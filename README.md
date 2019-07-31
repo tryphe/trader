@@ -36,11 +36,11 @@ Using Qt version 5.13.0 in /home/username/localqt/Qt-5.13.0-release/lib
 	- Run `./build-all.sh`. This will build all exchange targets and the CLI using `make -j`.
 	- Modify `daemon/build-config.h` with your build preferences and build using `make -j` or what you like.
 
-**Running the daemon**
-- Daemonize traderd so it stays running: `setsid ./traderd-poloniex`
+**Running the daemon** \
+Daemonize traderd so it stays running: `setsid ./traderd-poloniex`
 
-**Tailing the logs**
-- Running the daemons and relying terminal output is suboptimal if the terminal closes. It's enabled by default, but can be disabled in `daemon/build-config.h`. All output is also routed to the logfiles. There's a color log, and a noncolor log. To tail:
+**Tailing the logs** \
+Running the daemons and relying terminal output is suboptimal if the terminal closes. It's enabled by default, but can be disabled in `daemon/build-config.h`. All output is also routed to the logfiles. There's a color log, and a noncolor log. To tail:
 `tail -f --lines=200 ~/.config/pt/log.<press-tab>_color.txt`. Note: `~/.config/pt` for Poloniex, `~/.config/tt` for biTTrex, and `~/.config/bt` for Binance.
 
 **Preparing to run trader-cli (unix/linux)**
