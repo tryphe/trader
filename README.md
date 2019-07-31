@@ -1,3 +1,4 @@
+
 **Prerequisite: Compiling Qt (unix/linux)**
  1. Open your source directory, ie. `cd ~/src`. If it doesn't exist, run `mkdir ~/src` first.
  3. Pull a currently maintained Qt source (Please don't use ancient Qt versions, less than 5.10 is not supported currently): `wget https://download.qt.io/archive/qt/5.13/5.13.0/single/qt-everywhere-src-5.13.0.tar.xz`
@@ -8,9 +9,13 @@
 `./configure -prefix /home/username/localqt/Qt-5.13.0-minimal/ -opensource -confirm-license -shared -release -nomake examples -nomake tests -skip qt3d -skip qtactiveqt -skip qtandroidextras -skip qtcanvas3d -skip qtcharts -skip qtdatavis3d -skip qtgamepad -skip qtgraphicaleffects -skip qtlocation -skip qtmultimedia -skip qtpurchasing -skip qtquickcontrols -skip qtquickcontrols2 -skip qtscript -skip qtscxml -skip qtsensors -skip qtserialbus -skip qtserialport -skip qtwebengine -skip qtwebview -skip qttools`
  8. If there are no errors, now you can run make: `make -j` (if low on RAM or single CPU, you can skip the `-j`)
  9. If there are no errors, run `make install`
- 11. Now try and run qmake from your installation path with the `-v` flag: `/home/username/localqt/Qt-5.13.0-minimal/bin/qmake -v` and you should get:
-`QMake version 3.1
-Using Qt version 5.13.0 in /home/username/localqt/Qt-5.13.0-release/lib`
+ 11. Now try and run `qmake -v` from your installation path: 
+	 `/home/username/localqt/Qt-5.13.0-minimal/bin/qmake -v`
+	You should get:
+~~~
+QMake version 3.1
+Using Qt version 5.13.0 in /home/username/localqt/Qt-5.13.0-release/lib
+~~~
 
 **Compiling trader(unix/linux)**
  1. Open your source directory, ie. `cd ~/src` 
