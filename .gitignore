@@ -1,0 +1,16 @@
+traderd
+traderd-bittrex
+traderd-poloniex
+traderd-binance
+trader-cli
+
+Makefile*
+.qmake.stash
+*.pro.user
+
+build-tmp/
+daemon/traderd_plugin_import.cpp
+cli/trader-cli_plugin_import.cpp
+
+daemon/keydefs.h
+daemon/keydefs_mine.h
