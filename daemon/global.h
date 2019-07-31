@@ -288,12 +288,10 @@ static void messageOutput( QtMsgType type, const QMessageLogContext &context, co
     Q_UNUSED( context )
 
     // add a logfile tag for test build
-    QString testbuild_str;
     static QString log_file_path = QString( getTraderPath() + QDir::separator() + "log%1.txt" )
                                     .arg( QDateTime::currentMSecsSinceEpoch() );
 
-    static QString log_color_file_path = QString( getTraderPath() + QDir::separator() + "log%1.%2_color.txt" )
-                                    .arg( testbuild_str )
+    static QString log_color_file_path = QString( getTraderPath() + QDir::separator() + "log.%1_color.txt" )
                                     .arg( QDateTime::currentMSecsSinceEpoch() );
 
     static QFile *log_file_handle = new QFile( log_file_path );
