@@ -38,19 +38,19 @@
     #define ORDER_STRING_SIZE                   22
     #define INTERFACE_PORT                      62000
 
-    #define TREX_REST_URL                       "https://bittrex.com/api/v1.1/" // QByteArray::fromBase64( "aHR0cHM6Ly9iaXR0cmV4LmNvbS9hcGkvdjEuMS8=" ) // "https://bittrex.com/api/v1.1/"
+    #define TREX_REST_URL                       "https://bittrex.com/api/v1.1/"
 
-    #define TREX_COMMAND_CANCEL                 "market/cancel" // QByteArray::fromBase64( "bWFya2V0L2NhbmNlbA" ) //"market/cancel"
-    #define TREX_COMMAND_BUY                    "market/buylimit" // QByteArray::fromBase64( "bWFya2V0L2J1eWxpbWl0" ) //"market/buylimit"
-    #define TREX_COMMAND_SELL                   "market/selllimit" // QByteArray::fromBase64( "bWFya2V0L3NlbGxsaW1pdA" ) //"market/selllimit"
-    #define TREX_COMMAND_GET_ORDERS             "market/getopenorders" // QByteArray::fromBase64( "bWFya2V0L2dldG9wZW5vcmRlcnM" ) //"market/getopenorders"
-    #define TREX_COMMAND_GET_ORDER              "account/getorder" // QByteArray::fromBase64( "YWNjb3VudC9nZXRvcmRlcg" ) //"account/getorder"
-    #define TREX_COMMAND_GET_ORDER_HISTORY      "account/getorderhistory" // QByteArray::fromBase64( "YWNjb3VudC9nZXRvcmRlcmhpc3Rvcnk" ) //"account/getorderhistory"
-    #define TREX_COMMAND_GET_BALANCES           "account/getbalances" // QByteArray::fromBase64( "YWNjb3VudC9nZXRiYWxhbmNlcw" ) //"account/getbalances"
-    #define TREX_COMMAND_GET_MARKET_SUMMARIES   "public/getmarketsummaries" // QByteArray::fromBase64( "cHVibGljL2dldG1hcmtldHN1bW1hcmllcw" ) //"public/getmarketsummaries"
+    #define TREX_COMMAND_CANCEL                 "market/cancel"
+    #define TREX_COMMAND_BUY                    "market/buylimit"
+    #define TREX_COMMAND_SELL                   "market/selllimit"
+    #define TREX_COMMAND_GET_ORDERS             "market/getopenorders"
+    #define TREX_COMMAND_GET_ORDER              "account/getorder"
+    #define TREX_COMMAND_GET_ORDER_HISTORY      "account/getorderhistory"
+    #define TREX_COMMAND_GET_BALANCES           "account/getbalances"
+    #define TREX_COMMAND_GET_MARKET_SUMMARIES   "public/getmarketsummaries"
 
-    #define TREX_APIKEY                         "apikey" // QByteArray::fromBase64( "YXBpa2V5" ) // "apikey"
-    #define TREX_APISIGN                        "apisign" // QByteArray::fromBase64( "YXBpc2lnbg" ) // "apisign"
+    #define TREX_APIKEY                         "apikey"
+    #define TREX_APISIGN                        "apisign"
 
 #elif defined(EXCHANGE_BINANCE)
     #define EXCHANGE_STR                    "Binance"
