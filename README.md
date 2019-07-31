@@ -50,8 +50,8 @@ alias trader-cli-binance='~/src/trader/trader-cli Binance'
 
 Now you can access each daemon with a simple command, eg. Poloniex: `trader-cli-poloniex getbalances`
 
-**Tailing the logs**\
-Running the daemons and relying terminal output is suboptimal if the terminal closes. It's enabled by default, but can be disabled in `daemon/build-config.h`. All output is also routed to the logfiles. There's a color log, and a noncolor log. To tail:
+**Tailing the logs (note: CLI output goes to the logs)**\
+Running the daemons and relying terminal output is suboptimal if the terminal closes. It's enabled by default, but can be disabled in `daemon/build-config.h`. All output is also routed to the logfiles. There's a color log, and a noncolor log. To tail, run:
 `tail -f --lines=200 ~/.config/pt/log.<press-tab>_color.txt`. Note: `~/.config/pt` for Poloniex, `~/.config/tt` for biTTrex, and `~/.config/bt` for Binance.
 
 FAQS
