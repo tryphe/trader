@@ -50,7 +50,8 @@ alias trader-cli-binance='~/src/trader/trader-cli Binance'
 ***FAQS***
 
 **What is this madness?**
-- Trader is a bot that manages a set of ping pong positions while working within the confines of exchange limits. These limits can include a maximum number of orders, minimum price, maximum price, etc. Trader can also make one-time, maker or taker orders, with an optional timeout.
+
+Trader is a bot that manages a set of ping pong positions while working within the confines of exchange limits. These limits can include a maximum number of orders, minimum price, maximum price, etc. Trader can also make one-time, maker or taker orders, with an optional timeout.
 
 **What's a ping-pong position?**
 
@@ -59,7 +60,7 @@ A ping-pong position is simple. It's defined as a price variation with an order 
 - Buy price
 - Sell price
 	
-Suppose you want to initially buy 0.1 BTC worth shitcoins at 10 satoshi, and sell it at 30 satoshis:
+Suppose you want to ping-pong between buying 0.1 BTC worth shitcoins at 10 satoshi, and selling it at 30 satoshis. You'd run this command:
 - `trader-cli-poloniex setorder BTC_DOGE buy 0.00000010 0.00000030 0.1 active`
 - `buy` is the initial state
 - `0.00000010` is the buy price
