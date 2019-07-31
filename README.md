@@ -72,9 +72,10 @@ It's fairly easily to integrate the bot with any API, as long as it can read its
 **What's a ping-pong position?**
 
 A ping-pong position is simple. It's defined as a price variation with an order size: 
-- Order size
 - Buy price
 - Sell price
+- Order size
+- Initial state (buy or sell)
 	
 Suppose you want to ping-pong between buying 0.1 BTC worth shitcoins at 10 satoshi, and selling it at 30 satoshis. You'd run this command:
 - `trader-cli-poloniex setorder BTC_DOGE buy 0.00000010 0.00000030 0.1 active`
