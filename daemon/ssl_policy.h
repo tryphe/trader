@@ -2,7 +2,7 @@
 #define GLOBALSSL_H
 
 #include <assert.h>
-//#include "global.h"
+#include "global.h"
 
 #include <QSslConfiguration>
 #include <QSslCipher>
