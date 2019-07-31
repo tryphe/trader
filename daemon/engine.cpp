@@ -342,14 +342,12 @@ void Engine::fillNQ( const QString &order_id, qint8 fill_type , quint8 extra_dat
 
 void Engine::processFilledOrderRange( QVector<Position*> &filled_positions, qint8 fill_type )
 {
-    // NOTE: all positions here should already have is_invalidated = true
-
     // mark is_invalidated and build markets list before we call setBounds
     QSet<QString> markets;
     for ( QVector<Position*>::const_iterator i = filled_positions.begin(); i != filled_positions.end(); i++ )
     {
         Position *const &pos = *i;
-        pos->is_invalidated = false;
+        pos->is_invalidated = true;
         markets.insert( pos->market );
     }
 
