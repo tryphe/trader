@@ -7,7 +7,9 @@ Trader requires a Qt >= 5.10 build with the *core*, *network*, and *websockets* 
  3. Pull any currently maintained Qt source: `wget https://download.qt.io/archive/qt/5.13/5.13.0/single/qt-everywhere-src-5.13.0.tar.xz`
  4. Extract: `tar xf qt-everywhere-src-5.13.0.tar.xz`
  5. Go there: `cd qt-everywhere-src-5.13.0.tar.xz`
- 6. Install dependencies: `sudo apt-get build-dep qt5-default`
+ 6. Install dependencies: 
+ 	- `sudo apt build-dep qt5-default`
+	- `sudo apt install libgmp-dev`
  7. Configure Qt (and skip some things to improve compile time): 
 `./configure -prefix /home/username/localqt/Qt-5.13.0-minimal/ -opensource -confirm-license -shared -release -nomake examples -nomake tests -skip qt3d -skip qtactiveqt -skip qtandroidextras -skip qtcanvas3d -skip qtcharts -skip qtdatavis3d -skip qtgamepad -skip qtgraphicaleffects -skip qtlocation -skip qtmultimedia -skip qtpurchasing -skip qtquickcontrols -skip qtquickcontrols2 -skip qtscript -skip qtscxml -skip qtsensors -skip qtserialbus -skip qtserialport -skip qtwebengine -skip qtwebview -skip qttools`
  8. If there are no errors, now you can run make: `make -j` (if low on RAM or single CPU, you can skip the `-j`)
