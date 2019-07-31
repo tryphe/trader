@@ -18,8 +18,8 @@ struct EngineSettings
     explicit EngineSettings()
     {
         is_chatty = false;
-        should_clear_stray_orders = true /*false*/; // auto cancels orders that aren't ours - set false when multiple bots are running the same api key
-        should_clear_stray_orders_all = true; // cancel orders not in our price index
+        should_clear_stray_orders = false /*false*/; // auto cancels orders that aren't ours - set false when multiple bots are running the same api key
+        should_clear_stray_orders_all = false; // cancel orders not in our price index
         should_slippage_be_calculated = false; // try calculated slippage before additive. false = additive + additive2 only
         should_adjust_hibuy_losell = true; // adjust hi_buy/lo_sell maps based on post-only price errors
         should_adjust_hibuy_losell_debugmsgs_ticker = false; // enable chatty messages for hi/lo bounds adjust for wss-ticker
