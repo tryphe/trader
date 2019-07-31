@@ -30,8 +30,10 @@ Using Qt version 5.13.0 in /home/username/localqt/Qt-5.13.0-release/lib`
 
 **Preparing to run trader-cli (unix/linux)**
  1. Edit `~/.bashrc` using your favorite text editor, adding these lines:
-`alias trader-cli-poloniex='~/src/trader/trader-cli Poloniex'`
-`alias trader-cli-bittrex='~/src/trader/trader-cli Bittrex'`
-`alias trader-cli-binance='~/src/trader/trader-cli Binance'`
+~~~
+alias trader-cli-poloniex='~/src/trader/trader-cli Poloniex'
+alias trader-cli-bittrex='~/src/trader/trader-cli Bittrex'
+alias trader-cli-binance='~/src/trader/trader-cli Binance'
+ ~~~
  19. Then run `source ~/.bashrc`
  20. Now you can access each daemon with a simple command, eg. Poloniex: `trader-cli-poloniex getbalances`
