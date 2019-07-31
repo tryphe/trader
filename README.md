@@ -6,7 +6,7 @@
  6. Install dependencies: `sudo apt-get build-dep qt5-default`
  7. Configure Qt (and skip some things to improve compile time): 
 `./configure -prefix /home/username/localqt/Qt-5.13.0-minimal/ -opensource -confirm-license -shared -release -nomake examples -nomake tests -skip qt3d -skip qtactiveqt -skip qtandroidextras -skip qtcanvas3d -skip qtcharts -skip qtdatavis3d -skip qtgamepad -skip qtgraphicaleffects -skip qtlocation -skip qtmultimedia -skip qtpurchasing -skip qtquickcontrols -skip qtquickcontrols2 -skip qtscript -skip qtscxml -skip qtsensors -skip qtserialbus -skip qtserialport -skip qtwebengine -skip qtwebview -skip qttools`
- 8. If there are no errors, now you can run make: `make -j`
+ 8. If there are no errors, now you can run make: `make -j` (if low on RAM or single CPU, you can skip the `-j`)
  9. If there are no errors, run `make install`
  11. Now try and run qmake from your installation path with the `-v` flag: `/home/username/localqt/Qt-5.13.0-minimal/bin/qmake -v` and you should get:
 `QMake version 3.1
@@ -22,8 +22,8 @@ Using Qt version 5.13.0 in /home/username/localqt/Qt-5.13.0-release/lib`
  5. Now that `daemon/keydefs.h` exists, you can build the project from the project's root directory:
  6. Run qmake: `/home/username/localqt/Qt-5.13.0-minimal/bin/qmake`
  7. Build your binaries:
-	- Run `./build-all.sh`. This will build all exchange targets and the CLI using.
-	- Modify `daemon/build-config.h` with your build preferences and build using `make` or what you like.
+	- Run `./build-all.sh`. This will build all exchange targets and the CLI using `make -j`.
+	- Modify `daemon/build-config.h` with your build preferences and build using `make -j` or what you like.
 
 **Running the daemon**
 1. Daemonize traderd so it stays running: `setsid ./traderd-poloniex`
