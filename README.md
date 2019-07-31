@@ -63,7 +63,7 @@ Trader is a bot that manages a set of ping pong positions while working within t
 
 The bot doesn't do TA or have any concept of strategy. It doesn't read charts or know fancy statistics. It also doesn't have persistence yet (coming soon).
 
-Traderd is a rational bot with well defined targets, and is simply a tool of execution. Anything strategy related is intended to be running on top of this bot, in order to maintai the bot's order spread over time, rather than of being part of the bot directly. It pongs the pings and pings the pongs, and runs onetime orders, and should be very efficient in general.
+Traderd is a rational bot with well defined targets, and is simply a tool of execution. Anything strategy related is intended to be running on top of this bot, in order to maintain the bot's order spread over time, rather than of being part of the bot directly. It pongs the pings and pings the pongs, and runs onetime orders, and should be very efficient in general.
 
 **What's a ping-pong position?**
 
