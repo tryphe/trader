@@ -100,7 +100,7 @@ Same as above, but cancel if 5 minutes elapses (delayed fill or kill order):\
 Ping-pong order, buy at 17 satoshis, sell at 18, size 0.011:\
 `trader-cli-poloniex setorder BTC_OMG buy 0.00000017 0.00000018 0.011 active`
 
-Same as above, but when the ping-pong order is filled once, set size to 0.0001 (effectively buys 0.011 and ping-pongs 0.001 of it):\
+Same as above, but when the ping-pong order is filled once, set size to 0.001 (effectively buys 0.011 and ping-pongs 0.001 of it):\
 `trader-cli-poloniex setorder BTC_OMG buy 0.00000017 0.00000018 0.011/0.001 active`
 
 
