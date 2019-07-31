@@ -20,8 +20,8 @@
 #define PRINT_TEST_PERFORMANCE
 
 /// build options
-#define TRYPHE_BUILD
-#define SECONDARY_BOT // resolve conflicts for using 1 key on multiple machines (does not stop other bots conflicting with this bot)
+//#define TRYPHE_BUILD
+//#define SECONDARY_BOT // resolve conflicts for using 1 key on multiple machines (does not stop other bots conflicting with this bot)
 #define FALLBACK_FILE_INPUT
 //#define DEBUG_BUILD
 //#define DEBUG_BUILD_2
