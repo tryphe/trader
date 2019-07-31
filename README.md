@@ -1,4 +1,5 @@
 
+
 **Prerequisite: Compiling Qt (unix/linux)**
  1. Open your source directory, ie. `cd ~/src`. If it doesn't exist, run `mkdir ~/src` first.
  3. Pull a currently maintained Qt source (Please don't use ancient Qt versions, less than 5.10 is not supported currently): `wget https://download.qt.io/archive/qt/5.13/5.13.0/single/qt-everywhere-src-5.13.0.tar.xz`
@@ -21,10 +22,10 @@ Using Qt version 5.13.0 in /home/username/localqt/Qt-5.13.0-release/lib
  1. Open your source directory, ie. `cd ~/src` 
  2. Clone this repo: `git clone https://github.com/tryphe/trader`
  3. Go there: `cd trader`
- 4. Put your keys into the bot one of three ways (choose only one):
-	- Run `python generate_keys.py` to create `daemon/keydefs.h`
-	- or Copy the example keydefs file: `cp daemon/keydefs.h.example daemon/keydefs.h` then paste your keys in with your favorite editor, or:
-	- or Create `keydefs.h` using the example file, but leave the keys blank or as-is during compile, then use the runtime CLI to enter your keys into the bot: `trader-cli Poloniex setkeyandsecret <key> <secret>` (***be careful, this will leak your keys into the bash history***)
+ 4. Hardcode your keys into `daemon/keydefs.h` (choose only one):
+	- Run `python generate_keys.py`
+	- or: Copy the example keydefs file: `cp daemon/keydefs.h.example daemon/keydefs.h` then paste your keys in with your favorite editor, or:
+	- or (*non-hardcoded keys*): Create `keydefs.h` using the example file above, but leave the keys blank or as-is during compile, then use the runtime CLI to enter your keys into the bot: `trader-cli Poloniex setkeyandsecret <key> <secret>` (***be careful, this will leak your keys into the bash history***)
  5. Now that `daemon/keydefs.h` exists, you can build the project from the project's root directory:
  6. Run qmake: `/home/username/localqt/Qt-5.13.0-minimal/bin/qmake`
  7. Build your binaries:
