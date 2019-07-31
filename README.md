@@ -24,14 +24,14 @@ Using Qt version 5.13.0 in /home/username/localqt/Qt-5.13.0-release/lib
  4. Put your keys into the bot one of three ways (choose only one):
 	- Run `python generate_keys.py` to create `daemon/keydefs.h`
 	- or Copy the example keydefs file: `cp daemon/keydefs.h.example daemon/keydefs.h` then paste your keys in with your favorite editor, or:
-	- or Create `keydefs.h` using the example file, but leave the keys blank or as-is during compile, then use the runtime CLI to enter your keys into the bot: `trader-cli Poloniex setkeyandsecret <key> <secret>`
+	- or Create `keydefs.h` using the example file, but leave the keys blank or as-is during compile, then use the runtime CLI to enter your keys into the bot: `trader-cli Poloniex setkeyandsecret <key> <secret>` (***be careful, this will leak your keys into the bash history***)
  5. Now that `daemon/keydefs.h` exists, you can build the project from the project's root directory:
  6. Run qmake: `/home/username/localqt/Qt-5.13.0-minimal/bin/qmake`
  7. Build your binaries:
 	- Run `./build-all.sh`. This will build all exchange targets and the CLI using `make -j`.
 	- Modify `daemon/build-config.h` with your build preferences and build using `make -j` or what you like.
 
-**Running the daemon**
+**Running the daemon***
 1. Daemonize traderd so it stays running: `setsid ./traderd-poloniex`
 
 **Preparing to run trader-cli (unix/linux)**
