@@ -25,12 +25,16 @@
 #define KEY                             "key"
 #define SIGN                            "sign"
 
+/// keep subpaths defined for CLI build
+#define BITTREX_SUBPATH "tt"
+#define POLONIEX_SUBPATH "pt"
+#define BINANCE_SUBPATH "bt"
 
 /// urls/symbols
 #if defined(EXCHANGE_BITTREX)
     #define EXCHANGE_STR                        "Bittrex"
     #define REST_OBJECT                         TrexREST
-    #define EXCHANGE_SUBPATH                    "tt"
+    #define EXCHANGE_SUBPATH                    BITTREX_SUBPATH
     #define ORDER_STRING_SIZE                   22
     #define INTERFACE_PORT                      62000
 
@@ -51,7 +55,7 @@
 #elif defined(EXCHANGE_BINANCE)
     #define EXCHANGE_STR                    "Binance"
     #define REST_OBJECT                     BncREST
-    #define EXCHANGE_SUBPATH                "bt"
+    #define EXCHANGE_SUBPATH                BINANCE_SUBPATH
     #define ORDER_STRING_SIZE               15
     #define INTERFACE_PORT                  62001
 
@@ -73,7 +77,7 @@
 #elif defined(EXCHANGE_POLONIEX)
     #define EXCHANGE_STR                    "Poloniex"
     #define REST_OBJECT                     PoloREST
-    #define EXCHANGE_SUBPATH                "pt"
+    #define EXCHANGE_SUBPATH                POLONIEX_SUBPATH
     #define ORDER_STRING_SIZE               11
     #define INTERFACE_PORT                  62002
 
@@ -195,9 +199,9 @@ static inline const QString getConfigPath()
     return QStandardPaths::writableLocation( QStandardPaths::ConfigLocation );
 }
 
-static inline const QString getTraderPath()
+static inline const QString getTraderPath( QString subpath = EXCHANGE_SUBPATH )
 {
-    return getConfigPath() + QDir::separator() + EXCHANGE_SUBPATH;
+    return getConfigPath() + QDir::separator() + subpath;
 }
 
 static inline const QString getOldLogsPath()
@@ -205,9 +209,9 @@ static inline const QString getOldLogsPath()
     return getTraderPath() + QDir::separator() + "logs_old";
 }
 
-static inline const QString getIPCPath()
+static inline const QString getIPCPath( QString subpath = EXCHANGE_SUBPATH )
 {
-    return getTraderPath() + QDir::separator() + "trader.ipc";
+    return getTraderPath( subpath ) + QDir::separator() + "trader.ipc";
 }
 
 static inline void ensurePath()

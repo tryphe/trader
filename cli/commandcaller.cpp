@@ -3,10 +3,22 @@
 
 #include <QCoreApplication>
 
-CommandCaller::CommandCaller( QByteArray command, QObject *parent )
+CommandCaller::CommandCaller( QString exchange, QByteArray command, QObject *parent )
     : QLocalSocket( parent )
 {
-    QLocalSocket::connectToServer( Global::getIPCPath() );
+    // parse the first argument as the daemon target
+    QString subpath;
+    if ( exchange.toLower() == "binance" ) subpath = BINANCE_SUBPATH;
+    else if ( exchange.toLower() == "bittrex" ) subpath = BITTREX_SUBPATH;
+    else if ( exchange.toLower() == "poloniex" ) subpath = POLONIEX_SUBPATH;
+    else
+    {
+        qDebug() << "error: an incorrect exchange was given, use `trader-cli [bittrex|poloniex|bittrex] [command]`";
+        return;
+    }
+
+    QString path = Global::getIPCPath( subpath );
+    QLocalSocket::connectToServer( path );
     QLocalSocket::waitForConnected();
 
     if ( state() == QLocalSocket::ConnectedState )

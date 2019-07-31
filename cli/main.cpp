@@ -14,11 +14,12 @@ int main(int argc, char *argv[])
     args.removeFirst(); // remove application name
 
     // join args
+    QString exchange = args.takeFirst();
     QString joined = args.join( QChar( ' ' ) );
 
     //qDebug() << joined;
 
-    CommandCaller *c = new CommandCaller( joined.toLocal8Bit() );
+    CommandCaller *c = new CommandCaller( exchange, joined.toLocal8Bit() );
     delete c;
 
     return 0;

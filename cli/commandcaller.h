@@ -8,7 +8,7 @@ class CommandCaller : public QLocalSocket
 {
     Q_OBJECT
 public:
-    explicit CommandCaller( QByteArray command, QObject *parent = nullptr );
+    explicit CommandCaller( QString exchange, QByteArray command, QObject *parent = nullptr );
 
 signals:
 
