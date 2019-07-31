@@ -35,5 +35,5 @@ alias trader-cli-poloniex='~/src/trader/trader-cli Poloniex'
 alias trader-cli-bittrex='~/src/trader/trader-cli Bittrex'
 alias trader-cli-binance='~/src/trader/trader-cli Binance'
  ~~~
- 19. Then run `source ~/.bashrc`
- 20. Now you can access each daemon with a simple command, eg. Poloniex: `trader-cli-poloniex getbalances`
+ 2. Then run `source ~/.bashrc`
+ 3. Now you can access each daemon with a simple command, eg. Poloniex: `trader-cli-poloniex getbalances`
