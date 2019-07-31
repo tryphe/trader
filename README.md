@@ -59,6 +59,12 @@ alias trader-cli-binance='~/src/trader/trader-cli Binance'
 
 Trader is a bot that manages a set of ping pong positions while working within the confines of exchange limits. These limits can include a maximum number of orders, minimum price, maximum price, etc. Trader can also make one-time, maker or taker orders, with an optional timeout.
 
+**What the bot is NOT**
+
+The bot doesn't do TA or have any concept of strategy. It doesn't read charts or know fancy statistics. It also doesn't have persistence yet (coming soon).
+
+Traderd is a rational bot with well defined targets, and is simply a tool of execution. Anything strategy related is intended to be running on top of this bot, in order to maintai the bot's order spread over time, rather than of being part of the bot directly. It pongs the pings and pings the pongs, and runs onetime orders, and should be very efficient in general.
+
 **What's a ping-pong position?**
 
 A ping-pong position is simple. It's defined as a price variation with an order size: 
