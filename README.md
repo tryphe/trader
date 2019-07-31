@@ -11,7 +11,7 @@
 9. Now try and run qmake from your installation path with the `-v` flag: `/home/username/localqt/Qt-5.13.0-minimal/bin/qmake -v` and you should get:
 `QMake version 3.1
 Using Qt version 5.13.0 in /home/username/localqt/Qt-5.13.0-release/lib`
---------------------------
+
 **Compiling trader(unix/linux)**
 1. Open your source directory, ie. `cd ~/src`
 2. Clone this repo: `git clone  https://github.com/tryphe/trader`
