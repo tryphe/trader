@@ -65,12 +65,17 @@ The bot doesn't do TA or have any concept of strategy. It doesn't read charts or
 
 Traderd is a rational bot with well defined targets, and is simply a tool of execution. Anything strategy related is intended to be running on top of this bot, in order to maintain the bot's order spread over time, rather than of being part of the bot directly. It pongs the pings and pings the pongs, and runs onetime orders, and should be very efficient in general.
 
+**What about supporting xyz exchange?**
+
+It's fairly easily to integrate the bot with any API, as long as it can read its current orders and get ticker prices. Currently, it would take roughly 1000 lines to add another exchange. If you know of a good exchange, let me know.
+
 **What's a ping-pong position?**
 
 A ping-pong position is simple. It's defined as a price variation with an order size: 
-- Order size
 - Buy price
 - Sell price
+- Order size
+- Initial state (buy or sell)
 	
 Suppose you want to ping-pong between buying 0.1 BTC worth shitcoins at 10 satoshi, and selling it at 30 satoshis. You'd run this command:
 - `trader-cli-poloniex setorder BTC_DOGE buy 0.00000010 0.00000030 0.1 active`
