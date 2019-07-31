@@ -34,8 +34,8 @@ Compiling
  5. Now that `daemon/keydefs.h` exists, you can build the project from the project's root directory:
  6. Run qmake: `/home/username/localqt/Qt-5.13.0-minimal/bin/qmake`
  7. Modify `daemon/build-config.h` with your build preferences, then choose a build type:
-	- (manual) Run `make -j` or similar to build for a single exchange and the CLI.
-	- (scripted) Run `./build-all.sh`. This will build all exchange targets and the CLI using `make -j`.
+ 	- (scripted) Run `./build-all.sh`. This will build all exchange targets and the CLI using `make -j`.
+	- or (manual) Run `make -j` or similar to build for a single exchange and the CLI.
 
 Running the daemon
 ------------------
