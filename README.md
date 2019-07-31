@@ -1,7 +1,7 @@
 
 
-**Prerequisite: Compiling Qt (unix/linux)**
-
+Dependencies: Compiling Qt and installing libgmp (unix/linux)
+---------------------------------
 Trader requires a Qt >= 5.10 build with the *core*, *network*, and *websockets* modules. To build:
  1. Open your source directory, ie. `cd ~/src`. If it doesn't exist, run `mkdir ~/src` first.
  3. Pull any currently maintained Qt source: `wget https://download.qt.io/archive/qt/5.13/5.13.0/single/qt-everywhere-src-5.13.0.tar.xz`
@@ -22,7 +22,8 @@ QMake version 3.1
 Using Qt version 5.13.0 in /home/username/localqt/Qt-5.13.0-release/lib
 ~~~
 
-**Compiling trader(unix/linux)**
+Compiling
+---------
  1. Open your source directory, ie. `cd ~/src` 
  2. Clone this repo: `git clone https://github.com/tryphe/trader`
  3. Go there: `cd trader`
@@ -36,27 +37,25 @@ Using Qt version 5.13.0 in /home/username/localqt/Qt-5.13.0-release/lib
 	- (manual) Run `make -j` or similar to build for a single exchange and the CLI.
 	- (scripted) Run `./build-all.sh`. This will build all exchange targets and the CLI using `make -j`.
 
-**Running the daemon** \
-Daemonize traderd so it stays running: `setsid ./traderd-poloniex`
-
-**Tailing the logs** \
-Running the daemons and relying terminal output is suboptimal if the terminal closes. It's enabled by default, but can be disabled in `daemon/build-config.h`. All output is also routed to the logfiles. There's a color log, and a noncolor log. To tail:
-`tail -f --lines=200 ~/.config/pt/log.<press-tab>_color.txt`. Note: `~/.config/pt` for Poloniex, `~/.config/tt` for biTTrex, and `~/.config/bt` for Binance.
-
-**Preparing to run trader-cli (unix/linux)**
- 1. Edit `~/.bashrc` using your favorite text editor, adding these lines:
+Running the daemon
+------------------
+1. Daemonize traderd so it stays running: `setsid ./traderd-poloniex`
+2. Edit `~/.bashrc` using your favorite text editor, adding these lines:
 ~~~
 alias trader-cli-poloniex='~/src/trader/trader-cli Poloniex'
 alias trader-cli-bittrex='~/src/trader/trader-cli Bittrex'
 alias trader-cli-binance='~/src/trader/trader-cli Binance'
  ~~~
- 2. Then run `source ~/.bashrc`
- 3. Now you can access each daemon with a simple command, eg. Poloniex: `trader-cli-poloniex getbalances`
+ 3. Then run `source ~/.bashrc`
 
+Now you can access each daemon with a simple command, eg. Poloniex: `trader-cli-poloniex getbalances`
 
+**Tailing the logs**\
+Running the daemons and relying terminal output is suboptimal if the terminal closes. It's enabled by default, but can be disabled in `daemon/build-config.h`. All output is also routed to the logfiles. There's a color log, and a noncolor log. To tail:
+`tail -f --lines=200 ~/.config/pt/log.<press-tab>_color.txt`. Note: `~/.config/pt` for Poloniex, `~/.config/tt` for biTTrex, and `~/.config/bt` for Binance.
 
-***FAQS***
-
+FAQS
+----
 **What is this madness?**
 
 Trader is a bot that manages a set of ping pong positions while working within the confines of exchange limits. These limits can include a maximum number of orders, minimum price, maximum price, etc. Trader can also make one-time, maker or taker orders, with an optional timeout.
