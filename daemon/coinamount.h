@@ -78,7 +78,7 @@ static const Coin SUBSATOSHI = QString( "0.0000000000000001" );
 static const Coin A_LOT = QString( "10000000000000000000000000000000000000000000000000000000000000000000000" );
 static const QString SATOSHI_STR = QString( "0.00000001" );
 static const qreal SATOSHI_REAL = 0.00000001;
-static const qreal ORDER_SHIM = 0.000000005;
+static const Coin ORDER_SHIM = QString( "0.000000005" );
 
 static const QChar decimal = QChar( '.' );
 static const QChar zero = QChar( '0' );
