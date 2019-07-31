@@ -31,7 +31,7 @@ Using Qt version 5.13.0 in /home/username/localqt/Qt-5.13.0-release/lib
 	- Run `./build-all.sh`. This will build all exchange targets and the CLI using `make -j`.
 	- Modify `daemon/build-config.h` with your build preferences and build using `make -j` or what you like.
 
-**Running the daemon***
+**Running the daemon**
 1. Daemonize traderd so it stays running: `setsid ./traderd-poloniex`
 
 **Preparing to run trader-cli (unix/linux)**
