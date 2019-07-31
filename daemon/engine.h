@@ -155,6 +155,7 @@ public:
     void setMarketSettings( QString market, qint32 order_min, qint32 order_max, qint32 order_dc, qint32 order_dc_nice,
                             qint32 landmark_start, qint32 landmark_thresh, bool market_sentiment, qreal market_offset );
 
+    void findBetterPrice( Position *const &pos );
     void deleteReply( QNetworkReply *const &reply, Request *const &request );
 
 public Q_SLOTS:
@@ -162,7 +163,6 @@ public Q_SLOTS:
     void onCheckDivergeConverge();
 
 private:
-    void findBetterPrice( Position *const &pos );
     void removeFromDC( Position *const &pos );
     bool tryMoveSlippageOrder( Position *const &pos );
     void setMarketBoundsForPos( Position *const &pos );

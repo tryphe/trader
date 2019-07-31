@@ -4,8 +4,8 @@
 #define BUILD_VERSION "1.72h"
 
 /// select your exchange
-#define EXCHANGE_BITTREX
-//#define EXCHANGE_POLONIEX
+//#define EXCHANGE_BITTREX
+#define EXCHANGE_POLONIEX
 //#define EXCHANGE_BINANCE
 
 /// where to print logs
