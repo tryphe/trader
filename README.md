@@ -1,6 +1,8 @@
 
 
 **Prerequisite: Compiling Qt (unix/linux)**
+
+Trader requires a Qt >= 5.10 build with the *core*, *network*, and *websockets* modules. To build:
  1. Open your source directory, ie. `cd ~/src`. If it doesn't exist, run `mkdir ~/src` first.
  3. Pull a currently maintained Qt source (Please don't use ancient Qt versions, less than 5.10 is not supported currently): `wget https://download.qt.io/archive/qt/5.13/5.13.0/single/qt-everywhere-src-5.13.0.tar.xz`
  4. Extract: `tar xf qt-everywhere-src-5.13.0.tar.xz`
