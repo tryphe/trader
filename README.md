@@ -19,8 +19,9 @@ Using Qt version 5.13.0 in /home/username/localqt/Qt-5.13.0-release/lib
 
 **Compiling trader(unix/linux)**
  1. Open your source directory, ie. `cd ~/src` 
- 2. Clone this repo: `git clone  https://github.com/tryphe/trader`
- 3. Put your keys into the bot one of three ways (choose only one):
+ 2. Clone this repo: `git clone https://github.com/tryphe/trader`
+ 3. Go there: `cd trader`
+ 4. Put your keys into the bot one of three ways (choose only one):
 	- Run `python generate_keys.py` to create `daemon/keydefs.h`
 	- or Copy the example keydefs file: `cp daemon/keydefs.h.example daemon/keydefs.h` then paste your keys in with your favorite editor, or:
 	- or Create `keydefs.h` using the example file, but leave the keys blank or as-is during compile, then use the runtime CLI to enter your keys into the bot: `trader-cli Poloniex setkeyandsecret <key> <secret>`
