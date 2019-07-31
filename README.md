@@ -66,6 +66,6 @@ Suppose you want to ping-pong between buying 0.1 BTC worth shitcoins at 10 satos
 - `0.00000010` is the buy price
 - `0.00000030` is the sell price
 - `0.1` is the order size in BTC
-- `active` tells the bot not to set the order now (as opposed to automatically setting it later)
+- `active` tells the bot to set the order now (as opposed to setting it to `ghost` which lets the bot decide if it should set it)
 
 [todo] explain ghost positions, onetime taker/maker orders, onetime order timeouts, ping-pong divergence/convergence settings, general market settings, base/quote pair formatting, calculating total position equity, calculating risk/reward
