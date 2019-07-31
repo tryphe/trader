@@ -73,7 +73,7 @@ It's fairly easily to integrate the bot with any API, as long as it can read its
 
 **What's a ping-pong position?**
 
-A ping-pong position is simple. It's defined as a price variation with an order size:\
+A ping-pong position is simple. It's defined as a price variation with an order size:
 - Buy price
 - Sell price
 - Order size
