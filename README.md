@@ -6,7 +6,7 @@
 5. Install dependencies: `sudo apt-get build-dep qt5-default`
 6. Configure Qt (and skip some things to improve compile time): 
 `./configure -prefix /home/username/localqt/Qt-5.13.0-minimal/ -opensource -confirm-license -shared -release -nomake examples -nomake tests -skip qt3d -skip qtactiveqt -skip qtandroidextras -skip qtcanvas3d -skip qtcharts -skip qtdatavis3d -skip qtgamepad -skip qtgraphicaleffects -skip qtlocation -skip qtmultimedia -skip qtpurchasing -skip qtquickcontrols -skip qtquickcontrols2 -skip qtscript -skip qtscxml -skip qtsensors -skip qtserialbus -skip qtserialport -skip qtwebengine -skip qtwebview -skip qttools`
-7. If there are no errors, now you can run make: `make` and
+7. If there are no errors, now you can run make: `make -j`
 8. If there are no errors, run `make install`
 9. Now try and run qmake from your installation path with the `-v` flag: `/home/username/localqt/Qt-5.13.0-minimal/bin/qmake -v` and you should get:
 `QMake version 3.1
