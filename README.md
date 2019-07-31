@@ -25,6 +25,14 @@ Using Qt version 5.13.0 in /home/username/localqt/Qt-5.13.0-release/lib`
 6. Build your binaries:
 	a. Run `./build-all.sh`. This will build all exchange targets and the CLI using.
 	b. Modify `daemon/build-config.h` with your build preferences and build using `make` or what you like.
-	
-**Preparing to run traderd and trader-cli (unix/linux)**
-[todo]
+
+**Running the daemon**
+Daemonize traderd so it stays running: `setsid ./traderd-poloniex`
+
+**Preparing to run trader-cli (unix/linux)**
+1. Edit `~/.bashrc` using your favorite text editor, adding these lines:
+`alias trader-cli-poloniex='~/src/trader/trader-cli Poloniex'`
+`alias trader-cli-bittrex='~/src/trader/trader-cli Bittrex'`
+`alias trader-cli-binance='~/src/trader/trader-cli Binance'`
+2. Then run `source ~/.bashrc`
+3. Now you can access each daemon with a simple command, eg. Poloniex: `trader-cli-poloniex getbalances`
