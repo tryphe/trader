@@ -35,15 +35,7 @@ bool FallbackListener::openInputFile()
     if ( input_file && input_file->isReadable() && input_file->isWritable() )
         return true;
 
-    QString input_file_path = Global::getTraderPath();
-
-#if defined(DEBUG_BUILD)
-    input_file_path += "/in.test.txt";
-#elif defined(DEBUG_BUILD_2)
-    input_file_path += "/in.test2.txt";
-#else
-    input_file_path += "/in.txt";
-#endif
+    QString input_file_path = Global::getTraderPath() + "/in.txt";
 
     // if the file is open but stale, dispose of it
     if ( input_file && ( !input_file->isReadable() || !input_file->exists() ) )

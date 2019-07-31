@@ -289,14 +289,7 @@ static void messageOutput( QtMsgType type, const QMessageLogContext &context, co
 
     // add a logfile tag for test build
     QString testbuild_str;
-#if defined(DEBUG_BUILD)
-    testbuild_str += ".test";
-#elif defined(DEBUG_BUILD_2)
-    testbuild_str += ".test2";
-#endif
-
-    static QString log_file_path = QString( getTraderPath() + QDir::separator() + "log%1.%2.txt" )
-                                    .arg( testbuild_str )
+    static QString log_file_path = QString( getTraderPath() + QDir::separator() + "log%1.txt" )
                                     .arg( QDateTime::currentMSecsSinceEpoch() );
 
     static QString log_color_file_path = QString( getTraderPath() + QDir::separator() + "log%1.%2_color.txt" )
@@ -358,7 +351,7 @@ static void messageOutput( QtMsgType type, const QMessageLogContext &context, co
     endMessageBytes = endMessage_unixcolors.toUtf8();
 
     // print to console
-#if defined(PRINT_LOGS_TO_CONSOLE) || defined(DEBUG_BUILD) || defined(DEBUG_BUILD_2)
+#if defined(PRINT_LOGS_TO_CONSOLE)
     fprintf( stderr, "%s", endMessageBytes.constData() );
 #endif
 

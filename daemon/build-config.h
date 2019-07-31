@@ -5,8 +5,8 @@
 
 /// select your exchange
 //#define EXCHANGE_BITTREX
-#define EXCHANGE_POLONIEX
-//#define EXCHANGE_BINANCE
+//#define EXCHANGE_POLONIEX
+#define EXCHANGE_BINANCE
 
 /// where to print logs
 #define PRINT_LOGS_TO_CONSOLE
@@ -19,12 +19,11 @@
 //#define PRINT_DISABLED_SSL_CIPHERS
 #define PRINT_TEST_PERFORMANCE
 
+/// allow bulk input from in.txt? (deprecated with ipc sockets)
+#define FALLBACK_FILE_INPUT
+
 /// build options
 //#define TRYPHE_BUILD
-//#define SECONDARY_BOT // resolve conflicts for using 1 key on multiple machines (does not stop other bots conflicting with this bot)
-#define FALLBACK_FILE_INPUT
-//#define DEBUG_BUILD
-//#define DEBUG_BUILD_2
-
+//#define SECONDARY_BOT
 
 #endif // BUILDCONFIG_H
