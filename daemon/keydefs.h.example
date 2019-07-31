@@ -1,0 +1,17 @@
+#ifndef KEYDEFS_H
+#define KEYDEFS_H
+
+// put your poloniex key/secret here
+#define POLONIEX_KEY "POLONIEX-KEY-12345"
+#define POLONIEX_SECRET "227ac44a..."
+
+// put your bittrex key/secret here
+#define BITTREX_KEY "88a25c45..."
+#define BITTREX_SECRET "a47b25..."
+
+// put your binance key/secret here
+#define BINANCE_KEY "AJSDF45abc123..."
+#define BINANCE_SECRET "AJSD56abc123..."
+
+#endif // KEYDEFS_H
+

@@ -1,0 +1,987 @@
+#include "bncrest.h"
+
+#if defined(EXCHANGE_BINANCE)
+
+#include "stats.h"
+#include "engine.h"
+#include "position.h"
+
+#include <QTimer>
+#include <QNetworkAccessManager>
+#include <QUrl>
+#include <QUrlQuery>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonArray>
+#include <QThread>
+#include <QWebSocket>
+#include <QtMath>
+
+BncREST::BncREST( Engine *_engine )
+  : BaseREST( _engine ),
+    wss( nullptr ),
+    wss_connect_try_time( 0 ),
+    wss_heartbeat_time( 0 ),
+    binance_weight( 0 ),
+    exchangeinfo_timer( nullptr ),
+    wss_safety_delay_time( 2000 ), // only detect a wss filled order after this amount of time - for possible wss lag
+    ratelimit_second( 10 ),
+    ratelimit_minute( 600 ),
+    ratelimit_day( 100000 ),
+    wss_1000_state( false ), // account subscription
+    wss_1002_state( false ), // ticker subscription
+    wss_account_feed_update_time( 0 )
+{
+    kDebug() << "[BncREST]";
+}
+
+BncREST::~BncREST()
+{
+    exchangeinfo_timer->stop();
+    delete exchangeinfo_timer;
+    exchangeinfo_timer = nullptr;
+
+    // dispose of websocket
+    if ( wss )
+    {
+        // disconnect wss so we don't call wssCheckConnection()
+        disconnect( wss, &QWebSocket::disconnected, this, &BncREST::wssCheckConnection );
+
+        wss->abort();
+        delete wss;
+        wss = nullptr;
+    }
+
+    kDebug() << "[BncREST] done.";
+}
+
+void BncREST::init()
+{
+    BaseREST::limit_commands_queued = 35; // stop checks if we are over this many commands queued
+    BaseREST::limit_commands_queued_dc_check = 10; // exit dc check if we are over this many commands queued
+    BaseREST::limit_commands_sent = 60; // stop checks if we are over this many commands sent
+    BaseREST::limit_timeout_yield = 12;
+    BaseREST::market_cancel_thresh = 300; // limit for market order total for weighting cancels to be sent first
+
+    engine->settings().fee = "0.00075"; // preset the fee
+    engine->settings().request_timeout = 3 * 60000;  // how long before we resend most requests
+    engine->settings().cancel_timeout = 3 * 60000;  // how long before we resend a cancel request
+    engine->settings().should_slippage_be_calculated = true;  // try calculated slippage before additive. false = additive + additive2 only
+    engine->settings().stray_grace_time_limit = 10 * 60000; // time to allow stray orders to stick around before we cancel them. this is also the re-cancel time (keep it largeish)
+    engine->settings().safety_delay_time = 2000; // only detect a filled order after this amount of time - fixes possible orderbook lag
+    engine->settings().ticker_safety_delay_time = 2000;
+
+#if defined(TRYPHE_BUILD)
+    engine->setMarketSettings( "NAVBTC",  11, 75, 6, 16, 15, 25, false, 0.0020 );
+    engine->setMarketSettings( "MANABTC", 11, 75, 6, 16, 15, 25, false, 0.0020 );
+    engine->setMarketSettings( "VIABTC",  11, 75, 6, 16, 15, 25, false, 0.0020 );
+    engine->setMarketSettings( "XEMBTC",  11, 75, 6, 16, 15, 25, false, 0.0020 );
+    engine->setMarketSettings( "XMRBTC",  11, 75, 6, 16, 15, 25, false, 0.0020 );
+    engine->setMarketSettings( "XVGBTC",  11, 75, 6, 16, 15, 25, false, 0.0020 );
+#endif
+
+    keystore.setKeys( BINANCE_KEY, BINANCE_SECRET );
+
+    connect( nam, &QNetworkAccessManager::finished, this, &BncREST::onNamReply );
+
+    // create websocket
+//    wss = new QWebSocket();
+//    connect( wss, &QWebSocket::connected, this, &BncREST::wssConnected );
+//    connect( wss, &QWebSocket::disconnected, this, &BncREST::wssCheckConnection );
+//    connect( wss, &QWebSocket::textMessageReceived, this, &BncREST::wssTextMessageReceived );
+
+    // we use this to send the requests at a predictable rate
+    send_timer = new QTimer( this );
+    connect( send_timer, &QTimer::timeout, this, &BncREST::sendNamQueue );
+    send_timer->setTimerType( Qt::CoarseTimer );
+    send_timer->start( 111 );
+
+    // this timer checks for nam requests that have been queued too long
+    timeout_timer = new QTimer( this );
+    connect( timeout_timer, &QTimer::timeout, engine, &Engine::onCheckTimeouts );
+    timeout_timer->setTimerType( Qt::VeryCoarseTimer );
+    timeout_timer->start( 2000 );
+
+    // this timer requests the order book
+    orderbook_timer = new QTimer( this );
+    connect( orderbook_timer, &QTimer::timeout, this, &BncREST::onCheckBotOrders );
+    orderbook_timer->setTimerType( Qt::VeryCoarseTimer );
+    orderbook_timer->start( 12000 );
+
+    // this timer requests the order book
+    diverge_converge_timer = new QTimer( this );
+    connect( diverge_converge_timer, &QTimer::timeout, engine, &Engine::onCheckDivergeConverge );
+    diverge_converge_timer->setTimerType( Qt::VeryCoarseTimer );
+    diverge_converge_timer->start( 60000 );
+
+    // this timer syncs the maker fee so we can estimate profit
+    exchangeinfo_timer = new QTimer( this );
+    connect( exchangeinfo_timer, &QTimer::timeout, this, &BncREST::onCheckExchangeInfo );
+    exchangeinfo_timer->setTimerType( Qt::VeryCoarseTimer );
+    exchangeinfo_timer->start( 60000 ); // 1 minute (turns to 1 hour after first parse)
+
+    // this timer reads the lo_sell and hi_buy prices for all coins
+    ticker_timer = new QTimer( this );
+    connect( ticker_timer, &QTimer::timeout, this, &BncREST::onCheckTicker );
+    ticker_timer->setTimerType( Qt::VeryCoarseTimer );
+    ticker_timer->start( 2000 );
+
+    onCheckExchangeInfo();
+    onCheckTicker();
+    onCheckBotOrders();
+
+#ifdef SECONDARY_BOT
+    send_timer->setInterval( 400 );
+    orderbook_timer->setInterval( 10000 );
+    ticker_timer->setInterval( 20000 );
+    engine->settings().should_clear_stray_orders = false;
+    engine->settings().should_clear_stray_orders_all = false;
+#endif
+
+    //sendRequest( "sign-get-order", "symbol=XMRBTC&orderId=53849332" );
+}
+
+void BncREST::sendNamQueue()
+{
+    // check for requests
+    if ( nam_queue.isEmpty() )
+        return;
+
+    // stop sending commands if server is unresponsive
+    if ( nam_queue_sent.size() > limit_commands_sent )
+    {
+        // print something every minute
+        static qint64 last_print_time = 0;
+        qint64 current_time = QDateTime::currentMSecsSinceEpoch();
+        if ( last_print_time < current_time - 60000 )
+        {
+            kDebug() << "local info: nam_queue_sent.size > limit_commands_sent, waiting.";
+            last_print_time = current_time;
+        }
+
+        return;
+    }
+
+    // normalize ratelimit by our timer
+    const qint32 ratelimit_window = ratelimit_minute / ( 60000 / orderbook_timer->interval() );
+    if ( binance_weight > ratelimit_window )
+    {
+        kDebug() << "local warning: hit ratelimit_window" << ratelimit_window;
+        return;
+    }
+
+    //qint64 current_time = QDateTime::currentMSecsSinceEpoch();
+
+    QMultiMap<qreal/*weight*/,Request*> sorted_nam_queue;
+
+    // insert into auto sorted map sorted by weight
+    for ( QQueue<Request*>::const_iterator i = nam_queue.begin(); i != nam_queue.end(); i++ )
+    {
+        Request *const &request = *i;
+        Position *const &pos = request->pos;
+
+        // check for valid pos
+        if ( !pos || !engine->isPosition( pos ) )
+        {
+            sorted_nam_queue.insert( 0., request );
+            continue;
+        }
+
+        // check for cancel
+        if ( request->api_command == BNC_COMMAND_CANCEL &&
+             engine->getMarketOrderTotal( pos->market ) >= market_cancel_thresh )
+        {
+            // expedite the cancel
+            sorted_nam_queue.insert( 100., request );
+            continue;
+        }
+
+        if ( request->api_command == BNC_COMMAND_GETTICKER ||
+             request->api_command == BNC_COMMAND_GETORDERS )
+        {
+            sorted_nam_queue.insert( 0., request );
+            continue;
+        }
+
+        // new hi/lo buy or sell, we should value this at 0 because it's not a reactive order
+        if ( pos->is_new_hilo_order )
+        {
+            sorted_nam_queue.insert( 0., request );
+            continue;
+        }
+
+        // check for not buy/sell command
+        if ( request->api_command != BNC_COMMAND_BUYSELL )
+        {
+            sorted_nam_queue.insert( 0., request );
+            continue;
+        }
+
+        sorted_nam_queue.insert( pos->per_trade_profit.toAmountString().toDouble(), request );
+    }
+
+    // go through orders, ranked from highest weight to lowest
+    for ( QMultiMap<qreal,Request*>::const_iterator i = sorted_nam_queue.end() -1; i != sorted_nam_queue.begin() -1; i-- )
+    {
+        Request *const &request = i.value();
+
+        // check if we received the orderbook in the timeframe of an order timeout grace period
+        // if it's stale, we can assume the server is down and we let the orders timeout
+        if ( yieldToLag() && request->api_command != BNC_COMMAND_GETORDERS )
+        {
+            // let this request hang around until the orderbook is responded to
+            continue;
+        }
+
+        // track orders total and continue if we're over it
+        if ( request->api_command.endsWith( "post-order" ) )
+        {
+            QString mdy_str = Global::getDateStringMDY();
+            qint32 orders_today = daily_orders.value( mdy_str );
+
+            if ( orders_today >= ratelimit_day )
+            {
+                kDebug() << "local warning: we are over the daily order ratelimit" << ratelimit_day;
+                continue;
+            }
+
+            daily_orders[ mdy_str ]++;
+        }
+
+        sendNamRequest( request );
+        // the request is added to sent_nam_queue and thus not deleted until the response is met
+        return;
+    }
+}
+
+void BncREST::sendNamRequest( Request *const &request )
+{
+    binance_weight += request->weight;
+
+    const qint64 current_time = QDateTime::currentMSecsSinceEpoch();
+
+    QString api_command = request->api_command;
+    Position *const &pos = request->pos;
+
+    // set the order request time because we are sending the request
+    if ( api_command == BNC_COMMAND_BUYSELL &&
+         engine->isQueuedPosition( pos ) )
+    {
+        pos->order_request_time = current_time;
+    }
+    // set cancel time properly
+    else if ( api_command == BNC_COMMAND_CANCEL &&
+              engine->isActivePosition( pos ) )
+    {
+        pos->order_cancel_time = current_time;
+    }
+
+    // inherit the body from the input structure
+    QUrlQuery query( request->body );
+
+    // calculate a new nonce and compare it against the old nonce
+    const qint64 request_nonce_new = current_time;
+    QString request_nonce_str;
+
+    // let a corrected nonce past incase we got a nonce error (allow multi-bot per key)
+    if ( request_nonce_new <= request_nonce )
+    {
+        // let it past incase we overwrote with new_nonce
+        request_nonce_str = QString::number( ++request_nonce );
+    }
+    else
+    {
+        request_nonce_str = QString::number( request_nonce_new );
+        request_nonce = request_nonce_new;
+    }
+
+    // form nam request and body
+    QNetworkRequest nam_request;
+    QByteArray query_bytes;
+
+    nam_request.setRawHeader( CONTENT_TYPE, CONTENT_TYPE_ARGS ); // add content header
+
+    // add to sent queue so we can check if it timed out
+    request->time_sent_ms = current_time;
+
+    if ( api_command.startsWith( "sign-" ) )
+    {
+        api_command.remove( 0, 5 ); // remove "sign-" string
+
+        query.addQueryItem( BNC_RECVWINDOW, "120000" ); // 2 minutes recvWindow because we aren't bad
+        query.addQueryItem( BNC_TIMESTAMP, request_nonce_str );
+        query.addQueryItem( BNC_SIGNATURE, Global::getBncSignature( query.toString().toUtf8(), keystore.getSecret() ) ); // add signature header
+
+        // add signature to query
+        query_bytes = query.toString().toUtf8();
+
+        nam_request.setRawHeader( BNC_APIKEY, keystore.getKey() ); // add key header
+    }
+
+    QNetworkReply *reply = nullptr;
+    // GET
+    if ( api_command.startsWith( "get-" ) )
+    {
+        api_command.remove( 0, 4 ); // remove "get-"
+
+        QString url_base = BNC_URL;
+
+        // option to switch from v3 to v1
+        if ( api_command.startsWith( "v1-" ) )
+        {
+            api_command.remove( 0, 3 );
+            url_base.replace( "v3", "v1" );
+        }
+
+        QUrl public_url( url_base + api_command );
+
+//        kDebug() << public_url.toString();
+//        kDebug() << query.toString();
+
+        public_url.setQuery( query );
+        nam_request.setUrl( public_url );
+
+        reply = nam->get( nam_request );
+    }
+    // POST
+    else if ( api_command.startsWith( "post-" ) )
+    {
+        api_command.remove( 0, 5 ); // remove "post-"
+
+        QUrl public_url( BNC_URL + api_command );
+
+//        kDebug() << public_url.toString() << ":" << query_bytes;
+
+        nam_request.setUrl( public_url );
+        reply = nam->post( nam_request, query_bytes );
+    }
+    // DELETE
+    else if ( api_command.startsWith( "delete-" ) )
+    {
+        api_command.remove( 0, 7 ); // remove "delete-"
+
+        QUrl public_url( BNC_URL + api_command );
+
+//        kDebug() << public_url.toString();
+//        kDebug() << query_bytes;
+
+        nam_request.setUrl( public_url );
+        reply = nam->sendCustomRequest( nam_request, "DELETE", query_bytes );
+    }
+
+    if ( !reply )
+    {
+        kDebug() << "local error: failed to generate a valid QNetworkReply";
+        return;
+    }
+
+    nam_queue_sent.insert( reply, request );
+    nam_queue.removeOne( request );
+
+    last_request_sent_ms = current_time;
+}
+
+void BncREST::sendBuySell( Position * const &pos, bool quiet )
+{
+    if ( !quiet )
+        kDebug() << QString( "queued          %1" )
+                    .arg( pos->stringifyOrderWithoutOrderID() );
+
+    QUrlQuery query;
+    query.addQueryItem( "symbol", pos->market );
+    query.addQueryItem( "side", pos->sideStr() );
+
+    // set taker/maker order
+    if ( pos->is_taker )
+    {
+        query.addQueryItem( "type", "LIMIT" );
+        query.addQueryItem( "timeInForce", "GTC" );
+    }
+    else
+    {
+        query.addQueryItem( "type", "LIMIT_MAKER" );
+    }
+
+    query.addQueryItem( "price", pos->price );
+    query.addQueryItem( "quantity", pos->quantity );
+
+    // either post a buy or sell command
+    sendRequest( BNC_COMMAND_BUYSELL, query.toString(), pos, 1 );
+}
+
+void BncREST::sendCancel( const QString &_order_id, Position *const &pos )
+{
+    // extract market from orderid (binance only)
+    QString order_id = _order_id;
+    QString market;
+    while( order_id.size() > 0 && !order_id.at( 0 ).isDigit() )
+    {
+        market.append( order_id.left( 1 ) );
+        order_id.remove( 0, 1 );
+    }
+
+    QUrlQuery query;
+    query.addQueryItem( "symbol", market );
+    query.addQueryItem( "orderId", order_id );
+
+    sendRequest( BNC_COMMAND_CANCEL, query.toString(), pos, 1 );
+
+    if ( pos && engine->isActivePosition( pos ) )
+    {
+        pos->is_cancelling = true;
+
+        // set the cancel time once here, and once on send, to avoid double cancel timeouts
+        pos->order_cancel_time = QDateTime::currentMSecsSinceEpoch();
+    }
+}
+
+bool BncREST::yieldToFlowControl()
+{
+    return ( nam_queue.size() >= limit_commands_queued ||
+             nam_queue_sent.size() >= limit_commands_sent );
+}
+
+bool BncREST::yieldToLag()
+{
+    qint64 time = QDateTime::currentMSecsSinceEpoch();
+
+    // have we seen the orderbook update recently?
+    return ( orderbook_update_time < time - ( orderbook_timer->interval() *5 ) &&
+             wss_account_feed_update_time < time - 60000 );
+}
+
+void BncREST::onNamReply( QNetworkReply *const &reply )
+{
+    // don't process a reply we aren't tracking
+    if ( !nam_queue_sent.contains( reply ) )
+    {
+        //kDebug() << "local warning: found stray response with no request object";
+        reply->deleteLater();
+        return;
+    }
+
+    QByteArray data = reply->readAll();
+
+    // reference the object we made during the request
+    Request *const &request = nam_queue_sent.take( reply );
+    const QString &api_command = request->api_command;
+    const qint64 response_time = QDateTime::currentMSecsSinceEpoch() - request->time_sent_ms;
+
+    avg_response_time.addResponseTime( response_time );
+
+    //kDebug() << api_command << data;
+
+    //kDebug() << "got reply for" << api_command;
+
+    // parse any possible json in the body
+    QJsonDocument body_json = QJsonDocument::fromJson( data );
+    QJsonObject body_obj;
+    QJsonArray body_arr;
+
+    const bool is_body_object = body_json.isObject();
+    const bool is_body_array = body_json.isArray();
+    bool is_json_invalid = false;
+
+    // detect what type of json we should parse
+    if ( is_body_object )
+        body_obj = body_json.object();
+    else if ( is_body_array )
+        body_arr = body_json.array();
+    else
+        is_json_invalid = true;
+
+    // check for blank json
+    if ( data.isEmpty() )
+        is_json_invalid = true;
+
+    // handle invalid json by resending certain commands
+    if ( is_json_invalid )
+    {
+//        bool resent_command = false;
+        const bool contains_html = data.contains( QByteArray( "<html" ) ) || data.contains( QByteArray( "<HTML" ) );
+
+//        // resend cancel or on html data
+//        if ( api_command != "returnOpenOrders" )
+//        {
+//            sendRequest( api_command, request->body, request->pos );
+//            resent_command = true;
+//        }
+//        // resend buy/sell
+//        else if ( api_command == "buy" || api_command == "sell" )
+//        {
+//            // check for bad ptr, and the position should also be queued
+//            if ( !request->pos || !positions_queued.contains( request->pos ) )
+//            {
+//                deleteReply( reply, request );
+//                return;
+//            }
+
+//            sendRequest( api_command, request->body, request->pos );
+//            resent_command = true;
+//        }
+
+        // filter html to reduce spam
+        if ( contains_html )
+        {
+            data = QByteArray( "<html error>" );
+        }
+        // filter malformed json
+        else // we already know the json is invalid
+        {
+            //data = QByteArray( "<incomplete json>" );
+        }
+
+        // print the command and the invalid data
+        kDebug() << QString( "nam error for %1: %2" )
+                    .arg( api_command )
+                    .arg( QString::fromLocal8Bit( data ) );
+
+        engine->deleteReply( reply, request );
+        return;
+    }
+
+    if ( api_command == BNC_COMMAND_GETORDERS )
+    {
+        parseOpenOrders( body_arr, request->time_sent_ms );
+    }
+    else if ( api_command == BNC_COMMAND_GETTICKER )
+    {
+        parseOrderBook( body_arr, request->time_sent_ms );
+    }
+    else if ( api_command == BNC_COMMAND_GETEXCHANGEINFO )
+    {
+        parseExchangeInfo( body_obj );
+    }
+    else if ( api_command == BNC_COMMAND_BUYSELL )
+    {
+        parseBuySell( request, body_obj );
+    }
+    else if ( api_command == BNC_COMMAND_CANCEL )
+    {
+        parseCancelOrder( request, body_obj );
+    }
+    else if ( api_command == BNC_COMMAND_GETBALANCES )
+    {
+        parseReturnBalances( body_obj );
+    }
+    else
+    {
+        // parse unknown command
+        kDebug() << "nam reply:" << api_command << data;
+    }
+
+    // cleanup
+    engine->deleteReply( reply, request );
+}
+
+void BncREST::onCheckBotOrders()
+{
+    binance_weight = 0;
+
+    // return on unset key/secret, or if we already queued this command
+    if ( isKeyOrSecretUnset() || isCommandQueued( BNC_COMMAND_GETORDERS ) || isCommandSent( BNC_COMMAND_GETORDERS, 10 ) )
+        return;
+
+    // get list of open orders
+    sendRequest( BNC_COMMAND_GETORDERS, "", nullptr, 40 );
+}
+
+void BncREST::onCheckTicker()
+{
+    // check if wss disconnected
+    wssCheckConnection();
+
+    if ( isCommandQueued( BNC_COMMAND_GETTICKER ) || isCommandSent( BNC_COMMAND_GETTICKER, 10 ) )
+        return;
+
+    sendRequest( BNC_COMMAND_GETTICKER, "", nullptr, 2 );
+}
+
+void BncREST::onCheckExchangeInfo()
+{ // happens every hour
+
+    if ( isCommandQueued( BNC_COMMAND_GETEXCHANGEINFO ) || isCommandSent( BNC_COMMAND_GETEXCHANGEINFO, 2 ) )
+        return;
+
+    sendRequest( BNC_COMMAND_GETEXCHANGEINFO, "", nullptr, 1 );
+}
+
+void BncREST::wssConnected()
+{
+    wssSendSubscriptions();
+}
+
+void BncREST::wssSendSubscriptions()
+{
+}
+
+void BncREST::wssSendJsonObj( const QJsonObject &obj )
+{
+    Q_UNUSED( obj )
+}
+
+void BncREST::wssCheckConnection()
+{
+}
+
+void BncREST::wssTextMessageReceived( const QString &msg )
+{
+    Q_UNUSED( msg )
+}
+
+void BncREST::parseBuySell( Request *const &request, const QJsonObject &response )
+{
+    //kDebug();
+
+    // check if we have a position recorded for this request
+    if ( !request->pos )
+    {
+        kDebug() << "local error: found response for queued position, but postion is null";
+        return;
+    }
+
+    // check that the position is queued and not set
+    if ( !engine->isQueuedPosition( request->pos ) )
+    {
+        kDebug() << "local warning: position from response not found in positions_queued";
+        return;
+    }
+
+    Position *const &pos = request->pos;
+
+    // if we scan-set the order, it'll have an id. skip if the id is set
+    // exiting here lets us have simultaneous scan-sets across different indices with the same prices/sizes
+    if ( pos->order_number.size() > 0 )
+        return;
+
+    // look for post-only error
+    if ( response[ "msg" ].toString() == "Order would immediately match and take." )
+    {
+        // try a better post-only price
+        engine->findBetterPrice( pos );
+
+        // resend command
+        sendBuySell( pos );
+        return;
+    }
+
+    if ( !response.contains( "orderId" ) )
+    {
+        kDebug() << "local error: tried to parse order but id was blank:" << response;
+        return;
+    }
+
+    const QString &order_number = response[ "orderId" ].toVariant().toString(); // get the order number to track position id
+
+    engine->setOrderMeat( pos, order_number );
+
+    kDebug() << QString( "%1 %2" )
+                .arg( "set", -15 )
+                .arg( pos->stringifyOrder() );
+}
+
+void BncREST::parseCancelOrder( Request *const &request, const QJsonObject &response )
+{
+    // request must be valid!
+
+    Position *const &pos = request->pos;
+
+    // prevent unsafe access
+    if ( !pos || !engine->isActivePosition( pos ) )
+    {
+        kDebug() << "successfully cancelled non-local order:" << response;
+        return;
+    }
+
+    const QString &msg = response.value( "msg" ).toString();
+    const bool error_unknown_order = ( msg == "Unknown order sent." );
+
+    // handle error on manually cancelled order
+    if ( error_unknown_order &&
+         pos->cancel_reason == CANCELLING_FOR_USER )
+    {
+        engine->processCancelledOrder( pos );
+        return;
+    }
+
+    // cancel-n-fill
+    if ( error_unknown_order && // 3/12/2019 - looks like they changed the error to a more user-friendly string
+         ( pos->cancel_reason == CANCELLING_FOR_SLIPPAGE_RESET || // we were cancelling an order with slippage that was filled
+           pos->cancel_reason == CANCELLING_FOR_DC ) )
+    {
+        // single order fill
+        engine->processFilledOrderSingle( pos, FILL_CANCEL );
+        return;
+    }
+
+    // check if it failed it some other way (we want it to complain)
+    if ( response.value( "status" ).toString() != "CANCELED" )
+    {
+        kDebug() << "local error: cancel failed:" << response << "for pos" << pos->stringifyOrder();
+        return;
+    }
+
+    engine->processCancelledOrder( pos );
+}
+
+void BncREST::parseOpenOrders( const QJsonArray &markets, qint64 request_time_sent_ms )
+{
+    //kDebug() << "got openOrders" << markets;
+
+    const qint64 current_time = QDateTime::currentMSecsSinceEpoch(); // cache time
+    QVector<QString> order_numbers; // keep track of order numbers
+    QMultiHash<QString, OrderInfo> orders;
+
+    // is the orderbook is too old to be safe? check the stale tolerance
+    if ( request_time_sent_ms < current_time - orderbook_stale_tolerance )
+    {
+        orders_stale_trip_count++;
+        return;
+    }
+
+    // don't accept responses for requests sooner than the latest response request_time_sent_ms
+    if ( request_time_sent_ms < orderbook_update_request_time )
+        return;
+
+    // set the timestamp of orderbook update if we saw any orders
+    orderbook_update_time = current_time;
+    orderbook_update_request_time = request_time_sent_ms;
+
+    for ( QJsonArray::const_iterator i = markets.begin(); i != markets.end(); i++ )
+    {
+        // the first level is arrays of orders
+        if ( !(*i).isObject() )
+            continue;
+
+        const QJsonObject &order = (*i).toObject();
+        const QString &market = order.value( "symbol" ).toString();
+        const QString &order_number = market + order.value( "orderId" ).toVariant().toString();
+        const QString &side = order.value( "side" ).toString().toLower();
+        const QString &price = order.value( "price" ).toString();
+        const QString &original_quantity = order.value( "origQty" ).toString();
+        const QString &btc_amount = CoinAmount::toSatoshiFormatExpr( price.toDouble() * original_quantity.toDouble() );
+
+        //kDebug() << market << order_number << side << price << btc_amount;
+
+        // check for missing information
+        if ( market.isEmpty()||
+             order_number.isEmpty() ||
+             side.isEmpty() ||
+             price.isEmpty() ||
+             btc_amount.isEmpty() )
+            continue;
+
+        // insert into seen orders
+        order_numbers += order_number;
+
+        // insert (market, order)
+        orders.insert( market, OrderInfo( order_number, side == "buy" ? SIDE_BUY : side == "sell" ? SIDE_SELL : 0, price, btc_amount ) );
+    }
+
+    engine->processOpenOrders( order_numbers, orders, request_time_sent_ms );
+}
+
+void BncREST::parseReturnBalances( const QJsonObject &obj )
+{ // prints exchange balances
+    Coin total_btc_value;
+
+    if ( !obj[ "balances" ].isArray() )
+        return;
+
+    const QJsonArray &balances = obj[ "balances" ].toArray();
+
+    for ( QJsonArray::const_iterator i = balances.begin(); i != balances.end(); i++ )
+    {
+        // parse object only
+        if ( !(*i).isObject() )
+            continue;
+
+        const QJsonObject &stats = (*i).toObject();
+
+        const QString &currency = stats.value( "asset" ).toString();
+        const    Coin available = stats.value( "free" ).toString();
+        const    Coin onOrders = stats.value( "locked" ).toString();
+        const    Coin total = available  + onOrders;
+
+        // skip zero balances
+        if ( available.isZeroOrLess() &&
+             onOrders.isZeroOrLess() )
+            continue;
+
+        Coin btcValue = total;
+        if ( currency != "BTC" )
+            btcValue *= engine->getHiBuy( currency + "BTC" );
+
+        //kDebug() << currency << available << total << btcValue;
+
+        kDebug() << QString( "%1 TOTAL: %2 AVAIL: %3 ORDER: %4 BTC_VAL: %5" )
+                        .arg( currency, -8 )
+                        .arg( total, -20 )
+                        .arg( available, -20 )
+                        .arg( onOrders, -20 )
+                        .arg( btcValue, -20 );
+
+        total_btc_value += btcValue;
+    }
+
+    kDebug() << "total btc value:" << total_btc_value;
+}
+
+void BncREST::parseOrderBook( const QJsonArray &info, qint64 request_time_sent_ms )
+{
+    //kDebug() << info;
+
+    // check for data
+    if ( info.isEmpty() )
+        return;
+
+    const qint64 current_time = QDateTime::currentMSecsSinceEpoch();
+
+    // is the orderbook is too old to be safe? check the stale tolerance
+    if ( request_time_sent_ms < current_time - orderbook_stale_tolerance )
+    {
+        books_stale_trip_count++;
+        return;
+    }
+
+    // don't accept responses for requests sooner than the latest response request_time_sent_ms
+    if ( request_time_sent_ms < orderbook_public_update_request_time )
+        return;
+
+    orderbook_public_update_time = current_time;
+    orderbook_public_update_request_time = request_time_sent_ms;
+
+    // iterate through each market object
+    QMap<QString, TickerInfo> ticker_info;
+
+    for ( QJsonArray::const_iterator i = info.begin(); i != info.end(); i++ )
+    {
+        if ( !(*i).isObject() )
+            continue;
+
+        // read object and key
+        const QJsonObject &market_obj = (*i).toObject();
+        const QString &market = market_obj[ "symbol" ].toString();
+
+        //kDebug() << market_obj;
+
+        if ( !market_obj.contains( "askPrice" ) ||
+             !market_obj.contains( "bidPrice" ) )
+            continue;
+
+        // the object has two arrays of arrays [[1,2],[3,4]]
+        const Coin ask_price = market_obj[ "askPrice" ].toString();
+        const Coin bid_price = market_obj[ "bidPrice" ].toString();
+
+        //kDebug() << market << bid_price << ask_price;
+
+        // update our maps
+        if ( market.size() > 0 &&
+             bid_price.isGreaterThanZero() &&
+             ask_price.isGreaterThanZero() )
+        {
+            ticker_info.insert( market, TickerInfo( ask_price, bid_price ) );
+        }
+    }
+
+    engine->processTicker( ticker_info, request_time_sent_ms );
+}
+
+void BncREST::parseExchangeInfo( const QJsonObject &obj )
+{
+    const QJsonArray &rate_limits = obj[ "rateLimits" ].toArray();
+    const QJsonArray &symbols = obj[ "symbols" ].toArray();
+
+    for ( QJsonArray::const_iterator i = rate_limits.begin(); i != rate_limits.end(); i++ )
+    {
+        if ( !(*i).isObject() )
+            continue;
+
+        const QJsonObject &ratelimit = (*i).toObject();
+
+        //qDebug() << ratelimit;
+
+        const QString &interval = ratelimit[ "interval" ].toString();
+        const qint32 limit = ratelimit[ "limit" ].toInt();
+
+        if ( interval == "MINUTE" && limit > 1 )
+        {
+            ratelimit_minute = qFloor( limit * 0.75 );
+        }
+        else if ( interval == "SECOND" && limit > 3 )
+        {
+            ratelimit_second = limit - 2; // be nice, subtract 2 from limit
+            send_timer->setInterval( 1000 / ( ratelimit_second ) );
+            //qDebug() << "send_timer interval set to" << send_timer->interval();
+        }
+        else if ( interval == "DAY" && limit > 101 )
+        {
+            ratelimit_day = limit - 100;
+        }
+    }
+
+    for ( QJsonArray::const_iterator i = symbols.begin(); i != symbols.end(); i++ )
+    {
+        if ( !(*i).isObject() )
+            continue;
+
+        const QJsonObject &symbol_info = (*i).toObject();
+        const QString &market = symbol_info[ "baseAsset" ].toString() + symbol_info[ "quoteAsset" ].toString();
+        const QJsonArray &filters = symbol_info[ "filters" ].toArray();
+
+        if ( market.isEmpty() || filters.isEmpty() )
+            continue;
+
+        // read market info
+        MarketInfo &market_info = engine->getMarketInfo( market );
+
+        for ( QJsonArray::const_iterator j = filters.begin(); j != filters.end(); j++ )
+        {
+            const QJsonObject &filter = (*j).toObject();
+
+            const QString &filter_type = filter[ "filterType" ].toString();
+
+            if ( filter_type == "PRICE_FILTER" )
+            {
+                const QString &price_tick = filter[ "tickSize" ].toString();
+                //qDebug() << "price ticksize" << price_tick;
+
+                if ( Coin( price_tick ).isGreaterThanZero() )
+                    market_info.price_ticksize = price_tick;
+                else
+                    kDebug() << "local error: failed to parse 'tickSize'" << filter;
+            }
+            else if ( filter_type == "LOT_SIZE" )
+            {
+                const QString &quantity_tick = filter[ "stepSize" ].toString();
+                //qDebug() << "quantity ticksize" << quantity_tick;
+
+                if ( Coin( quantity_tick ).isGreaterThanZero() )
+                    market_info.quantity_ticksize = quantity_tick;
+                else
+                    kDebug() << "local error: failed to parse 'stepSize'" << filter;
+            }
+            else if ( filter_type == "PERCENT_PRICE" )
+            {
+                const Coin &min = filter[ "multiplierDown" ].toString();
+                const Coin &max = filter[ "multiplierUp" ].toString();
+                //kDebug() << filter_type << market << Global::toSatoshiFormat( min ) << Global::toSatoshiFormat( max );
+
+                if ( min.isGreaterThanZero() && max.isGreaterThanZero() )
+                {
+                    market_info.price_min_mul = min;
+                    market_info.price_max_mul = max;
+                }
+                else
+                    kDebug() << "local error: failed to parse 'multiplierDown' 'multiplierUp'" << filter;
+            }
+        }
+    }
+
+    // after we get a response, turn our timer interval up
+    static const qint32 exchangeinfo_interval = 60000 * 60;
+    if ( exchangeinfo_timer->interval() < exchangeinfo_interval )
+        exchangeinfo_timer->setInterval( exchangeinfo_interval ); // 1 hour
+}
+
+#endif // EXCHANGE_BINANCE
