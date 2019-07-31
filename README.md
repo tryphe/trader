@@ -73,18 +73,36 @@ It's fairly easily to integrate the bot with any API, as long as it can read its
 
 **What's a ping-pong position?**
 
-A ping-pong position is simple. It's defined as a price variation with an order size: 
+A ping-pong position is simple. It's defined as a price variation with an order size:\
 - Buy price
 - Sell price
 - Order size
 - Initial state (buy or sell)
 	
-Suppose you want to ping-pong between buying 0.1 BTC worth shitcoins at 10 satoshi, and selling it at 30 satoshis. You'd run this command:
-- `trader-cli-poloniex setorder BTC_DOGE buy 0.00000010 0.00000030 0.1 active`
+Suppose you want to ping-pong between buying 0.1 BTC worth of DOGE at 10 satoshi, and selling it at 30 satoshis. You'd run this command:\
+`trader-cli-poloniex setorder BTC_DOGE buy 0.00000010 0.00000030 0.1 active`
 - `buy` is the initial state
 - `0.00000010` is the buy price
 - `0.00000030` is the sell price
 - `0.1` is the order size in BTC
 - `active` tells the bot to set the order now (as opposed to setting it to `ghost` which lets the bot decide if it should set it)
 
-[todo] explain ghost positions, onetime taker/maker orders, onetime order timeouts, ping-pong divergence/convergence settings, general market settings, base/quote pair formatting, calculating total position equity, calculating risk/reward
+**Placing different types of orders**
+
+One-time taker order, buy 0.025 BTC of DOGE at 30 satoshi:\
+`trader-cli-poloniex setorder BTC_DOGE buy 0.00000030 0.00000000 0.025 onetime-taker`
+
+One-time maker order, sell 0.1 BTC of DOGE at 100 satoshi (maker-limit order):\
+`trader-cli-poloniex setorder BTC_DOGE sell 0.00000000 0.00000100 0.025 onetime`
+
+Same as above, but cancel if 5 minutes elapses (delayed fill or kill order):\
+`trader-cli-poloniex setorder BTC_DOGE sell 0.00000000 0.00000100 0.025 onetime-timeout5`
+
+Ping-pong order, buy at 17 satoshis, sell at 18, size 0.011:\
+`trader-cli-poloniex setorder BTC_OMG buy 0.00000017 0.00000018 0.011 active`
+
+Same as above, but when the ping-pong order is filled once, set size to 0.0001 (effectively buys 0.011 and ping-pongs 0.001 of it):\
+`trader-cli-poloniex setorder BTC_OMG buy 0.00000017 0.00000018 0.011/0.001 active`
+
+
+[todo] explain ghost positions, ping-pong divergence/convergence settings, general market settings, base/quote pair formatting, calculating total position equity, calculating risk/reward
