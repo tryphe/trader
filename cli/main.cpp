@@ -3,7 +3,6 @@
 #include <QCoreApplication>
 #include <QString>
 #include <QByteArray>
-#include <QDebug>
 
 int main(int argc, char *argv[])
 {
@@ -13,11 +12,9 @@ int main(int argc, char *argv[])
     QStringList args = QCoreApplication::arguments();
     args.removeFirst(); // remove application name
 
-    // join args
+    // form arguments for command caller
     QString exchange = args.takeFirst();
     QString joined = args.join( QChar( ' ' ) );
-
-    //qDebug() << joined;
 
     CommandCaller *c = new CommandCaller( exchange, joined.toLocal8Bit() );
     delete c;

@@ -13,7 +13,7 @@ CommandCaller::CommandCaller( QString exchange, QByteArray command, QObject *par
     else if ( exchange.toLower() == "poloniex" ) subpath = POLONIEX_SUBPATH;
     else
     {
-        qDebug() << "error: an incorrect exchange was given, use `trader-cli [bittrex|poloniex|bittrex] [command]`";
+        qDebug() << "error: an incorrect exchange was given, use `trader-cli [bittrex|poloniex|binance] [command]`";
         return;
     }
 
