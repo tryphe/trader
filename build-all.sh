@@ -1,7 +1,8 @@
 #!/bin/bash
 
-make clean
-rm traderd trader-cli
+rm -r build-tmp/
+rm traderd* trader-cli
+rm cli/Makefile* daemon/Makefile*
 
 failureHints=''
 
