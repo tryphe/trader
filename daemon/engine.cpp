@@ -216,7 +216,7 @@ Position *Engine::addPosition( QString market, quint8 side, QString price_lo, QS
 #if defined(EXCHANGE_BINANCE)
     const MarketInfo &info = market_info.value( market );
 
-    // respect the binance limits with a 20% padding
+    // respect the binance limits with a 20% padding (we don't know what the 5min avg is, so we'll just compress the range)
     const Coin &buy_limit = info.highest_buy * info.price_min_mul.ratio( 1.2 );
     const Coin &sell_limit = info.lowest_sell * info.price_max_mul.ratio( 0.8 );
 
