@@ -385,7 +385,7 @@ QString Position::stringifyPositionChange()
             .arg( price_str )
             .arg( order_number_str, ORDER_STRING_SIZE )
             .arg( indices_str )
-            .arg( per_trade_profit.isGreaterThanZero() ? " p" + per_trade_profit : "" );
+            .arg( per_trade_profit.isGreaterThanZero() ? " p " + per_trade_profit : "" );
 }
 
 qint32 Position::getLowestMarketIndex() const
