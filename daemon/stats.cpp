@@ -52,8 +52,8 @@ void Stats::updateStats( Position *const &pos )
                                 .arg( profit_margin_trunc );
 
     MarketInfo &info = engine->getMarketInfo( pos->market );
-    bool market_sentiment = info.market_sentiment;
-    qreal market_offset = info.market_offset;
+//    bool market_sentiment = info.market_sentiment;
+//    qreal market_offset = info.market_offset;
 
     // update some stats
     //MarketStats &_stats = market_stats[ pos->market ];
