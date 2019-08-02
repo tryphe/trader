@@ -69,9 +69,9 @@ void Stats::updateStats( Position *const &pos )
     daily_fills[ date_str ]++;
     last_price[ pos->market ] = pos->price;
     market_fills[ pos->market ]++;
-    market_shortlong[ pos->market ] += market_sentiment ?
-                                       (  market_offset / 2 ) * pos->btc_amount.toAmountString().toDouble()
-                                     : ( -market_offset / 2 ) * pos->btc_amount.toAmountString().toDouble();
+//    market_shortlong[ pos->market ] += market_sentiment ?
+//                                       (  market_offset / 2 ) * pos->btc_amount.toAmountString().toDouble()
+//                                     : ( -market_offset / 2 ) * pos->btc_amount.toAmountString().toDouble();
 
     // avoid div0 just incase
     Coin risk_reward_val;
@@ -298,7 +298,7 @@ void Stats::printPositions( QString market )
 
 void Stats::printVolumes()
 { // print local volumes for all markets
-    Coin total_volume = 0.;
+    Coin total_volume;
 
     QMap<QString /*market*/, Coin /*volume*/>::const_iterator i;
     for ( i = market_volumes.begin(); i != market_volumes.end(); i++ )
@@ -418,27 +418,28 @@ void Stats::printBuySellTotal()
     kDebug() << "total:" << total;
 }
 
-void Stats::printShortLong()
+void Stats::printStrategyShortLong( QString strategy_tag )
 {
-    Coin total = 0.;
+    Coin total;
+    kDebug() << "totals for shortlong strategy" << strategy_tag << ":";
 
-    QMap<QString /*market*/, Coin /*amount*/>::const_iterator i;
-    for ( i = market_shortlong.begin(); i != market_shortlong.end(); i++ )
+    const QMap<QString/*currency*/,Coin/*short-long*/> &mapref = shortlong.value( strategy_tag );
+    for ( QMap<QString,Coin>::const_iterator i = mapref.begin(); i != mapref.end(); i++ )
     {
-        const Coin &val = i.value();
+        const Coin &amount = i.value();
 
-        total += val;
+        total += amount;
         kDebug() << QString( "%1: %2" )
                 .arg( i.key(), 8 )
-                .arg( val );
+                .arg( amount );
     }
 
-    kDebug() << "short long total:" << total;
+    kDebug() << "shortlong total:" << total;
 }
 
 void Stats::printProfit()
 {
-    Coin total = 0.;
+    Coin total;
 
     QMap<QString /*market*/, Coin /*amount*/>::const_iterator i;
     for ( i = market_profit.begin(); i != market_profit.end(); i++ )

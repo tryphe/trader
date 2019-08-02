@@ -55,6 +55,7 @@ public:
     Coin btc_amount, per_trade_profit, profit_margin;
     quint32 price_reset_count;
     quint32 max_age_minutes; // how many minutes the order should exist for before we cancel it
+    QString strategy_tag; // tag for short/long
 
     // track indices for market map
     QVector<qint32> market_indices;

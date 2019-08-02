@@ -381,22 +381,22 @@ void CommandRunner::command_setnexthighest( QStringList &args )
 
 void CommandRunner::command_long( QStringList &args )
 {
-    engine->flipLoSellPrice( args.value( 1 ) );
+    engine->flipLoSellPrice( args.value( 1 ), args.value( 2 ) );
 }
 
 void CommandRunner::command_longindex( QStringList &args )
 {
-    engine->flipLoSellIndex( args.value( 1 ) );
+    engine->flipLoSellIndex( args.value( 1 ), args.value( 2 ) );
 }
 
 void CommandRunner::command_short( QStringList &args )
 {
-    engine->flipHiBuyPrice( args.value( 1 ) );
+    engine->flipHiBuyPrice( args.value( 1 ), args.value( 2 ) );
 }
 
 void CommandRunner::command_shortindex( QStringList &args )
 {
-    engine->flipHiBuyIndex( args.value( 1 ) );
+    engine->flipHiBuyIndex( args.value( 1 ), args.value( 2 ) );
 }
 
 void CommandRunner::command_setcancelthresh( QStringList &args )
@@ -503,8 +503,7 @@ void CommandRunner::command_getfills( QStringList &args )
 
 void CommandRunner::command_getshortlong( QStringList &args )
 {
-    Q_UNUSED( args )
-    stats->printShortLong();
+    stats->printStrategyShortLong( args.value( 1 ) );
 }
 
 void CommandRunner::command_gethibuylosell( QStringList &args )

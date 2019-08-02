@@ -100,12 +100,10 @@ public:
     void setNextHighest( const QString &market, quint8 side = SIDE_SELL, bool landmark = false );
 
     void flipPosition( Position *const &pos );
-    void flipHiBuyPrice( const QString &market );
-    void flipHiBuyIndex( const QString &market );
+    void flipHiBuyPrice( const QString &market, QString tag = QLatin1String() );
+    void flipHiBuyIndex( const QString &market, QString tag = QLatin1String() );
     void flipLoSellPrice( const QString &market, QString tag = QLatin1String() );
     void flipLoSellIndex( const QString &market, QString tag = QLatin1String() );
-    void flipLoBuyIndex( const QString &market );
-    void flipHiSellIndex(const QString &market );
     Coin getLoSell( const QString &market ) const;
     Coin getHiBuy( const QString &market ) const;
     Coin getHiBuyFlipPrice( const QString &market ) const;

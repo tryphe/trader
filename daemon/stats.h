@@ -59,7 +59,7 @@ public:
     //void printOrdersTotal();
     void printLastPrices();
     void printBuySellTotal();
-    void printShortLong();
+    void printStrategyShortLong( QString strategy_tag );
     void printProfit();
     void printDailyProfit();
     void printMarketProfit();
@@ -70,6 +70,8 @@ public:
     void printMarketProfitFills();
     void printDailyMarketProfitRW();
     void printMarketProfitRW();
+
+    QMap<QString /*strat*/, QMap<QString/*currency*/,Coin/*short-long*/>> shortlong;
 
 private:
     //QMap<QString, MarketStats> market_stats;
@@ -82,7 +84,6 @@ private:
     QMap<QString /*market*/, Coin /*profit*/> daily_profit; // track daily profit total
     QMap<QString /*market*/, qint64/*orders*/> market_fills; // track local market volume
     QMap<QString /*market*/, QString/*price*/> last_price; // track last seen price for each market
-    QMap<QString /*market*/, Coin /*amount*/> market_shortlong;
     QMap<QString /*market*/, qint32 /*num*/> daily_fills;
 
     // stats to decide new order multipliers, risk-reward and market-volume

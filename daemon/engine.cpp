@@ -1382,14 +1382,26 @@ void Engine::flipPosition( Position *const &pos )
         Position *new_pos = addPosition( pos->market, pos->side, new_data.price_lo, new_data.price_hi, new_data.order_size, "active",
                      pos->market_indices, false, true );
 
-        // if we cancelled for shortlong, remove technical profit from the impending position
+        // we cancelled for shortlong
         if ( pos->cancel_reason == CANCELLING_FOR_SHORTLONG &&
              new_pos != nullptr )
-            new_pos->per_trade_profit = Coin();
+        {
+            new_pos->strategy_tag = pos->strategy_tag; // copy strategy tag
+            new_pos->per_trade_profit = Coin(); // remove profit message from fill
+
+            // track stats related to this strategy tag
+            Coin amount;
+            if ( new_pos->side == SIDE_BUY )
+                amount += new_pos->btc_amount;
+            else if ( new_pos->side == SIDE_SELL )
+                amount -= new_pos->btc_amount;
+
+            stats->shortlong[ pos->strategy_tag ][ pos->market ] += amount;
+        }
     }
 }
 
-void Engine::flipHiBuyPrice( const QString &market )
+void Engine::flipHiBuyPrice( const QString &market, QString tag )
 {
     Position *pos = getHighestActiveBuyPosByPrice( market );
 
@@ -1397,6 +1409,7 @@ void Engine::flipHiBuyPrice( const QString &market )
     if ( !isActivePosition( pos ) )
         return;
 
+    pos->strategy_tag = tag;
     pos->per_trade_profit = Coin(); // clear trade profit from message
     kDebug() << QString( "queued short    %1" )
                   .arg( pos->stringifyPositionChange() );
@@ -1404,7 +1417,7 @@ void Engine::flipHiBuyPrice( const QString &market )
     cancelOrder( pos, false, CANCELLING_FOR_SHORTLONG );
 }
 
-void Engine::flipHiBuyIndex( const QString &market )
+void Engine::flipHiBuyIndex( const QString &market, QString tag )
 {
     Position *pos = getHighestActiveBuyPosByIndex( market );
 
@@ -1412,6 +1425,7 @@ void Engine::flipHiBuyIndex( const QString &market )
     if ( !isActivePosition( pos ) )
         return;
 
+    pos->strategy_tag = tag;
     pos->per_trade_profit = Coin(); // clear trade profit from message
     kDebug() << QString( "queued short    %1" )
                   .arg( pos->stringifyPositionChange() );
@@ -1427,6 +1441,7 @@ void Engine::flipLoSellPrice( const QString &market, QString tag )
     if ( !isActivePosition( pos ) )
         return;
 
+    pos->strategy_tag = tag;
     pos->per_trade_profit = Coin(); // clear trade profit from message
     kDebug() << QString( "queued long     %1" )
                   .arg( pos->stringifyPositionChange() );
@@ -1434,7 +1449,7 @@ void Engine::flipLoSellPrice( const QString &market, QString tag )
     cancelOrder( pos, false, CANCELLING_FOR_SHORTLONG );
 }
 
-void Engine::flipLoSellIndex( const QString &market )
+void Engine::flipLoSellIndex( const QString &market, QString tag )
 {
     Position *pos = getLowestActiveSellPosByIndex( market );
 
@@ -1442,6 +1457,7 @@ void Engine::flipLoSellIndex( const QString &market )
     if ( !isActivePosition( pos ) )
         return;
 
+    pos->strategy_tag = tag;
     pos->per_trade_profit = Coin(); // clear trade profit from message
     kDebug() << QString( "queued long     %1" )
                   .arg( pos->stringifyPositionChange() );
