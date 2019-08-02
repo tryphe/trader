@@ -1419,22 +1419,7 @@ void Engine::flipHiBuyIndex( const QString &market )
     cancelOrder( pos, false, CANCELLING_FOR_SHORTLONG );
 }
 
-void Engine::flipLoBuyIndex( const QString &market )
-{
-    Position *pos = getLowestActiveBuyPosByIndex( market );
-
-    // check pos
-    if ( !isActivePosition( pos ) )
-        return;
-
-    pos->per_trade_profit = Coin(); // clear trade profit from message
-    kDebug() << QString( "queued short    %1" )
-                  .arg( pos->stringifyPositionChange() );
-
-    cancelOrder( pos, false, CANCELLING_FOR_SHORTLONG );
-}
-
-void Engine::flipLoSellPrice( const QString &market )
+void Engine::flipLoSellPrice( const QString &market, QString tag )
 {
     Position *pos = getLowestActiveSellPosByPrice( market );
 
@@ -1452,21 +1437,6 @@ void Engine::flipLoSellPrice( const QString &market )
 void Engine::flipLoSellIndex( const QString &market )
 {
     Position *pos = getLowestActiveSellPosByIndex( market );
-
-    // check pos
-    if ( !isActivePosition( pos ) )
-        return;
-
-    pos->per_trade_profit = Coin(); // clear trade profit from message
-    kDebug() << QString( "queued long     %1" )
-                  .arg( pos->stringifyPositionChange() );
-
-    cancelOrder( pos, false, CANCELLING_FOR_SHORTLONG );
-}
-
-void Engine::flipHiSellIndex( const QString &market )
-{
-    Position *pos = getHighestActiveSellPosByIndex( market );
 
     // check pos
     if ( !isActivePosition( pos ) )

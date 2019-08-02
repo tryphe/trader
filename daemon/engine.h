@@ -102,8 +102,8 @@ public:
     void flipPosition( Position *const &pos );
     void flipHiBuyPrice( const QString &market );
     void flipHiBuyIndex( const QString &market );
-    void flipLoSellPrice( const QString &market );
-    void flipLoSellIndex( const QString &market );
+    void flipLoSellPrice( const QString &market, QString tag = QLatin1String() );
+    void flipLoSellIndex( const QString &market, QString tag = QLatin1String() );
     void flipLoBuyIndex( const QString &market );
     void flipHiSellIndex(const QString &market );
     Coin getLoSell( const QString &market ) const;
