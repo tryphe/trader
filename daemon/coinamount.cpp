@@ -261,6 +261,10 @@ QString Coin::toSubSatoshiString() const
 
     //qDebug() << "str:" << ret;
 
+    // temporarily remove the negative sign so we can properly prepend zeroes
+    bool is_negative = ret.at( 0 ) == CoinAmount::minus;
+    if ( is_negative ) ret.remove( 0, 1 );
+
     int sz1 = ret.size();
     while ( sz1 < CoinAmount::subsatoshi_decimals )
     {
@@ -274,7 +278,9 @@ QString Coin::toSubSatoshiString() const
 
     // decimal is the first character, return with prepended zero
     if ( sz1 == 0 )
-        return ret.prepend( CoinAmount::zero );
+        ret.prepend( CoinAmount::zero );
+
+    if ( is_negative ) ret.prepend( CoinAmount::minus );
 
     return ret;
 }
