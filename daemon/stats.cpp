@@ -430,7 +430,7 @@ void Stats::printStrategyShortLong( QString strategy_tag )
 
         total += amount;
         kDebug() << QString( "%1: %2" )
-                .arg( i.key(), 8 )
+                .arg( i.key(), -8 )
                 .arg( amount );
     }
 

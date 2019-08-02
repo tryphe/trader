@@ -1,12 +1,12 @@
 #ifndef BUILDCONFIG_H
 #define BUILDCONFIG_H
 
-#define BUILD_VERSION "1.72i"
+#define BUILD_VERSION "1.72j"
 
 /// select your exchange
 //#define EXCHANGE_BITTREX
-//#define EXCHANGE_POLONIEX
-#define EXCHANGE_BINANCE
+#define EXCHANGE_POLONIEX
+//#define EXCHANGE_BINANCE
 
 /// where to print logs
 #define PRINT_LOGS_TO_CONSOLE
