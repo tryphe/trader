@@ -122,6 +122,7 @@ static inline void toSatoshiFormat( QString &s, int decimals = 8 )
         // try to read scientific notation string
         if ( *i == QChar('e') )
         {
+            // if we have a decimal, remove it and iterate backwards
             if ( dec_count > 0 )
             {
                 int dec_idx = s.indexOf( CoinAmount::decimal );
@@ -131,8 +132,8 @@ static inline void toSatoshiFormat( QString &s, int decimals = 8 )
             }
 
             int sz = s.size();
-            int e = s.mid( ct +2, sz - ct +2 ).toInt();
-            QChar sign = s.at( ct +1 );
+            int e = s.mid( ct +2, sz - ct +2 ).toInt(); // read exponent
+            QChar sign = s.at( ct +1 ); // read sign
             int sign_int = sign == CoinAmount::plus ? 1 :
                            sign == CoinAmount::minus ? -1 : 0;
 
@@ -152,13 +153,13 @@ static inline void toSatoshiFormat( QString &s, int decimals = 8 )
                         s.append( CoinAmount::zero );
                 }
 
+                // insert decimal
                 if ( sign_int == -1 )
                 {
                     s.insert( 1, CoinAmount::decimal );
                     s.insert( 1, CoinAmount::zero );
                 }
-
-                if ( sign_int == 1 )
+                else
                     s.append( CoinAmount::decimal );
 
                 // restart loop and check again
