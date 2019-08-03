@@ -381,7 +381,9 @@ void CoinAmountTest::test()
     // ( but we don't use QVariant( double ).toString() anywhere in code, so it's okay for now )
 //    kDebug() << QVariant( -0.0000001 /* 1e-7 */ ).toString();
 //    kDebug() << Coin( QVariant( -0.00000001 /* 1e-7 */ ).toString() ).toSubSatoshiString();
-//    kDebug() << Coin( QVariant( -0.00000001 /* 1e-7 */ ).toString() );
+//    kDebug() << Coin( QVariant( -0.0000001 /* 1e-6 */ ).toString() );
+    assert( Coin( QVariant( -0.00000001 /* 1e-7 */ ).toString() ).toSubSatoshiString() == "-0.0000000010000000" );
+    assert( Coin( QVariant( -0.0000001 /* 1e-6 */ ).toString() ) == "-0.00000001" );
     ///
 
 }
