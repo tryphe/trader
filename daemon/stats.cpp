@@ -51,7 +51,7 @@ void Stats::updateStats( Position *const &pos )
                                 .arg( btc_amount_trunc )
                                 .arg( profit_margin_trunc );
 
-    MarketInfo &info = engine->getMarketInfo( pos->market );
+//    MarketInfo &info = engine->getMarketInfo( pos->market );
 //    bool market_sentiment = info.market_sentiment;
 //    qreal market_offset = info.market_offset;
 
