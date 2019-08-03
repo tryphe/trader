@@ -91,7 +91,7 @@ Suppose you want to ping-pong between buying 0.1 BTC worth of DOGE at 10 satoshi
 One-time taker order, buy 0.025 BTC of DOGE at 30 satoshi:\
 `trader-cli-poloniex setorder BTC_DOGE buy 0.00000030 0.00000000 0.025 onetime-taker`
 
-One-time maker order, sell 0.1 BTC of DOGE at 100 satoshi (maker-limit order):\
+One-time maker order, sell 0.025 BTC of DOGE at 100 satoshi (maker-limit order):\
 `trader-cli-poloniex setorder BTC_DOGE sell 0.00000000 0.00000100 0.025 onetime`
 
 Same as above, but cancel if 5 minutes elapses (delayed fill or kill order):\
