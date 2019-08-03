@@ -360,19 +360,17 @@ QString Position::stringifyPositionChange()
 {
     const QString &order_number_str = Global::getOrderString( order_number );
 
-    // make a string that looks like 0.00009999     -> 0.00120000
-    //                               <filled price>    <new price>
-    QString price_str;
+    // make a string that looks like 0.00009999 -> 0.00120000
+    //                               <price>       <next price>
     bool is_buy = ( side == SIDE_BUY );
+    Coin &price = is_buy ? price_lo : price_hi;
+    Coin &next_price = is_buy ? price_hi : price_lo;
 
-    if ( is_buy )
-        price_str = QString( "%1 -> %2" )
-                     .arg( price_lo )
-                     .arg( price_hi );
-    else
-        price_str = QString( "%1 -> %2" )
-                     .arg( price_hi )
-                     .arg( price_lo );
+    QString price_str = price;
+
+    if ( next_price.isGreaterThanZero() )
+        price_str += QString( " -> %1" )
+                     .arg( next_price );
 
     // there's an extra padded space here for the color magic to use it
     return QString( "%1%2  %3%4>>>none<<< %5 %6 @ %7 o %8 %9%10" )
@@ -382,7 +380,7 @@ QString Position::stringifyPositionChange()
             .arg( sideStr(), -4 )
             .arg( market, 8 )
             .arg( btc_amount, 11 )
-            .arg( price_str )
+            .arg( price_str, -24 )
             .arg( order_number_str, ORDER_STRING_SIZE )
             .arg( indices_str )
             .arg( per_trade_profit.isGreaterThanZero() ? " p " + per_trade_profit : "" );
