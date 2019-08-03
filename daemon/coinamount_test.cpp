@@ -368,8 +368,7 @@ void CoinAmountTest::test()
     assert( trunc == "0.09000000" );
 
     ///
-    /// partially broken stuff that we probably should support but aren't even using
-    ///
+    /// stuff we support but aren't even using
     ///
     // test scientific exponent style strings ie. "1e+07" passed via toSatoshiFormat( QVariant(d).toString() )
     assert( Coin( QVariant( 10000000.0 /* 1e7 */ ).toString() ) ==  "10000000.00000000" );
@@ -377,11 +376,7 @@ void CoinAmountTest::test()
     assert( Coin( QVariant( 10000000000000000000000.0 /* 1e22 */ ).toString() ) ==  "10000000000000000000000.00000000" );
     assert( Coin( QVariant( -10000000.0 /* -1e7 */ ).toString() ) ==  "-10000000.00000000" );
 
-    // TODO: negative scientific notation exponents doesn't work
-    // ( but we don't use QVariant( double ).toString() anywhere in code, so it's okay for now )
-//    kDebug() << QVariant( -0.0000001 /* 1e-7 */ ).toString();
-//    kDebug() << Coin( QVariant( -0.00000001 /* 1e-7 */ ).toString() ).toSubSatoshiString();
-//    kDebug() << Coin( QVariant( -0.0000001 /* 1e-6 */ ).toString() );
+    // strings with negative exponents
     assert( Coin( QVariant( -0.00000001 /* 1e-7 */ ).toString() ).toSubSatoshiString() == "-0.0000000010000000" );
     assert( Coin( QVariant( -0.0000001 /* 1e-6 */ ).toString() ) == "-0.00000001" );
     ///
