@@ -122,20 +122,26 @@ static inline void toSatoshiFormat( QString &s, int decimals = 8 )
         // try to read scientific notation string
         if ( *i == QChar('e') )
         {
+            if ( dec_count > 0 )
+            {
+                int dec_idx = s.indexOf( CoinAmount::decimal );
+                s.remove( dec_idx, 1 );
+                dec_count--;
+                ct--;
+            }
+
             int sz = s.size();
             int e = s.mid( ct +2, sz - ct +2 ).toInt();
             QChar sign = s.at( ct +1 );
             int sign_int = sign == CoinAmount::plus ? 1 :
                            sign == CoinAmount::minus ? -1 : 0;
 
+            if ( sign_int == -1 ) e--; // one less if we're negative
+
             // make sure there's something to read and the conversion passed
             if ( sign_int != 0 && sz > ct +2 && e > 0 )
             {
                 s.remove( ct, sz - ct );
-                //sz -= ct;
-                // note: don't use sz after this line
-
-                //qDebug() << s << e;
 
                 // append zeroes
                 while ( e-- > 0 )
@@ -154,8 +160,6 @@ static inline void toSatoshiFormat( QString &s, int decimals = 8 )
 
                 if ( sign_int == 1 )
                     s.append( CoinAmount::decimal );
-
-                //qDebug() << s;
 
                 // restart loop and check again
                 dec_count = ct = 0;

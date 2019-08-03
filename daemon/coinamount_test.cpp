@@ -377,8 +377,9 @@ void CoinAmountTest::test()
     assert( Coin( QVariant( -10000000.0 /* -1e7 */ ).toString() ) ==  "-10000000.00000000" );
 
     // strings with negative exponents
-    assert( Coin( QVariant( -0.00000001 /* 1e-7 */ ).toString() ).toSubSatoshiString() == "-0.0000000010000000" );
-    assert( Coin( QVariant( -0.0000001 /* 1e-6 */ ).toString() ) == "-0.00000001" );
+    assert( Coin( QVariant( -0.000000011 /* -11e-7 */ ).toString() ).toSubSatoshiString() == "-0.0000000110000000" );
+    assert( Coin( QVariant( -0.00000001 /* -1e-7 */ ).toString() ).toSubSatoshiString() == "-0.0000000100000000" );
+    assert( Coin( QVariant( -0.00000010 /* -1e-6 */ ).toString() ) == "-0.00000010" );
     ///
 
 }
