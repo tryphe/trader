@@ -72,7 +72,6 @@ void FallbackListener::parseInputFile()
 
     // check for new lines
     QString data = input_file->readAll();
-    emit gotDataChunk( data );
 
     // truncate the file before we parse the commands, incase we run 'exit', otherwise they'll run next time
     // NOTE: this causes problems, as we can't bombard the text file with frequent edits. use IPC sockets instead, except for bulk calls.
@@ -80,6 +79,8 @@ void FallbackListener::parseInputFile()
     {
         input_file->resize( 0 );
     }
+
+    emit gotDataChunk( data );
 }
 
 #endif // FALLBACK_FILE_INPUT
