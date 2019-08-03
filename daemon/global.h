@@ -3,6 +3,7 @@
 
 #include "build-config.h"
 
+#include <assert.h>
 #include <gmp.h>
 
 #include <QByteArray>

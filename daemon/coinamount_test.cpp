@@ -2,6 +2,8 @@
 #include "global.h"
 #include "coinamount.h"
 
+#include <assert.h>
+
 #include <QtMath>
 
 
