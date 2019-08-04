@@ -413,7 +413,7 @@ void Stats::printBuySellTotal()
 
         if ( pos->side == SIDE_BUY )
             buys[ pos->market ]++;
-        else if ( pos->side == SIDE_SELL )
+        else
             sells[ pos->market ]++;
 
         // save the total count

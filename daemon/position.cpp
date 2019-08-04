@@ -166,12 +166,13 @@ void Position::flip()
     // set position size to original size
     btc_amount = original_size;
 
+    // buy->sell
     if ( side == SIDE_BUY )
     {
         side = SIDE_SELL;
         price = price_hi;
     }
-    else if ( side == SIDE_SELL )
+    else // sell->buy
     {
         side = SIDE_BUY;
         price = price_lo;
@@ -193,7 +194,7 @@ bool Position::applyPriceSide()
         price = price_hi;
         return true;
     }
-    else if ( side == SIDE_BUY ) // buy lo
+    else // buy lo
     {
         price = price_lo;
         return true;

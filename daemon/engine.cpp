@@ -1879,10 +1879,10 @@ void Engine::checkBuySellCount()
         if ( market.isEmpty() )
             continue;
         // tally buys
-        else if ( pos->side == SIDE_BUY ) // && !pos->is_cancelling
+        else if ( pos->side == SIDE_BUY && !pos->is_cancelling )
             buys[ market ]++;
         // tally sells
-        else if ( pos->side == SIDE_SELL ) // && !pos->is_cancelling
+        else if ( pos->side == SIDE_SELL && !pos->is_cancelling )
             sells[ market ]++;
     }
 
@@ -2242,7 +2242,7 @@ bool Engine::tryMoveSlippageOrder( Position* const &pos )
                      << "hi_buy" << hi_buy << "lo_sell" << lo_sell;
     }
     // replace sell price
-    else if ( pos->side == SIDE_SELL )
+    else
     {
         // calculate a new sell price double/str
         Coin new_sell_price;
@@ -2566,7 +2566,7 @@ void Engine::onCheckDivergeConverge()
             if ( lowest_idx < market_single_lo_buy.value( market, std::numeric_limits<qint32>::max() ) )
                 market_single_lo_buy[ market ] = lowest_idx;
         }
-        else if ( pos->side == SIDE_SELL )
+        else // sell
         {
             const qint32 highest_idx = pos->getHighestMarketIndex();
 

@@ -28,8 +28,7 @@ public:
     QString stringifyNewPosition();
     QString stringifyPositionChange();
     QString sideStr() const { return side == SIDE_BUY  ? QString( "buy" ) :
-                                     side == SIDE_SELL ? QString( "sell" ) :
-                                                         QString( "none" ); }
+                                                         QString( "sell" ); }
     qint32 getLowestMarketIndex() const;
     qint32 getHighestMarketIndex() const;
 
