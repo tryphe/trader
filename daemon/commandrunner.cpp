@@ -199,13 +199,17 @@ void CommandRunner::runCommandChunk( QString &s )
     }
 }
 
-bool CommandRunner::checkArgs( qint32 expected_args_count, const QStringList &args )
+bool CommandRunner::checkArgs( const QStringList &args, qint32 expected_args_min, qint32 expected_args_max )
 {
+    expected_args_min++; // add one
+    if ( expected_args_max < 0 )
+        expected_args_max = expected_args_min;
+
     // check for expected arg count
-    if ( args.size() != expected_args_count +1 )
+    if ( args.size() < expected_args_min || args.size() > expected_args_max )
     {
         kDebug() << QString( "[CommandRunner] not enough args (%1)" )
-                        .arg( expected_args_count +1 );
+                        .arg( expected_args_min );
         return false;
     }
 
@@ -278,7 +282,7 @@ void CommandRunner::command_getordersbyindex( QStringList &args )
 
 void CommandRunner::command_setorder( QStringList &args )
 {
-    if ( !checkArgs( 6, args ) ) return;
+    if ( !checkArgs( args, 6, 7 ) ) return;
 
     const QString &market = args.value( 1 );
     quint8 side = args.value( 2 ) == "buy" ? SIDE_BUY :
@@ -287,13 +291,14 @@ void CommandRunner::command_setorder( QStringList &args )
     const QString &hi = args.value( 4 );
     const QString &size = args.value( 5 );
     const QString &type = args.value( 6 );
+    const QString &strategy = args.value( 7 );
 
-    engine->addPosition( market, side, lo, hi, size, type );
+    engine->addPosition( market, side, lo, hi, size, type, strategy );
 }
 
 void CommandRunner::command_setordermin( QStringList &args )
 {
-    if ( !checkArgs( 2, args ) ) return;
+    if ( !checkArgs( args, 2 ) ) return;
 
     const QString &market = args.value( 1 );
     const qint32 &count = args.value( 2 ).toInt();
@@ -304,7 +309,7 @@ void CommandRunner::command_setordermin( QStringList &args )
 
 void CommandRunner::command_setordermax( QStringList &args )
 {
-    if ( !checkArgs( 2, args ) ) return;
+    if ( !checkArgs( args, 2 ) ) return;
 
     const QString &market = args.value( 1 );
     const qint32 &count = args.value( 2 ).toInt();
@@ -315,7 +320,7 @@ void CommandRunner::command_setordermax( QStringList &args )
 
 void CommandRunner::command_setorderdc( QStringList &args )
 {
-    if ( !checkArgs( 2, args ) ) return;
+    if ( !checkArgs( args, 2 ) ) return;
 
     const QString &market = args.value( 1 );
     const qint32 &count = args.value( 2 ).toInt();
@@ -326,7 +331,7 @@ void CommandRunner::command_setorderdc( QStringList &args )
 
 void CommandRunner::command_setorderdcnice( QStringList &args )
 {
-    if ( !checkArgs( 2, args ) ) return;
+    if ( !checkArgs( args, 2 ) ) return;
 
     const QString &market = args.value( 1 );
     const qint32 &nice = args.value( 2 ).toInt();
@@ -337,7 +342,7 @@ void CommandRunner::command_setorderdcnice( QStringList &args )
 
 void CommandRunner::command_setorderlandmarkthresh( QStringList &args )
 {
-    if ( !checkArgs( 2, args ) ) return;
+    if ( !checkArgs( args, 2 ) ) return;
 
     const QString &market = args.value( 1 );
     const qint32 &val = args.value( 2 ).toInt();
@@ -348,7 +353,7 @@ void CommandRunner::command_setorderlandmarkthresh( QStringList &args )
 
 void CommandRunner::command_setorderlandmarkstart( QStringList &args )
 {
-    if ( !checkArgs( 2, args ) ) return;
+    if ( !checkArgs( args, 2 ) ) return;
 
     const QString &market = args.value( 1 );
     const qint32 &val = args.value( 2 ).toInt();
@@ -359,7 +364,7 @@ void CommandRunner::command_setorderlandmarkstart( QStringList &args )
 
 void CommandRunner::command_setnextlowest( QStringList &args )
 {
-    if ( !checkArgs( 2, args ) ) return;
+    if ( !checkArgs( args, 2 ) ) return;
 
     const QString &market = args.value( 1 );
     quint8 side = args.value( 2 ) == "buy" ? SIDE_BUY :
@@ -370,7 +375,7 @@ void CommandRunner::command_setnextlowest( QStringList &args )
 
 void CommandRunner::command_setnexthighest( QStringList &args )
 {
-    if ( !checkArgs( 2, args ) ) return;
+    if ( !checkArgs( args, 2 ) ) return;
 
     const QString &market = args.value( 1 );
     quint8 side = args.value( 2 ) == "buy" ? SIDE_BUY :
@@ -408,7 +413,7 @@ void CommandRunner::command_setcancelthresh( QStringList &args )
 void CommandRunner::command_setkeyandsecret( QStringList &args )
 {
     // [ exchange, key, secret ]
-    if ( !checkArgs( 2, args ) ) return;
+    if ( !checkArgs( args, 2 ) ) return;
 
     QByteArray key = args.value( 1 ).toLocal8Bit();
     QByteArray secret = args.value( 2 ).toLocal8Bit();
@@ -540,7 +545,7 @@ void CommandRunner::command_gethibuylosell( QStringList &args )
 
 void CommandRunner::command_setmarketoffset( QStringList &args )
 {
-    if ( !checkArgs( 2, args ) ) return;
+    if ( !checkArgs( args, 2 ) ) return;
 
     const QString &market = args.value( 1 );
     qreal offset = args.value( 2 ).toDouble();
@@ -551,7 +556,7 @@ void CommandRunner::command_setmarketoffset( QStringList &args )
 
 void CommandRunner::command_setmarketsentiment( QStringList &args )
 {
-    if ( !checkArgs( 2, args ) ) return;
+    if ( !checkArgs( args, 2 ) ) return;
 
     const QString &market = args.value( 1 );
     bool sentiment = args.value( 2 ) == "true" ? true : false;
@@ -700,7 +705,7 @@ void CommandRunner::command_setcanceltimeout( QStringList &args )
 
 void CommandRunner::command_setslippagetimeout( QStringList &args )
 {
-    if ( !checkArgs( 2, args ) ) return;
+    if ( !checkArgs( args, 2 ) ) return;
 
     const QString &market = args.value( 1 );
 
@@ -834,7 +839,7 @@ void CommandRunner::command_sendcommand( QStringList &args )
 
 void CommandRunner::command_setchatty( QStringList &args )
 {
-    if ( !checkArgs( 1, args ) ) return;
+    if ( !checkArgs( args, 1 ) ) return;
 
     bool chatty = args.value( 1 ) == "true" ? true : false;
 
@@ -844,7 +849,7 @@ void CommandRunner::command_setchatty( QStringList &args )
 
 void CommandRunner::command_setaggressivespread( QStringList &args )
 {
-    if ( !checkArgs( 1, args ) ) return;
+    if ( !checkArgs( args, 1 ) ) return;
 
     bool aggressive_spread = args.value( 1 ) == "true" ? true : false;
 

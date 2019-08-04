@@ -28,7 +28,7 @@ public slots:
     void runCommandChunk( QString &s );
 
 private:
-    bool checkArgs( qint32 expected_args_count, const QStringList &args );
+    bool checkArgs( const QStringList &args, qint32 expected_args_min, qint32 expected_args_max = -1 ); // -1 sets max=min
 
     void command_getbalances( QStringList &args );
     void command_getlastprices( QStringList &args );
