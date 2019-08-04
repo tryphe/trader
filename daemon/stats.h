@@ -46,6 +46,7 @@ public:
     ~Stats();
 
     void updateStats( Position *const &pos );
+    void addStrategyStats( Position *const &pos );
     void clearSome( const QString &market );
     void clearAll();
 

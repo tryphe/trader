@@ -51,12 +51,7 @@ void Stats::updateStats( Position *const &pos )
                                 .arg( btc_amount_trunc )
                                 .arg( profit_margin_trunc );
 
-//    MarketInfo &info = engine->getMarketInfo( pos->market );
-//    bool market_sentiment = info.market_sentiment;
-//    qreal market_offset = info.market_offset;
-
     // update some stats
-    //MarketStats &_stats = market_stats[ pos->market ];
     market_volumes[ pos->market ] += volume_amt;
     market_profit[ pos->market ] += pos->per_trade_profit.toAmountString().toDouble();
     market_profit_volume[ market_profit_str ] += volume_amt;
@@ -69,9 +64,6 @@ void Stats::updateStats( Position *const &pos )
     daily_fills[ date_str ]++;
     last_price[ pos->market ] = pos->price;
     market_fills[ pos->market ]++;
-//    market_shortlong[ pos->market ] += market_sentiment ?
-//                                       (  market_offset / 2 ) * pos->btc_amount.toAmountString().toDouble()
-//                                     : ( -market_offset / 2 ) * pos->btc_amount.toAmountString().toDouble();
 
     // avoid div0 just incase
     Coin risk_reward_val;
@@ -85,6 +77,21 @@ void Stats::updateStats( Position *const &pos )
     // update dailyprofitRW
     market_profit_risk_reward[ market_profit_str ].first += risk_reward_val;
     market_profit_risk_reward[ market_profit_str ].second++;
+
+    // add shortlong strategy stats (use blank tag for all onetime orders)
+    addStrategyStats( pos );
+}
+
+void Stats::addStrategyStats( Position *const &pos )
+{
+    // track stats related to this strategy tag
+    Coin amount;
+    if ( pos->side == SIDE_BUY )
+        amount += pos->btc_amount;
+    else
+        amount -= pos->btc_amount;
+
+    shortlong[ pos->strategy_tag ][ pos->market ] += amount;
 }
 
 void Stats::clearSome( const QString &market )
