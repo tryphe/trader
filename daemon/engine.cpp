@@ -320,7 +320,8 @@ void Engine::fillNQ( const QString &order_id, qint8 fill_type , quint8 extra_dat
         if ( market_info.value( pos->market ).position_index.size() <= pos->market_indices.value( i ) )
             continue;
 
-        market_info[ pos->market ].position_index[ pos->market_indices.value( i ) ].incrementFillCount();
+        // increment fill count and resize by alternate size if one exists
+        market_info[ pos->market ].position_index[ pos->market_indices.value( i ) ].resizeByAlternateSize();
     }
 
     QString fill_str = fill_strings.value( fill_type -1, "unknown-fill" );

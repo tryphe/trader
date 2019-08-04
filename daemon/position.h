@@ -84,12 +84,15 @@ struct PositionData
         fill_count = 0;
     }
 
-    void incrementFillCount() { if ( ++fill_count == 1 && alternate_size.size() > 0 )
-                                {
-                                    order_size = alternate_size;
-                                    alternate_size.clear();
-                                }
-                              }
+    void resizeByAlternateSize()
+    {
+        fill_count++;
+        if ( alternate_size.size() > 0 )
+        {
+            order_size = alternate_size;
+            alternate_size.clear();
+        }
+    }
 
     QString price_lo, price_hi, order_size, alternate_size;
     quint32 fill_count;
