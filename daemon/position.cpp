@@ -10,7 +10,7 @@
 #include <QDebug>
 
 Position::Position( QString _market, quint8 _side, QString _price_lo, QString _price_hi,
-                    QString _order_size, QVector<qint32> _market_indices,
+                    QString _order_size, QString _strategy_tag, QVector<qint32> _market_indices,
                     bool _landmark, Engine *_engine )
 {
     // local info
@@ -30,6 +30,7 @@ Position::Position( QString _market, quint8 _side, QString _price_lo, QString _p
     is_invalidated = false;
     price_reset_count = 0;
     max_age_minutes = 0;
+    strategy_tag = _strategy_tag;
 
     if ( engine && is_landmark && market_indices.size() > 1 )
     {

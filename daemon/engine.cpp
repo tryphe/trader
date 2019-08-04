@@ -75,7 +75,7 @@ Position *Engine::getPositionForOrderID( const QString &order_id ) const
 }
 
 Position *Engine::addPosition( QString market, quint8 side, QString price_lo, QString price_hi,
-                               QString order_size, QString type, QVector<qint32> indices,
+                               QString order_size, QString type, QString strategy_tag, QVector<qint32> indices,
                                bool landmark, bool quiet )
 {
     // convert accidental underscore to dash, and vice versa
@@ -194,7 +194,7 @@ Position *Engine::addPosition( QString market, quint8 side, QString price_lo, QS
         return nullptr;
 
     // make position object
-    Position *const &pos = new Position( market, side, price_lo, price_hi, order_size, indices, landmark, this );
+    Position *const &pos = new Position( market, side, price_lo, price_hi, order_size, strategy_tag, indices, landmark, this );
 
     // check for correctly loaded position data
     if ( !pos || pos->market.isEmpty() || pos->price.isEmpty() || pos->btc_amount.isZeroOrLess() || pos->quantity.isZeroOrLess() )
@@ -268,7 +268,7 @@ Position *Engine::addPosition( QString market, quint8 side, QString price_lo, QS
 void Engine::addLandmarkPositionFor( Position *const &pos )
 {
     // add position with dummy elements
-    addPosition( pos->market, pos->side, "0.00000001", "0.00000002", "0.00000000", "active",
+    addPosition( pos->market, pos->side, "0.00000001", "0.00000002", "0.00000000", "active", "",
                  pos->market_indices, true, true );
 }
 
@@ -698,7 +698,7 @@ void Engine::processCancelledOrder( Position * const &pos )
         {
             const PositionData &new_pos = market_info[ pos->market ].position_index.value( pos->market_indices.value( 0 ) );
 
-            addPosition( pos->market, pos->side, new_pos.price_lo, new_pos.price_hi, new_pos.order_size, "active",
+            addPosition( pos->market, pos->side, new_pos.price_lo, new_pos.price_hi, new_pos.order_size, "active", "",
                          pos->market_indices, false, true );
 
             deletePosition( pos );
@@ -979,7 +979,7 @@ void Engine::cancelOrderMeatDCOrder( Position * const &pos )
                 QVector<qint32> new_index_single;
                 new_index_single.append( new_indices.value( i ) );
 
-                addPosition( pos->market, pos->side, data.price_lo, data.price_hi, data.order_size, "active",
+                addPosition( pos->market, pos->side, data.price_lo, data.price_hi, data.order_size, "active", "",
                              new_index_single, false, true );
             }
         }
@@ -1240,7 +1240,7 @@ void Engine::setNextLowest( const QString &market, quint8 side, bool landmark )
 //    kDebug() << "adding idx" << indices.value( 0 ) << "from indices" << indices;
 //    kDebug() << "adding next lo pos" << market << side << data.price_lo << data.price_hi << data.order_size;
 
-    Position *pos = addPosition( market, side, data.price_lo, data.price_hi, data.order_size, "active",
+    Position *pos = addPosition( market, side, data.price_lo, data.price_hi, data.order_size, "active", "",
                                      indices, landmark, true );
 
     // check for valid ptr
@@ -1347,7 +1347,7 @@ void Engine::setNextHighest( const QString &market, quint8 side, bool landmark )
 //    kDebug() << "adding next hi pos" << market << side << data.price_lo << data.price_hi << data.order_size;
 
 
-    Position *pos = addPosition( market, side, data.price_lo, data.price_hi, data.order_size, "active",
+    Position *pos = addPosition( market, side, data.price_lo, data.price_hi, data.order_size, "active", "",
                                      indices, landmark, true );
 
     // check for valid ptr
@@ -1380,7 +1380,7 @@ void Engine::flipPosition( Position *const &pos )
         // we could use the same prices, but instead we reset the data incase there was slippage
         const PositionData &new_data = market_info[ pos->market ].position_index.value( pos->market_indices.value( 0 ) );
 
-        Position *new_pos = addPosition( pos->market, pos->side, new_data.price_lo, new_data.price_hi, new_data.order_size, "active",
+        Position *new_pos = addPosition( pos->market, pos->side, new_data.price_lo, new_data.price_hi, new_data.order_size, "active", "",
                      pos->market_indices, false, true );
 
         // we cancelled for shortlong
@@ -1391,13 +1391,7 @@ void Engine::flipPosition( Position *const &pos )
             new_pos->per_trade_profit = Coin(); // remove profit message from fill
 
             // track stats related to this strategy tag
-            Coin amount;
-            if ( new_pos->side == SIDE_BUY )
-                amount += new_pos->btc_amount;
-            else if ( new_pos->side == SIDE_SELL )
-                amount -= new_pos->btc_amount;
-
-            stats->shortlong[ pos->strategy_tag ][ pos->market ] += amount;
+            stats->addStrategyStats( pos );
         }
     }
 }

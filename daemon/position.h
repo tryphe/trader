@@ -12,7 +12,8 @@ class Position
 {
 public:
     explicit Position( QString _market, quint8 _side, QString _price_lo, QString _price_hi,
-                       QString _order_size, QVector<qint32> _market_indices = QVector<qint32>(),
+                       QString _order_size, QString _strategy_tag = QLatin1String(),
+                       QVector<qint32> _market_indices = QVector<qint32>(),
                        bool _landmark = false, Engine *_engine = nullptr );
     ~Position();
 

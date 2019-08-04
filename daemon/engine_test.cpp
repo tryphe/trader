@@ -78,7 +78,7 @@ void EngineTest::test( Engine *e )
     test_index += PositionData( "0.00000005", "0.00000060", "0.02", QLatin1String() ); // idx 1
     test_index += PositionData( "0.00000005", "0.00000070", "0.03", QLatin1String() ); // idx 2
     QVector<qint32> landmark_indices = QVector<qint32>() << 0 << 1 << 2;
-    Position p3 = Position( "TEST", SIDE_SELL, "0.00000001", "0.00000002", "1.0", landmark_indices, true, e );
+    Position p3 = Position( "TEST", SIDE_SELL, "0.00000001", "0.00000002", "1.0", "", landmark_indices, true, e );
 
     // weight total = (50 * 0.01) + (60 * 0.02) + (70 * 0.03) = 3.8
     // size total =   0.01 + 0.02 + 0.03 = 0.06
@@ -115,12 +115,13 @@ void EngineTest::test( Engine *e )
     test_index_1 += PositionData( "0.00000001", "0.00000060", "0.02", QLatin1String() ); // idx 1
     test_index_1 += PositionData( "0.00000001", "0.00000070", "0.03", QLatin1String() ); // idx 2
     landmark_indices = QVector<qint32>() << 0 << 1 << 2;
-    Position *p5 = e->addPosition( "TEST", SIDE_BUY, "0.00000001", "0.00000002", "0.00000000", "active", landmark_indices, true );
+    Position *p5 = e->addPosition( "TEST", SIDE_BUY, "0.00000001", "0.00000002", "0.00000000", "active", "test-strat", landmark_indices, true );
     assert( p5 != nullptr );
     assert( p5->btc_amount == "0.06000000" );
     assert( p5->quantity == "6000000.00000000" );
     assert( p5->price_lo == "0.00000001" );
     assert( p5->price_hi == "0.00000063" );
+    assert( p5->strategy_tag == "test-strat" );
 
     // test getBuyTotal/getSellTotal
     assert( e->getBuyTotal( "TEST" ) == 1 );
