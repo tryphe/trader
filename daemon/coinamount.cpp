@@ -315,7 +315,7 @@ Coin Coin::ratio( qreal r ) const
     return ret;
 }
 
-void Coin::truncateValueByTicksize( QString ticksize )
+void Coin::truncateByTicksize( QString ticksize )
 {
     // set default value when argument is blank
     if ( ticksize.isEmpty() )
@@ -333,4 +333,10 @@ void Coin::truncateValueByTicksize( QString ticksize )
     s.truncate( dec_idx + ticksize_idx_one );
 
     operator =( s );
+}
+
+Coin Coin::truncatedByTicksize( QString ticksize )
+{
+    truncateByTicksize( ticksize );
+    return *this;
 }

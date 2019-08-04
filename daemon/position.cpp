@@ -110,8 +110,8 @@ Position::Position( QString _market, quint8 _side, QString _price_lo, QString _p
     // truncate order by exchange tick size
 #if defined(EXCHANGE_BINANCE)
     Coin ticksize = !engine ? CoinAmount::SATOSHI : Coin( engine->getMarketInfo( market ).price_ticksize );
-    price_lo.truncateValueByTicksize( ticksize );
-    price_hi.truncateValueByTicksize( ticksize );
+    price_lo.truncateByTicksize( ticksize );
+    price_hi.truncateByTicksize( ticksize );
 
     // prevent price_lo from being less than ticksize
     if ( !ticksize.isZeroOrLess() && price_lo < ticksize )
@@ -153,7 +153,7 @@ void Position::calculateQuantity()
 #if defined(EXCHANGE_BINANCE)
     const QString &ticksize = !engine ? CoinAmount::SATOSHI_STR : engine->getMarketInfo( market ).price_ticksize;
 
-    quantity.truncateValueByTicksize( ticksize );
+    quantity.truncateByTicksize( ticksize );
 #endif
     btc_amount = quantity * p;
 

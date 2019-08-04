@@ -58,7 +58,8 @@ public:
     void applyRatio( qreal r );
     Coin ratio( qreal r ) const;
 
-    void truncateValueByTicksize( QString ticksize );
+    void truncateByTicksize( QString ticksize );
+    Coin truncatedByTicksize( QString ticksize );
 
 private:
     mpz_t b;

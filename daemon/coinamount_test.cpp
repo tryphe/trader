@@ -358,15 +358,15 @@ void CoinAmountTest::test()
     assert( Coin( "1.0" ).isGreaterThanZero() );
     assert( Coin( "999999999999999999999999999999999999999999999999999999999.0" ).isGreaterThanZero() );
 
-    // Coin::truncateValueByTicksize
+    // Coin::truncateByTicksize
     Coin trunc( "0.00001777" );
-    trunc.truncateValueByTicksize( "0.00001000" );
+    trunc.truncateByTicksize( "0.00001000" );
     assert( trunc == "0.00001000" );
     trunc = "0.00000017";
-    trunc.truncateValueByTicksize( "0.00000010" );
+    trunc.truncateByTicksize( "0.00000010" );
     assert( trunc == "0.00000010" );
     trunc = "0.09999999";
-    trunc.truncateValueByTicksize( "0.01" ); // tolerate unpadded zeroes
+    trunc.truncateByTicksize( "0.01" ); // tolerate unpadded zeroes
     assert( trunc == "0.09000000" );
 
     ///
