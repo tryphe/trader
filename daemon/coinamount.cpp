@@ -337,6 +337,7 @@ void Coin::truncateByTicksize( QString ticksize )
 
 Coin Coin::truncatedByTicksize( QString ticksize )
 {
-    truncateByTicksize( ticksize );
-    return *this;
+    Coin ret = *this;
+    ret.truncateByTicksize( ticksize );
+    return ret;
 }

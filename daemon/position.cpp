@@ -177,11 +177,6 @@ void Position::flip()
         side = SIDE_BUY;
         price = price_lo;
     }
-    else
-    {
-        kDebug() << "local error: position flip failed!" << stringifyOrder();
-        return;
-    }
 
     // the object is deleted after this, no need to set/clear stuff
 }
