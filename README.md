@@ -42,9 +42,9 @@ Running the daemon
 1. Daemonize traderd so it stays running: `setsid ./traderd-poloniex`
 2. Edit `~/.bashrc` using your favorite text editor, adding these lines:
 ~~~
-alias trader-cli-poloniex='~/src/trader/trader-cli Poloniex'
-alias trader-cli-bittrex='~/src/trader/trader-cli Bittrex'
-alias trader-cli-binance='~/src/trader/trader-cli Binance'
+alias trader-poloniex='~/src/trader/trader-cli Poloniex'
+alias trader-bittrex='~/src/trader/trader-cli Bittrex'
+alias trader-binance='~/src/trader/trader-cli Binance'
  ~~~
  3. Then run `source ~/.bashrc`
 
