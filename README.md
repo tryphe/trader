@@ -103,5 +103,88 @@ Ping-pong order, buy at 17 satoshis, sell at 18, size 0.011:\
 Same as above, but when the ping-pong order is filled once, set size to 0.001 (effectively buys 0.011 and ping-pongs 0.001 of it):\
 `trader-poloniex setorder BTC_OMG buy 0.00000017 0.00000018 0.011/0.001 active`
 
+**Enough of that, give me a real ping-pong example!**\
+Note: This is purely for example and so the buy and sell prices are so far apart, they'd probably never fill.\
+First, buy a tiny amount of both pairs you'd like to trade. We'll use `BTC` and `OMG`.\
+Then, paste this into `~/.config/pt/in.txt`: (note: `/tt` for Bittrex, `/bt` for Binance).
+```
+setorderdc BTC_OMG 5
+setorderdcnice BTC_OMG 8
+setorderlandmarkstart BTC_OMG 9
+setorderlandmarkthresh BTC_OMG 10
+setordermin BTC_OMG 11
+setordermax BTC_OMG 44
+setmarketoffset BTC_OMG 0.004
+setmarketsentiment BTC_OMG false
+setorder BTC_OMG buy 0.00000001 0.00100000 0.00011 ghost
+setorder BTC_OMG buy 0.00000002 0.00200000 0.00011 ghost
+setorder BTC_OMG buy 0.00000003 0.00300000 0.00011 ghost
+setorder BTC_OMG buy 0.00000004 0.00400000 0.00011 ghost
+setorder BTC_OMG buy 0.00000005 0.00500000 0.00011 ghost
+setorder BTC_OMG buy 0.00000006 0.00600000 0.00011 ghost
+setorder BTC_OMG buy 0.00000007 0.00700000 0.00011 ghost
+setorder BTC_OMG buy 0.00000008 0.00800000 0.00011 ghost
+setorder BTC_OMG buy 0.00000009 0.00900000 0.00011 ghost
+setorder BTC_OMG buy 0.00000010 0.01000000 0.00011 ghost
+setorder BTC_OMG buy 0.00000011 0.01100000 0.00011 ghost
+setorder BTC_OMG buy 0.00000012 0.01200000 0.00011 active
+setorder BTC_OMG buy 0.00000013 0.01300000 0.00011 active
+setorder BTC_OMG buy 0.00000014 0.01400000 0.00011 active
+setorder BTC_OMG buy 0.00000015 0.01500000 0.00011 active
+setorder BTC_OMG buy 0.00000016 0.01600000 0.00011 active
+setorder BTC_OMG sell 0.00000017 0.01700000 0.00011 active
+setorder BTC_OMG sell 0.00000017 0.01700000 0.00011 active
+setorder BTC_OMG sell 0.00000018 0.01800000 0.00011 active
+setorder BTC_OMG sell 0.00000019 0.01900000 0.00011 active
+setorder BTC_OMG sell 0.00000020 0.02000000 0.00011 active
+setorder BTC_OMG sell 0.00000021 0.02100000 0.00011 ghost
+setorder BTC_OMG sell 0.00000022 0.02200000 0.00011 ghost
+setorder BTC_OMG sell 0.00000023 0.02300000 0.00011 ghost
+setorder BTC_OMG sell 0.00000024 0.02400000 0.00011 ghost
+setorder BTC_OMG sell 0.00000025 0.02500000 0.00011 ghost
+setorder BTC_OMG sell 0.00000026 0.02600000 0.00011 ghost
+setorder BTC_OMG sell 0.00000027 0.02700000 0.00011 ghost
+setorder BTC_OMG sell 0.00000028 0.02800000 0.00011 ghost
+setorder BTC_OMG sell 0.00000029 0.02900000 0.00011 ghost
+setorder BTC_OMG sell 0.00000030 0.03000000 0.00011 ghost
+setorder BTC_OMG sell 0.00000031 0.03100000 0.00011 ghost
+setorder BTC_OMG sell 0.00000032 0.03200000 0.00011 ghost
+setorder BTC_OMG sell 0.00000033 0.03300000 0.00011 ghost
+setorder BTC_OMG sell 0.00000034 0.03400000 0.00011 ghost
+```
 
-[todo] explain ghost positions, ping-pong divergence/convergence settings, general market settings, base/quote pair formatting, calculating total position equity, calculating risk/reward
+Since we are giving the bot an initial state rather than setting one-time orders, we need some settings:
+
+`setorderdc <market> <n>` converges orders far away from the spread action from n orders into 1 order.
+
+`setorderlandmarkstart/thresh <market> <n>` are distances that dictate if the bot should set/cancel a lowest/highest order as a landmark, and the tolerance to noise.
+
+`setorderdcnice <market> <n>` adjusts the noise of converging/diverging orders. higher = nicer, lower = more API spam.
+
+`setordermin <market> <n>` is the number of minimum orders to maintain on each side (bid/ask) of the market spread. If `orderdc >1`, `min = max-min`.
+
+`setordermax <market> <n>` is the max stated above. This attempts to maintain the count of active orders at `min+(max-min)`.
+
+`setmarketsentiment <market> <bool>` false = short base currency (BTC in this case). If true = long base currency.
+
+`setmarketoffset <market> <real>` "balances out" the exchange amounts after making trades by offsetting the amount buy from the amount sold. For example, if the fee is 0.2%, you need this amount of the base currency (BTC), times two; one for the buy, one for the sell. You'd input: `setmarketoffset BTC_OMG 0.004` aka `(0.2% *2)`.
+
+**How do I see my orders?**
+Sorted by price: `getorders <market>` or by index: `getordersbyindex <market>`
+
+**How do I cancel orders**
+Cancelling non-bot orders: `cancelall [market="all"]` (Note: disabled if you have bot orders set, because it would interfere with fills)
+Cancelling bot orders: `cancellocal [market="all"]` (Note: won't interfere with orders you've set on the exchange.)
+
+If you call the command without any arguments, cancel all markets, otherwise just cancel that one market.
+
+**That's crazy. What's the point of all of this?**
+
+Now that you've tried ping-pong orders, you should realize that you can shift the ping-pong spread up to the total equity on each side of your spread, essentially going short/long on the future value of your spread (for example, cost averaging between multiple markets, or some other function), without a taker position:
+
+`short <market>`
+`long <market>` 
+(Note: or `shortindex`/`longindex` to associate by index and not by price)
+
+
+[todo] explain ghost positions, other stuff
