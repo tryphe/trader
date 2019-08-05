@@ -175,7 +175,7 @@ Sorted by price: `getorders <market>` or by index: `getordersbyindex <market>`
 
 **How do I cancel orders**
 
-Cancelling non-bot orders: `cancelall [market="all"]` (Note: disabled if you have bot orders set, because it would interfere with fills)
+Cancelling non-bot orders: `cancelall [market="all"]` (Note: disabled if you have bot orders set, because it would interfere with fills)\
 Cancelling bot orders: `cancellocal [market="all"]` (Note: won't interfere with orders you've set on the exchange.)
 
 If you call the command without any arguments, cancel all markets, otherwise just cancel that one market.
