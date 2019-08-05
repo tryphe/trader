@@ -196,7 +196,7 @@ Now that you've tried ping-pong orders, you should realize that you can shift th
 
 **Rules of Thumb**
 
-If doing ping-pong, try and keep at least 50 orders. This lets us mitigate an erroneous "blank but valid" exchange order list response where the exchange tells us we have no orders, but actually do. Does this happen? Yes it does, on every exchange, although very rarely (although WSS on Poloniex relieves us from polling the order list on there).
+When botting long-term, you MUST keep at least 50 orders total. This lets us mitigate an erroneous "blank but valid" exchange order list response where the exchange tells us we have no orders, but actually do. Does this happen? Yes it does, on every exchange, although very rarely (although WSS on Poloniex relieves us from polling the order list on there).
 
 
 [todo] explain ghost positions, other stuff
