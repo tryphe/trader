@@ -1371,6 +1371,13 @@ void Engine::flipPosition( Position *const &pos )
 
     pos->flip(); // flip our position
 
+    // we cancelled for shortlong, edit some stats
+    if ( pos->cancel_reason == CANCELLING_FOR_SHORTLONG )
+    {
+        // track stats related to this strategy tag
+        stats->addStrategyStats( pos );
+    }
+
     if ( pos->is_landmark ) // landmark pos
     {
         addLandmarkPositionFor( pos );
@@ -1380,19 +1387,8 @@ void Engine::flipPosition( Position *const &pos )
         // we could use the same prices, but instead we reset the data incase there was slippage
         const PositionData &new_data = market_info[ pos->market ].position_index.value( pos->market_indices.value( 0 ) );
 
-        Position *new_pos = addPosition( pos->market, pos->side, new_data.price_lo, new_data.price_hi, new_data.order_size, "active", "",
+        addPosition( pos->market, pos->side, new_data.price_lo, new_data.price_hi, new_data.order_size, "active", "",
                      pos->market_indices, false, true );
-
-        // we cancelled for shortlong
-        if ( pos->cancel_reason == CANCELLING_FOR_SHORTLONG &&
-             new_pos != nullptr )
-        {
-            new_pos->strategy_tag = pos->strategy_tag; // copy strategy tag
-            new_pos->per_trade_profit = Coin(); // remove profit message from fill
-
-            // track stats related to this strategy tag
-            stats->addStrategyStats( pos );
-        }
     }
 }
 
