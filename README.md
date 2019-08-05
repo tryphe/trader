@@ -182,7 +182,7 @@ If you call the command without any arguments, cancel all markets, otherwise jus
 
 **That's crazy. What's the point of all of this?**
 
-Now that you've tried ping-pong orders, you should realize that you can shift the ping-pong spread up to the total equity on each side of your spread, essentially going short/long on the future value of your spread (for example, cost averaging between multiple markets, or some other function), without a taker position, by inverting a ping-pong order to its other side: 
+Now that you've tried ping-pong orders, you should realize that you can shift the ping-pong spread up to the total equity on each side of your spread, essentially going short/long on the future value of one side spread (for example, cost averaging between multiple markets, or some other function), without a taker position, by inverting a ping-pong order to its other side: 
 
 `short <market>`\
 `long <market>` \
