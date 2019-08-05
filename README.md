@@ -104,6 +104,7 @@ Same as above, but when the ping-pong order is filled once, set size to 0.001 (e
 `trader-poloniex setorder BTC_OMG buy 0.00000017 0.00000018 0.011/0.001 active`
 
 **Enough of that, give me a real ping-pong example!**\
+Note: For exchange commands, the formatting is literally `command <required-arg> [optional-arg=default-value]`\
 Note: This is purely for example and so the buy and sell prices are so far apart, they'd probably never fill.\
 First, buy a tiny amount of both pairs you'd like to trade. We'll use `BTC` and `OMG`.\
 Then, paste this into `~/.config/pt/in.txt`: (note: `/tt` for Bittrex, `/bt` for Binance).
@@ -180,6 +181,11 @@ Cancelling bot orders: `cancellocal [market="all"]` (Note: won't interfere with 
 
 If you call the command without any arguments, cancel all markets, otherwise just cancel that one market.
 
+**Once my spread moves, how can I restart the bot or revamp my order list?**
+
+`savemarket [market="all"]` will save the market state to the file `/index-<market-name>.txt`.\
+If you want to feed it back into the bot, copy it into in.txt ie `cp index-all.txt in.txt`.
+
 **That's crazy. What's the point of all of this?**
 
 Now that you've tried ping-pong orders, you should realize that you can shift the ping-pong spread up to the total equity on each side of your spread, essentially going short/long on the future value of one side of the spread (for example, cost averaging between multiple markets, or some other function), without a taker position, by inverting a ping-pong order to its other side: 
@@ -187,6 +193,10 @@ Now that you've tried ping-pong orders, you should realize that you can shift th
 `short <market>`\
 `long <market>` \
 (Note: or `shortindex`/`longindex` to associate by index and not by price)
+
+**Rules of Thumb**
+
+If doing ping-pong, try and keep at least 50 orders. This lets us mitigate an erroneous "blank but valid" exchange order list response where the exchange tells us we have no orders, but actually do. Does this happen? Yes it does, on every exchange (although WSS on Poloniex relieves us from polling the order list on there).
 
 
 [todo] explain ghost positions, other stuff
