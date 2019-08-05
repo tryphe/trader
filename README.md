@@ -174,7 +174,7 @@ Since we are giving the bot an initial state rather than setting one-time orders
 
 Sorted by price: `getorders <market>` or by index: `getordersbyindex <market>`
 
-**How do I cancel orders**
+**How do I cancel my orders?**
 
 Cancelling non-bot orders: `cancelall [market="all"]` (Note: disabled if you have bot orders set, because it would interfere with fills)\
 Cancelling bot orders: `cancellocal [market="all"]` (Note: won't interfere with orders you've set on the exchange.)
