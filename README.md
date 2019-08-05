@@ -170,9 +170,11 @@ Since we are giving the bot an initial state rather than setting one-time orders
 `setmarketoffset <market> <real>` "balances out" the exchange amounts after making trades by offsetting the amount bought from the amount sold. For example, if the fee is 0.2%, you need this amount of the base currency (BTC), times two; one for the buy, one for the sell. You'd run: `setmarketoffset BTC_OMG 0.004` aka `(0.2% *2)`.
 
 **How do I see my orders?**
+
 Sorted by price: `getorders <market>` or by index: `getordersbyindex <market>`
 
 **How do I cancel orders**
+
 Cancelling non-bot orders: `cancelall [market="all"]` (Note: disabled if you have bot orders set, because it would interfere with fills)
 Cancelling bot orders: `cancellocal [market="all"]` (Note: won't interfere with orders you've set on the exchange.)
 
