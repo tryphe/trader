@@ -168,7 +168,7 @@ Because we are giving the bot an initial state rather than setting one-time orde
 
 `setmarketsentiment <market> <bool>` false = short quote currency. true = long quote currency. In this case, the quote currency is OMG, and since it's false, we will short it by the amount below.
 
-`setmarketoffset <market> <real>` "balances out" the exchange amounts after making trades by offsetting the amount bought from the amount sold. For example, if the fee is 0.2%, you need this amount of the base currency (BTC), times two; one for the buy, one for the sell. You'd run: `setmarketoffset BTC_OMG 0.004` aka `(0.2% *2)`.
+`setmarketoffset <market> <real>` "balances out" the exchange amounts after making trades by offsetting the amount bought from the amount sold. For example, if the fee is 0.2%, the exchange will take this amount of the base currency (BTC), times two; one for the buy, one for the sell. To offset it, you'd run: `setmarketoffset BTC_OMG 0.004` aka `(0.2% *2)`.
 
 **How do I see my orders?**
 
