@@ -75,8 +75,6 @@ public:
                            QString order_size, QString type = "active", QString strategy_tag = QLatin1String(),
                            QVector<qint32> indices = QVector<qint32>(), bool landmark = false, bool quiet = false );
 
-    void addLandmarkPositionFor( Position *const &pos );
-
     void processFilledOrderRange( QVector<Position*> &filled_positions, qint8 fill_type );
     void processFilledOrderSingle( Position *const &pos, qint8 fill_type );
 
@@ -92,14 +90,12 @@ public:
     void cancelHighest( const QString &market );
     void cancelLowest( const QString &market );
     //void cancelOrderByPrice( const QString &market, QString price );
-    void cancelOrderMeatDCOrder( Position *const &pos );
     void setOrderMeat( Position *const &pos, QString order_number );
     void saveMarket( QString market, qint32 num_orders = 15 );
 
     void setNextLowest( const QString &market, quint8 side = SIDE_BUY, bool landmark = false );
     void setNextHighest( const QString &market, quint8 side = SIDE_SELL, bool landmark = false );
 
-    void flipPosition( Position *const &pos );
     void flipHiBuyPrice( const QString &market, QString tag = QLatin1String() );
     void flipHiBuyIndex( const QString &market, QString tag = QLatin1String() );
     void flipLoSellPrice( const QString &market, QString tag = QLatin1String() );
@@ -108,26 +104,10 @@ public:
     Coin getHiBuy( const QString &market ) const;
     Coin getHiBuyFlipPrice( const QString &market ) const;
     Coin getLoSellFlipPrice( const QString &market ) const;
-    Position *getPositionByIndex( const QString &market, const qint32 idx ) const;
-    Coin getHighestBuyPrice( const QString &market ) const;
-    Coin getLowestSellPrice( const QString &market ) const;
-    inline bool isIndexDivergingConverging( const QString &market, const qint32 index ) const;
-    Position *getHighestActiveBuyPosByIndex( const QString &market ) const;
-    Position *getHighestActiveSellPosByIndex( const QString &market ) const;
-    Position *getLowestActiveSellPosByIndex( const QString &market ) const;
-    Position *getLowestActiveBuyPosByIndex( const QString &market ) const;
-    Position *getHighestActiveBuyPosByPrice( const QString &market ) const;
-    Position *getLowestActiveSellPosByPrice( const QString &market ) const;
-    Position *getLowestActivePingPong( const QString &market ) const;
-    Position *getHighestActivePingPong( const QString &market ) const;
+
     qint32 getMarketOrderTotal( const QString &market, bool onetime_only = false ) const;
     qint32 getBuyTotal( const QString &market ) const;
     qint32 getSellTotal( const QString &market ) const;
-
-    // timer routines
-    void cleanGraceTimes();
-    void checkBuySellCount();
-    void checkMaintenance();
 
     // utility functions
     void setStats( Stats *_stats ) { stats = _stats; }
@@ -161,9 +141,29 @@ public Q_SLOTS:
     void onCheckDivergeConverge();
 
 private:
+    // timer routines
+    void cleanGraceTimes();
+    void checkBuySellCount();
+    void checkMaintenance();
+
     void converge( QMap<QString/*market*/,QVector<qint32>> &market_map, quint8 side );
     void diverge( QMap<QString/*market*/,QVector<qint32>> &market_map );
 
+    Position *getPositionByIndex( const QString &market, const qint32 idx ) const;
+    Position *getHighestActiveBuyPosByIndex( const QString &market ) const;
+    Position *getHighestActiveSellPosByIndex( const QString &market ) const;
+    Position *getLowestActiveSellPosByIndex( const QString &market ) const;
+    Position *getLowestActiveBuyPosByIndex( const QString &market ) const;
+    Position *getHighestActiveBuyPosByPrice( const QString &market ) const;
+    Position *getLowestActiveSellPosByPrice( const QString &market ) const;
+    Position *getLowestActivePingPong( const QString &market ) const;
+    Position *getHighestActivePingPong( const QString &market ) const;
+    Coin getHighestBuyPrice( const QString &market ) const;
+    Coin getLowestSellPrice( const QString &market ) const;
+    inline bool isIndexDivergingConverging( const QString &market, const qint32 index ) const;
+    void addLandmarkPositionFor( Position *const &pos );
+    void flipPosition( Position *const &pos );
+    void cancelOrderMeatDCOrder( Position *const &pos );
     void removeFromDC( Position *const &pos );
     bool tryMoveOrder( Position *const &pos );
     void fillNQ( const QString &order_id, qint8 fill_type, quint8 extra_data = 0 );
