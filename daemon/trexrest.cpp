@@ -178,7 +178,7 @@ void TrexREST::sendNamQueue()
             continue;
         }
 
-        if ( request->api_command == TREX_COMMAND_GET_ORDER_HISTORY )
+        if ( request->api_command == TREX_COMMAND_GET_ORDER_HIST )
         {
             sorted_nam_queue.insert( 0.00000100, request );
             continue;
@@ -209,7 +209,7 @@ void TrexREST::sendNamQueue()
 
         // check if we received the orderbook in the timeframe of an order timeout grace period
         // if it's stale, we can assume the server is down and we let the orders timeout
-        if ( yieldToLag() && request->api_command != TREX_COMMAND_GET_ORDER_HISTORY )
+        if ( yieldToLag() && request->api_command != TREX_COMMAND_GET_ORDER_HIST )
         {
             // let this request hang around until the orderbook is responded to
             continue;
@@ -404,8 +404,8 @@ void TrexREST::onNamReply( QNetworkReply *const &reply )
         // resend for all commands except common commands
         else if ( !is_throttled && // if we are throttled, let timeouts happen for regular commands
                   api_command != TREX_COMMAND_GET_ORDERS &&
-                  api_command != TREX_COMMAND_GET_ORDER_HISTORY &&
-                  api_command != TREX_COMMAND_GET_MARKET_SUMMARIES &&
+                  api_command != TREX_COMMAND_GET_ORDER_HIST &&
+                  api_command != TREX_COMMAND_GET_MARKET_SUMS &&
                   ( error_str == "" || error_str == "APIKEY_INVALID" || is_html ) )
         {
             // exceptions for buy/sell errors
@@ -453,7 +453,7 @@ void TrexREST::onNamReply( QNetworkReply *const &reply )
         return;
     }
 
-    if ( api_command == TREX_COMMAND_GET_ORDER_HISTORY ) // history-fill
+    if ( api_command == TREX_COMMAND_GET_ORDER_HIST ) // history-fill
     {
         parseOrderHistory( body_obj );
     }
@@ -461,7 +461,7 @@ void TrexREST::onNamReply( QNetworkReply *const &reply )
     {
         parseOpenOrders( result_arr, request->time_sent_ms );
     }
-    else if ( api_command == TREX_COMMAND_GET_MARKET_SUMMARIES ) // ticker-fill
+    else if ( api_command == TREX_COMMAND_GET_MARKET_SUMS ) // ticker-fill
     {
         parseOrderBook( result_arr, request->time_sent_ms );
     }
@@ -503,18 +503,18 @@ void TrexREST::onCheckBotOrders()
 void TrexREST::onCheckOrderHistory()
 {
     // ensure key/secret is set and command is not queued
-    if ( isKeyOrSecretUnset() || isCommandQueued( TREX_COMMAND_GET_ORDER_HISTORY ) || isCommandSent( TREX_COMMAND_GET_ORDER_HISTORY, 10 ) )
+    if ( isKeyOrSecretUnset() || isCommandQueued( TREX_COMMAND_GET_ORDER_HIST ) || isCommandSent( TREX_COMMAND_GET_ORDER_HIST, 10 ) )
         return;
 
-    sendRequest( TREX_COMMAND_GET_ORDER_HISTORY );
+    sendRequest( TREX_COMMAND_GET_ORDER_HIST );
 }
 
 void TrexREST::onCheckOrderBooks()
 {
-    if ( isCommandQueued( TREX_COMMAND_GET_MARKET_SUMMARIES ) || isCommandSent( TREX_COMMAND_GET_MARKET_SUMMARIES, 10 ) )
+    if ( isCommandQueued( TREX_COMMAND_GET_MARKET_SUMS ) || isCommandSent( TREX_COMMAND_GET_MARKET_SUMS, 10 ) )
         return;
 
-    sendRequest( TREX_COMMAND_GET_MARKET_SUMMARIES );
+    sendRequest( TREX_COMMAND_GET_MARKET_SUMS );
 }
 
 void TrexREST::wssConnected()

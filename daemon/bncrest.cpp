@@ -507,7 +507,7 @@ void BncREST::onNamReply( QNetworkReply *const &reply )
 //            resent_command = true;
 //        }
 //        // resend buy/sell
-//        else if ( api_command == "buy" || api_command == "sell" )
+//        else if ( api_command == BUY || api_command == SELL )
 //        {
 //            // check for bad ptr, and the position should also be queued
 //            if ( !request->pos || !positions_queued.contains( request->pos ) )
@@ -775,7 +775,7 @@ void BncREST::parseOpenOrders( const QJsonArray &markets, qint64 request_time_se
         order_numbers += order_number;
 
         // insert (market, order)
-        orders.insert( market, OrderInfo( order_number, side == "buy" ? SIDE_BUY : side == "sell" ? SIDE_SELL : 0, price, btc_amount ) );
+        orders.insert( market, OrderInfo( order_number, side == BUY ? SIDE_BUY : side == SELL ? SIDE_SELL : 0, price, btc_amount ) );
     }
 
     engine->processOpenOrders( order_numbers, orders, request_time_sent_ms );

@@ -635,6 +635,7 @@ void Engine::processTicker( const QMap<QString, TickerInfo> &ticker_data, qint64
             continue;
 
         const TickerInfo &ticker = ticker_data[ market ];
+
         const Coin &ask = ticker.ask_price;
         const Coin &bid = ticker.bid_price;
 
@@ -1140,7 +1141,7 @@ void Engine::saveMarket( QString market, qint32 num_orders )
 
             out_savefile << QString( "setorder %1 %2 %3 %4 %5 %6\n" )
                             .arg( current_market )
-                            .arg( is_sell ? "sell" : "buy" )
+                            .arg( is_sell ? SELL : BUY )
                             .arg( pos_data.price_lo )
                             .arg( pos_data.price_hi )
                             .arg( order_size )

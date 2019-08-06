@@ -406,7 +406,7 @@ void PoloREST::parseOpenOrders( const QJsonObject &markets, qint64 request_time_
             order_numbers.append( order_number );
 
             // insert (market, order)
-            orders.insert( market, OrderInfo( order_number, side == "buy" ? SIDE_BUY : side == "sell" ? SIDE_SELL : 0, price, btc_amount ) );
+            orders.insert( market, OrderInfo( order_number, side == BUY ? SIDE_BUY : side == SELL ? SIDE_SELL : 0, price, btc_amount ) );
         }
     }
 

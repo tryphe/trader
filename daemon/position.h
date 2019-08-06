@@ -27,8 +27,8 @@ public:
     QString stringifyOrderWithoutOrderID();
     QString stringifyNewPosition();
     QString stringifyPositionChange();
-    QString sideStr() const { return side == SIDE_BUY  ? QString( "buy" ) :
-                                                         QString( "sell" ); }
+    QString sideStr() const { return side == SIDE_BUY  ? QString( BUY ) :
+                                                         QString( SELL ); }
     qint32 getLowestMarketIndex() const;
     qint32 getHighestMarketIndex() const;
 

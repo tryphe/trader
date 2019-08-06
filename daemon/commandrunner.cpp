@@ -285,8 +285,8 @@ void CommandRunner::command_setorder( QStringList &args )
     if ( !checkArgs( args, 6, 7 ) ) return;
 
     const QString &market = args.value( 1 );
-    quint8 side = args.value( 2 ) == "buy" ? SIDE_BUY :
-                  args.value( 2 ) == "sell" ? SIDE_SELL : 0;
+    quint8 side = args.value( 2 ) == BUY ? SIDE_BUY :
+                  args.value( 2 ) == SELL ? SIDE_SELL : 0;
     const QString &lo = args.value( 3 );
     const QString &hi = args.value( 4 );
     const QString &size = args.value( 5 );
@@ -367,8 +367,8 @@ void CommandRunner::command_setnextlowest( QStringList &args )
     if ( !checkArgs( args, 2 ) ) return;
 
     const QString &market = args.value( 1 );
-    quint8 side = args.value( 2 ) == "buy" ? SIDE_BUY :
-                  args.value( 2 ) == "sell" ? SIDE_SELL : 0;
+    quint8 side = args.value( 2 ) == BUY ? SIDE_BUY :
+                  args.value( 2 ) == SELL ? SIDE_SELL : 0;
 
     engine->setNextLowest( market, side );
 }
@@ -378,8 +378,8 @@ void CommandRunner::command_setnexthighest( QStringList &args )
     if ( !checkArgs( args, 2 ) ) return;
 
     const QString &market = args.value( 1 );
-    quint8 side = args.value( 2 ) == "buy" ? SIDE_BUY :
-                  args.value( 2 ) == "sell" ? SIDE_SELL : 0;
+    quint8 side = args.value( 2 ) == BUY ? SIDE_BUY :
+                  args.value( 2 ) == SELL ? SIDE_SELL : 0;
 
     engine->setNextHighest( market, side );
 }

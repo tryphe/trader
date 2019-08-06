@@ -16,110 +16,100 @@
 #include <QMessageAuthenticationCode>
 #include <QSslSocket>
 
-/// plain strings
-#define BUY                             "buy"
-#define SELL                            "sell"
-#define COMMAND                         "command"
-#define NONCE                           "nonce"
-#define CONTENT_TYPE                    "Content-Type"
-#define CONTENT_TYPE_ARGS               "application/x-www-form-urlencoded"
-#define KEY                             "key"
-#define SIGN                            "sign"
+#define kDebug QMessageLogger( __FILE__, __LINE__, Q_FUNC_INFO ).debug().noquote
 
-/// keep subpaths defined for CLI build
-#define BITTREX_SUBPATH "tt"
-#define POLONIEX_SUBPATH "pt"
-#define BINANCE_SUBPATH "bt"
+/// global symbols
+static const quint8 SIDE_BUY                                ( 1 );
+static const quint8 SIDE_SELL                               ( 2 );
+
+static const quint8 CANCELLING_LOWEST                       ( 1 );
+static const quint8 CANCELLING_HIGHEST                      ( 2 );
+static const quint8 CANCELLING_FOR_SHORTLONG                ( 3 );
+static const quint8 CANCELLING_FOR_DC                       ( 4 );
+static const quint8 CANCELLING_FOR_SLIPPAGE_RESET           ( 5 );
+static const quint8 CANCELLING_FOR_MAX_AGE                  ( 6 );
+static const quint8 CANCELLING_FOR_USER                     ( 7 );
+
+static const quint8 FILL_GETORDER                           ( 1 );
+static const quint8 FILL_HISTORY                            ( 2 );
+static const quint8 FILL_TICKER                             ( 3 );
+static const quint8 FILL_CANCEL                             ( 4 );
+static const quint8 FILL_WSS                                ( 5 );
+
+static const QLatin1String BUY                              ( "buy" );
+static const QLatin1String SELL                             ( "sell" );
+static const QLatin1String COMMAND                          ( "command" );
+static const QLatin1String NONCE                            ( "nonce" );
+static const QByteArray    KEY                              ( "key" );
+static const QByteArray    SIGN                             ( "sign" );
+static const QByteArray    CONTENT_TYPE                     ( "Content-Type" );
+static const QByteArray    CONTENT_TYPE_ARGS                ( "application/x-www-form-urlencoded" );
+static const QLatin1String BITTREX_SUBPATH                  ( "tt" );
+static const QLatin1String POLONIEX_SUBPATH                 ( "pt" );
+static const QLatin1String BINANCE_SUBPATH                  ( "bt" );
 
 /// urls/symbols
 #if defined(EXCHANGE_BITTREX)
-    #define EXCHANGE_STR                        "Bittrex"
-    #define REST_OBJECT                         TrexREST
-    #define EXCHANGE_SUBPATH                    BITTREX_SUBPATH
-    #define ORDER_STRING_SIZE                   22
-    #define INTERFACE_PORT                      62000
+    #define REST_OBJECT                                     TrexREST
+    #define EXCHANGE_SUBPATH                                BITTREX_SUBPATH
+    static const QLatin1String EXCHANGE_STR                 ( "Bittrex" );
+    static const int INTERFACE_PORT                         ( 62000 );
+    static const int ORDER_STRING_SIZE                      ( 22 );
 
-    #define TREX_REST_URL                       "https://bittrex.com/api/v1.1/"
-
-    #define TREX_COMMAND_CANCEL                 "market/cancel"
-    #define TREX_COMMAND_BUY                    "market/buylimit"
-    #define TREX_COMMAND_SELL                   "market/selllimit"
-    #define TREX_COMMAND_GET_ORDERS             "market/getopenorders"
-    #define TREX_COMMAND_GET_ORDER              "account/getorder"
-    #define TREX_COMMAND_GET_ORDER_HISTORY      "account/getorderhistory"
-    #define TREX_COMMAND_GET_BALANCES           "account/getbalances"
-    #define TREX_COMMAND_GET_MARKET_SUMMARIES   "public/getmarketsummaries"
-
-    #define TREX_APIKEY                         "apikey"
-    #define TREX_APISIGN                        "apisign"
+    static const QLatin1String TREX_REST_URL                ( "https://bittrex.com/api/v1.1/" );
+    static const QLatin1String TREX_COMMAND_CANCEL          ( "market/cancel" );
+    static const QLatin1String TREX_COMMAND_BUY             ( "market/buylimit" );
+    static const QLatin1String TREX_COMMAND_SELL            ( "market/selllimit" );
+    static const QLatin1String TREX_COMMAND_GET_ORDERS      ( "market/getopenorders" );
+    static const QLatin1String TREX_COMMAND_GET_ORDER       ( "account/getorder" );
+    static const QLatin1String TREX_COMMAND_GET_ORDER_HIST  ( "account/getorderhistory" );
+    static const QLatin1String TREX_COMMAND_GET_BALANCES    ( "account/getbalances" );
+    static const QLatin1String TREX_COMMAND_GET_MARKET_SUMS ( "public/getmarketsummaries" );
+    static const QLatin1String TREX_APIKEY                  ( "apikey" );
+    static const QByteArray TREX_APISIGN                    ( "apisign" );
 
 #elif defined(EXCHANGE_BINANCE)
-    #define EXCHANGE_STR                    "Binance"
-    #define REST_OBJECT                     BncREST
-    #define EXCHANGE_SUBPATH                BINANCE_SUBPATH
-    #define ORDER_STRING_SIZE               15
-    #define INTERFACE_PORT                  62001
+    #define REST_OBJECT                                     BncREST
+    #define EXCHANGE_SUBPATH                                BINANCE_SUBPATH
+    static const QLatin1String EXCHANGE_STR                 ( "Binance" );
+    static const int INTERFACE_PORT                         ( 62001 );
+    static const int ORDER_STRING_SIZE                      ( 15 );
 
-    #define BNC_URL                         "https://api.binance.com/api/v3/"
-    #define BNC_URL_WSS                     "wss://api.binance.com"
-
-    #define BNC_COMMAND_GETORDERS           "sign-get-openOrders"
-    #define BNC_COMMAND_BUYSELL             "sign-post-order"
-    #define BNC_COMMAND_CANCEL              "sign-delete-order"
-    #define BNC_COMMAND_GETTICKER           "get-ticker/bookTicker"
-    #define BNC_COMMAND_GETEXCHANGEINFO     "get-v1-exchangeInfo"
-    #define BNC_COMMAND_GETBALANCES         "sign-get-account"
-
-    #define BNC_RECVWINDOW                  "recvWindow"
-    #define BNC_TIMESTAMP                   "timestamp"
-    #define BNC_SIGNATURE                   "signature"
-    #define BNC_APIKEY                      "X-MBX-APIKEY"
+    static const QLatin1String BNC_URL                      ( "https://api.binance.com/api/v3/" );
+    static const QLatin1String BNC_URL_WSS                  ( "wss://api.binance.com" );
+    static const QLatin1String BNC_COMMAND_GETORDERS        ( "sign-get-openOrders" );
+    static const QLatin1String BNC_COMMAND_BUYSELL          ( "sign-post-order" );
+    static const QLatin1String BNC_COMMAND_CANCEL           ( "sign-delete-order" );
+    static const QLatin1String BNC_COMMAND_GETTICKER        ( "get-ticker/bookTicker" );
+    static const QLatin1String BNC_COMMAND_GETEXCHANGEINFO  ( "get-v1-exchangeInfo" );
+    static const QLatin1String BNC_COMMAND_GETBALANCES      ( "sign-get-account" );
+    static const QLatin1String BNC_RECVWINDOW               ( "recvWindow" );
+    static const QLatin1String BNC_TIMESTAMP                ( "timestamp" );
+    static const QLatin1String BNC_SIGNATURE                ( "signature" );
+    static const QByteArray BNC_APIKEY                      ( "X-MBX-APIKEY" );
 
 #elif defined(EXCHANGE_POLONIEX)
-    #define EXCHANGE_STR                    "Poloniex"
-    #define REST_OBJECT                     PoloREST
-    #define EXCHANGE_SUBPATH                POLONIEX_SUBPATH
-    #define ORDER_STRING_SIZE               11
-    #define INTERFACE_PORT                  62002
+    #define REST_OBJECT                                     PoloREST
+    #define EXCHANGE_SUBPATH                                POLONIEX_SUBPATH
+    static const QLatin1String EXCHANGE_STR                 ( "Poloniex" );
+    static const int INTERFACE_PORT                         ( 62002 );
+    static const int ORDER_STRING_SIZE                      ( 11 );
 
-    #define POLO_URL_TRADE                  "https://poloniex.com/tradingApi"
-    #define POLO_URL_PUBLIC                 "https://poloniex.com/public"
-    #define POLO_URL_PRIVATE                "https://poloniex.com/private"
-    #define POLO_URL_WSS                    "wss://api2.poloniex.com/"
+    static const QLatin1String POLO_URL_TRADE               ( "https://poloniex.com/tradingApi" );
+    static const QLatin1String POLO_URL_PUBLIC              ( "https://poloniex.com/public" );
+    static const QLatin1String POLO_URL_PRIVATE             ( "https://poloniex.com/private" );
+    static const QLatin1String POLO_URL_WSS                 ( "wss://api2.poloniex.com/" );
 
-    #define POLO_COMMAND_GETCHARTDATA       "returnChartData"
-    #define POLO_COMMAND_GETBALANCES        "returnCompleteBalances"
-    #define POLO_COMMAND_GETORDERS          "returnOpenOrders"
-    #define POLO_COMMAND_GETORDERS_ARGS     "currencyPair=all"
-    #define POLO_COMMAND_CANCEL             "cancelOrder"
-    #define POLO_COMMAND_CANCEL_ARGS        "orderNumber="
-    #define POLO_COMMAND_GETBOOKS           "returnOrderBook"
-    #define POLO_COMMAND_GETBOOKS_ARGS      "currencyPair=all&depth=1"
-    #define POLO_COMMAND_GETFEE             "returnFeeInfo"
+    static const QLatin1String POLO_COMMAND_GETCHARTDATA    ( "returnChartData" );
+    static const QLatin1String POLO_COMMAND_GETBALANCES     ( "returnCompleteBalances" );
+    static const QLatin1String POLO_COMMAND_GETORDERS       ( "returnOpenOrders" );
+    static const QLatin1String POLO_COMMAND_GETORDERS_ARGS  ( "currencyPair=all" );
+    static const QLatin1String POLO_COMMAND_CANCEL          ( "cancelOrder" );
+    static const QLatin1String POLO_COMMAND_CANCEL_ARGS     ( "orderNumber=" );
+    static const QLatin1String POLO_COMMAND_GETBOOKS        ( "returnOrderBook" );
+    static const QLatin1String POLO_COMMAND_GETBOOKS_ARGS   ( "currencyPair=all&depth=1" );
+    static const QLatin1String POLO_COMMAND_GETFEE          ( "returnFeeInfo" );
 #endif
-
-
-//#define kDebug QMessageLogger( nullptr,0,0 ).debug().noquote
-#define kDebug QMessageLogger( __FILE__, __LINE__, Q_FUNC_INFO ).debug().noquote
-
-
-static const quint8 SIDE_BUY  = 1;
-static const quint8 SIDE_SELL = 2;
-
-static const quint8 CANCELLING_LOWEST             = 1;
-static const quint8 CANCELLING_HIGHEST            = 2;
-static const quint8 CANCELLING_FOR_SHORTLONG      = 3;
-static const quint8 CANCELLING_FOR_DC             = 4;
-static const quint8 CANCELLING_FOR_SLIPPAGE_RESET = 5;
-static const quint8 CANCELLING_FOR_MAX_AGE        = 6;
-static const quint8 CANCELLING_FOR_USER           = 7;
-
-static const quint8 FILL_GETORDER = 1;
-static const quint8 FILL_HISTORY  = 2;
-static const quint8 FILL_TICKER   = 3;
-static const quint8 FILL_CANCEL   = 4;
-static const quint8 FILL_WSS      = 5;
-
 
 namespace Global {
 
