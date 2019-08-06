@@ -334,7 +334,7 @@ void PoloREST::parseBuySell( Request *const &request, const QJsonObject &respons
 void PoloREST::parseCancelOrder( Request *const &request, const QJsonObject &response )
 {
     // check if it succeeded, if so "success"=1
-    if ( !response.value( "success" ).toInt() )
+    if ( response.value( "success" ).toInt() != 1 )
     {
         kDebug() << "local error: cancel failed:" << response;
         return;
