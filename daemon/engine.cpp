@@ -607,8 +607,9 @@ void Engine::processTicker( const QMap<QString, TickerInfo> &ticker_data, qint64
         if ( ask.isZeroOrLess() || bid.isZeroOrLess() )
             continue;
 
-        market_info[ market ].highest_buy = bid;
-        market_info[ market ].lowest_sell = ask;
+        MarketInfo &info = market_info[ market ];
+        info.highest_buy = bid;
+        info.lowest_sell = ask;
     }
 
     // if this is a ticker feed, just process the ticker data. the fill feed will cause false fills when the ticker comes in just as new positions were set,
