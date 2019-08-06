@@ -162,9 +162,7 @@ public Q_SLOTS:
 
 private:
     void removeFromDC( Position *const &pos );
-    bool tryMoveSlippageOrder( Position *const &pos );
-    void setMarketBoundsForPos( Position *const &pos );
-    void ensureBounds( Position *const &pos ); // applies slippage if we would collide with the spread
+    bool tryMoveOrder( Position *const &pos );
     void fillNQ( const QString &order_id, qint8 fill_type, quint8 extra_data = 0 );
     void setMarketBoundsForMarkets( const QSet<QString> &filled_markets );
     void deletePosition( Position * const &pos );

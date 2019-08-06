@@ -321,7 +321,7 @@ void CoinAmountTest::test()
     assert( q == "3329629.33333333" );
     assert( q.toSubSatoshiString() == "3329629.3333333333333333" );
 
-    // Engine::tryMoveSlippageOrder()
+    // Engine::tryMoveOrder()
     Coin price_lo_original_d = 0.00000015;
     Coin new_buy_price = 0.00000001;
     Coin lo_sell = 0.00000015;

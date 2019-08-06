@@ -189,7 +189,7 @@ Position *Engine::addPosition( QString market, quint8 side, QString price_lo, QS
         //kDebug() << "added index for" << market << "#" << indices.value( 0 );
     }
 
-    // if it's a ghost just exit here (we added it to the index, but don't add it live)
+    // if it's a ghost just exit here. we added it to the index, but don't set the order.
     if ( !is_onetime && !is_active )
         return nullptr;
 
@@ -247,11 +247,8 @@ Position *Engine::addPosition( QString market, quint8 side, QString price_lo, QS
     // if it's not a taker order, enable local post-only mode
     if ( !is_taker )
     {
-        ensureBounds( pos ); // check for slippage based on spread
-        setMarketBoundsForPos( pos ); // calculate a new hi_buy/lo_sell spread based on this position
-
         // if we are setting a new position, try to obtain a better price
-        if ( tryMoveSlippageOrder( pos ) )
+        if ( tryMoveOrder( pos ) )
             pos->applyOffset();
     }
 
@@ -338,7 +335,36 @@ void Engine::fillNQ( const QString &order_id, qint8 fill_type , quint8 extra_dat
     rest->removeRequest( TREX_COMMAND_GET_ORDER, QString( "uuid=%1" ).arg( order_id ) ); // note: uses pos*
 #endif
 
+    QString market = pos->market;
+    Coin price_lo = pos->price_lo;
+    Coin price_hi = pos->price_hi;
+
+    // delete
     deletePosition( pos );
+
+#if defined(EXCHANGE_BINANCE)
+    Coin ticksize = market_info[ market ].price_ticksize;
+#else
+    Coin ticksize = CoinAmount::SATOSHI;
+#endif
+
+    // set market bounds by pulling outwards (because filling can only take away, which expands out)
+    MarketInfo &_market_info = market_info[ market ];
+
+    if ( price_lo < _market_info.highest_buy )
+    {
+        _market_info.highest_buy = getHighestBuyPrice( market ); // this is why we set is_invalidated
+
+        if ( _market_info.lowest_sell < _market_info.highest_buy )
+            _market_info.lowest_sell = _market_info.highest_buy + ticksize;
+    }
+    if ( price_hi > _market_info.lowest_sell )
+    {
+        _market_info.lowest_sell = getLowestSellPrice( market ); // this is why we set is_invalidated
+
+        if ( _market_info.highest_buy > _market_info.lowest_sell )
+            _market_info.highest_buy = _market_info.lowest_sell - ticksize;
+    }
 }
 
 void Engine::processFilledOrderRange( QVector<Position*> &filled_positions, qint8 fill_type )
@@ -578,7 +604,7 @@ void Engine::processTicker( const QMap<QString, TickerInfo> &ticker_data, qint64
         const Coin &bid = ticker.bid_price;
 
         // check for missing information
-        if ( ticker.ask_price.isZeroOrLess() || ticker.bid_price.isZeroOrLess() )
+        if ( ask.isZeroOrLess() || bid.isZeroOrLess() )
             continue;
 
         market_info[ market ].highest_buy = bid;
@@ -1371,12 +1397,9 @@ void Engine::flipPosition( Position *const &pos )
 
     pos->flip(); // flip our position
 
-    // we cancelled for shortlong, edit some stats
+    // we cancelled for shortlong, track stats related to this strategy tag
     if ( pos->cancel_reason == CANCELLING_FOR_SHORTLONG )
-    {
-        // track stats related to this strategy tag
         stats->addStrategyStats( pos );
-    }
 
     if ( pos->is_landmark ) // landmark pos
     {
@@ -2179,45 +2202,59 @@ void Engine::findBetterPrice( Position *const &pos )
 #endif
 }
 
-bool Engine::tryMoveSlippageOrder( Position* const &pos )
+bool Engine::tryMoveOrder( Position* const &pos )
 {
     // pos must be valid!
 
     const QString &market = pos->market;
-    const Coin &lo_sell = getLoSell( market );
-    const Coin &hi_buy = getHiBuy( market );
+    MarketInfo &_info = market_info[ market ];
+    const Coin &hi_buy = _info.highest_buy;
+    const Coin &lo_sell = _info.lowest_sell;
+
+    // return early when no ticker is set
+    if ( hi_buy.isZeroOrLess() || lo_sell.isZeroOrLess() )
+    {
+        kDebug() << "local warning: couldn't call setMarketBoundsForPos because ticker is not yet set";
+        return false;
+    }
 
 #if defined(EXCHANGE_BINANCE)
-    Coin price_ticksize = market_info[ market ].price_ticksize;
+    Coin ticksize = _info.price_ticksize;
 #else
-    static Coin price_ticksize = CoinAmount::SATOSHI;
+    Coin ticksize = CoinAmount::SATOSHI;
 #endif
 
     // check for bad ticksize
-    if ( price_ticksize.isZeroOrLess() )
+    if ( ticksize.isZeroOrLess() )
     {
-        kDebug() << "local error: tryMoveSlippageOrder() price_ticksize was <= 0 for market" << market;
-        price_ticksize = CoinAmount::SATOSHI;
+        kDebug() << "local error: tryMoveOrder() ticksize was <= 0 for market" << market;
+        ticksize = CoinAmount::SATOSHI;
     }
-    else if ( price_ticksize > CoinAmount::A_LOT )
-        price_ticksize = CoinAmount::A_LOT;
+    else if ( ticksize > CoinAmount::A_LOT )
+        ticksize = CoinAmount::A_LOT;
 
     // replace buy price
     if ( pos->side == SIDE_BUY )
     {
-        // calculate a new buy price double/str
-        Coin new_buy_price;
+        // recalculate buy if needed - don't interfere with spread
+        if ( pos->price_lo >= lo_sell )
+        {
+            // set buy price to low sell - ticksize
+            pos->price_lo = lo_sell - ticksize;
+            pos->is_slippage = true;
+            return true;
+        }
 
-        // try to obtain new slippage buy price
-        if ( pos->is_slippage &&
-             lo_sell.isGreaterThanZero() )
+        // try to obtain better buy price
+        Coin new_buy_price;
+        if ( lo_sell.isGreaterThanZero() )
         {
             new_buy_price = pos->price_lo;
 
-            while ( new_buy_price >= price_ticksize && // new_buy_price >= SATOSHI
-                    new_buy_price < lo_sell - price_ticksize && //  new_buy_price < lo_sell - SATOSHI
+            while ( new_buy_price >= ticksize && // new_buy_price >= SATOSHI
+                    new_buy_price < lo_sell - ticksize && //  new_buy_price < lo_sell - SATOSHI
                     new_buy_price < pos->price_lo_original ) // new_buy_price < pos->price_lo_original
-                new_buy_price += price_ticksize;
+                new_buy_price += ticksize;
         }
 
         // new possible price is better than current price and different
@@ -2240,24 +2277,30 @@ bool Engine::tryMoveSlippageOrder( Position* const &pos )
     // replace sell price
     else
     {
-        // calculate a new sell price double/str
-        Coin new_sell_price;
+        // recalculate sell if needed - don't interfere with spread
+        if ( pos->price_hi <= hi_buy )
+        {
+            // set sell price to high buy + ticksize;
+            pos->price_hi = hi_buy + ticksize;
+            pos->is_slippage = true;
+            return true;
+        }
 
-        // try to obtain new slippage sell price
-        if ( pos->is_slippage &&
-             hi_buy.isGreaterThanZero() )
+        // try to obtain a better sell price
+        Coin new_sell_price;
+        if ( hi_buy.isGreaterThanZero() )
         {
             new_sell_price = pos->price_hi;
 
-            while ( new_sell_price > price_ticksize * 2. && // only iterate down to 2 sat for a sell
-                    new_sell_price > hi_buy + price_ticksize &&
+            while ( new_sell_price > ticksize * 2. && // only iterate down to 2 sat for a sell
+                    new_sell_price > hi_buy + ticksize &&
                     new_sell_price > pos->price_hi_original )
-                new_sell_price -= price_ticksize;
+                new_sell_price -= ticksize;
         }
 
         // new possible price is better than current price and different
         if ( new_sell_price != pos->price &&
-             new_sell_price > price_ticksize &&
+             new_sell_price > ticksize &&
              new_sell_price >= pos->price_hi_original &&
              new_sell_price != pos->price_hi &&
              new_sell_price > hi_buy )
@@ -2276,151 +2319,6 @@ bool Engine::tryMoveSlippageOrder( Position* const &pos )
     return false;
 }
 
-void Engine::ensureBounds( Position *const &pos )
-{
-    // pos must be valid!
-
-    bool is_buy = ( pos->side == SIDE_BUY );
-    const QString &market = pos->market;
-    const Coin &lo_sell = getLoSell( market );
-    const Coin &hi_buy = getHiBuy( market );
-    bool set_new_price = false;
-
-#if defined(EXCHANGE_BINANCE)
-    Coin price_ticksize = market_info[ market ].price_ticksize;
-#else
-    static Coin price_ticksize = CoinAmount::SATOSHI;
-#endif
-
-    // check for bad ticksize
-    if ( price_ticksize.isZeroOrLess() )
-    {
-        kDebug() << "local error: ensureBounds() price_ticksize was <= 0 for market" << market;
-        price_ticksize = CoinAmount::SATOSHI;
-    }
-    else if ( price_ticksize > CoinAmount::A_LOT )
-        price_ticksize = CoinAmount::A_LOT;
-
-    // set new buy price
-    if ( is_buy &&
-         !lo_sell.isZeroOrLess() &&
-         pos->price_lo >= lo_sell )
-    {
-        Coin new_buy_price;
-
-        new_buy_price = lo_sell - price_ticksize;
-
-        if ( m_settings.is_chatty )
-            kDebug() << "(ensure-bounds)" << market
-                     << "pos->price_lo" << pos->price_lo
-                     << "is gte lo_sell" << lo_sell
-                     << "new price" << new_buy_price;
-
-        pos->price_lo = new_buy_price;
-        set_new_price = true;
-    }
-
-    // set new sell price
-    else if ( !is_buy &&
-              !hi_buy.isZeroOrLess() &&
-              pos->price_hi <= hi_buy )
-    {
-        Coin new_sell_price;
-
-        new_sell_price = hi_buy + price_ticksize;
-
-        if ( m_settings.is_chatty )
-            kDebug() << "(ensure-bounds)" << market
-                     << "pos->price_hi" << pos->price_hi
-                     << "is lte hi_buy" << hi_buy
-                     << "new price" << new_sell_price;
-
-        // set new prices
-        pos->price_hi = new_sell_price;
-        set_new_price = true;
-    }
-
-    if ( set_new_price )
-    {
-        MarketInfo &_market_info = market_info[ market ];
-
-        // set slippage flag
-        pos->is_slippage = true;
-
-        // remove old price from prices index for detecting stray orders
-        _market_info.order_prices.removeOne( pos->price );
-
-        // reapply offset, sentiment, price
-        pos->applyOffset();
-
-        // add new price from prices index for detecting stray orders
-        _market_info.order_prices.append( pos->price );
-    }
-}
-
-void Engine::setMarketBoundsForPos( Position * const &pos )
-{
-    // pos must be valid!
-
-    const QString &market = pos->market;
-    MarketInfo &_market_info = market_info[ market ];
-    bool is_buy = ( pos->side == SIDE_BUY );
-
-#if defined(EXCHANGE_BINANCE)
-    Coin ticksize = _market_info.price_ticksize;
-#else
-    Coin ticksize = CoinAmount::SATOSHI;
-#endif
-
-    // check for bad ticksize
-    if ( ticksize.isZeroOrLess() )
-    {
-        kDebug() << "local error: setMarketBoundsForPos() ticksize was <= 0 for market" << market;
-        ticksize = CoinAmount::SATOSHI;
-    }
-    else if ( ticksize > CoinAmount::A_LOT )
-        ticksize = CoinAmount::A_LOT;
-
-    // recalculate hi_buy if needed
-    if ( is_buy && pos->price_lo > getHiBuy( market ) )
-    {
-        _market_info.highest_buy = pos->price_lo;
-
-        // check buy_price and lo_sell collision (can happen if the ticker isn't updated)
-        if ( pos->price_lo >= _market_info.lowest_sell )
-        {
-            _market_info.lowest_sell = pos->price_lo + ticksize;
-
-            if ( m_settings.is_chatty )
-                kDebug() << "(aggressive-spread-adjust-0)";
-        }
-
-        if ( m_settings.is_chatty )
-            kDebug() << "(aggressive-in-fill-spread)" << market
-                     << "hi_buy" << getHiBuy( market )
-                     << "lo_sell" << getLoSell( market );
-    }
-    // recalculate lo_sell if needed
-    else if ( !is_buy && pos->price_hi < _market_info.lowest_sell )
-    {
-        _market_info.lowest_sell = pos->price_hi;
-
-        // check sell_price and hi_buy collision (can happen if the ticker isn't updated)
-        if ( pos->price_hi <= _market_info.highest_buy )
-        {
-            _market_info.highest_buy = pos->price_hi - ticksize;
-
-            if ( m_settings.is_chatty )
-                kDebug() << "(aggressive-spread-adjust-1)";
-        }
-
-        if ( m_settings.is_chatty )
-            kDebug() << "(aggressive-in-fill-spread)" << market
-                << "hi_buy" << getHiBuy( market )
-                << "lo_sell" << getLoSell( market );
-    }
-}
-
 void Engine::setMarketBoundsForMarkets( const QSet<QString> &filled_markets )
 {
     if ( !m_settings.should_use_aggressive_spread )
@@ -2433,17 +2331,33 @@ void Engine::setMarketBoundsForMarkets( const QSet<QString> &filled_markets )
         const Coin &lo_sell = getLowestSellPrice( market );
 
         if ( !hi_buy.isZeroOrLess() &&
-             lo_sell < CoinAmount::A_LOT )
+             !lo_sell.isZeroOrLess() )
         {
-            MarketInfo &_market_info = market_info[ market ];
+            MarketInfo &info = market_info[ market ];
 
-            _market_info.highest_buy = hi_buy;
-            _market_info.lowest_sell = lo_sell;
+#if defined(EXCHANGE_BINANCE)
+            Coin ticksize = info.price_ticksize;
+#else
+            Coin ticksize = CoinAmount::SATOSHI;
+#endif
 
-            if ( m_settings.is_chatty )
-                kDebug() << "(aggressive-pre-fill-spread)" << market
-                         << "hi_buy" << hi_buy
-                         << "lo_sell" <<  lo_sell;
+            // set market bounds by pushing inwards
+            if ( hi_buy > info.highest_buy )
+            {
+                info.highest_buy = hi_buy;
+
+                // fix ticker collision
+                if ( info.highest_buy >= info.lowest_sell )
+                    info.lowest_sell = info.highest_buy + ticksize;
+            }
+            if ( lo_sell < info.lowest_sell )
+            {
+                info.lowest_sell = lo_sell;
+
+                // fix ticker collision
+                if ( info.lowest_sell <= info.highest_buy )
+                    info.highest_buy = info.lowest_sell - ticksize;
+            }
         }
     }
 }
@@ -2501,7 +2415,7 @@ void Engine::onCheckTimeouts()
              pos->order_set_time < current_time - market_info[ pos->market ].slippage_timeout )
         {
             // reconcile slippage price according to spread hi/lo
-            if ( tryMoveSlippageOrder( pos ) )
+            if ( tryMoveOrder( pos ) )
             {
                 // we found a better price, mark resetting and cancel
                 cancelOrder( pos, false, CANCELLING_FOR_SLIPPAGE_RESET );
@@ -2615,13 +2529,6 @@ void Engine::onCheckDivergeConverge()
             {
                 diverge_buys[ market ].append( first_idx );
             }
-            // landmark buy that we should diverge (anti-clutter)
-//            else if ( pos->is_landmark &&
-//                      market_single_lo_buy[ market ] < first_idx )
-//            {
-//                kDebug() << "(anti-clutter)";
-//                diverge_buys[ market ].append( first_idx );
-//            }
         }
 
         //check sell orders
@@ -2648,13 +2555,6 @@ void Engine::onCheckDivergeConverge()
             {
                 diverge_sells[ market ].append( first_idx );
             }
-            // landmark sell that we should diverge (anti-clutter)
-//            else if ( pos->is_landmark &&
-//                      market_single_hi_sell[ market ] > pos->getHighestMarketIndex() )
-//            {
-//                kDebug() << "(anti-clutter)";
-//                diverge_sells[ market ].append( first_idx );
-//            }
         }
     }
 
