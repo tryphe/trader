@@ -134,7 +134,6 @@ setorder BTC_OMG buy 0.00000014 0.01400000 0.00011 active
 setorder BTC_OMG buy 0.00000015 0.01500000 0.00011 active
 setorder BTC_OMG buy 0.00000016 0.01600000 0.00011 active
 setorder BTC_OMG sell 0.00000017 0.01700000 0.00011 active
-setorder BTC_OMG sell 0.00000017 0.01700000 0.00011 active
 setorder BTC_OMG sell 0.00000018 0.01800000 0.00011 active
 setorder BTC_OMG sell 0.00000019 0.01900000 0.00011 active
 setorder BTC_OMG sell 0.00000020 0.02000000 0.00011 active
