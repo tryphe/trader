@@ -2,7 +2,7 @@ Features
 --------
  - [x] Supports a large number of platforms
  - [x] Order engine is adaptable to any exchange
- - [x] No floating point math operations are used for any prices or amounts. They are only used to store ratios which are fed as strings into GMP.
+ - [x] No floating point math operations are used for any prices or amounts. They are only used to store ratios which are fed as strings into GMP. [how can floats fail?](https://github.com/tryphe/trader/blob/master/daemon/coinamount_test.cpp#L12)
  - [x] Poloniex REST and WSS feed support
  - [x] Bittrex REST support
  - [x] Binance REST support
