@@ -23,7 +23,7 @@ Trader requires a Qt >= 5.10 build with the *core*, *network*, and *websockets* 
  6. Install dependencies: 
  	- `sudo apt build-dep qt5-default`
 	- `sudo apt install libgmp-dev`
- 7. Configure Qt and skip some things to improve compile time. Replace <username> with your user. Note: If you want to build for another machine, [configure a static build instead](https://gist.githubusercontent.com/tryphe/e3d17209ff6d53d2ca3c5d192471e12e/raw/3e85caf5c2e0fc63f36b7e7772771dff58bc174e/configure.static):\
+ 7. Configure Qt and skip some things to improve compile time. Replace `<username>` with your user. Note: If you want to build for another machine, [configure a static build instead](https://gist.githubusercontent.com/tryphe/e3d17209ff6d53d2ca3c5d192471e12e/raw/3e85caf5c2e0fc63f36b7e7772771dff58bc174e/configure.static):\
 `./configure -prefix /home/username/localqt/Qt-5.13.0-minimal/ -opensource -confirm-license -shared -release -nomake examples -nomake tests -skip qt3d -skip qtactiveqt -skip qtandroidextras -skip qtcanvas3d -skip qtcharts -skip qtdatavis3d -skip qtgamepad -skip qtgraphicaleffects -skip qtlocation -skip qtmultimedia -skip qtpurchasing -skip qtquickcontrols -skip qtquickcontrols2 -skip qtscript -skip qtscxml -skip qtsensors -skip qtserialbus -skip qtserialport -skip qtwebengine -skip qtwebview -skip qttools`
  8. If there are no errors, now you can run make: `make -j` (if low on RAM or single CPU, you can skip the `-j`)
  9. If there are no errors, run `make install`
