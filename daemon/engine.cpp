@@ -349,21 +349,21 @@ void Engine::fillNQ( const QString &order_id, qint8 fill_type , quint8 extra_dat
 #endif
 
     // set market bounds by pulling outwards (because filling can only take away, which expands out)
-    MarketInfo &_market_info = market_info[ market ];
+    MarketInfo &info = market_info[ market ];
 
-    if ( price_lo < _market_info.highest_buy )
+    if ( price_lo < info.highest_buy )
     {
-        _market_info.highest_buy = getHighestBuyPrice( market ); // this is why we set is_invalidated
+        info.highest_buy = getHighestBuyPrice( market ); // this is why we set is_invalidated
 
-        if ( _market_info.lowest_sell < _market_info.highest_buy )
-            _market_info.lowest_sell = _market_info.highest_buy + ticksize;
+        if ( info.lowest_sell < info.highest_buy )
+            info.lowest_sell = info.highest_buy + ticksize;
     }
-    if ( price_hi > _market_info.lowest_sell )
+    if ( price_hi > info.lowest_sell )
     {
-        _market_info.lowest_sell = getLowestSellPrice( market ); // this is why we set is_invalidated
+        info.lowest_sell = getLowestSellPrice( market ); // this is why we set is_invalidated
 
-        if ( _market_info.highest_buy > _market_info.lowest_sell )
-            _market_info.highest_buy = _market_info.lowest_sell - ticksize;
+        if ( info.highest_buy > info.lowest_sell )
+            info.highest_buy = info.lowest_sell - ticksize;
     }
 }
 
@@ -1080,8 +1080,8 @@ void Engine::saveMarket( QString market, qint32 num_orders )
     for ( QHash<QString, MarketInfo>::const_iterator i = market_info.begin(); i != market_info.end(); i++ )
     {
         const QString &current_market = i.key();
-        const MarketInfo &_market_info = i.value();
-        const QVector<PositionData> &list = _market_info.position_index;
+        const MarketInfo &info = i.value();
+        const QVector<PositionData> &list = info.position_index;
 
         // apply our market filter
         if ( market != "all" && current_market != market )
@@ -1314,8 +1314,8 @@ void Engine::setNextHighest( const QString &market, quint8 side, bool landmark )
     if ( new_index < 1 || new_index > std::numeric_limits<qint32>::max() -1 )
         return;
 
-    const MarketInfo &_market_info = market_info[ market ];
-    const qint32 dc_val = _market_info.order_dc;
+    const MarketInfo &info = market_info[ market ];
+    const qint32 dc_val = info.order_dc;
 
     // count up until we find an index without a position
     while ( getPositionByIndex( market, new_index ) ||
@@ -1325,7 +1325,7 @@ void Engine::setNextHighest( const QString &market, quint8 side, bool landmark )
     QVector<qint32> indices = QVector<qint32>() << new_index;
 
     // check if we ran out of indexed positions
-    if ( indices.value( 0 ) >= _market_info.position_index.size() )
+    if ( indices.value( 0 ) >= info.position_index.size() )
         return;
 
     // add an index until we run out of bounds or our landmark size is matched
@@ -1334,7 +1334,7 @@ void Engine::setNextHighest( const QString &market, quint8 side, bool landmark )
         new_index = indices.value( indices.size() -1 ) +1;
 
         // are we about to add an out of bounds index or one that already exists?
-        if ( new_index >= _market_info.position_index.size() )
+        if ( new_index >= info.position_index.size() )
         {
             // preserve the indices and break here
             break;
@@ -1355,7 +1355,7 @@ void Engine::setNextHighest( const QString &market, quint8 side, bool landmark )
 
     // enforce full landmark size or return, except on the boundary of our positions
     if ( ( landmark && indices.size() != dc_val ) &&  // tried to set a landmark order with the wrong size
-         !indices.contains( _market_info.position_index.size() -1 ) ) // contains highest position index
+         !indices.contains( info.position_index.size() -1 ) ) // contains highest position index
         return;
 
     // enforce return on normal order with >1 size
@@ -1364,11 +1364,11 @@ void Engine::setNextHighest( const QString &market, quint8 side, bool landmark )
 
     // check for out of bounds indices[0] and [n]
     if ( indices.isEmpty() ||
-         indices.value( 0 ) >= _market_info.position_index.size() )
+         indices.value( 0 ) >= info.position_index.size() )
         return;
 
     // get the index data
-    const PositionData &data = _market_info.position_index.value( indices.value( 0 ) );
+    const PositionData &data = info.position_index.value( indices.value( 0 ) );
 
 //    kDebug() << "adding next hi pos" << market << side << data.price_lo << data.price_hi << data.order_size;
 
@@ -1916,14 +1916,14 @@ void Engine::checkBuySellCount()
         for ( QList<QString>::const_iterator i = markets.begin(); i != markets.end(); i++ )
         {
             const QString &market = *i;
-            const MarketInfo &_market_info = market_info[ market ];
+            const MarketInfo &info = market_info[ market ];
             qint32 buy_count = buys[ market ];
             qint32 sell_count = sells[ market ];
-            const qint32 &order_min = _market_info.order_min;
-            const qint32 &order_max = _market_info.order_max;
+            const qint32 &order_min = info.order_min;
+            const qint32 &order_max = info.order_max;
 
             // if we are cancelling, don't set more orders
-            if ( _market_info.position_index.isEmpty() )
+            if ( info.position_index.isEmpty() )
                 continue;
 
             // allow skipping of automation by setting a market min/max to 0
@@ -1951,9 +1951,9 @@ void Engine::checkBuySellCount()
                 new_orders_ct++;
             }
             // count >= min and count < max
-            else if ( _market_info.order_dc > 1 &&
+            else if ( info.order_dc > 1 &&
                  buy_count >= order_min &&
-                 buy_count < order_max - _market_info.order_landmark_thresh )
+                 buy_count < order_max - info.order_landmark_thresh )
             {
                 setNextLowest( market, SIDE_BUY, true );
                 buys[ market ]++;
@@ -1986,9 +1986,9 @@ void Engine::checkBuySellCount()
                 new_orders_ct++;
             }
             // count >= min and count < max
-            else if ( _market_info.order_dc > 1 &&
+            else if ( info.order_dc > 1 &&
                  sell_count >= order_min &&
-                 sell_count < order_max - _market_info.order_landmark_thresh )
+                 sell_count < order_max - info.order_landmark_thresh )
             {
                 setNextHighest( market, SIDE_SELL, true );
                 sells[ market ]++;
@@ -2068,13 +2068,13 @@ void Engine::findBetterPrice( Position *const &pos )
 
     bool is_buy = ( pos->side == SIDE_BUY );
     const QString &market = pos->market;
-    MarketInfo &_market_info = market_info[ market ];
-    Coin &hi_buy = _market_info.highest_buy;
-    Coin &lo_sell = _market_info.lowest_sell;
+    MarketInfo &info = market_info[ market ];
+    Coin &hi_buy = info.highest_buy;
+    Coin &lo_sell = info.lowest_sell;
     Coin ticksize;
 
 #if defined(EXCHANGE_BINANCE)
-    ticksize = _market_info.price_ticksize;
+    ticksize = info.price_ticksize;
 
     if ( pos->price_reset_count > 0 )
         ticksize += ticksize * qFloor( ( qPow( pos->price_reset_count, 1.110 ) ) );
@@ -2107,7 +2107,7 @@ void Engine::findBetterPrice( Position *const &pos )
                      << "with lo_sell at" << lo_sell;
 
         // set new boundary
-        _market_info.lowest_sell = pos->price_lo;
+        info.lowest_sell = pos->price_lo;
         lo_sell = pos->price_lo;
     }
     // adjust hi_buy
@@ -2121,7 +2121,7 @@ void Engine::findBetterPrice( Position *const &pos )
                      << "with hi_buy at" << hi_buy;
 
         // set new boundary
-        _market_info.highest_buy = pos->price_hi;
+        info.highest_buy = pos->price_hi;
         hi_buy = pos->price_hi;
     }
 
@@ -2192,13 +2192,13 @@ void Engine::findBetterPrice( Position *const &pos )
     pos->price_reset_count++;
 
     // remove old price from prices index for detecting stray orders
-    _market_info.order_prices.removeOne( pos->price );
+    info.order_prices.removeOne( pos->price );
 
     // reapply offset, sentiment, price
     pos->applyOffset();
 
     // add new price from prices index for detecting stray orders
-    _market_info.order_prices.append( pos->price );
+    info.order_prices.append( pos->price );
 #endif
 }
 
@@ -2493,14 +2493,14 @@ void Engine::onCheckDivergeConverge()
     {
         Position *const &pos = *i;
         const QString &market = pos->market;
-        const MarketInfo &_market_info = market_info[ pos->market ];
+        const MarketInfo &info = market_info[ pos->market ];
 
         // skip if one-time order
         if ( pos->is_onetime )
             continue;
 
         // check for market dc size
-        if ( _market_info.order_dc < 2 )
+        if ( info.order_dc < 2 )
             continue;
 
         const qint32 first_idx = pos->getLowestMarketIndex();
@@ -2514,12 +2514,12 @@ void Engine::onCheckDivergeConverge()
              !converge_buys[ market ].contains( first_idx ) &&
              !diverge_buys[ market ].contains( first_idx ) )
         {
-            const qint32 buy_landmark_boundary = market_hi_buy_idx[ market ] - _market_info.order_landmark_start;
+            const qint32 buy_landmark_boundary = market_hi_buy_idx[ market ] - info.order_landmark_start;
             const qint32 hi_idx = pos->getHighestMarketIndex();
 
             // normal buy that we should converge
             if     ( !pos->is_landmark &&
-                     hi_idx < buy_landmark_boundary - _market_info.order_dc_nice )
+                     hi_idx < buy_landmark_boundary - info.order_dc_nice )
             {
                 converge_buys[ market ].append( first_idx );
             }
@@ -2540,12 +2540,12 @@ void Engine::onCheckDivergeConverge()
              !converge_sells[ market ].contains( first_idx ) &&
              !diverge_sells[ market ].contains( first_idx ) )
         {
-            const qint32 sell_landmark_boundary = market_hi_buy_idx[ market ] + 1 + _market_info.order_landmark_start;
+            const qint32 sell_landmark_boundary = market_hi_buy_idx[ market ] + 1 + info.order_landmark_start;
             const qint32 lo_idx = pos->getLowestMarketIndex();
 
             // normal sell that we should converge
             if     ( !pos->is_landmark &&
-                     lo_idx > sell_landmark_boundary + _market_info.order_dc_nice )
+                     lo_idx > sell_landmark_boundary + info.order_dc_nice )
             {
                 converge_sells[ market ].append( first_idx );
             }
@@ -2800,16 +2800,16 @@ void Engine::onCheckDivergeConverge()
 void Engine::setMarketSettings( QString market, qint32 order_min, qint32 order_max, qint32 order_dc, qint32 order_dc_nice,
                                 qint32 landmark_start, qint32 landmark_thresh, bool market_sentiment, qreal market_offset )
 {
-    MarketInfo &_market_info = market_info[ market ];
+    MarketInfo &info = market_info[ market ];
 
-    _market_info.order_min = order_min;
-    _market_info.order_max = order_max;
-    _market_info.order_dc = order_dc;
-    _market_info.order_dc_nice = order_dc_nice;
-    _market_info.order_landmark_start = landmark_start;
-    _market_info.order_landmark_thresh = landmark_thresh;
-    _market_info.market_sentiment = market_sentiment;
-    _market_info.market_offset = market_offset;
+    info.order_min = order_min;
+    info.order_max = order_max;
+    info.order_dc = order_dc;
+    info.order_dc_nice = order_dc_nice;
+    info.order_landmark_start = landmark_start;
+    info.order_landmark_thresh = landmark_thresh;
+    info.market_sentiment = market_sentiment;
+    info.market_offset = market_offset;
 }
 
 void Engine::deletePosition( Position *const &pos )
