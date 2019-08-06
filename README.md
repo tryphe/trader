@@ -9,7 +9,7 @@ Features
  
  TODO
  ----
-  - [ ] Extensible API and querying system (logs are the only interface at the moment)
+  - [ ] Extensible API and querying system (CLI input and log output are the only interface at the moment)
   - [ ] External stats tracker for stats persistence
   - [ ] Save file for user settings 
 
