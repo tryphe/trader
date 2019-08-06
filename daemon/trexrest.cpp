@@ -633,9 +633,9 @@ void TrexREST::parseOpenOrders(const QJsonArray &orders, qint64 request_time_sen
                               order_type == "LIMIT_SELL" ? SIDE_SELL : 0;
 
         // the exchange uses a double (wtf), we'll read a double
-        const    Coin price = order.value( "Limit" ).toDouble();
-        const    Coin quantity = order.value( "Quantity" ).toDouble();
-        const    Coin btc_amount = quantity * price; // note: didn't use Coin because performance
+        const Coin price = order.value( "Limit" ).toDouble();
+        const Coin quantity = order.value( "Quantity" ).toDouble();
+        const Coin btc_amount = quantity * price;
 
         //kDebug() << order;
         //kDebug() << market << side << btc_amount << "@" << price << order_number;

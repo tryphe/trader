@@ -104,7 +104,7 @@ Position::Position( QString _market, quint8 _side, QString _price_lo, QString _p
     {
         price_lo = CoinAmount::toSatoshiFormatStr( _price_lo );
         price_hi = CoinAmount::toSatoshiFormatStr( _price_hi );
-        original_size = CoinAmount::toSatoshiFormatExpr( _order_size.toDouble() );
+        original_size = Coin( _order_size );
     }
 
     // truncate order by exchange tick size
@@ -242,8 +242,6 @@ void Position::applyOffset( qreal _offset, bool sentiment )
     // bearish sentiment on sell
     else// if ( !sentiment && !is_buy )
         btc_amount.applyRatio( hi_scalar );
-
-    //btc_amount = btc_amount.toAmountString().toDouble();
 
     // calculate lo/hi amounts
     Coin amount_lo_d;

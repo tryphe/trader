@@ -757,9 +757,9 @@ void BncREST::parseOpenOrders( const QJsonArray &markets, qint64 request_time_se
         const QString &market = order.value( "symbol" ).toString();
         const QString &order_number = market + order.value( "orderId" ).toVariant().toString();
         const QString &side = order.value( "side" ).toString().toLower();
-        const QString &price = order.value( "price" ).toString();
-        const QString &original_quantity = order.value( "origQty" ).toString();
-        const QString &btc_amount = CoinAmount::toSatoshiFormatExpr( price.toDouble() * original_quantity.toDouble() );
+        const Coin &price = order.value( "price" ).toString();
+        const Coin &original_quantity = order.value( "origQty" ).toString();
+        const Coin &btc_amount = price * original_quantity;
 
         //kDebug() << market << order_number << side << price << btc_amount;
 
@@ -767,8 +767,8 @@ void BncREST::parseOpenOrders( const QJsonArray &markets, qint64 request_time_se
         if ( market.isEmpty()||
              order_number.isEmpty() ||
              side.isEmpty() ||
-             price.isEmpty() ||
-             btc_amount.isEmpty() )
+             price.isZeroOrLess() ||
+             btc_amount.isZeroOrLess() )
             continue;
 
         // insert into seen orders
