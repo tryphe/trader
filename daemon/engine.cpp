@@ -164,7 +164,7 @@ Position *Engine::addPosition( QString market, quint8 side, QString price_lo, QS
     price_hi = formatted_price_hi;
     order_size = formatted_order_size;
 
-    // anti-stupid check: did we put in a taker price that's <>30% of the current bid/ask?
+    // anti-stupid check: did we put in a taker price that's <>10% of the current bid/ask?
     if ( !is_override && is_taker &&
         ( ( side == SIDE_SELL && getHiBuy( market ).ratio( 0.9 ) > Coin( price_hi ) ) ||  // bid * 0.9 > price_hi
           ( side == SIDE_SELL && getHiBuy( market ).ratio( 1.1 ) < Coin( price_hi ) ) ||  // bid * 1.1 < price_hi
@@ -335,9 +335,7 @@ void Engine::fillNQ( const QString &order_id, qint8 fill_type , quint8 extra_dat
     rest->removeRequest( TREX_COMMAND_GET_ORDER, QString( "uuid=%1" ).arg( order_id ) ); // note: uses pos*
 #endif
 
-    QString market = pos->market;
-    Coin price_lo = pos->price_lo;
-    Coin price_hi = pos->price_hi;
+    const QString &market = pos->market;
 
     // delete
     deletePosition( pos );
@@ -346,14 +344,14 @@ void Engine::fillNQ( const QString &order_id, qint8 fill_type , quint8 extra_dat
     const Coin &ticksize = info.price_ticksize;
 
     // set market bounds by pulling outwards (because filling can only take away, which expands out)
-    if ( price_lo < info.highest_buy )
+    if ( pos->price_lo < info.highest_buy )
     {
         info.highest_buy = getHighestBuyPrice( market ); // this is why we set is_invalidated
 
         if ( info.lowest_sell < info.highest_buy )
             info.lowest_sell = info.highest_buy + ticksize;
     }
-    if ( price_hi > info.lowest_sell )
+    if ( pos->price_hi > info.lowest_sell )
     {
         info.lowest_sell = getLowestSellPrice( market ); // this is why we set is_invalidated
 
