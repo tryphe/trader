@@ -156,7 +156,7 @@ setorder BTC_OMG sell 0.00000034 0.03400000 0.00011 ghost
 
 Because we are giving the bot an initial state rather than setting one-time orders, we need some settings:
 
-`setorderdc <market> <n>` converges orders that are far away from the spread action from into 1 order, combining all of the quantities and setting a price using the weighted average. These are called landmark orders, denoted by `L` in the bot.
+`setorderdc <market> <n>` converges n orders that are far away from the spread into 1 order, and diverges them back into n orders when it becomes close enough to spread. It combines all of the quantities and prices using the total quantity and quantity-weighted price average. These are called landmark orders, denoted by `L` in the bot.
 
 `setorderlandmarkstart/thresh <market> <n>` are distances that dictate if the bot should set/cancel a lowest/highest order as a landmark, and the tolerance to noise.
 
