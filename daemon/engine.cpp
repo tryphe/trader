@@ -2415,7 +2415,7 @@ void Engine::onCheckTimeouts()
 
 void Engine::onCheckDivergeConverge()
 {
-    checkMaintenance();
+    checkMaintenance(); // this should probably be somewhere else, but we'll piggyback this timer
     cleanGraceTimes(); // this should happen every once in a while, might as well put it here
 
     // flow control
