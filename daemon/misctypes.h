@@ -28,9 +28,6 @@ struct MarketInfo
 {
     explicit MarketInfo()
     {
-        highest_buy = 0.;
-        lowest_sell = 0.;
-
         order_min = 5;
         order_max = 10;
         order_dc = 1;
