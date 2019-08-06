@@ -24,7 +24,7 @@ struct EngineSettings
         should_adjust_hibuy_losell = true; // adjust hi_buy/lo_sell maps based on post-only price errors
         should_adjust_hibuy_losell_debugmsgs_ticker = false; // enable chatty messages for hi/lo bounds adjust for wss-ticker
         should_mitigate_blank_orderbook_flash = true;
-        should_dc_slippage_orders = true;
+        should_dc_slippage_orders = false;
         should_use_aggressive_spread = true;
         request_timeout = 3 * 60000; // how long before we resend most requests
         cancel_timeout = 6 * 60000; // how long before we resend a cancel request

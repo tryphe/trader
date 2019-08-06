@@ -2478,10 +2478,10 @@ void Engine::onCheckDivergeConverge()
         const qint32 first_idx = pos->getLowestMarketIndex();
 
         // check buy orders
-        if (  pos->side == SIDE_BUY &&       // buys only
-             !pos->is_cancelling &&          // must not be cancelling
-           // ( pos->is_slippage && !should_dc_slippage_orders ) || // must not be slippage
-              pos->order_number.size() &&    // must be set
+        if (  pos->side == SIDE_BUY &&                              // buys only
+             !pos->is_cancelling &&                                 // must not be cancelling
+             ( should_dc_slippage_orders || !pos->is_slippage ) &&  // must not be slippage
+              pos->order_number.size() &&                           // must be set
              !isIndexDivergingConverging( market, first_idx ) &&
              !converge_buys[ market ].contains( first_idx ) &&
              !diverge_buys[ market ].contains( first_idx ) )
@@ -2504,10 +2504,10 @@ void Engine::onCheckDivergeConverge()
         }
 
         //check sell orders
-        if (  pos->side == SIDE_SELL &&      // sells only
-             !pos->is_cancelling &&          // must not be cancelling
-             //!pos->is_slippage || // must not be slippage
-              pos->order_number.size() &&    // must be set
+        if (  pos->side == SIDE_SELL &&                             // sells only
+             !pos->is_cancelling &&                                 // must not be cancelling
+             ( should_dc_slippage_orders || !pos->is_slippage ) &&  // must not be slippage
+              pos->order_number.size() &&                           // must be set
              !isIndexDivergingConverging( market, first_idx ) &&
              !converge_sells[ market ].contains( first_idx ) &&
              !diverge_sells[ market ].contains( first_idx ) )
