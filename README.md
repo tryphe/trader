@@ -11,7 +11,7 @@ Features
  ----
   - [ ] Extensible API and querying system (CLI input and log output are the only interface at the moment)
   - [ ] External stats tracker for stats persistence
-  - [ ] Save file for user settings 
+  - [ ] User settings file
 
 Dependencies: Compiling Qt and installing libgmp (unix/linux)
 ---------------------------------
