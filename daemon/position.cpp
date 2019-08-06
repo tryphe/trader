@@ -86,10 +86,10 @@ Position::Position( QString _market, quint8 _side, QString _price_lo, QString _p
 
 #if defined(EXCHANGE_BINANCE)
         // we want to "round" up or down each landmark order, in order to preserve our weighted profit ratio
-        const Coin shim = !engine ? CoinAmount::ORDER_SHIM : engine->getMarketInfo( market ).price_ticksize.toDouble() / 2.0;
+        const Coin &shim = !engine ? CoinAmount::ORDER_SHIM : engine->getMarketInfo( market ).price_ticksize.ratio( 0.5 );
 #else
         // default 0.5 satoshi for other exchanges
-        const Coin shim = CoinAmount::ORDER_SHIM;
+        const Coin &shim = CoinAmount::ORDER_SHIM;
 #endif
         // apply the weighted price, rounded to the nearest half-satoshi
         price_lo = ( lo_price_weight_total / ordersize_weight_total ) - shim;
@@ -97,7 +97,7 @@ Position::Position( QString _market, quint8 _side, QString _price_lo, QString _p
         original_size = ordersize_amount_total;
 
         // catch bad buy price due to shim
-        if ( Coin( CoinAmount::SATOSHI ) > price_lo )
+        if ( CoinAmount::SATOSHI > price_lo )
             price_lo = CoinAmount::SATOSHI;
     }
     else
@@ -109,7 +109,7 @@ Position::Position( QString _market, quint8 _side, QString _price_lo, QString _p
 
     // truncate order by exchange tick size
 #if defined(EXCHANGE_BINANCE)
-    Coin ticksize = !engine ? CoinAmount::SATOSHI : Coin( engine->getMarketInfo( market ).price_ticksize );
+    const Coin &ticksize = !engine ? CoinAmount::SATOSHI : engine->getMarketInfo( market ).price_ticksize;
     price_lo.truncateByTicksize( ticksize );
     price_hi.truncateByTicksize( ticksize );
 
@@ -151,7 +151,7 @@ void Position::calculateQuantity()
 
     // polo doesn't do this... do it anyways
 #if defined(EXCHANGE_BINANCE)
-    const QString &ticksize = !engine ? CoinAmount::SATOSHI_STR : engine->getMarketInfo( market ).price_ticksize;
+    const Coin &ticksize = !engine ? CoinAmount::SATOSHI : engine->getMarketInfo( market ).price_ticksize;
 
     quantity.truncateByTicksize( ticksize );
 #endif

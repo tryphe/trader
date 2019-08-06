@@ -42,9 +42,9 @@ struct MarketInfo
         price_min_mul = 0.2;
         price_max_mul = 5.0;
 
-        price_ticksize = CoinAmount::SATOSHI_STR;
-        quantity_ticksize = CoinAmount::SATOSHI_STR;
+        quantity_ticksize = CoinAmount::SATOSHI;
 #endif
+        price_ticksize = CoinAmount::SATOSHI;
     }
 
     operator QString() const { return QString( "bid %1 ask %2 order_min %3 order_max %4 order_dc %5 order_dc_nice %6 order_landmark_thresh %7 order_landmark_start %8 slippage_timeout %9 market_offset %10 market_sentiment %11" )
@@ -79,15 +79,14 @@ struct MarketInfo
     qreal /*offset scalar*/ market_offset;
     bool /*bullish*/ market_sentiment;
 
-
 #if defined(EXCHANGE_BINANCE)
     // used to pass filter PERCENT_PRICE
     Coin price_min_mul;
     Coin price_max_mul;
 
-    QString price_ticksize; // used to pass filter PRICE_FILTER "tickSize"
-    QString quantity_ticksize; // used to pass filter LOT_SIZE "stepSize"
+    Coin quantity_ticksize; // used to pass filter LOT_SIZE "stepSize"
 #endif
+    Coin price_ticksize; // used to find new prices and pass binance filter PRICE_FILTER "tickSize"
 };
 
 struct OrderInfo

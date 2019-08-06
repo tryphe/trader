@@ -343,11 +343,7 @@ void Engine::fillNQ( const QString &order_id, qint8 fill_type , quint8 extra_dat
     deletePosition( pos );
 
     MarketInfo &info = market_info[ market ];
-#if defined(EXCHANGE_BINANCE)
-    Coin ticksize = info.price_ticksize;
-#else
-    Coin ticksize = CoinAmount::SATOSHI;
-#endif
+    const Coin &ticksize = info.price_ticksize;
 
     // set market bounds by pulling outwards (because filling can only take away, which expands out)
     if ( price_lo < info.highest_buy )
@@ -2088,15 +2084,6 @@ void Engine::findBetterPrice( Position *const &pos )
     else          ticksize = pos->price_hi.ratio( slippage_mul ) + CoinAmount::SATOSHI;
 #endif
 
-    // check for bad ticksize
-    if ( ticksize.isZeroOrLess() )
-    {
-        kDebug() << "local error: findBetterPrice() price_ticksize was <= 0 for market" << market;
-        ticksize = CoinAmount::SATOSHI;
-    }
-    else if ( ticksize > CoinAmount::A_LOT )
-        ticksize = CoinAmount::A_LOT;
-
     //kDebug() << "slippage offset" << ticksize << pos->price_lo << pos->price_hi;
 
     // adjust lo_sell
@@ -2221,20 +2208,7 @@ bool Engine::tryMoveOrder( Position* const &pos )
         return false;
     }
 
-#if defined(EXCHANGE_BINANCE)
-    Coin ticksize = _info.price_ticksize;
-#else
-    Coin ticksize = CoinAmount::SATOSHI;
-#endif
-
-    // check for bad ticksize
-    if ( ticksize.isZeroOrLess() )
-    {
-        kDebug() << "local error: tryMoveOrder() ticksize was <= 0 for market" << market;
-        ticksize = CoinAmount::SATOSHI;
-    }
-    else if ( ticksize > CoinAmount::A_LOT )
-        ticksize = CoinAmount::A_LOT;
+    const Coin &ticksize = _info.price_ticksize;
 
     // replace buy price
     if ( pos->side == SIDE_BUY )
@@ -2337,12 +2311,7 @@ void Engine::setMarketBoundsForMarkets( const QSet<QString> &filled_markets )
              !lo_sell.isZeroOrLess() )
         {
             MarketInfo &info = market_info[ market ];
-
-#if defined(EXCHANGE_BINANCE)
-            Coin ticksize = info.price_ticksize;
-#else
-            Coin ticksize = CoinAmount::SATOSHI;
-#endif
+            const Coin &ticksize = info.price_ticksize;
 
             // set market bounds by pushing inwards
             if ( hi_buy > info.highest_buy )

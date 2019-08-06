@@ -943,20 +943,20 @@ void BncREST::parseExchangeInfo( const QJsonObject &obj )
 
             if ( filter_type == "PRICE_FILTER" )
             {
-                const QString &price_tick = filter[ "tickSize" ].toString();
+                const Coin &price_tick = filter[ "tickSize" ].toString();
                 //qDebug() << "price ticksize" << price_tick;
 
-                if ( Coin( price_tick ).isGreaterThanZero() )
+                if ( price_tick.isGreaterThanZero() )
                     market_info.price_ticksize = price_tick;
                 else
                     kDebug() << "local error: failed to parse 'tickSize'" << filter;
             }
             else if ( filter_type == "LOT_SIZE" )
             {
-                const QString &quantity_tick = filter[ "stepSize" ].toString();
+                const Coin &quantity_tick = filter[ "stepSize" ].toString();
                 //qDebug() << "quantity ticksize" << quantity_tick;
 
-                if ( Coin( quantity_tick ).isGreaterThanZero() )
+                if ( quantity_tick.isGreaterThanZero() )
                     market_info.quantity_ticksize = quantity_tick;
                 else
                     kDebug() << "local error: failed to parse 'stepSize'" << filter;

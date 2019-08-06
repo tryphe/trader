@@ -164,6 +164,9 @@ void CoinAmountTest::test()
     c = 1;
     assert( c.ratio( 3.0 ) == Coin( 3.0 ) );
 
+    // test ratio for default shim(0.5 satoshi) is equal to calling shim (position.cpp)
+    assert( CoinAmount::SATOSHI.ratio( 0.5 ) == CoinAmount::ORDER_SHIM );
+
     // Coin( qreal amount )
     Coin c1( 1000000.0 ); // 1m
     assert( c1 == "1000000.00000000" );
