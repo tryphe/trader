@@ -342,15 +342,14 @@ void Engine::fillNQ( const QString &order_id, qint8 fill_type , quint8 extra_dat
     // delete
     deletePosition( pos );
 
+    MarketInfo &info = market_info[ market ];
 #if defined(EXCHANGE_BINANCE)
-    Coin ticksize = market_info[ market ].price_ticksize;
+    Coin ticksize = info.price_ticksize;
 #else
     Coin ticksize = CoinAmount::SATOSHI;
 #endif
 
     // set market bounds by pulling outwards (because filling can only take away, which expands out)
-    MarketInfo &info = market_info[ market ];
-
     if ( price_lo < info.highest_buy )
     {
         info.highest_buy = getHighestBuyPrice( market ); // this is why we set is_invalidated
@@ -988,6 +987,8 @@ void Engine::cancelOrderMeatDCOrder( Position * const &pos )
         }
         else // we diverged into multiple standard orders
         {
+            MarketInfo &info = market_info[ pos->market ];
+
             for ( int i = 0; i < new_indices.size(); i++ )
             {
                 qint32 idx = new_indices.value( i );
@@ -996,11 +997,11 @@ void Engine::cancelOrderMeatDCOrder( Position * const &pos )
                 diverging_converging[ pos->market ].removeOne( idx );
 
                 // check for valid index data - incase we are cancelling
-                if ( !market_info[ pos->market ].position_index.size() )
+                if ( !info.position_index.size() )
                     continue;
 
                 // get position data
-                const PositionData &data = market_info[ pos->market ].position_index.value( idx );
+                const PositionData &data = info.position_index.value( idx );
 
                 // create a list with one single index, we can't use the constructor because it's an int
                 QVector<qint32> new_index_single;
@@ -1209,7 +1210,8 @@ void Engine::setNextLowest( const QString &market, quint8 side, bool landmark )
     if ( new_index < 0 || new_index > std::numeric_limits<qint32>::max() -2 )
         return;
 
-    const qint32 dc_val = market_info[ market ].order_dc;
+    const MarketInfo &info = market_info[ market ];
+    const qint32 dc_val = info.order_dc;
 
     // count down until we find an index without a position
     while ( getPositionByIndex( market, new_index ) ||
@@ -1258,11 +1260,11 @@ void Engine::setNextLowest( const QString &market, quint8 side, bool landmark )
 
     // check for out of bounds indices[0] and [n]
     if ( indices.isEmpty() ||
-         indices.value( 0 ) >= market_info[ market ].position_index.size() )
+         indices.value( 0 ) >= info.position_index.size() )
         return;
 
     // get the index data
-    const PositionData &data = market_info[ market ].position_index.value( indices.value( 0 ) );
+    const PositionData &data = info.position_index.value( indices.value( 0 ) );
 
 //    kDebug() << "adding idx" << indices.value( 0 ) << "from indices" << indices;
 //    kDebug() << "adding next lo pos" << market << side << data.price_lo << data.price_hi << data.order_size;
@@ -1918,10 +1920,10 @@ void Engine::checkBuySellCount()
         {
             const QString &market = *i;
             const MarketInfo &info = market_info[ market ];
-            qint32 buy_count = buys[ market ];
-            qint32 sell_count = sells[ market ];
             const qint32 &order_min = info.order_min;
             const qint32 &order_max = info.order_max;
+            qint32 buy_count = buys[ market ];
+            qint32 sell_count = sells[ market ];
 
             // if we are cancelling, don't set more orders
             if ( info.position_index.isEmpty() )
