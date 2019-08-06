@@ -161,6 +161,9 @@ public Q_SLOTS:
     void onCheckDivergeConverge();
 
 private:
+    void converge( QMap<QString/*market*/,QVector<qint32>> &market_map, quint8 side );
+    void diverge( QMap<QString/*market*/,QVector<qint32>> &market_map );
+
     void removeFromDC( Position *const &pos );
     bool tryMoveOrder( Position *const &pos );
     void fillNQ( const QString &order_id, qint8 fill_type, quint8 extra_data = 0 );

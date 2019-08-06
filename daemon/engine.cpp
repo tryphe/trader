@@ -2558,8 +2558,18 @@ void Engine::onCheckDivergeConverge()
         }
     }
 
-    // converge buys (many)->(one)
-    for ( QMap<QString/*market*/,QVector<qint32>>::const_iterator i = converge_buys.begin(); i != converge_buys.end(); i++ )
+    converge( converge_buys, SIDE_BUY ); // converge buys (many)->(one)
+    converge( converge_sells, SIDE_SELL ); // converge sells (many)->(one)
+
+    diverge( diverge_buys ); // diverge buy (one)->(many)
+    diverge( diverge_sells ); // diverge sell (one)->(many)
+}
+
+void Engine::converge( QMap<QString, QVector<qint32>> &market_map, quint8 side )
+{
+    int index_offset = side == SIDE_BUY ? 1 : -1;
+
+    for ( QMap<QString/*market*/,QVector<qint32>>::const_iterator i = market_map.begin(); i != market_map.end(); i++ )
     {
         const QString &market = i.key();
         QVector<qint32> indices = i.value();
@@ -2571,25 +2581,28 @@ void Engine::onCheckDivergeConverge()
             continue;
 
         // walk the indices from hi->lo
-        std::sort( indices.begin(), indices.end() );
+        if ( side == SIDE_BUY )
+            std::sort( indices.begin(), indices.end() );
+        else // reverse sort for sells
+            std::sort( indices.rbegin(), indices.rend() );
 
-        QVector<qint32> buy_order;
+        QVector<qint32> new_order;
 
         for ( int j = 0; j < indices.size(); j++ )
         {
             const qint32 index = indices.value( j );
 
             // add the first item, if we don't have one
-            if ( buy_order.isEmpty() )
-                buy_order.append( index );
+            if ( new_order.isEmpty() )
+                new_order.append( index );
             // enforce sequential
-            else if ( index == buy_order.value( buy_order.size() -1 ) +1 )
-                buy_order.append( index );
+            else if ( index == new_order.value( new_order.size() -1 ) + index_offset )
+                new_order.append( index );
             // we found non-sequential indices, remove index 0 and restart the loop from 0
             else
             {
                 indices.removeFirst();
-                buy_order.clear();
+                new_order.clear();
 
                 // we still have indices, we should continue
                 if ( indices.size() > 0 )
@@ -2603,19 +2616,19 @@ void Engine::onCheckDivergeConverge()
             }
 
             // check if we have enough orders to make a landmark
-            if ( buy_order.size() == dc_value && buy_order.size() > 1 )
+            if ( new_order.size() == dc_value )
             {
                 kDebug() << QString( "converging %1 %2" )
                              .arg( market, -8 )
-                             .arg( Global::printVectorqint32( buy_order ) );
+                             .arg( Global::printVectorqint32( new_order ) );
 
                 // store positions we are cancelling
                 QVector<Position*> positions;
 
                 // cancel these indices
-                for ( int k = 0; k < buy_order.size(); k++ )
+                for ( int k = 0; k < new_order.size(); k++ )
                 {
-                    const qint32 idx = buy_order.value( k );
+                    const qint32 idx = new_order.value( k );
                     Position *const &pos = getPositionByIndex( market, idx );
 
                     cancelOrder( pos, true, CANCELLING_FOR_DC );
@@ -2626,9 +2639,9 @@ void Engine::onCheckDivergeConverge()
                 }
 
                 // insert into a map for tracking for when cancels are complete
-                diverge_converge.insert( positions, qMakePair( true, buy_order ) );
+                diverge_converge.insert( positions, qMakePair( true, new_order ) );
 
-                buy_order.clear(); // clear buy_order
+                new_order.clear(); // clear new_order
                 break; // 1 order per market
             }
         }
@@ -2637,89 +2650,11 @@ void Engine::onCheckDivergeConverge()
         if ( rest->yieldToFlowControl() || rest->nam_queue.size() >= rest->limit_commands_queued_dc_check )
             return;
     }
+}
 
-    // converge sells (many)->(one)
-    for ( QMap<QString/*market*/,QVector<qint32>>::const_iterator i = converge_sells.begin(); i != converge_sells.end(); i++ )
-    {
-        const QString &market = i.key();
-        QVector<qint32> indices = i.value();
-
-        const qint32 dc_value = market_info[ market ].order_dc;
-
-        // check for indices size
-        if ( indices.size() < dc_value || dc_value < 2 )
-            continue;
-
-        // walk the indices from hi->lo
-        std::sort( indices.rbegin(), indices.rend() );
-
-        QVector<qint32> sell_order;
-
-        for ( int j = 0; j < indices.size(); j++ )
-        {
-            const qint32 index = indices.value( j );
-
-            // add the first item, if we don't have one
-            if ( sell_order.isEmpty() )
-                sell_order.append( index );
-            // enforce sequential
-            else if ( index == sell_order.value( sell_order.size() -1 ) -1 )
-                sell_order.append( index );
-            // we found non-sequential indices, remove index 0 and restart the loop from 0
-            else
-            {
-                indices.removeFirst();
-                sell_order.clear();
-
-                // we still have indices, we should continue
-                if ( indices.size() > 0 )
-                {
-                    j = -1; // restart loop from 0
-                    continue;
-                }
-                // we ran out of indices
-                else
-                    break;
-            }
-
-            // check if we have enough orders to make a landmark
-            if ( sell_order.size() == dc_value && sell_order.size() > 1 )
-            {
-                kDebug() << QString( "converging %1 %2" )
-                             .arg( market, -8 )
-                             .arg( Global::printVectorqint32( sell_order ) );
-
-                // store positions we are cancelling
-                QVector<Position*> positions;
-
-                // cancel these indices
-                for ( int k = 0; k < sell_order.size(); k++ )
-                {
-                    const qint32 idx = sell_order.value( k );
-                    Position *const &pos = getPositionByIndex( market, idx );
-
-                    cancelOrder( pos, true, CANCELLING_FOR_DC );
-                    positions.append( pos );
-
-                    // keep track of indices we should avoid autosetting
-                    diverging_converging[ market ].append( idx );
-                }
-
-                // insert into a map for tracking for when cancels are complete
-                diverge_converge.insert( positions, qMakePair( true, sell_order ) );
-
-                sell_order.clear(); // clear buy_order
-                break; // 1 order per market
-            }
-        }
-
-        // flow control
-        if ( rest->yieldToFlowControl() || rest->nam_queue.size() >= rest->limit_commands_queued_dc_check )
-            return;
-    }
-
-    // diverge buy (one)->(many)
-    for ( QMap<QString/*market*/,QVector<qint32>>::const_iterator i = diverge_buys.begin(); i != diverge_buys.end(); i++ )
+void Engine::diverge( QMap<QString, QVector<qint32> > &market_map )
+{
+    for ( QMap<QString/*market*/,QVector<qint32>>::const_iterator i = market_map.begin(); i != market_map.end(); i++ )
     {
         const QString &market = i.key();
         QVector<qint32> indices = i.value();
@@ -2729,45 +2664,6 @@ void Engine::onCheckDivergeConverge()
             continue;
 
         // walk the indices from hi->lo
-        std::sort( indices.begin(), indices.end() );
-
-        const qint32 index = indices.value( 0 );
-        Position *const &pos = getPositionByIndex( market, index ); // get position for index
-
-        kDebug() << QString( "diverging  %1 %2" )
-                     .arg( market, -8 )
-                     .arg( Global::printVectorqint32( pos->market_indices ) );
-
-        // cancel the order
-        cancelOrder( pos, true, CANCELLING_FOR_DC );
-
-        // store positions we are cancelling
-        QVector<Position*> positions;
-        positions.append( pos );
-
-        // store a list of indices we must set after the cancel is complete
-        for ( int k = 0; k < pos->market_indices.size(); k++ )
-            diverging_converging[ market ].append( pos->market_indices.value( k ) );
-
-        // insert into a map for tracking for when cancels are complete
-        diverge_converge.insert( positions, qMakePair( false, pos->market_indices ) );
-
-        // flow control
-        if ( rest->yieldToFlowControl() || rest->nam_queue.size() >= rest->limit_commands_queued_dc_check )
-            return;
-    }
-
-    // diverge sell (one)->(many)
-    for ( QMap<QString/*market*/,QVector<qint32>>::const_iterator i = diverge_sells.begin(); i != diverge_sells.end(); i++ )
-    {
-        const QString &market = i.key();
-        QVector<qint32> indices = i.value();
-
-        // check for indices size
-        if ( indices.isEmpty() )
-            continue;
-
-        // walk the indices from lo->hi
         std::sort( indices.begin(), indices.end() );
 
         const qint32 index = indices.value( 0 );
