@@ -1,7 +1,7 @@
 Features
 --------
  - [x] Poloniex REST and WSS feed support
- - [x] Bittrexx REST
+ - [x] Bittrex REST
  - [x] Binance REST
  - [x] No floating point math operations used for prices, amounts, tick sizes, or quantities. They are only used to store ratios which are stringified.
 
