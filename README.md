@@ -32,7 +32,7 @@ Trader requires a Qt >= 5.10 build with the *core*, *network*, and *websockets* 
 	You should get:
 ~~~
 QMake version 3.1
-Using Qt version 5.13.0 in /home/username/localqt/Qt-5.13.0-release/lib
+Using Qt version 5.13.0 in /home/username/localqt/Qt-5.13.0-minimal/lib
 ~~~
 
 Compiling
