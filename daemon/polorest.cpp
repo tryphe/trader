@@ -391,8 +391,8 @@ void PoloREST::parseOpenOrders( const QJsonObject &markets, qint64 request_time_
             const QJsonObject &order = exchange_orders[j].toObject();
             const QString &order_number = order.value( "orderNumber" ).toString();
             const QString &side = order.value( "type" ).toString();
-            const QString &price = CoinAmount::toSatoshiFormatStrExpr( order.value( "rate" ).toString() ); // reformat into padded
-            const QString &btc_amount = CoinAmount::toSatoshiFormatStrExpr( order.value( "total" ).toString() ); // reformat into padded
+            const QString &price = Coin( order.value( "rate" ).toString() ); // reformat into padded
+            const QString &btc_amount = Coin( order.value( "total" ).toString() ); // reformat into padded
 
             // check for missing information
             if ( market.isEmpty() ||

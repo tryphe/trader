@@ -91,7 +91,7 @@ Position *Engine::addPosition( QString market, quint8 side, QString price_lo, QS
     if ( parse.size() > 1 )
     {
         order_size = parse.value( 0 ); // this will be formatted below
-        alternate_size = CoinAmount::toSatoshiFormatStrExpr( parse.value( 1 ) ); // formatted
+        alternate_size = Coin( parse.value( 1 ) ); // formatted
     }
     parse.clear(); // cleanup
 
@@ -143,9 +143,9 @@ Position *Engine::addPosition( QString market, quint8 side, QString price_lo, QS
     }
 
     // reformat strings
-    QString formatted_price_lo = CoinAmount::toSatoshiFormatStr( price_lo );
-    QString formatted_price_hi = CoinAmount::toSatoshiFormatStr( price_hi );
-    QString formatted_order_size = CoinAmount::toSatoshiFormatStr( order_size );
+    QString formatted_price_lo = Coin( price_lo );
+    QString formatted_price_hi = Coin( price_hi );
+    QString formatted_order_size = Coin( order_size );
 
     //kDebug() << price_hi.size() << price_hi << formatted_price_hi.size() << formatted_price_hi;
 

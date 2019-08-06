@@ -102,8 +102,9 @@ Position::Position( QString _market, quint8 _side, QString _price_lo, QString _p
     }
     else
     {
-        price_lo = CoinAmount::toSatoshiFormatStr( _price_lo );
-        price_hi = CoinAmount::toSatoshiFormatStr( _price_hi );
+        // convert to coin for satoshi formatting
+        price_lo = Coin( _price_lo );
+        price_hi = Coin( _price_hi );
         original_size = Coin( _order_size );
     }
 
