@@ -73,8 +73,8 @@ Position::Position( QString _market, quint8 _side, QString _price_lo, QString _p
             ordersize_weights.insert( i, current_weight );
 
             // add to price weight totals
-            hi_price_weight_total += Coin( Coin( data.price_hi ) * current_weight );
-            lo_price_weight_total += Coin( Coin( data.price_lo ) * current_weight );
+            hi_price_weight_total += Coin( data.price_hi ) * current_weight;
+            lo_price_weight_total += Coin( data.price_lo ) * current_weight;
         }
 
         //kDebug() << "hi_price_weight_total:" << hi_price_weight_total;
