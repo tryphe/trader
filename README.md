@@ -1,9 +1,17 @@
 Features
 --------
+ - [x] Supports a large number of platforms
+ - [x] Order engine is adaptable to any exchange
+ - [x] No floating point math operations are used for any prices or amounts. They are only used to store ratios which are fed as strings into GMP.
  - [x] Poloniex REST and WSS feed support
- - [x] Bittrex REST
- - [x] Binance REST
- - [x] No floating point math operations used for prices, amounts, tick sizes, or quantities. They are only used to store ratios which are stringified.
+ - [x] Bittrex REST support
+ - [x] Binance REST support
+ 
+ TODO
+ ----
+  - [ ] Extensible API and querying system (logs are the only interface at the moment)
+  - [ ] External stats tracker for stats persistence
+  - [ ] Save file for user settings 
 
 Dependencies: Compiling Qt and installing libgmp (unix/linux)
 ---------------------------------
