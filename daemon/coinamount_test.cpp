@@ -325,18 +325,18 @@ void CoinAmountTest::test()
     assert( q.toSubSatoshiString() == "3329629.3333333333333333" );
 
     // Engine::tryMoveOrder()
-    Coin price_lo_original_d = 0.00000015;
+    Coin buy_price_original_d = 0.00000015;
     Coin new_buy_price = 0.00000001;
     Coin lo_sell = 0.00000015;
     assert( new_buy_price == CoinAmount::SATOSHI );
     assert( new_buy_price >= CoinAmount::SATOSHI );
-    assert( new_buy_price < price_lo_original_d );
+    assert( new_buy_price < buy_price_original_d );
     assert( new_buy_price < lo_sell );
     assert( Coin().operator +=( CoinAmount::SATOSHI ) == "0.00000001" ); // avoid infinite loop if logic is broken
 
     while ( new_buy_price >= CoinAmount::SATOSHI && // new_buy_price >= SATOSHI
             new_buy_price < lo_sell - CoinAmount::SATOSHI && //  new_buy_price < lo_sell - SATOSHI
-            new_buy_price < price_lo_original_d ) // new_buy_price < pos->price_lo_original_d
+            new_buy_price < buy_price_original_d ) // new_buy_price < pos->buy_price_original_d
         new_buy_price += CoinAmount::SATOSHI;
 
     assert( new_buy_price == "0.00000014" );

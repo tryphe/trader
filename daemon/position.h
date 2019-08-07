@@ -11,7 +11,7 @@ class Engine;
 class Position
 {
 public:
-    explicit Position( QString _market, quint8 _side, QString _price_lo, QString _price_hi,
+    explicit Position( QString _market, quint8 _side, QString _buy_price, QString _sell_price,
                        QString _order_size, QString _strategy_tag = QLatin1String(),
                        QVector<qint32> _market_indices = QVector<qint32>(),
                        bool _landmark = false, Engine *_engine = nullptr );
@@ -19,7 +19,7 @@ public:
 
     void calculateQuantity();
     void flip();
-    QString getFlippedPrice() { return side == SIDE_BUY ? price_hi_original : price_lo_original; }
+    QString getFlippedPrice() { return side == SIDE_BUY ? sell_price_original : buy_price_original; }
     bool applyPriceSide();
     void applyOffset();
     void applyOffset( qreal offset, bool sentiment = true );
@@ -51,8 +51,8 @@ public:
 
     // our position data
     QString indices_str;
-    Coin price_lo, price_hi;
-    QString price_lo_original, price_hi_original;
+    Coin buy_price, sell_price;
+    QString buy_price_original, sell_price_original;
     Coin btc_amount, per_trade_profit, profit_margin;
     quint32 price_reset_count;
     quint32 max_age_minutes; // how many minutes the order should exist for before we cancel it
@@ -75,10 +75,10 @@ private:
 struct PositionData
 {
     explicit PositionData() {}
-    explicit PositionData( QString _price_lo, QString _price_hi, QString _order_size, QString _alternate_size )
+    explicit PositionData( QString _buy_price, QString _sell_price, QString _order_size, QString _alternate_size )
     {
-        price_lo = _price_lo;
-        price_hi = _price_hi;
+        buy_price = _buy_price;
+        sell_price = _sell_price;
         order_size = _order_size;
         alternate_size = _alternate_size;
         fill_count = 0;
@@ -94,7 +94,7 @@ struct PositionData
         }
     }
 
-    QString price_lo, price_hi, order_size, alternate_size;
+    QString buy_price, sell_price, order_size, alternate_size;
     quint32 fill_count;
 };
 

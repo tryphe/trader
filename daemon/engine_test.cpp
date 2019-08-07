@@ -33,8 +33,8 @@ void EngineTest::test( Engine *e )
     assert( p.is_landmark == false );
     assert( p.btc_amount == "0.10000000" );
     assert( p.original_size == "0.10000000" );
-    assert( p.price_lo == "0.00001000" );
-    assert( p.price_hi == "0.00009000" );
+    assert( p.buy_price == "0.00001000" );
+    assert( p.sell_price == "0.00009000" );
 
     // theoretical profit per trade, if we execute both sides
     // (((9 / 1) - 1) * 0.1) / 2 = 0.4
@@ -48,7 +48,7 @@ void EngineTest::test( Engine *e )
 
     p.flip();
     assert( p.side == SIDE_SELL );
-    assert( p.price == p.price_hi );
+    assert( p.price == p.sell_price );
 
     p.applyOffset( 0.02, false );
     assert( p.quantity == "1122.22222222" );
@@ -64,8 +64,8 @@ void EngineTest::test( Engine *e )
     assert( p2.btc_amount == "0.07777776" );
     assert( p2.original_size == "0.07777777" );
     assert( p2.quantity == "4376.91446257" );
-    assert( p2.price_lo == "0.00001777" );
-    assert( p2.price_hi == "0.00009999" );
+    assert( p2.buy_price == "0.00001777" );
+    assert( p2.sell_price == "0.00009999" );
 
     // per trade profit
     // avg trade amt = 0.07777777
@@ -94,8 +94,8 @@ void EngineTest::test( Engine *e )
     assert( p3.btc_amount == "0.05999999" );
     assert( p3.original_size == "0.06000000" );
     assert( p3.quantity == "95238.09523809" );
-    assert( p3.price_lo == "0.00000004" );
-    assert( p3.price_hi == "0.00000063" );
+    assert( p3.buy_price == "0.00000004" );
+    assert( p3.sell_price == "0.00000063" );
 
     // Engine::deletePosition
     e->cancelLocal( "TEST" );
@@ -121,8 +121,8 @@ void EngineTest::test( Engine *e )
     assert( p5 != nullptr );
     assert( p5->btc_amount == "0.06000000" );
     assert( p5->quantity == "6000000.00000000" );
-    assert( p5->price_lo == "0.00000001" );
-    assert( p5->price_hi == "0.00000063" );
+    assert( p5->buy_price == "0.00000001" );
+    assert( p5->sell_price == "0.00000063" );
     assert( p5->strategy_tag == "test-strat" );
 
     // test getBuyTotal/getSellTotal

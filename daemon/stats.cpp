@@ -295,8 +295,8 @@ void Stats::printPositions( QString market )
         const PositionData &data = list.value( i );
 
         kDebug() << QString( "lo %1 hi %2 size %3 fills %4 alt %5" )
-                        .arg( data.price_lo )
-                        .arg( data.price_hi )
+                        .arg( data.buy_price )
+                        .arg( data.sell_price )
                         .arg( data.order_size )
                         .arg( data.fill_count, -3 )
                         .arg( data.alternate_size );

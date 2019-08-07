@@ -75,7 +75,7 @@ Position *Engine::getPositionForOrderID( const QString &order_id ) const
     return positions_by_number.value( order_id, nullptr );
 }
 
-Position *Engine::addPosition( QString market, quint8 side, QString price_lo, QString price_hi,
+Position *Engine::addPosition( QString market, quint8 side, QString buy_price, QString sell_price,
                                QString order_size, QString type, QString strategy_tag, QVector<qint32> indices,
                                bool landmark, bool quiet )
 {
@@ -110,10 +110,10 @@ Position *Engine::addPosition( QString market, quint8 side, QString price_lo, QS
     }
 
     // check for blank argument
-    if ( market.isEmpty() || price_lo.isEmpty() || price_hi.isEmpty() || order_size.isEmpty() )
+    if ( market.isEmpty() || buy_price.isEmpty() || sell_price.isEmpty() || order_size.isEmpty() )
     {
-        kDebug() << "local error: an argument was empty. mkt:" << market << "lo:" << price_lo << "hi:"
-                 << price_hi << "sz:" << order_size;
+        kDebug() << "local error: an argument was empty. mkt:" << market << "lo:" << buy_price << "hi:"
+                 << sell_price << "sz:" << order_size;
         return nullptr;
     }
 
@@ -132,54 +132,54 @@ Position *Engine::addPosition( QString market, quint8 side, QString price_lo, QS
     }
 
     // check that we didn't make an erroneous buy/sell price. if it's a onetime order, do single price check
-    if ( ( !is_onetime && ( Coin( price_hi ) <= Coin( price_lo ) ||
-                            Coin( price_lo ).isZeroOrLess() || Coin( price_hi ).isZeroOrLess() ) ) ||
-         ( is_onetime && side == SIDE_BUY && Coin( price_lo ).isZeroOrLess() ) ||
-         ( is_onetime && side == SIDE_SELL && Coin( price_hi ).isZeroOrLess() ) ||
+    if ( ( !is_onetime && ( Coin( sell_price ) <= Coin( buy_price ) ||
+                            Coin( buy_price ).isZeroOrLess() || Coin( sell_price ).isZeroOrLess() ) ) ||
+         ( is_onetime && side == SIDE_BUY && Coin( buy_price ).isZeroOrLess() ) ||
+         ( is_onetime && side == SIDE_SELL && Coin( sell_price ).isZeroOrLess() ) ||
          ( is_onetime && alternate_size.size() > 0 && Coin( alternate_size ).isZeroOrLess() ) )
     {
         kDebug() << "local error: tried to set bad" << ( is_onetime ? "one-time" : "ping-pong" ) << "order. hi price"
-                 << price_hi << "lo price" << price_lo << "size" << order_size << "alternate size" << alternate_size;
+                 << sell_price << "lo price" << buy_price << "size" << order_size << "alternate size" << alternate_size;
         return nullptr;
     }
 
     // reformat strings
-    QString formatted_price_lo = Coin( price_lo );
-    QString formatted_price_hi = Coin( price_hi );
+    QString formatted_buy_price = Coin( buy_price );
+    QString formatted_sell_price = Coin( sell_price );
     QString formatted_order_size = Coin( order_size );
 
-    //kDebug() << price_hi.size() << price_hi << formatted_price_hi.size() << formatted_price_hi;
+    //kDebug() << sell_price.size() << sell_price << formatted_sell_price.size() << formatted_sell_price;
 
     // anti-stupid check: did we put in price/amount decimals that didn't go into the price? abort if so
-    if ( price_lo.size() > formatted_price_lo.size() ||
-         price_hi.size() > formatted_price_hi.size() ||
+    if ( buy_price.size() > formatted_buy_price.size() ||
+         sell_price.size() > formatted_sell_price.size() ||
          order_size.size() > formatted_order_size.size() )
     {
-        kDebug() << "local error: too many decimals in one of these values: price_hi:"
-                 << price_hi << "price_lo:" << price_lo << "order_size:" << order_size << "alternate_size:" << alternate_size;
+        kDebug() << "local error: too many decimals in one of these values: sell_price:"
+                 << sell_price << "buy_price:" << buy_price << "order_size:" << order_size << "alternate_size:" << alternate_size;
         return nullptr;
     }
 
     // set values to formatted value
-    price_lo = formatted_price_lo;
-    price_hi = formatted_price_hi;
+    buy_price = formatted_buy_price;
+    sell_price = formatted_sell_price;
     order_size = formatted_order_size;
 
     // anti-stupid check: did we put in a taker price that's <>10% of the current bid/ask?
     if ( !is_override && is_taker &&
-        ( ( side == SIDE_SELL && getHiBuy( market ).ratio( 0.9 ) > Coin( price_hi ) ) ||  // bid * 0.9 > price_hi
-          ( side == SIDE_SELL && getHiBuy( market ).ratio( 1.1 ) < Coin( price_hi ) ) ||  // bid * 1.1 < price_hi
-          ( side == SIDE_BUY && getLoSell( market ).ratio( 1.1 ) < Coin( price_lo ) ) ||  // ask * 1.1 < price_lo
-          ( side == SIDE_BUY && getLoSell( market ).ratio( 0.9 ) > Coin( price_lo ) ) ) ) // ask * 0.9 > price_lo
+        ( ( side == SIDE_SELL && getHiBuy( market ).ratio( 0.9 ) > Coin( sell_price ) ) ||  // bid * 0.9 > sell_price
+          ( side == SIDE_SELL && getHiBuy( market ).ratio( 1.1 ) < Coin( sell_price ) ) ||  // bid * 1.1 < sell_price
+          ( side == SIDE_BUY && getLoSell( market ).ratio( 1.1 ) < Coin( buy_price ) ) ||  // ask * 1.1 < buy_price
+          ( side == SIDE_BUY && getLoSell( market ).ratio( 0.9 ) > Coin( buy_price ) ) ) ) // ask * 0.9 > buy_price
     {
-        kDebug() << "local error: taker price_hi:" << price_hi << "price_lo:" << price_lo << "is >10% from spread, aborting order. add '-override' if intentional.";
+        kDebug() << "local error: taker sell_price:" << sell_price << "buy_price:" << buy_price << "is >10% from spread, aborting order. add '-override' if intentional.";
         return nullptr;
     }
 
     // figure out the market index if we didn't supply one
     if ( !is_onetime && indices.isEmpty() )
     {
-        const PositionData posdata = PositionData( price_lo, price_hi, order_size, alternate_size );
+        const PositionData posdata = PositionData( buy_price, sell_price, order_size, alternate_size );
 
         // get the next position index and append to our positions
         indices.append( market_info[ market ].position_index.size() );
@@ -195,12 +195,12 @@ Position *Engine::addPosition( QString market, quint8 side, QString price_lo, QS
         return nullptr;
 
     // make position object
-    Position *const &pos = new Position( market, side, price_lo, price_hi, order_size, strategy_tag, indices, landmark, this );
+    Position *const &pos = new Position( market, side, buy_price, sell_price, order_size, strategy_tag, indices, landmark, this );
 
     // check for correctly loaded position data
     if ( !pos || pos->market.isEmpty() || pos->price.isEmpty() || pos->btc_amount.isZeroOrLess() || pos->quantity.isZeroOrLess() )
     {
-        kDebug() << "local warning: new position failed to initialize" << market << side << price_lo << price_hi << order_size << indices << landmark;
+        kDebug() << "local warning: new position failed to initialize" << market << side << buy_price << sell_price << order_size << indices << landmark;
         if ( pos ) delete pos;
         return nullptr;
     }
@@ -214,8 +214,8 @@ Position *Engine::addPosition( QString market, quint8 side, QString price_lo, QS
     Coin sell_limit = ( info.lowest_sell * info.price_max_mul.ratio( 0.8 ) ).truncatedByTicksize( "0.00000001" );
 
     // regardless of the order type, enforce lo/hi price >0 to be in bounds
-    if ( ( pos->side == SIDE_BUY  && pos->price_lo.isGreaterThanZero() && buy_limit.isGreaterThanZero() && pos->price_lo < buy_limit ) ||
-         ( pos->side == SIDE_SELL && pos->price_hi.isGreaterThanZero() && sell_limit.isGreaterThanZero() && pos->price_hi > sell_limit ) )
+    if ( ( pos->side == SIDE_BUY  && pos->buy_price.isGreaterThanZero() && buy_limit.isGreaterThanZero() && pos->buy_price < buy_limit ) ||
+         ( pos->side == SIDE_SELL && pos->sell_price.isGreaterThanZero() && sell_limit.isGreaterThanZero() && pos->sell_price > sell_limit ) )
     {
         kDebug() << "local warning(ignore for ping-pongs): hit PERCENT_PRICE limit for" << market << buy_limit << sell_limit << "for pos" << pos->stringifyOrderWithoutOrderID();
         delete pos;
@@ -357,7 +357,7 @@ void Engine::processFilledOrders( QVector<Position*> &filled_positions, qint8 fi
     // sort the orders
     QMap<Coin,Position*> sorted; // key = (lo/hi) - lower is better
     for ( QVector<Position*>::const_iterator i = filled_positions.begin(); i != filled_positions.end(); i++ )
-        sorted.insert( (*i)->price_lo / (*i)->price_hi, (*i) );
+        sorted.insert( (*i)->buy_price / (*i)->sell_price, (*i) );
 
     for ( QMap<Coin,Position*>::const_iterator i = sorted.begin(); i != sorted.end(); i++ )
         fillNQ( i.value()->order_number, fill_type );
@@ -626,13 +626,13 @@ void Engine::processTicker( const QMap<QString, TickerInfo> &ticker_data, qint64
 
         // check for position price collision with ticker prices
         quint8 fill_details = 0;
-        if      ( pos->side == SIDE_SELL && pos->price_hi <= bid ) // sell price <= hi buy
+        if      ( pos->side == SIDE_SELL && pos->sell_price <= bid ) // sell price <= hi buy
             fill_details = 1;
-        else if ( pos->side == SIDE_BUY  && pos->price_lo >= ask ) // buy price => lo sell
+        else if ( pos->side == SIDE_BUY  && pos->buy_price >= ask ) // buy price => lo sell
             fill_details = 2;
-        else if ( pos->side == SIDE_SELL && pos->price_hi < ask ) // sell price < lo sell
+        else if ( pos->side == SIDE_SELL && pos->sell_price < ask ) // sell price < lo sell
             fill_details = 3;
-        else if ( pos->side == SIDE_BUY  && pos->price_lo > bid ) // buy price > hi buy
+        else if ( pos->side == SIDE_BUY  && pos->buy_price > bid ) // buy price > hi buy
             fill_details = 4;
 
         if ( fill_details > 0 )
@@ -693,7 +693,7 @@ void Engine::processCancelledOrder( Position * const &pos )
         {
             const PositionData &new_pos = market_info[ pos->market ].position_index.value( pos->market_indices.value( 0 ) );
 
-            addPosition( pos->market, pos->side, new_pos.price_lo, new_pos.price_hi, new_pos.order_size, "active", "",
+            addPosition( pos->market, pos->side, new_pos.buy_price, new_pos.sell_price, new_pos.order_size, "active", "",
                          pos->market_indices, false, true );
 
             deletePosition( pos );
@@ -900,8 +900,8 @@ void Engine::cancelLowest( const QString &market )
 
 //        if (  pos->market == market &&
 //             !pos->is_cancelling &&
-//            ( pos->price_lo == price ||
-//              pos->price_hi == price ) )
+//            ( pos->buy_price == price ||
+//              pos->sell_price == price ) )
 //        {
 //            cancelOrder( pos );
 //            break;
@@ -976,7 +976,7 @@ void Engine::cancelOrderMeatDCOrder( Position * const &pos )
                 QVector<qint32> new_index_single;
                 new_index_single.append( new_indices.value( i ) );
 
-                addPosition( pos->market, pos->side, data.price_lo, data.price_hi, data.order_size, "active", "",
+                addPosition( pos->market, pos->side, data.buy_price, data.sell_price, data.order_size, "active", "",
                              new_index_single, false, true );
             }
         }
@@ -1129,8 +1129,8 @@ void Engine::saveMarket( QString market, qint32 num_orders )
             out_savefile << QString( "setorder %1 %2 %3 %4 %5 %6\n" )
                             .arg( current_market )
                             .arg( is_sell ? SELL : BUY )
-                            .arg( pos_data.price_lo )
-                            .arg( pos_data.price_hi )
+                            .arg( pos_data.buy_price )
+                            .arg( pos_data.sell_price )
                             .arg( order_size )
                             .arg( is_active ? "active" : "ghost" );
 
@@ -1249,9 +1249,9 @@ void Engine::setNextLowest( const QString &market, quint8 side, bool landmark )
     const PositionData &data = info.position_index.value( indices.value( 0 ) );
 
 //    kDebug() << "adding idx" << indices.value( 0 ) << "from indices" << indices;
-//    kDebug() << "adding next lo pos" << market << side << data.price_lo << data.price_hi << data.order_size;
+//    kDebug() << "adding next lo pos" << market << side << data.buy_price << data.sell_price << data.order_size;
 
-    Position *pos = addPosition( market, side, data.price_lo, data.price_hi, data.order_size, "active", "",
+    Position *pos = addPosition( market, side, data.buy_price, data.sell_price, data.order_size, "active", "",
                                      indices, landmark, true );
 
     // check for valid ptr
@@ -1355,10 +1355,10 @@ void Engine::setNextHighest( const QString &market, quint8 side, bool landmark )
     // get the index data
     const PositionData &data = info.position_index.value( indices.value( 0 ) );
 
-//    kDebug() << "adding next hi pos" << market << side << data.price_lo << data.price_hi << data.order_size;
+//    kDebug() << "adding next hi pos" << market << side << data.buy_price << data.sell_price << data.order_size;
 
 
-    Position *pos = addPosition( market, side, data.price_lo, data.price_hi, data.order_size, "active", "",
+    Position *pos = addPosition( market, side, data.buy_price, data.sell_price, data.order_size, "active", "",
                                      indices, landmark, true );
 
     // check for valid ptr
@@ -1395,7 +1395,7 @@ void Engine::flipPosition( Position *const &pos )
         // we could use the same prices, but instead we reset the data incase there was slippage
         const PositionData &new_data = market_info[ pos->market ].position_index.value( pos->market_indices.value( 0 ) );
 
-        addPosition( pos->market, pos->side, new_data.price_lo, new_data.price_hi, new_data.order_size, "active", "",
+        addPosition( pos->market, pos->side, new_data.buy_price, new_data.sell_price, new_data.order_size, "active", "",
                      pos->market_indices, false, true );
     }
 }
@@ -1484,7 +1484,7 @@ Coin Engine::getHiBuyFlipPrice( const QString &market ) const
 
     kDebug() << "hi_buy_flip" << pos->stringifyOrder();
 
-    return pos->price_hi;
+    return pos->sell_price;
 }
 
 Coin Engine::getLoSellFlipPrice( const QString &market ) const
@@ -1497,7 +1497,7 @@ Coin Engine::getLoSellFlipPrice( const QString &market ) const
 
     kDebug() << "lo_sell_flip" << pos->stringifyOrder();
 
-    return pos->price_lo;
+    return pos->buy_price;
 }
 
 Position *Engine::getPositionByIndex( const QString &market, const qint32 idx ) const
@@ -1527,9 +1527,9 @@ Coin Engine::getHighestBuyPrice( const QString &market ) const
         // check for higher buy
         if ( pos->side == SIDE_BUY &&
             !pos->is_cancelling &&
-             pos->price_lo > highest_buy_price &&
+             pos->buy_price > highest_buy_price &&
              pos->market == market )
-            highest_buy_price = pos->price_lo;
+            highest_buy_price = pos->buy_price;
     }
 
     return highest_buy_price;
@@ -1546,9 +1546,9 @@ Coin Engine::getLowestSellPrice( const QString &market ) const
         // check for lower sell
         if ( pos->side == SIDE_SELL &&
             !pos->is_cancelling &&
-             pos->price_hi < lowest_sell_price &&
+             pos->sell_price < lowest_sell_price &&
              pos->market == market )
-            lowest_sell_price = pos->price_hi;
+            lowest_sell_price = pos->sell_price;
     }
 
     return lowest_sell_price;
@@ -1677,9 +1677,9 @@ Position *Engine::getHighestActiveBuyPosByPrice( const QString &market ) const
               )
             continue;
 
-        if ( pos->price_lo > hi_buy ) // position index is greater than our incrementor
+        if ( pos->buy_price > hi_buy ) // position index is greater than our incrementor
         {
-            hi_buy = pos->price_lo;
+            hi_buy = pos->buy_price;
             ret = pos;
         }
     }
@@ -1702,9 +1702,9 @@ Position *Engine::getLowestActiveSellPosByPrice( const QString &market ) const
               )
             continue;
 
-        if ( pos->price_hi < lo_sell ) // position index is less than our incrementor
+        if ( pos->sell_price < lo_sell ) // position index is less than our incrementor
         {
-            lo_sell = pos->price_hi;
+            lo_sell = pos->sell_price;
             ret = pos;
         }
     }
@@ -2059,39 +2059,39 @@ void Engine::findBetterPrice( Position *const &pos )
 #elif defined(EXCHANGE_POLONIEX)
     const qreal slippage_mul = rest->slippage_multiplier.value( market, 0. );
 
-    if ( is_buy ) ticksize = pos->price_lo.ratio( slippage_mul ) + CoinAmount::SATOSHI;
-    else          ticksize = pos->price_hi.ratio( slippage_mul ) + CoinAmount::SATOSHI;
+    if ( is_buy ) ticksize = pos->buy_price.ratio( slippage_mul ) + CoinAmount::SATOSHI;
+    else          ticksize = pos->sell_price.ratio( slippage_mul ) + CoinAmount::SATOSHI;
 #endif
 
-    //kDebug() << "slippage offset" << ticksize << pos->price_lo << pos->price_hi;
+    //kDebug() << "slippage offset" << ticksize << pos->buy_price << pos->sell_price;
 
     // adjust lo_sell
     if ( m_settings.should_adjust_hibuy_losell &&
          is_buy &&
          lo_sell.isGreaterThanZero() &&
-         lo_sell > pos->price_lo )
+         lo_sell > pos->buy_price )
     {
         if ( m_settings.is_chatty )
-            kDebug() << "(lo-sell-adjust) tried to buy" << market << pos->price_lo
+            kDebug() << "(lo-sell-adjust) tried to buy" << market << pos->buy_price
                      << "with lo_sell at" << lo_sell;
 
         // set new boundary
-        info.lowest_sell = pos->price_lo;
-        lo_sell = pos->price_lo;
+        info.lowest_sell = pos->buy_price;
+        lo_sell = pos->buy_price;
     }
     // adjust hi_buy
     else if ( m_settings.should_adjust_hibuy_losell &&
               !is_buy &&
               hi_buy.isGreaterThanZero() &&
-              hi_buy < pos->price_hi )
+              hi_buy < pos->sell_price )
     {
         if ( m_settings.is_chatty )
-            kDebug() << "(hi-buy--adjust) tried to sell" << market << pos->price_hi
+            kDebug() << "(hi-buy--adjust) tried to sell" << market << pos->sell_price
                      << "with hi_buy at" << hi_buy;
 
         // set new boundary
-        info.highest_buy = pos->price_hi;
-        hi_buy = pos->price_hi;
+        info.highest_buy = pos->sell_price;
+        hi_buy = pos->sell_price;
     }
 
     quint8 haggle_type = 0;
@@ -2111,7 +2111,7 @@ void Engine::findBetterPrice( Position *const &pos )
         // just add to the sell price
         else
         {
-            new_buy_price = pos->price_lo - ticksize;
+            new_buy_price = pos->buy_price - ticksize;
             haggle_type = SLIPPAGE_ADDITIVE;
         }
 
@@ -2123,7 +2123,7 @@ void Engine::findBetterPrice( Position *const &pos )
                             .arg( pos->stringifyOrderWithoutOrderID() );
 
         // set new prices
-        pos->price_lo = new_buy_price;
+        pos->buy_price = new_buy_price;
     }
     // replace sell price
     else
@@ -2141,7 +2141,7 @@ void Engine::findBetterPrice( Position *const &pos )
         // just add to the sell price
         else
         {
-            new_sell_price = pos->price_hi + ticksize;
+            new_sell_price = pos->sell_price + ticksize;
             haggle_type = SLIPPAGE_ADDITIVE;
         }
 
@@ -2153,7 +2153,7 @@ void Engine::findBetterPrice( Position *const &pos )
                             .arg( pos->stringifyOrderWithoutOrderID() );
 
         // set new prices
-        pos->price_hi = new_sell_price;;
+        pos->sell_price = new_sell_price;;
     }
 
     // set slippage
@@ -2193,11 +2193,11 @@ bool Engine::tryMoveOrder( Position* const &pos )
     if ( pos->side == SIDE_BUY )
     {
         // recalculate buy if needed - don't interfere with spread
-        if ( pos->price_lo >= lo_sell &&
+        if ( pos->buy_price >= lo_sell &&
              lo_sell > ticksize ) // lo_sell <= ticksize shouldn't happen but is triggerable in tests
         {
             // set buy price to low sell - ticksize
-            pos->price_lo = lo_sell - ticksize;
+            pos->buy_price = lo_sell - ticksize;
             pos->is_slippage = true;
             return true;
         }
@@ -2206,39 +2206,39 @@ bool Engine::tryMoveOrder( Position* const &pos )
         Coin new_buy_price;
         if ( lo_sell.isGreaterThanZero() )
         {
-            new_buy_price = pos->price_lo;
+            new_buy_price = pos->buy_price;
 
             while ( new_buy_price >= ticksize && // new_buy_price >= SATOSHI
                     new_buy_price < lo_sell - ticksize && //  new_buy_price < lo_sell - SATOSHI
-                    new_buy_price < pos->price_lo_original ) // new_buy_price < pos->price_lo_original
+                    new_buy_price < pos->buy_price_original ) // new_buy_price < pos->buy_price_original
                 new_buy_price += ticksize;
         }
 
         // new possible price is better than current price and different
         if ( new_buy_price != pos->price &&
              new_buy_price.isGreaterThanZero() && // new_buy_price > 0
-             new_buy_price <= pos->price_lo_original && // new_buy_price <= pos->price_lo_original
-             new_buy_price != pos->price_lo && // new_buy_price != pos->price_lo_d
+             new_buy_price <= pos->buy_price_original && // new_buy_price <= pos->buy_price_original
+             new_buy_price != pos->buy_price && // new_buy_price != pos->buy_price_d
              new_buy_price < lo_sell ) // new_buy_price < lo_sell
         {
-            pos->price_lo = new_buy_price;
+            pos->buy_price = new_buy_price;
             pos->is_slippage = true;
             return true;
         }
 
         if ( pos->is_slippage && m_settings.is_chatty )
             kDebug() << "couldn't find better buy price for" << pos->stringifyOrder() << "new_buy_price"
-                     << new_buy_price << "original_buy_price" << pos->price_lo_original
+                     << new_buy_price << "original_buy_price" << pos->buy_price_original
                      << "hi_buy" << hi_buy << "lo_sell" << lo_sell;
     }
     // replace sell price
     else
     {
         // recalculate sell if needed - don't interfere with spread
-        if ( pos->price_hi <= hi_buy )
+        if ( pos->sell_price <= hi_buy )
         {
             // set sell price to high buy + ticksize;
-            pos->price_hi = hi_buy + ticksize;
+            pos->sell_price = hi_buy + ticksize;
             pos->is_slippage = true;
             return true;
         }
@@ -2247,29 +2247,29 @@ bool Engine::tryMoveOrder( Position* const &pos )
         Coin new_sell_price;
         if ( hi_buy.isGreaterThanZero() )
         {
-            new_sell_price = pos->price_hi;
+            new_sell_price = pos->sell_price;
 
             while ( new_sell_price > ticksize * 2. && // only iterate down to 2 sat for a sell
                     new_sell_price > hi_buy + ticksize &&
-                    new_sell_price > pos->price_hi_original )
+                    new_sell_price > pos->sell_price_original )
                 new_sell_price -= ticksize;
         }
 
         // new possible price is better than current price and different
         if ( new_sell_price != pos->price &&
              new_sell_price > ticksize &&
-             new_sell_price >= pos->price_hi_original &&
-             new_sell_price != pos->price_hi &&
+             new_sell_price >= pos->sell_price_original &&
+             new_sell_price != pos->sell_price &&
              new_sell_price > hi_buy )
         {
-            pos->price_hi = new_sell_price;
+            pos->sell_price = new_sell_price;
             pos->is_slippage = true;
             return true;
         }
 
         if ( pos->is_slippage && m_settings.is_chatty )
             kDebug() << "couldn't find better sell price for" << pos->stringifyOrder() << "new_sell_price"
-                     << new_sell_price << "original_sell_price" << pos->price_hi_original
+                     << new_sell_price << "original_sell_price" << pos->sell_price_original
                      << "hi_buy" << hi_buy << "lo_sell" << lo_sell;
     }
 

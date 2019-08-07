@@ -71,7 +71,7 @@ public:
     bool isPositionOrderID( const QString &order_id ) const;
     Position *getPositionForOrderID( const QString &order_id ) const;
 
-    Position *addPosition( QString market, quint8 side, QString price_lo , QString price_hi,
+    Position *addPosition( QString market, quint8 side, QString buy_price , QString sell_price,
                            QString order_size, QString type = "active", QString strategy_tag = QLatin1String(),
                            QVector<qint32> indices = QVector<qint32>(), bool landmark = false, bool quiet = false );
 

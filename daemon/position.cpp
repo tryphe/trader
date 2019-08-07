@@ -9,7 +9,7 @@
 #include <algorithm>
 #include <QDebug>
 
-Position::Position( QString _market, quint8 _side, QString _price_lo, QString _price_hi,
+Position::Position( QString _market, quint8 _side, QString _buy_price, QString _sell_price,
                     QString _order_size, QString _strategy_tag, QVector<qint32> _market_indices,
                     bool _landmark, Engine *_engine )
 {
@@ -72,15 +72,15 @@ Position::Position( QString _market, quint8 _side, QString _price_lo, QString _p
             ordersize_weights.insert( i, current_weight );
 
             // add to price weight totals
-            hi_price_weight_total += Coin( data.price_hi ) * current_weight;
-            lo_price_weight_total += Coin( data.price_lo ) * current_weight;
+            hi_price_weight_total += Coin( data.sell_price ) * current_weight;
+            lo_price_weight_total += Coin( data.buy_price ) * current_weight;
         }
 
         //kDebug() << "hi_price_weight_total:" << hi_price_weight_total;
 
 //        kDebug() << "indices" << market_indices;
 //        kDebug() << "landmark size:" << original_size;
-//        kDebug() << "landmark price:" << price_lo;
+//        kDebug() << "landmark price:" << buy_price;
 //        kDebug() << "landmark weights:" << ordersize_weights;
 
 #if defined(EXCHANGE_BINANCE)
@@ -91,36 +91,36 @@ Position::Position( QString _market, quint8 _side, QString _price_lo, QString _p
         const Coin &shim = CoinAmount::ORDER_SHIM;
 #endif
         // apply the weighted price, rounded to the nearest half-satoshi
-        price_lo = ( lo_price_weight_total / ordersize_weight_total ) - shim;
-        price_hi = ( hi_price_weight_total / ordersize_weight_total ) + shim;
+        buy_price = ( lo_price_weight_total / ordersize_weight_total ) - shim;
+        sell_price = ( hi_price_weight_total / ordersize_weight_total ) + shim;
         original_size = ordersize_amount_total;
 
         // catch bad buy price due to shim
-        if ( CoinAmount::SATOSHI > price_lo )
-            price_lo = CoinAmount::SATOSHI;
+        if ( CoinAmount::SATOSHI > buy_price )
+            buy_price = CoinAmount::SATOSHI;
     }
     else
     {
         // convert to coin for satoshi formatting
-        price_lo = Coin( _price_lo );
-        price_hi = Coin( _price_hi );
+        buy_price = Coin( _buy_price );
+        sell_price = Coin( _sell_price );
         original_size = Coin( _order_size );
     }
 
     // truncate order by exchange tick size
 #if defined(EXCHANGE_BINANCE)
     const Coin &ticksize = !engine ? CoinAmount::SATOSHI : engine->getMarketInfo( market ).price_ticksize;
-    price_lo.truncateByTicksize( ticksize );
-    price_hi.truncateByTicksize( ticksize );
+    buy_price.truncateByTicksize( ticksize );
+    sell_price.truncateByTicksize( ticksize );
 
-    // prevent price_lo from being less than ticksize
-    if ( !ticksize.isZeroOrLess() && price_lo < ticksize )
-        price_lo = ticksize;
+    // prevent buy_price from being less than ticksize
+    if ( !ticksize.isZeroOrLess() && buy_price < ticksize )
+        buy_price = ticksize;
 #endif
 
     // set original prices, so that if we set slippage, we can go back towards these prices
-    price_lo_original = price_lo;
-    price_hi_original = price_hi;
+    buy_price_original = buy_price;
+    sell_price_original = sell_price;
 
     // sort the indices so we can print a nicer looking string
     std::sort( market_indices.begin(), market_indices.end() );
@@ -170,12 +170,12 @@ void Position::flip()
     if ( side == SIDE_BUY )
     {
         side = SIDE_SELL;
-        price = price_hi;
+        price = sell_price;
     }
     else // sell->buy
     {
         side = SIDE_BUY;
-        price = price_lo;
+        price = buy_price;
     }
 
     // the object is deleted after this, no need to set/clear stuff
@@ -186,12 +186,12 @@ bool Position::applyPriceSide()
     // set our price
     if ( side == SIDE_SELL ) // sell hi
     {
-        price = price_hi;
+        price = sell_price;
         return true;
     }
     else // buy lo
     {
-        price = price_lo;
+        price = buy_price;
         return true;
     }
 
@@ -263,8 +263,8 @@ void Position::applyOffset( qreal _offset, bool sentiment )
 
     // calculate profit multipler while avoiding div0
     Coin profit_multiplier;
-    if ( price_lo.isGreaterThanZero() )
-        profit_multiplier = ( ( price_hi / price_lo ) - 1 ) / 2;
+    if ( buy_price.isGreaterThanZero() )
+        profit_multiplier = ( ( sell_price / buy_price ) - 1 ) / 2;
 
     // the average trade amount is the difference /2
     Coin avg_trade_amt = ( amount_hi_d + amount_lo_d ) / 2;
@@ -299,8 +299,8 @@ void Position::applyOffset( qreal _offset, bool sentiment )
 //    ret["side"] = side;
 
 //    // local info
-//    ret["price_lo"] = price_lo;
-//    ret["price_hi"] = price_hi;
+//    ret["buy_price"] = buy_price;
+//    ret["sell_price"] = sell_price;
 
 //    return ret;
 //}
@@ -344,8 +344,8 @@ QString Position::stringifyNewPosition()
                     .arg( sideStr(), -4 )
                     .arg( market, 8 )
                     .arg( btc_amount, 11 )
-                    .arg( price_lo, 10 )
-                    .arg( price_hi, -16 - ORDER_STRING_SIZE )
+                    .arg( buy_price, 10 )
+                    .arg( sell_price, -16 - ORDER_STRING_SIZE )
                     .arg( indices_str );
 
     return ret;
@@ -358,8 +358,8 @@ QString Position::stringifyPositionChange()
     // make a string that looks like 0.00009999 -> 0.00120000
     //                               <price>       <next price>
     bool is_buy = ( side == SIDE_BUY );
-    Coin &price = is_buy ? price_lo : price_hi;
-    Coin &next_price = is_buy ? price_hi : price_lo;
+    Coin &price = is_buy ? buy_price : sell_price;
+    Coin &next_price = is_buy ? sell_price : buy_price;
 
     QString price_str = price;
 
