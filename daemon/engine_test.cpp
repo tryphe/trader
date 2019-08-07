@@ -133,7 +133,37 @@ void EngineTest::test( Engine *e )
     e->cancelLocal();
     assert( e->positionsAll().size() == 0 );
 
-    /// run ping-pong fill test
+    /// run ticker slippage test for buy price colliding with asks
+    ///
+    /// if asks are at 100, our bid at 105 goes to 99
+    QVector<Position*> pp;
+    e->market_info[ "TEST" ].highest_buy = "0.00000095";
+    e->market_info[ "TEST" ].lowest_sell = "0.00000100";
+
+    pp += e->addPosition( "TEST", SIDE_BUY,  "0.00000105", "0.00000200", "0.1", "active" ); // 0
+
+    assert( pp.value( 0 )->price == "0.00000099" );
+
+    e->cancelLocal();
+    assert( e->positionsAll().size() == 0 );
+    ///
+
+    /// run ticker slippage test for sell price colliding with bids
+    ///
+    /// if bids are at 50, our ask at 45 goes to 51
+    pp.clear();
+    e->market_info[ "TEST" ].highest_buy = "0.00000050";
+    e->market_info[ "TEST" ].lowest_sell = "0.00000055";
+
+    pp += e->addPosition( "TEST", SIDE_SELL,  "0.00000030", "0.00000045", "0.1", "active" ); // 0
+
+    assert( pp.value( 0 )->price == "0.00000051" );
+
+    e->cancelLocal();
+    assert( e->positionsAll().size() == 0 );
+    ///
+
+    /// run ping-pong bulk fill test
     ///
     ///   BUYS  |  SELLS
     ///   1 2 3 | 5 6 7 8
@@ -143,7 +173,7 @@ void EngineTest::test( Engine *e )
     ///
     e->market_info[ "TEST" ].highest_buy = "0.00000004";
     e->market_info[ "TEST" ].lowest_sell = "0.00000005";
-    QVector<Position*> pp;
+    pp.clear();
     pp += e->addPosition( "TEST", SIDE_BUY,  "0.00000001", "0.00000002", "0.1", "active" ); // 0
     pp += e->addPosition( "TEST", SIDE_BUY,  "0.00000002", "0.00000003", "0.1", "active" ); // 1
     pp += e->addPosition( "TEST", SIDE_BUY,  "0.00000003", "0.00000004", "0.1", "active" ); // 2
