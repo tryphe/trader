@@ -317,6 +317,56 @@ Position *PositionMan::getHighestActivePingPong( const QString &market ) const
     return hi_pos;
 }
 
+qint32 PositionMan::getLowestPingPongIndex( const QString &market ) const
+{
+    qint32 new_index = std::numeric_limits<qint32>::max();
+
+    // get lowest sell from all positions
+    for ( QSet<Position*>::const_iterator i = positions_all.begin(); i != positions_all.end(); i++ )
+    {
+        Position *const &pos = *i;
+
+        // skip if one-time order
+        if ( pos->is_onetime )
+            continue;
+
+        const qint32 pos_lowest_idx = pos->getLowestMarketIndex();
+
+        if ( pos_lowest_idx < new_index &&
+            !pos->is_cancelling &&
+             pos->market == market )
+        {
+            new_index = pos_lowest_idx;
+        }
+    }
+
+    return new_index;
+}
+
+qint32 PositionMan::getHighestPingPongIndex( const QString &market ) const
+{
+    qint32 new_index = -1;
+
+    // look for the highest buy index
+    for ( QSet<Position*>::const_iterator i = positions_all.begin(); i != positions_all.end(); i++ )
+    {
+        Position *const &pos = *i;
+
+        // skip if one-time order
+        if ( pos->is_onetime )
+            continue;
+
+        const qint32 pos_highest_idx = pos->getHighestMarketIndex();
+
+        if ( pos_highest_idx > new_index &&
+            !pos->is_cancelling &&
+             pos->market == market )
+            new_index = pos_highest_idx;
+    }
+
+    return new_index;
+}
+
 qint32 PositionMan::getMarketOrderTotal( const QString &market, bool onetime_only ) const
 {
     if ( market.isEmpty() )

@@ -1086,25 +1086,7 @@ void Engine::setNextLowest( const QString &market, quint8 side, bool landmark )
         return;
     }
 
-    qint32 new_index = std::numeric_limits<qint32>::max();
-
-    // get lowest sell from all positions
-    for ( QSet<Position*>::const_iterator i = positions->all().begin(); i != positions->all().end(); i++ )
-    {
-        Position *const &pos = *i;
-
-        // skip if one-time order
-        if ( pos->is_onetime )
-            continue;
-
-        const qint32 pos_lowest_idx = pos->getLowestMarketIndex();
-
-        if ( pos_lowest_idx < new_index &&
-             pos->market == market )
-        {
-            new_index = pos_lowest_idx;
-        }
-    }
+    qint32 new_index = positions->getLowestPingPongIndex( market );
 
     // subtract 1
     new_index--;
@@ -1195,23 +1177,7 @@ void Engine::setNextHighest( const QString &market, quint8 side, bool landmark )
         return;
     }
 
-    qint32 new_index = -1;
-
-    // look for the highest buy index
-    for ( QSet<Position*>::const_iterator i = positions->all().begin(); i != positions->all().end(); i++ )
-    {
-        Position *const &pos = *i;
-
-        // skip if one-time order
-        if ( pos->is_onetime )
-            continue;
-
-        const qint32 pos_highest_idx = pos->getHighestMarketIndex();
-
-        if ( pos_highest_idx > new_index &&
-             pos->market == market )
-            new_index = pos_highest_idx;
-    }
+    qint32 new_index = positions->getHighestPingPongIndex( market );
 
     // add 1
     new_index++;
@@ -1278,7 +1244,6 @@ void Engine::setNextHighest( const QString &market, quint8 side, bool landmark )
 
 //    kDebug() << "adding next hi pos" << market << side << data.buy_price << data.sell_price << data.order_size;
 
-
     Position *pos = addPosition( market, side, data.buy_price, data.sell_price, data.order_size, "active", "",
                                      indices, landmark, true );
 
@@ -1320,8 +1285,6 @@ void Engine::flipPosition( Position *const &pos )
                      pos->market_indices, false, true );
     }
 }
-
-
 
 void Engine::cleanGraceTimes()
 {

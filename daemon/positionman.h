@@ -45,6 +45,8 @@ public:
     Position *getLowestActiveSellPosByPrice( const QString &market ) const;
     Position *getLowestActivePingPong( const QString &market ) const;
     Position *getHighestActivePingPong( const QString &market ) const;
+    qint32 getLowestPingPongIndex( const QString &market ) const;
+    qint32 getHighestPingPongIndex( const QString &market ) const;
     qint32 getMarketOrderTotal( const QString &market, bool onetime_only = false ) const;
     qint32 getBuyTotal( const QString &market ) const;
     qint32 getSellTotal( const QString &market ) const;

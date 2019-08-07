@@ -49,7 +49,14 @@ public:
     void setNextLowest( const QString &market, quint8 side = SIDE_BUY, bool landmark = false );
     void setNextHighest( const QString &market, quint8 side = SIDE_SELL, bool landmark = false );
 
-
+    void flipHiBuyPrice( const QString &market, QString tag = QLatin1String() );
+    void flipHiBuyIndex( const QString &market, QString tag = QLatin1String() );
+    void flipLoSellPrice( const QString &market, QString tag = QLatin1String() );
+    void flipLoSellIndex( const QString &market, QString tag = QLatin1String() );
+    Coin getLoSell( const QString &market ) const;
+    Coin getHiBuy( const QString &market ) const;
+    Coin getHiBuyFlipPrice( const QString &market ) const;
+    Coin getLoSellFlipPrice( const QString &market ) const;
 
 
 
