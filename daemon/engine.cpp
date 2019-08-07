@@ -354,9 +354,13 @@ void Engine::fillNQ( const QString &order_id, qint8 fill_type , quint8 extra_dat
 
 void Engine::processFilledOrders( QVector<Position*> &filled_positions, qint8 fill_type )
 {
-    // fill the orders
+    // sort the orders
+    QMap<Coin,Position*> sorted; // key = (lo/hi) - lower is better
     for ( QVector<Position*>::const_iterator i = filled_positions.begin(); i != filled_positions.end(); i++ )
-        fillNQ( (*i)->order_number, fill_type );
+        sorted.insert( (*i)->price_lo / (*i)->price_hi, (*i) );
+
+    for ( QMap<Coin,Position*>::const_iterator i = sorted.begin(); i != sorted.end(); i++ )
+        fillNQ( i.value()->order_number, fill_type );
 }
 
 void Engine::processOpenOrders( QVector<QString> &order_numbers, QMultiHash<QString, OrderInfo> &orders, qint64 request_time_sent_ms )
