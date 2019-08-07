@@ -321,7 +321,7 @@ void Engine::fillNQ( const QString &order_id, qint8 fill_type , quint8 extra_dat
             continue;
 
         // increment fill count and resize by alternate size if one exists
-        market_info[ pos->market ].position_index[ pos->market_indices.value( i ) ].resizeByAlternateSize();
+        market_info[ pos->market ].position_index[ pos->market_indices.value( i ) ].iterateFillCount();
     }
 
     if ( verbosity > 0 )

@@ -84,7 +84,7 @@ struct PositionData
         fill_count = 0;
     }
 
-    void resizeByAlternateSize()
+    void iterateFillCount()
     {
         fill_count++;
         if ( alternate_size.size() > 0 )
