@@ -15,7 +15,7 @@
 #include <QStringList>
 
 Engine::Engine()
-    : QObject( nullptr ),
+    : EngineSettings(),
       is_running_cancelall( false ), // state
       maintenance_time( 0 ),
       maintenance_triggered( false ),
@@ -409,10 +409,10 @@ void Engine::processOpenOrders( QVector<QString> &order_numbers, QMultiHash<QStr
         }
 
         // we haven't seen this order in a buy/sell reply, we should test the order id to see if it matches a queued pos
-        if ( m_settings.should_clear_stray_orders && !isPositionOrderID( order_number ) )
+        if ( EngineSettings::should_clear_stray_orders && !isPositionOrderID( order_number ) )
         {
             // if this isn't a price in any of our positions, we should ignore it
-            if ( !m_settings.should_clear_stray_orders_all && !market_info[ market ].order_prices.contains( price ) )
+            if ( !EngineSettings::should_clear_stray_orders_all && !market_info[ market ].order_prices.contains( price ) )
                 continue;
 
             // we haven't seen it, add a grace time if it doesn't match an active position
@@ -458,7 +458,7 @@ void Engine::processOpenOrders( QVector<QString> &order_numbers, QMultiHash<QStr
                 }
             }
             // we have seen the stray order at least once before, measure the grace time
-            else if ( current_time - order_grace_times.value( order_number ) > m_settings.stray_grace_time_limit )
+            else if ( current_time - order_grace_times.value( order_number ) > EngineSettings::stray_grace_time_limit )
             {
                 kDebug() << "queued cancel for stray order" << market << side << btc_amount << "@" << price << "id:" << order_number;
                 stray_orders.append( order_number );
@@ -486,13 +486,13 @@ void Engine::processOpenOrders( QVector<QString> &order_numbers, QMultiHash<QStr
             const QString &order_number = stray_orders.takeFirst();
             rest->sendCancel( order_number );
             // reset grace time incase we see this order again from the next response
-            order_grace_times.insert( order_number, current_time + m_settings.stray_grace_time_limit /* don't try to cancel again for 10m */ );
+            order_grace_times.insert( order_number, current_time + EngineSettings::stray_grace_time_limit /* don't try to cancel again for 10m */ );
         }
 
     }
 
     // mitigate blank orderbook flash
-    if ( m_settings.should_mitigate_blank_orderbook_flash &&
+    if ( EngineSettings::should_mitigate_blank_orderbook_flash &&
          !order_numbers.size() && // the orderbook is blank
          positions_active.size() > 50 ) // we have some orders, don't make it too low (if it's 2 or 3, we might fill all those orders at once, and the mitigation leads to the orders never getting filled)
     {
@@ -524,7 +524,7 @@ void Engine::processOpenOrders( QVector<QString> &order_numbers, QMultiHash<QStr
             continue;
 
         // allow for a safe period to avoid orders we just set possibly not showing up yet
-        if ( pos->order_set_time > current_time - m_settings.safety_delay_time )
+        if ( pos->order_set_time > current_time - EngineSettings::safety_delay_time )
             continue;
 
         // is the order in the list of orders?
@@ -639,8 +639,8 @@ void Engine::processTicker( const QMap<QString, TickerInfo> &ticker_data, qint64
         if ( fill_details > 0 )
         {
             // is the order pretty new?
-            if ( pos->order_set_time > request_time_sent_ms - m_settings.ticker_safety_delay_time || // if the request time is supplied, check that we didn't send the ticker command before the position was set
-                 pos->order_set_time > current_time - m_settings.ticker_safety_delay_time ) // allow for a safe period to avoid orders we just set possibly not showing up yet
+            if ( pos->order_set_time > request_time_sent_ms - EngineSettings::ticker_safety_delay_time || // if the request time is supplied, check that we didn't send the ticker command before the position was set
+                 pos->order_set_time > current_time - EngineSettings::ticker_safety_delay_time ) // allow for a safe period to avoid orders we just set possibly not showing up yet
             {
                 // for trex, if the order is new, check on it manually with 'getorder'
 #if defined(EXCHANGE_BITTREX)
@@ -1032,7 +1032,7 @@ void Engine::setOrderMeat( Position *const &pos, QString order_number )
 
     // check if the order was queued for a cancel (manual or automatic) while it was queued
     if ( pos->is_cancelling &&
-         pos->order_cancel_time < QDateTime::currentMSecsSinceEpoch() - m_settings.cancel_timeout )
+         pos->order_cancel_time < QDateTime::currentMSecsSinceEpoch() - EngineSettings::cancel_timeout )
     {
         cancelOrder( pos, true, pos->cancel_reason );
     }
@@ -1853,7 +1853,7 @@ void Engine::cleanGraceTimes()
         const qint64 &seen_time = i.value();
 
         // clear order ids older than timeout
-        if ( seen_time < current_time - ( m_settings.stray_grace_time_limit *2 ) )
+        if ( seen_time < current_time - ( EngineSettings::stray_grace_time_limit *2 ) )
             removed.append( order );
     }
 
@@ -2067,12 +2067,12 @@ void Engine::findBetterPrice( Position *const &pos )
     //kDebug() << "slippage offset" << ticksize << pos->buy_price << pos->sell_price;
 
     // adjust lo_sell
-    if ( m_settings.should_adjust_hibuy_losell &&
+    if ( EngineSettings::should_adjust_hibuy_losell &&
          is_buy &&
          lo_sell.isGreaterThanZero() &&
          lo_sell > pos->buy_price )
     {
-        if ( m_settings.is_chatty )
+        if ( EngineSettings::is_chatty )
             kDebug() << "(lo-sell-adjust) tried to buy" << market << pos->buy_price
                      << "with lo_sell at" << lo_sell;
 
@@ -2081,12 +2081,12 @@ void Engine::findBetterPrice( Position *const &pos )
         lo_sell = pos->buy_price;
     }
     // adjust hi_buy
-    else if ( m_settings.should_adjust_hibuy_losell &&
+    else if ( EngineSettings::should_adjust_hibuy_losell &&
               !is_buy &&
               hi_buy.isGreaterThanZero() &&
               hi_buy < pos->sell_price )
     {
-        if ( m_settings.is_chatty )
+        if ( EngineSettings::is_chatty )
             kDebug() << "(hi-buy--adjust) tried to sell" << market << pos->sell_price
                      << "with hi_buy at" << hi_buy;
 
@@ -2104,7 +2104,7 @@ void Engine::findBetterPrice( Position *const &pos )
         // does our price collide with what the public orderbook says?
         if ( pos->price_reset_count < 1 && // how many times have we been here
              lo_sell.isGreaterThanZero() &&
-             m_settings.should_slippage_be_calculated )
+             EngineSettings::should_slippage_be_calculated )
         {
             new_buy_price = lo_sell - ticksize;
             haggle_type = SLIPPAGE_CALCULATED;
@@ -2134,7 +2134,7 @@ void Engine::findBetterPrice( Position *const &pos )
         // does our price collide with what the public orderbook says?
         if ( pos->price_reset_count < 1 && // how many times have we been here
              hi_buy.isGreaterThanZero() &&
-             m_settings.should_slippage_be_calculated )
+             EngineSettings::should_slippage_be_calculated )
         {
             new_sell_price = hi_buy + ticksize;
             haggle_type = SLIPPAGE_CALCULATED;
@@ -2227,7 +2227,7 @@ bool Engine::tryMoveOrder( Position* const &pos )
             return true;
         }
 
-        if ( pos->is_slippage && m_settings.is_chatty )
+        if ( pos->is_slippage && EngineSettings::is_chatty )
             kDebug() << "couldn't find better buy price for" << pos->stringifyOrder() << "new_buy_price"
                      << new_buy_price << "original_buy_price" << pos->buy_price_original
                      << "hi_buy" << hi_buy << "lo_sell" << lo_sell;
@@ -2268,7 +2268,7 @@ bool Engine::tryMoveOrder( Position* const &pos )
             return true;
         }
 
-        if ( pos->is_slippage && m_settings.is_chatty )
+        if ( pos->is_slippage && EngineSettings::is_chatty )
             kDebug() << "couldn't find better sell price for" << pos->stringifyOrder() << "new_sell_price"
                      << new_sell_price << "original_sell_price" << pos->sell_price_original
                      << "hi_buy" << hi_buy << "lo_sell" << lo_sell;
@@ -2299,7 +2299,7 @@ void Engine::onCheckTimeouts()
         // make sure the order hasn't been set and the request is stale
         if ( pos->order_set_time == 0 &&
              pos->order_request_time > 0 &&
-             pos->order_request_time < current_time - m_settings.request_timeout )
+             pos->order_request_time < current_time - EngineSettings::request_timeout )
         {
             kDebug() << "order timeout detected, resending" << pos->stringifyOrder();
 
@@ -2317,7 +2317,7 @@ void Engine::onCheckTimeouts()
         if ( pos->is_cancelling &&
              pos->order_set_time > 0 &&
              pos->order_cancel_time > 0 &&
-             pos->order_cancel_time < current_time - m_settings.cancel_timeout )
+             pos->order_cancel_time < current_time - EngineSettings::cancel_timeout )
         {
             cancelOrder( pos );
             return;
@@ -2339,7 +2339,7 @@ void Engine::onCheckTimeouts()
             else
             {
                 // don't check it until new timeout occurs
-                pos->order_set_time = current_time - m_settings.safety_delay_time;
+                pos->order_set_time = current_time - EngineSettings::safety_delay_time;
             }
         }
 
@@ -2423,7 +2423,7 @@ void Engine::onCheckDivergeConverge()
         // check buy orders
         if (  pos->side == SIDE_BUY &&                              // buys only
              !pos->is_cancelling &&                                 // must not be cancelling
-             !( !m_settings.should_dc_slippage_orders && pos->is_slippage ) && // must not be slippage
+             !( !EngineSettings::should_dc_slippage_orders && pos->is_slippage ) && // must not be slippage
               pos->order_number.size() &&                           // must be set
              !isIndexDivergingConverging( market, first_idx ) &&
              !converge_buys[ market ].contains( first_idx ) &&
@@ -2449,7 +2449,7 @@ void Engine::onCheckDivergeConverge()
         //check sell orders
         if (  pos->side == SIDE_SELL &&                             // sells only
              !pos->is_cancelling &&                                 // must not be cancelling
-             !( !m_settings.should_dc_slippage_orders && pos->is_slippage ) && // must not be slippage
+             !( !EngineSettings::should_dc_slippage_orders && pos->is_slippage ) && // must not be slippage
               pos->order_number.size() &&                           // must be set
              !isIndexDivergingConverging( market, first_idx ) &&
              !converge_sells[ market ].contains( first_idx ) &&

@@ -57,13 +57,6 @@ void TrexREST::init()
     BaseREST::limit_timeout_yield = 6;
     BaseREST::market_cancel_thresh = 300; // limit for market order total for weighting cancels to be sent first
 
-    engine->settings().fee = "0.0025"; // preset the fee
-    engine->settings().request_timeout = 3 * 60000; // how long before we resend most requests
-    engine->settings().cancel_timeout = 5 * 60000; // how long before we resend a cancel request
-    engine->settings().stray_grace_time_limit = 10 * 60000; // time to allow stray orders to stick around before we cancel them. this is also the re-cancel time (keep it largeish)
-    engine->settings().safety_delay_time = 8500; // only accept filled order within this amount of time of an order being set
-    engine->settings().ticker_safety_delay_time = 8500; // only accept ticker after this amount of time of an order being set (if we are below, send getorder)
-
 #if defined(TRYPHE_BUILD) // set trex options (probably logically a bad place but whatever)
     engine->setMarketSettings( "BTC-DASH", 11, 64, 6, 15, 14, 18, false, 0.0051 );
     engine->setMarketSettings( "BTC-DGB",  11, 64, 6, 15, 14, 18, false, 0.0051 );
@@ -126,8 +119,8 @@ void TrexREST::init()
     onCheckOrderBooks();
 
 #ifdef SECONDARY_BOT
-    engine->settings().should_clear_stray_orders = false;
-    engine->settings().should_clear_stray_orders_all = false;
+    engine->should_clear_stray_orders = false;
+    engine->should_clear_stray_orders_all = false;
 #endif
 
     //sendRequest( "account/getdepositaddress", "NXT" );

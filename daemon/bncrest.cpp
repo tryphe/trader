@@ -63,14 +63,6 @@ void BncREST::init()
     BaseREST::limit_timeout_yield = 12;
     BaseREST::market_cancel_thresh = 300; // limit for market order total for weighting cancels to be sent first
 
-    engine->settings().fee = "0.00075"; // preset the fee
-    engine->settings().request_timeout = 3 * 60000;  // how long before we resend most requests
-    engine->settings().cancel_timeout = 3 * 60000;  // how long before we resend a cancel request
-    engine->settings().should_slippage_be_calculated = true;  // try calculated slippage before additive. false = additive + additive2 only
-    engine->settings().stray_grace_time_limit = 10 * 60000; // time to allow stray orders to stick around before we cancel them. this is also the re-cancel time (keep it largeish)
-    engine->settings().safety_delay_time = 2000; // only detect a filled order after this amount of time - fixes possible orderbook lag
-    engine->settings().ticker_safety_delay_time = 2000;
-
 #if defined(TRYPHE_BUILD)
     engine->setMarketSettings( "NAVBTC",  11, 75, 6, 16, 15, 25, false, 0.0020 );
     engine->setMarketSettings( "MANABTC", 11, 75, 6, 16, 15, 25, false, 0.0020 );
@@ -134,8 +126,8 @@ void BncREST::init()
     send_timer->setInterval( 400 );
     orderbook_timer->setInterval( 10000 );
     ticker_timer->setInterval( 20000 );
-    engine->settings().should_clear_stray_orders = false;
-    engine->settings().should_clear_stray_orders_all = false;
+    engine->should_clear_stray_orders = false;
+    engine->should_clear_stray_orders_all = false;
 #endif
 
     //sendRequest( "sign-get-order", "symbol=XMRBTC&orderId=53849332" );

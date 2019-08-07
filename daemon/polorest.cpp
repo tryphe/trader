@@ -68,16 +68,6 @@ void PoloREST::init()
     BaseREST::limit_timeout_yield = 5;
     BaseREST::market_cancel_thresh = 99; // limit for market order total for weighting cancels to be sent first
 
-    engine->settings().fee = "0.0010"; // preset the fee
-    engine->settings().request_timeout = 3 * 60000;  // how long before we resend most requests
-    engine->settings().cancel_timeout = 5 * 60000;  // how long before we resend a cancel request
-    engine->settings().should_slippage_be_calculated = true;  // try calculated slippage before additive. false = additive + additive2 only
-    engine->settings().should_adjust_hibuy_losell = true;  // adjust hi_buy/lo_sell maps based on post-only price errors
-    engine->settings().should_adjust_hibuy_losell_debugmsgs_ticker = false;  // enable chatty messages for hi/lo bounds adjust for wss-ticker
-    engine->settings().stray_grace_time_limit = 10 * 60000;  // time to allow stray orders to stick around before we cancel them. this is also the re-cancel time (keep it largeish)
-    engine->settings().safety_delay_time = 2000;  // only detect a filled order after this amount of time - fixes possible orderbook lag
-    engine->settings().ticker_safety_delay_time = 2000;
-
 #if defined(TRYPHE_BUILD)
     engine->setMarketSettings( "BTC_BCN",  10, 30, 1,  0,  0,  0, false, 0.0017 );
     engine->setMarketSettings( "BTC_BTS",  11, 44, 6, 10,  9, 10, false, 0.0017 );
@@ -163,8 +153,8 @@ void PoloREST::init()
     orderbook_timer->setInterval( 10000 );
     ticker_timer->setInterval( 20000 );
     should_correct_nonce = true;
-    engine->settings().should_clear_stray_orders = false;
-    engine->settings().should_clear_stray_orders_all = false;
+    engine->should_clear_stray_orders = false;
+    engine->should_clear_stray_orders_all = false;
 #endif
 }
 
@@ -461,7 +451,7 @@ void PoloREST::parseFeeInfo( const QJsonObject &info )
 
     if ( Coin( maker ).isGreaterThanZero() )
     {
-        engine->settings().fee = maker;
+        engine->fee = maker;
         kDebug() << QString( "(fee) maker %1%, taker %2%, 30-day volume %3" )
                              .arg( QString( Coin( maker ) * 100 ).mid( 0, 4 ) )
                              .arg( QString( Coin( taker ) * 100 ).mid( 0, 4 ) )

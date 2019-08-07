@@ -13,24 +13,47 @@ class REST_OBJECT;
 class Stats;
 class WSInterface;
 
-struct EngineSettings
+class EngineSettings : public QObject
 {
+    Q_OBJECT
+public:
+
     explicit EngineSettings()
+      : QObject( nullptr )
     {
+        // global settings (probably shouldn't be modified
         is_chatty = false;
         should_clear_stray_orders = false /*false*/; // auto cancels orders that aren't ours - set false when multiple bots are running the same api key
         should_clear_stray_orders_all = false; // cancel orders not in our price index
-        should_slippage_be_calculated = false; // try calculated slippage before additive. false = additive + additive2 only
         should_adjust_hibuy_losell = true; // adjust hi_buy/lo_sell maps based on post-only price errors
         should_adjust_hibuy_losell_debugmsgs_ticker = false; // enable chatty messages for hi/lo bounds adjust for wss-ticker
         should_mitigate_blank_orderbook_flash = true;
         should_dc_slippage_orders = false;
         should_use_aggressive_spread = true;
-        request_timeout = 3 * 60000; // how long before we resend most requests
-        cancel_timeout = 6 * 60000; // how long before we resend a cancel request
-        stray_grace_time_limit = 0; // time to allow stray orders to stick around before we cancel them. this is also the re-cancel time (keep it largeish)
-        safety_delay_time = 0; // allow for a safe period to avoid orders we just set possibly not showing up yet
-        ticker_safety_delay_time = 0; // only accept ticker after this amount of time
+        stray_grace_time_limit = 10 * 60000;
+
+        // per exchange settings
+#if defined(EXCHANGE_POLONIEX)
+        fee = "0.0010"; // preset the fee
+        request_timeout = 3 * 60000;  // how long before we resend most requests
+        cancel_timeout = 5 * 60000;  // how long before we resend a cancel request
+        should_slippage_be_calculated = true;  // try calculated slippage before additive. false = additive + additive2 only
+        safety_delay_time = 2000;  // only detect a filled order after this amount of time - fixes possible orderbook lag
+        ticker_safety_delay_time = 2000;
+#elif defined(EXCHANGE_BITTREX)
+        fee = "0.0025"; // preset the fee
+        request_timeout = 3 * 60000;
+        cancel_timeout = 5 * 60000;
+        safety_delay_time = 8500;
+        ticker_safety_delay_time = 8500;
+#elif defined(EXCHANGE_BINANCE)
+        fee = "0.00075"; // preset the fee
+        request_timeout = 3 * 60000;
+        cancel_timeout = 3 * 60000;
+        should_slippage_be_calculated = true;
+        safety_delay_time = 2000;
+        ticker_safety_delay_time = 2000;
+#endif
     }
 
     Coin fee;
@@ -51,7 +74,7 @@ struct EngineSettings
     qint64 ticker_safety_delay_time;
 };
 
-class Engine : public QObject
+class Engine : public EngineSettings
 {
     Q_OBJECT
 
@@ -121,8 +144,6 @@ public:
 
     QSet<Position*> &positionsAll() { return positions_all; }
 
-    EngineSettings &settings() { return m_settings; }
-
     QHash<QString, MarketInfo> &getMarketInfoStructure() { return market_info; }
     MarketInfo &getMarketInfo( const QString &market ) { return market_info[ market ]; }
 
@@ -183,8 +204,6 @@ private:
 
     // other
     QHash<QString/*order_id*/, qint64/*seen_time*/> order_grace_times; // record "seen" time to allow for grace period before we remove stray orders
-
-    EngineSettings m_settings;
 
     // state for cancel commands
     bool is_running_cancelall;
