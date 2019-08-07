@@ -44,7 +44,6 @@ public:
     void cancelHighest( const QString &market );
     void cancelLowest( const QString &market );
     //void cancelOrderByPrice( const QString &market, QString price );
-    //void setOrderMeat( Position *const &pos, QString order_number );
     void saveMarket( QString market, qint32 num_orders = 15 );
 
     void setNextLowest( const QString &market, quint8 side = SIDE_BUY, bool landmark = false );

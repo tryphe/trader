@@ -34,6 +34,8 @@ Engine::Engine()
 
 Engine::~Engine()
 {
+    delete positions;
+    delete settings;
 
     // these are deleted in trader
     rest = nullptr;
