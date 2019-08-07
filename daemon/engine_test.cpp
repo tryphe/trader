@@ -127,8 +127,8 @@ void EngineTest::test( Engine *e )
     assert( p5->strategy_tag == "test-strat" );
 
     // test getBuyTotal/getSellTotal
-    assert( e->getBuyTotal( "TEST" ) == 1 );
-    assert( e->getSellTotal( "TEST" ) == 0 );
+    assert( e->positions->getBuyTotal( "TEST" ) == 1 );
+    assert( e->positions->getSellTotal( "TEST" ) == 0 );
 
     // cancel positions and clear mappings
     e->cancelLocal();

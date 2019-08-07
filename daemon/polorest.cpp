@@ -595,7 +595,7 @@ void PoloREST::sendNamQueue()
 
         // check for cancel
         if ( request->api_command == POLO_COMMAND_CANCEL &&
-             engine->getMarketOrderTotal( pos->market ) >= market_cancel_thresh )
+             engine->positions->getMarketOrderTotal( pos->market ) >= market_cancel_thresh )
         {
             // expedite the cancel
             sorted_nam_queue.insert( 100., request );

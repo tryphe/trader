@@ -165,7 +165,7 @@ void TrexREST::sendNamQueue()
 
         // check if we should prioritize cancel
         if ( request->api_command == TREX_COMMAND_CANCEL &&
-             engine->getMarketOrderTotal( pos->market ) >= market_cancel_thresh )
+             engine->positions->getMarketOrderTotal( pos->market ) >= market_cancel_thresh )
         {
             // expedite the cancel
             sorted_nam_queue.insert( 100., request );
@@ -679,7 +679,7 @@ void TrexREST::parseReturnBalances( const QJsonArray &balances )
         }
         else // for alts, we format DOGE -> BTC-DOGE style string
         {
-            value_d *= engine->getHiBuy( QString( "BTC-%1" ).arg( currency ) );
+            value_d *= engine->positions->getHiBuy( QString( "BTC-%1" ).arg( currency ) );
             total_d += value_d;
         }
 

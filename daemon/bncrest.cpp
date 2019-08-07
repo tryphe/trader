@@ -182,7 +182,7 @@ void BncREST::sendNamQueue()
 
         // check for cancel
         if ( request->api_command == BNC_COMMAND_CANCEL &&
-             engine->getMarketOrderTotal( pos->market ) >= market_cancel_thresh )
+             engine->positions->getMarketOrderTotal( pos->market ) >= market_cancel_thresh )
         {
             // expedite the cancel
             sorted_nam_queue.insert( 100., request );
@@ -799,7 +799,7 @@ void BncREST::parseReturnBalances( const QJsonObject &obj )
 
         Coin btcValue = total;
         if ( currency != "BTC" )
-            btcValue *= engine->getHiBuy( currency + "BTC" );
+            btcValue *= engine->positions->getHiBuy( currency + "BTC" );
 
         //kDebug() << currency << available << total << btcValue;
 

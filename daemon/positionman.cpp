@@ -55,6 +55,407 @@ Position *PositionMan::getPositionForOrderID( const QString &order_id ) const
     return positions_by_number.value( order_id, nullptr );
 }
 
+Coin PositionMan::getHiBuyFlipPrice( const QString &market ) const
+{
+    Position *pos = getHighestActiveBuyPosByPrice( market );
+
+    // check pos
+    if ( !pos || !isActive( pos ) )
+        return 0.;
+
+    kDebug() << "hi_buy_flip" << pos->stringifyOrder();
+
+    return pos->sell_price;
+}
+
+Coin PositionMan::getLoSellFlipPrice( const QString &market ) const
+{
+    Position *pos = getLowestActiveSellPosByPrice( market );
+
+    // check pos
+    if ( !pos || !isActive( pos ) )
+        return 0.;
+
+    kDebug() << "lo_sell_flip" << pos->stringifyOrder();
+
+    return pos->buy_price;
+}
+
+Position *PositionMan::getPositionByIndex( const QString &market, const qint32 idx ) const
+{
+    Position *ret = nullptr;
+
+    for ( QSet<Position*>::const_iterator i = positions_all.begin(); i != positions_all.end(); i++ )
+    {
+        Position *const &pos = *i;
+
+        // check for idx
+        if ( pos->market == market && pos->market_indices.contains( idx ) )
+            return pos;
+    }
+
+    return ret;
+}
+
+bool PositionMan::isDivergingConverging( const QString &market, const qint32 index ) const
+{
+    return diverging_converging[ market ].contains( index );
+}
+
+Position *PositionMan::getHighestActiveBuyPosByIndex( const QString &market ) const
+{
+    Position *ret = nullptr;
+    qint32 idx_hi_buy = -1;
+
+    for ( QSet<Position*>::const_iterator i = positions_active.begin(); i != positions_active.end(); i++ )
+    {
+        Position *const &pos = *i;
+        if (  pos->side != SIDE_BUY ||         // sells only
+              pos->is_cancelling ||             // must not be cancelling
+              pos->order_number.size() == 0 ||  // must be set
+              pos->market != market             // check market filter
+              )
+            continue;
+
+        const qint32 pos_idx = pos->getHighestMarketIndex();
+        if ( pos_idx > idx_hi_buy ) // position index is greater than our incrementor
+        {
+            idx_hi_buy = pos_idx;
+            ret = pos;
+        }
+    }
+
+    return ret;
+}
+
+Position *PositionMan::getHighestActiveSellPosByIndex( const QString &market ) const
+{
+    Position *ret = nullptr;
+    qint32 idx_hi_buy = -1;
+
+    for ( QSet<Position*>::const_iterator i = positions_active.begin(); i != positions_active.end(); i++ )
+    {
+        Position *const &pos = *i;
+        if (  pos->side != SIDE_SELL ||         // sells only
+              pos->is_cancelling ||             // must not be cancelling
+              pos->order_number.size() == 0 ||  // must be set
+              pos->market != market             // check market filter
+              )
+            continue;
+
+        const qint32 pos_idx = pos->getHighestMarketIndex();
+        if ( pos_idx > idx_hi_buy ) // position index is greater than our incrementor
+        {
+            idx_hi_buy = pos_idx;
+            ret = pos;
+        }
+    }
+
+    return ret;
+}
+
+Position *PositionMan::getLowestActiveSellPosByIndex( const QString &market ) const
+{
+    Position *ret = nullptr;
+    qint32 idx_lo_sell = std::numeric_limits<qint32>::max();
+
+    for ( QSet<Position*>::const_iterator i = positions_active.begin(); i != positions_active.end(); i++ )
+    {
+        Position *const &pos = *i;
+        if (  pos->side != SIDE_SELL ||         // sells only
+              pos->is_cancelling ||             // must not be cancelling
+              pos->order_number.size() == 0 ||  // must be set
+              pos->market != market             // check market filter
+              )
+            continue;
+        const qint32 pos_idx = pos->getLowestMarketIndex();
+        if ( pos_idx < idx_lo_sell ) // position index is greater than our incrementor
+        {
+            idx_lo_sell = pos_idx;
+            ret = pos;
+        }
+    }
+
+    return ret;
+}
+
+Position *PositionMan::getLowestActiveBuyPosByIndex( const QString &market ) const
+{
+    Position *ret = nullptr;
+    qint32 idx_lo_sell = std::numeric_limits<qint32>::max();
+
+    for ( QSet<Position*>::const_iterator i = positions_active.begin(); i != positions_active.end(); i++ )
+    {
+        Position *const &pos = *i;
+        if (  pos->side != SIDE_BUY ||          // sells only
+              pos->is_cancelling ||             // must not be cancelling
+              pos->order_number.size() == 0 ||  // must be set
+              pos->market != market             // check market filter
+              )
+            continue;
+
+        const qint32 pos_idx = pos->getLowestMarketIndex();
+        if ( pos_idx < idx_lo_sell ) // position index is greater than our incrementor
+        {
+            idx_lo_sell = pos_idx;
+            ret = pos;
+        }
+    }
+
+    return ret;
+}
+
+Position *PositionMan::getHighestActiveBuyPosByPrice( const QString &market ) const
+{
+    Position *ret = nullptr;
+    Coin hi_buy = -1;
+
+    for ( QSet<Position*>::const_iterator i = positions_active.begin(); i != positions_active.end(); i++ )
+    {
+        Position *const &pos = *i;
+        if (  pos->side != SIDE_BUY ||          // sells only
+              pos->is_cancelling ||             // must not be cancelling
+              pos->order_number.size() == 0 ||  // must be set
+              pos->market != market             // check market filter
+              )
+            continue;
+
+        if ( pos->buy_price > hi_buy ) // position index is greater than our incrementor
+        {
+            hi_buy = pos->buy_price;
+            ret = pos;
+        }
+    }
+
+    return ret;
+}
+
+Position *PositionMan::getLowestActiveSellPosByPrice( const QString &market ) const
+{
+    Position *ret = nullptr;
+    Coin lo_sell = CoinAmount::A_LOT;
+
+    for ( QSet<Position*>::const_iterator i = positions_active.begin(); i != positions_active.end(); i++ )
+    {
+        Position *const &pos = *i;
+        if (  pos->side != SIDE_SELL ||         // sells only
+              pos->is_cancelling ||             // must not be cancelling
+              pos->order_number.size() == 0 ||  // must be set
+              pos->market != market             // check market filter
+              )
+            continue;
+
+        if ( pos->sell_price < lo_sell ) // position index is less than our incrementor
+        {
+            lo_sell = pos->sell_price;
+            ret = pos;
+        }
+    }
+
+    return ret;
+}
+
+Position *PositionMan::getLowestActivePingPong( const QString &market ) const
+{
+    // store lo and lo pointer
+    Position *lo_pos = nullptr;
+    qint32 lo_idx = std::numeric_limits<qint32>::max();
+
+    // look for highest position for a market
+    qint32 pos_lo_idx;
+    for ( QSet<Position*>::const_iterator i = positions_all.begin(); i != positions_all.end(); i++ )
+    {
+        Position *const &pos = *i;
+
+        // note: cancelLowest() uses this. we must exlude one-time orders otherwise automatic ping-pong
+        //       maintenance interferes with one-time orders.
+        if ( pos->is_onetime )
+            continue;
+
+        pos_lo_idx = pos->getLowestMarketIndex();
+
+        if ( pos_lo_idx < lo_idx &&
+            !pos->is_cancelling &&
+             pos->market == market )
+        {
+            lo_idx = pos_lo_idx;
+            lo_pos = pos;
+        }
+    }
+
+    return lo_pos;
+}
+
+Position *PositionMan::getHighestActivePingPong( const QString &market ) const
+{
+    // store hi and high pointer
+    Position *hi_pos = nullptr;
+    qint32 hi_idx = -1;
+
+    // look for highest sell index for a market
+    qint32 pos_hi_idx;
+    for ( QSet<Position*>::const_iterator i = positions_all.begin(); i != positions_all.end(); i++ )
+    {
+        Position *const &pos = *i;
+
+        // note: cancelHighest() uses this. we must exlude one-time orders otherwise automatic ping-pong
+        //       maintenance interferes with one-time orders.
+        if ( pos->is_onetime )
+            continue;
+
+        pos_hi_idx = pos->getHighestMarketIndex();
+
+        if ( pos_hi_idx > hi_idx &&
+            !pos->is_cancelling &&
+             pos->market == market )
+        {
+            hi_idx = pos_hi_idx;
+            hi_pos = pos;
+        }
+    }
+
+    return hi_pos;
+}
+
+qint32 PositionMan::getMarketOrderTotal( const QString &market, bool onetime_only ) const
+{
+    if ( market.isEmpty() )
+        return 0;
+
+    qint32 total = 0;
+
+    // get total order count for a market
+    for ( QSet<Position*>::const_iterator i = positions_all.begin(); i != positions_all.end(); i++ )
+    {
+        const Position *const &pos = *i;
+
+        // onetime_only, only include onetime orders
+        if ( onetime_only && !pos->is_onetime )
+            continue;
+
+        if ( pos->market == market )
+            total++;
+    }
+
+    return total;
+}
+
+qint32 PositionMan::getBuyTotal( const QString &market ) const
+{
+    if ( market.isEmpty() )
+        return 0;
+
+    qint32 total = 0;
+
+    // get total order count for a market
+    for ( QSet<Position*>::const_iterator i = positions_all.begin(); i != positions_all.end(); i++ )
+    {
+        Position *const &pos = *i;
+
+        if ( pos->side == SIDE_BUY &&
+             pos->market == market )
+            total++;
+    }
+
+    return total;
+}
+
+void PositionMan::flipLoSellIndex( const QString &market, QString tag )
+{
+    Position *pos = getLowestActiveSellPosByIndex( market );
+
+    // check pos
+    if ( !isActive( pos ) )
+        return;
+
+    pos->strategy_tag = tag;
+    pos->per_trade_profit = Coin(); // clear trade profit from message
+    kDebug() << QString( "queued long     %1" )
+                  .arg( pos->stringifyPositionChange() );
+
+    engine->cancelOrder( pos, false, CANCELLING_FOR_SHORTLONG );
+}
+
+Coin PositionMan::getLoSell( const QString &market ) const
+{
+    return engine->market_info[ market ].lowest_sell;
+}
+
+Coin PositionMan::getHiBuy( const QString &market ) const
+{
+    return engine->market_info[ market ].highest_buy;
+}
+
+qint32 PositionMan::getSellTotal( const QString &market ) const
+{
+    if ( market.isEmpty() )
+        return 0;
+
+    qint32 total = 0;
+
+    // get total order count for a market
+    for ( QSet<Position*>::const_iterator i = positions_all.begin(); i != positions_all.end(); i++ )
+    {
+        Position *const &pos = *i;
+
+        if ( pos->side == SIDE_SELL &&
+             pos->market == market )
+            total++;
+    }
+
+    return total;
+}
+
+void PositionMan::flipHiBuyPrice( const QString &market, QString tag )
+{
+    Position *pos = getHighestActiveBuyPosByPrice( market );
+
+    // check pos
+    if ( !isActive( pos ) )
+        return;
+
+    pos->strategy_tag = tag;
+    pos->per_trade_profit = Coin(); // clear trade profit from message
+    kDebug() << QString( "queued short    %1" )
+                  .arg( pos->stringifyPositionChange() );
+
+    engine->cancelOrder( pos, false, CANCELLING_FOR_SHORTLONG );
+}
+
+void PositionMan::flipHiBuyIndex( const QString &market, QString tag )
+{
+    Position *pos = getHighestActiveBuyPosByIndex( market );
+
+    // check pos
+    if ( !isActive( pos ) )
+        return;
+
+    pos->strategy_tag = tag;
+    pos->per_trade_profit = Coin(); // clear trade profit from message
+    kDebug() << QString( "queued short    %1" )
+                  .arg( pos->stringifyPositionChange() );
+
+    engine->cancelOrder( pos, false, CANCELLING_FOR_SHORTLONG );
+}
+
+void PositionMan::flipLoSellPrice( const QString &market, QString tag )
+{
+    Position *pos = getLowestActiveSellPosByPrice( market );
+
+    // check pos
+    if ( !isActive( pos ) )
+        return;
+
+    pos->strategy_tag = tag;
+    pos->per_trade_profit = Coin(); // clear trade profit from message
+    kDebug() << QString( "queued long     %1" )
+                  .arg( pos->stringifyPositionChange() );
+
+    engine->cancelOrder( pos, false, CANCELLING_FOR_SHORTLONG );
+}
+
+
+
 void PositionMan::add( Position * const &pos )
 {
     positions_queued.insert( pos );
@@ -174,3 +575,4 @@ void PositionMan::removeFromDC( Position * const &pos )
     for ( int i = 0; i < pos->market_indices.size(); i++ )
         diverging_converging[ pos->market ].removeOne( pos->market_indices.value( i ) );
 }
+

@@ -138,10 +138,10 @@ Position *Engine::addPosition( QString market, quint8 side, QString buy_price, Q
 
     // anti-stupid check: did we put in a taker price that's <>10% of the current bid/ask?
     if ( !is_override && is_taker &&
-        ( ( side == SIDE_SELL && getHiBuy( market ).ratio( 0.9 ) > Coin( sell_price ) ) ||  // bid * 0.9 > sell_price
-          ( side == SIDE_SELL && getHiBuy( market ).ratio( 1.1 ) < Coin( sell_price ) ) ||  // bid * 1.1 < sell_price
-          ( side == SIDE_BUY && getLoSell( market ).ratio( 1.1 ) < Coin( buy_price ) ) ||  // ask * 1.1 < buy_price
-          ( side == SIDE_BUY && getLoSell( market ).ratio( 0.9 ) > Coin( buy_price ) ) ) ) // ask * 0.9 > buy_price
+        ( ( side == SIDE_SELL && positions->getHiBuy( market ).ratio( 0.9 ) > Coin( sell_price ) ) ||  // bid * 0.9 > sell_price
+          ( side == SIDE_SELL && positions->getHiBuy( market ).ratio( 1.1 ) < Coin( sell_price ) ) ||  // bid * 1.1 < sell_price
+          ( side == SIDE_BUY && positions->getLoSell( market ).ratio( 1.1 ) < Coin( buy_price ) ) ||  // ask * 1.1 < buy_price
+          ( side == SIDE_BUY && positions->getLoSell( market ).ratio( 0.9 ) > Coin( buy_price ) ) ) ) // ask * 0.9 > buy_price
     {
         kDebug() << "local error: taker sell_price:" << sell_price << "buy_price:" << buy_price << "is >10% from spread, aborting order. add '-override' if intentional.";
         return nullptr;
@@ -797,7 +797,7 @@ void Engine::cancelOrder( Position *const &pos, bool quiet, quint8 cancel_reason
         return;
     }
 
-    // if testing, skip ahead to processCancelledOrder logic which just calls positions->remove();
+    // if testing, skip ahead to processCancelledOrder logic which just calls remove();
     if ( is_testing )
     {
         positions->remove( pos );
@@ -844,7 +844,7 @@ void Engine::cancelOrder( Position *const &pos, bool quiet, quint8 cancel_reason
 void Engine::cancelHighest( const QString &market )
 {
     // store hi and high pointer
-    Position *const &hi_pos = getHighestActivePingPong( market );
+    Position *const &hi_pos = positions->getHighestActivePingPong( market );
 
     // cancel highest order
     if ( hi_pos )
@@ -854,7 +854,7 @@ void Engine::cancelHighest( const QString &market )
 void Engine::cancelLowest( const QString &market )
 {
     // store lo and lo pointer
-    Position *const &lo_pos = getLowestActivePingPong( market );
+    Position *const &lo_pos = positions->getLowestActivePingPong( market );
 
     // cancel lowest order
     if ( lo_pos )
@@ -864,7 +864,7 @@ void Engine::cancelLowest( const QString &market )
 //void Engine::cancelOrderByPrice( const QString &market, QString price )
 //{
 //    // now we can look for the order we should delete
-//    for ( QSet<Position*>::const_iterator k = positions->active().begin(); k != positions->active().end(); k++ )
+//    for ( QSet<Position*>::const_iterator k = active().begin(); k != active().end(); k++ )
 //    {
 //        Position *const &pos = *k;
 
@@ -1117,8 +1117,8 @@ void Engine::setNextLowest( const QString &market, quint8 side, bool landmark )
     const qint32 dc_val = info.order_dc;
 
     // count down until we find an index without a position
-    while ( getPositionByIndex( market, new_index ) ||
-            isIndexDivergingConverging( market, new_index ) )
+    while ( positions->getPositionByIndex( market, new_index ) ||
+            positions->isDivergingConverging( market, new_index ) )
         new_index--;
 
     QVector<qint32> indices = QVector<qint32>() << new_index;
@@ -1140,8 +1140,8 @@ void Engine::setNextLowest( const QString &market, quint8 side, bool landmark )
         }
 
         // if we can't use the new index, go to the -next lowest- index and restart the loop
-        if ( getPositionByIndex( market, new_index ) ||
-             isIndexDivergingConverging( market, new_index ) )
+        if ( positions->getPositionByIndex( market, new_index ) ||
+             positions->isDivergingConverging( market, new_index ) )
         {
             while ( indices.size() > 1 )
                 indices.removeLast();
@@ -1224,8 +1224,8 @@ void Engine::setNextHighest( const QString &market, quint8 side, bool landmark )
     const qint32 dc_val = info.order_dc;
 
     // count up until we find an index without a position
-    while ( getPositionByIndex( market, new_index ) ||
-            isIndexDivergingConverging( market, new_index ) )
+    while ( positions->getPositionByIndex( market, new_index ) ||
+            positions->isDivergingConverging( market, new_index ) )
         new_index++;
 
     QVector<qint32> indices = QVector<qint32>() << new_index;
@@ -1247,8 +1247,8 @@ void Engine::setNextHighest( const QString &market, quint8 side, bool landmark )
         }
 
         // if we can't use the new index, find the next valid index and restart the loop
-        if ( getPositionByIndex( market, new_index ) ||
-             isIndexDivergingConverging( market, new_index ) )
+        if ( positions->getPositionByIndex( market, new_index ) ||
+             positions->isDivergingConverging( market, new_index ) )
         {
             while ( indices.size() > 1 )
                 indices.removeLast();
@@ -1321,442 +1321,7 @@ void Engine::flipPosition( Position *const &pos )
     }
 }
 
-void Engine::flipHiBuyPrice( const QString &market, QString tag )
-{
-    Position *pos = getHighestActiveBuyPosByPrice( market );
 
-    // check pos
-    if ( !positions->isActive( pos ) )
-        return;
-
-    pos->strategy_tag = tag;
-    pos->per_trade_profit = Coin(); // clear trade profit from message
-    kDebug() << QString( "queued short    %1" )
-                  .arg( pos->stringifyPositionChange() );
-
-    cancelOrder( pos, false, CANCELLING_FOR_SHORTLONG );
-}
-
-void Engine::flipHiBuyIndex( const QString &market, QString tag )
-{
-    Position *pos = getHighestActiveBuyPosByIndex( market );
-
-    // check pos
-    if ( !positions->isActive( pos ) )
-        return;
-
-    pos->strategy_tag = tag;
-    pos->per_trade_profit = Coin(); // clear trade profit from message
-    kDebug() << QString( "queued short    %1" )
-                  .arg( pos->stringifyPositionChange() );
-
-    cancelOrder( pos, false, CANCELLING_FOR_SHORTLONG );
-}
-
-void Engine::flipLoSellPrice( const QString &market, QString tag )
-{
-    Position *pos = getLowestActiveSellPosByPrice( market );
-
-    // check pos
-    if ( !positions->isActive( pos ) )
-        return;
-
-    pos->strategy_tag = tag;
-    pos->per_trade_profit = Coin(); // clear trade profit from message
-    kDebug() << QString( "queued long     %1" )
-                  .arg( pos->stringifyPositionChange() );
-
-    cancelOrder( pos, false, CANCELLING_FOR_SHORTLONG );
-}
-
-void Engine::flipLoSellIndex( const QString &market, QString tag )
-{
-    Position *pos = getLowestActiveSellPosByIndex( market );
-
-    // check pos
-    if ( !positions->isActive( pos ) )
-        return;
-
-    pos->strategy_tag = tag;
-    pos->per_trade_profit = Coin(); // clear trade profit from message
-    kDebug() << QString( "queued long     %1" )
-                  .arg( pos->stringifyPositionChange() );
-
-    cancelOrder( pos, false, CANCELLING_FOR_SHORTLONG );
-}
-
-Coin Engine::getLoSell( const QString &market ) const
-{
-    return market_info[ market ].lowest_sell;
-}
-
-Coin Engine::getHiBuy( const QString &market ) const
-{
-    return market_info[ market ].highest_buy;
-}
-
-Coin Engine::getHiBuyFlipPrice( const QString &market ) const
-{
-    Position *pos = getHighestActiveBuyPosByPrice( market );
-
-    // check pos
-    if ( !pos || !positions->isActive( pos ) )
-        return 0.;
-
-    kDebug() << "hi_buy_flip" << pos->stringifyOrder();
-
-    return pos->sell_price;
-}
-
-Coin Engine::getLoSellFlipPrice( const QString &market ) const
-{
-    Position *pos = getLowestActiveSellPosByPrice( market );
-
-    // check pos
-    if ( !pos || !positions->isActive( pos ) )
-        return 0.;
-
-    kDebug() << "lo_sell_flip" << pos->stringifyOrder();
-
-    return pos->buy_price;
-}
-
-Position *Engine::getPositionByIndex( const QString &market, const qint32 idx ) const
-{
-    Position *ret = nullptr;
-
-    for ( QSet<Position*>::const_iterator i = positions->all().begin(); i != positions->all().end(); i++ )
-    {
-        Position *const &pos = *i;
-
-        // check for idx
-        if ( pos->market == market && pos->market_indices.contains( idx ) )
-            return pos;
-    }
-
-    return ret;
-}
-
-Coin Engine::getHighestBuyPrice( const QString &market ) const
-{
-    Coin highest_buy_price;
-
-    for ( QSet<Position*>::const_iterator i = positions->all().begin(); i != positions->all().end(); i++ )
-    {
-        Position *const &pos = *i;
-
-        // check for higher buy
-        if ( pos->side == SIDE_BUY &&
-            !pos->is_cancelling &&
-             pos->buy_price > highest_buy_price &&
-             pos->market == market )
-            highest_buy_price = pos->buy_price;
-    }
-
-    return highest_buy_price;
-}
-
-Coin Engine::getLowestSellPrice( const QString &market ) const
-{
-    Coin lowest_sell_price = CoinAmount::A_LOT;
-
-    for ( QSet<Position*>::const_iterator i = positions->all().begin(); i != positions->all().end(); i++ )
-    {
-        Position *const &pos = *i;
-
-        // check for lower sell
-        if ( pos->side == SIDE_SELL &&
-            !pos->is_cancelling &&
-             pos->sell_price < lowest_sell_price &&
-             pos->market == market )
-            lowest_sell_price = pos->sell_price;
-    }
-
-    return lowest_sell_price;
-}
-
-inline bool Engine::isIndexDivergingConverging( const QString &market, const qint32 index ) const
-{
-    return positions->diverging_converging[ market ].contains( index );
-}
-
-Position *Engine::getHighestActiveBuyPosByIndex( const QString &market ) const
-{
-    Position *ret = nullptr;
-    qint32 idx_hi_buy = -1;
-
-    for ( QSet<Position*>::const_iterator i = positions->active().begin(); i != positions->active().end(); i++ )
-    {
-        Position *const &pos = *i;
-        if (  pos->side != SIDE_BUY ||         // sells only
-              pos->is_cancelling ||             // must not be cancelling
-              pos->order_number.size() == 0 ||  // must be set
-              pos->market != market             // check market filter
-              )
-            continue;
-
-        const qint32 pos_idx = pos->getHighestMarketIndex();
-        if ( pos_idx > idx_hi_buy ) // position index is greater than our incrementor
-        {
-            idx_hi_buy = pos_idx;
-            ret = pos;
-        }
-    }
-
-    return ret;
-}
-
-Position *Engine::getHighestActiveSellPosByIndex( const QString &market ) const
-{
-    Position *ret = nullptr;
-    qint32 idx_hi_buy = -1;
-
-    for ( QSet<Position*>::const_iterator i = positions->active().begin(); i != positions->active().end(); i++ )
-    {
-        Position *const &pos = *i;
-        if (  pos->side != SIDE_SELL ||         // sells only
-              pos->is_cancelling ||             // must not be cancelling
-              pos->order_number.size() == 0 ||  // must be set
-              pos->market != market             // check market filter
-              )
-            continue;
-
-        const qint32 pos_idx = pos->getHighestMarketIndex();
-        if ( pos_idx > idx_hi_buy ) // position index is greater than our incrementor
-        {
-            idx_hi_buy = pos_idx;
-            ret = pos;
-        }
-    }
-
-    return ret;
-}
-
-Position *Engine::getLowestActiveSellPosByIndex( const QString &market ) const
-{
-    Position *ret = nullptr;
-    qint32 idx_lo_sell = std::numeric_limits<qint32>::max();
-
-    for ( QSet<Position*>::const_iterator i = positions->active().begin(); i != positions->active().end(); i++ )
-    {
-        Position *const &pos = *i;
-        if (  pos->side != SIDE_SELL ||         // sells only
-              pos->is_cancelling ||             // must not be cancelling
-              pos->order_number.size() == 0 ||  // must be set
-              pos->market != market             // check market filter
-              )
-            continue;
-        const qint32 pos_idx = pos->getLowestMarketIndex();
-        if ( pos_idx < idx_lo_sell ) // position index is greater than our incrementor
-        {
-            idx_lo_sell = pos_idx;
-            ret = pos;
-        }
-    }
-
-    return ret;
-}
-
-Position *Engine::getLowestActiveBuyPosByIndex( const QString &market ) const
-{
-    Position *ret = nullptr;
-    qint32 idx_lo_sell = std::numeric_limits<qint32>::max();
-
-    for ( QSet<Position*>::const_iterator i = positions->active().begin(); i != positions->active().end(); i++ )
-    {
-        Position *const &pos = *i;
-        if (  pos->side != SIDE_BUY ||          // sells only
-              pos->is_cancelling ||             // must not be cancelling
-              pos->order_number.size() == 0 ||  // must be set
-              pos->market != market             // check market filter
-              )
-            continue;
-
-        const qint32 pos_idx = pos->getLowestMarketIndex();
-        if ( pos_idx < idx_lo_sell ) // position index is greater than our incrementor
-        {
-            idx_lo_sell = pos_idx;
-            ret = pos;
-        }
-    }
-
-    return ret;
-}
-
-Position *Engine::getHighestActiveBuyPosByPrice( const QString &market ) const
-{
-    Position *ret = nullptr;
-    Coin hi_buy = -1;
-
-    for ( QSet<Position*>::const_iterator i = positions->active().begin(); i != positions->active().end(); i++ )
-    {
-        Position *const &pos = *i;
-        if (  pos->side != SIDE_BUY ||          // sells only
-              pos->is_cancelling ||             // must not be cancelling
-              pos->order_number.size() == 0 ||  // must be set
-              pos->market != market             // check market filter
-              )
-            continue;
-
-        if ( pos->buy_price > hi_buy ) // position index is greater than our incrementor
-        {
-            hi_buy = pos->buy_price;
-            ret = pos;
-        }
-    }
-
-    return ret;
-}
-
-Position *Engine::getLowestActiveSellPosByPrice( const QString &market ) const
-{
-    Position *ret = nullptr;
-    Coin lo_sell = CoinAmount::A_LOT;
-
-    for ( QSet<Position*>::const_iterator i = positions->active().begin(); i != positions->active().end(); i++ )
-    {
-        Position *const &pos = *i;
-        if (  pos->side != SIDE_SELL ||         // sells only
-              pos->is_cancelling ||             // must not be cancelling
-              pos->order_number.size() == 0 ||  // must be set
-              pos->market != market             // check market filter
-              )
-            continue;
-
-        if ( pos->sell_price < lo_sell ) // position index is less than our incrementor
-        {
-            lo_sell = pos->sell_price;
-            ret = pos;
-        }
-    }
-
-    return ret;
-}
-
-Position *Engine::getLowestActivePingPong( const QString &market ) const
-{
-    // store lo and lo pointer
-    Position *lo_pos = nullptr;
-    qint32 lo_idx = std::numeric_limits<qint32>::max();
-
-    // look for highest position for a market
-    qint32 pos_lo_idx;
-    for ( QSet<Position*>::const_iterator i = positions->all().begin(); i != positions->all().end(); i++ )
-    {
-        Position *const &pos = *i;
-
-        // note: cancelLowest() uses this. we must exlude one-time orders otherwise automatic ping-pong
-        //       maintenance interferes with one-time orders.
-        if ( pos->is_onetime )
-            continue;
-
-        pos_lo_idx = pos->getLowestMarketIndex();
-
-        if ( pos_lo_idx < lo_idx &&
-            !pos->is_cancelling &&
-             pos->market == market )
-        {
-            lo_idx = pos_lo_idx;
-            lo_pos = pos;
-        }
-    }
-
-    return lo_pos;
-}
-
-Position *Engine::getHighestActivePingPong( const QString &market ) const
-{
-    // store hi and high pointer
-    Position *hi_pos = nullptr;
-    qint32 hi_idx = -1;
-
-    // look for highest sell index for a market
-    qint32 pos_hi_idx;
-    for ( QSet<Position*>::const_iterator i = positions->all().begin(); i != positions->all().end(); i++ )
-    {
-        Position *const &pos = *i;
-
-        // note: cancelHighest() uses this. we must exlude one-time orders otherwise automatic ping-pong
-        //       maintenance interferes with one-time orders.
-        if ( pos->is_onetime )
-            continue;
-
-        pos_hi_idx = pos->getHighestMarketIndex();
-
-        if ( pos_hi_idx > hi_idx &&
-            !pos->is_cancelling &&
-             pos->market == market )
-        {
-            hi_idx = pos_hi_idx;
-            hi_pos = pos;
-        }
-    }
-
-    return hi_pos;
-}
-
-qint32 Engine::getMarketOrderTotal( const QString &market, bool onetime_only ) const
-{
-    if ( market.isEmpty() )
-        return 0;
-
-    qint32 total = 0;
-
-    // get total order count for a market
-    for ( QSet<Position*>::const_iterator i = positions->all().begin(); i != positions->all().end(); i++ )
-    {
-        const Position *const &pos = *i;
-
-        // onetime_only, only include onetime orders
-        if ( onetime_only && !pos->is_onetime )
-            continue;
-
-        if ( pos->market == market )
-            total++;
-    }
-
-    return total;
-}
-
-qint32 Engine::getBuyTotal( const QString &market ) const
-{
-    if ( market.isEmpty() )
-        return 0;
-
-    qint32 total = 0;
-
-    // get total order count for a market
-    for ( QSet<Position*>::const_iterator i = positions->all().begin(); i != positions->all().end(); i++ )
-    {
-        Position *const &pos = *i;
-
-        if ( pos->side == SIDE_BUY &&
-             pos->market == market )
-            total++;
-    }
-
-    return total;
-}
-
-qint32 Engine::getSellTotal( const QString &market ) const
-{
-    if ( market.isEmpty() )
-        return 0;
-
-    qint32 total = 0;
-
-    // get total order count for a market
-    for ( QSet<Position*>::const_iterator i = positions->all().begin(); i != positions->all().end(); i++ )
-    {
-        Position *const &pos = *i;
-
-        if ( pos->side == SIDE_SELL &&
-             pos->market == market )
-            total++;
-    }
-
-    return total;
-}
 
 void Engine::cleanGraceTimes()
 {
@@ -2323,7 +1888,7 @@ void Engine::onCheckDivergeConverge()
              !pos->is_cancelling &&                                 // must not be cancelling
              !( !settings->should_dc_slippage_orders && pos->is_slippage ) && // must not be slippage
               pos->order_number.size() &&                           // must be set
-             !isIndexDivergingConverging( market, first_idx ) &&
+             !positions->isDivergingConverging( market, first_idx ) &&
              !converge_buys[ market ].contains( first_idx ) &&
              !diverge_buys[ market ].contains( first_idx ) )
         {
@@ -2349,7 +1914,7 @@ void Engine::onCheckDivergeConverge()
              !pos->is_cancelling &&                                 // must not be cancelling
              !( !settings->should_dc_slippage_orders && pos->is_slippage ) && // must not be slippage
               pos->order_number.size() &&                           // must be set
-             !isIndexDivergingConverging( market, first_idx ) &&
+             !positions->isDivergingConverging( market, first_idx ) &&
              !converge_sells[ market ].contains( first_idx ) &&
              !diverge_sells[ market ].contains( first_idx ) )
         {
@@ -2442,7 +2007,7 @@ void Engine::converge( QMap<QString, QVector<qint32>> &market_map, quint8 side )
                 for ( int k = 0; k < new_order.size(); k++ )
                 {
                     const qint32 idx = new_order.value( k );
-                    Position *const &pos = getPositionByIndex( market, idx );
+                    Position *const &pos = positions->getPositionByIndex( market, idx );
 
                     cancelOrder( pos, true, CANCELLING_FOR_DC );
                     position_list.append( pos );
@@ -2480,7 +2045,7 @@ void Engine::diverge( QMap<QString, QVector<qint32> > &market_map )
         std::sort( indices.begin(), indices.end() );
 
         const qint32 index = indices.value( 0 );
-        Position *const &pos = getPositionByIndex( market, index ); // get position for index
+        Position *const &pos = positions->getPositionByIndex( market, index ); // get position for index
 
         kDebug() << QString( "diverging  %1 %2" )
                      .arg( market, -8 )

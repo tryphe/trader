@@ -6,6 +6,7 @@
 #include "polorest.h"
 #include "bncrest.h"
 #include "stats.h"
+#include "positionman.h"
 
 #include <functional>
 
@@ -195,8 +196,8 @@ void CommandRunner::runCommandChunk( QString &s )
                         .arg( market )
                         .arg( orders_set )
                         .arg( engine->getMarketInfo( market ).position_index.size() )
-                        .arg( engine->getMarketOrderTotal( market ) )
-                        .arg( engine->getMarketOrderTotal( market, true ) );
+                        .arg( engine->positions->getMarketOrderTotal( market ) )
+                        .arg( engine->positions->getMarketOrderTotal( market, true ) );
     }
 }
 
@@ -387,22 +388,22 @@ void CommandRunner::command_setnexthighest( QStringList &args )
 
 void CommandRunner::command_long( QStringList &args )
 {
-    engine->flipLoSellPrice( args.value( 1 ), args.value( 2 ) );
+    engine->positions->flipLoSellPrice( args.value( 1 ), args.value( 2 ) );
 }
 
 void CommandRunner::command_longindex( QStringList &args )
 {
-    engine->flipLoSellIndex( args.value( 1 ), args.value( 2 ) );
+    engine->positions->flipLoSellIndex( args.value( 1 ), args.value( 2 ) );
 }
 
 void CommandRunner::command_short( QStringList &args )
 {
-    engine->flipHiBuyPrice( args.value( 1 ), args.value( 2 ) );
+    engine->positions->flipHiBuyPrice( args.value( 1 ), args.value( 2 ) );
 }
 
 void CommandRunner::command_shortindex( QStringList &args )
 {
-    engine->flipHiBuyIndex( args.value( 1 ), args.value( 2 ) );
+    engine->positions->flipHiBuyIndex( args.value( 1 ), args.value( 2 ) );
 }
 
 void CommandRunner::command_setcancelthresh( QStringList &args )

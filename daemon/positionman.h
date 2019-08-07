@@ -1,6 +1,8 @@
 #ifndef POSITIONMAN_H
 #define POSITIONMAN_H
 
+#include "coinamount.h"
+
 #include <QObject>
 #include <QMap>
 #include <QSet>
@@ -34,12 +36,35 @@ public:
     bool isPosition( Position *const &pos ) const;
     bool isPositionOrderID( const QString &order_id ) const;
     Position *getPositionForOrderID( const QString &order_id ) const;
+    Position *getPositionByIndex( const QString &market, const qint32 idx ) const;
+    Position *getHighestActiveBuyPosByIndex( const QString &market ) const;
+    Position *getHighestActiveSellPosByIndex( const QString &market ) const;
+    Position *getLowestActiveSellPosByIndex( const QString &market ) const;
+    Position *getLowestActiveBuyPosByIndex( const QString &market ) const;
+    Position *getHighestActiveBuyPosByPrice( const QString &market ) const;
+    Position *getLowestActiveSellPosByPrice( const QString &market ) const;
+    Position *getLowestActivePingPong( const QString &market ) const;
+    Position *getHighestActivePingPong( const QString &market ) const;
+    qint32 getMarketOrderTotal( const QString &market, bool onetime_only = false ) const;
+    qint32 getBuyTotal( const QString &market ) const;
+    qint32 getSellTotal( const QString &market ) const;
+
+    void flipHiBuyPrice( const QString &market, QString tag = QLatin1String() );
+    void flipHiBuyIndex( const QString &market, QString tag = QLatin1String() );
+    void flipLoSellPrice( const QString &market, QString tag = QLatin1String() );
+    void flipLoSellIndex( const QString &market, QString tag = QLatin1String() );
+    Coin getLoSell( const QString &market ) const;
+    Coin getHiBuy( const QString &market ) const;
+    Coin getHiBuyFlipPrice( const QString &market ) const;
+    Coin getLoSellFlipPrice( const QString &market ) const;
 
     void add( Position *const &pos );
     void activate( Position *const &pos, const QString &order_number );
     void remove( Position *const &pos );
     void removeFromDC( Position *const &pos );
     int getDCCount() { return diverge_converge.size(); }
+
+    bool isDivergingConverging( const QString &market, const qint32 index ) const;
 
 private:
     // maintain a map of queued positions and set positions
