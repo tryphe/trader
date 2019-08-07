@@ -3,6 +3,7 @@
 #include "global.h"
 #include "position.h"
 #include "coinamount.h"
+#include "stats.h"
 
 #include <algorithm>
 #include <assert.h>
@@ -13,6 +14,7 @@
 void EngineTest::test( Engine *e )
 {
     e->setTesting( true );
+    e->setVerbosity( 0 );
 
     // test sorting for diverge/converge
     QVector<qint32> indices = QVector<qint32>() << 3 << 1 << 5 << 2 << 4;
@@ -129,11 +131,88 @@ void EngineTest::test( Engine *e )
 
     // cancel positions and clear mappings
     e->cancelLocal();
+    assert( e->positionsAll().size() == 0 );
+
+    /// run ping-pong fill test
+    ///
+    ///   BUYS  |  SELLS
+    ///   1 2 3 | 5 6 7 8
+    ///        \_/
+    ///
+    /// 4 4 4 4 | 5 5 5
+    ///
+    e->market_info[ "TEST" ].highest_buy = "0.00000004";
+    e->market_info[ "TEST" ].lowest_sell = "0.00000005";
+    QVector<Position*> pp;
+    pp += e->addPosition( "TEST", SIDE_BUY,  "0.00000001", "0.00000002", "0.1", "active" ); // 0
+    pp += e->addPosition( "TEST", SIDE_BUY,  "0.00000002", "0.00000003", "0.1", "active" ); // 1
+    pp += e->addPosition( "TEST", SIDE_BUY,  "0.00000003", "0.00000004", "0.1", "active" ); // 2
+    pp += e->addPosition( "TEST", SIDE_SELL, "0.00000004", "0.00000005", "0.1", "active" ); // 3
+    pp += e->addPosition( "TEST", SIDE_SELL, "0.00000005", "0.00000006", "0.1", "active" ); // 4
+    pp += e->addPosition( "TEST", SIDE_SELL, "0.00000006", "0.00000007", "0.1", "active" ); // 5
+    pp += e->addPosition( "TEST", SIDE_SELL, "0.00000007", "0.00000008", "0.1", "active" ); // 6
+
+    // simulate fills
+    e->processFilledOrders( pp, FILL_WSS );
+    //e->stats->printOrdersByIndex( "TEST" );
+
+//    kDebug() << "hi_buy: " << e->market_info[ "TEST" ].highest_buy;
+//    kDebug() << "lo_sell:" << e->market_info[ "TEST" ].lowest_sell;
+
+    // orders are filled, revamp list
+    pp.clear();
+    pp += e->positionsAll().values().toVector();
+
+    for ( QSet<Position*>::const_iterator i = e->positionsAll().begin(); i != e->positionsAll().end(); i++ )
+    {
+        Position *pos = *i;
+        if ( pos->side == SIDE_BUY )
+            assert( pos->price == "0.00000004" );
+        else
+            assert( pos->price == "0.00000005" );
+    }
+
+    e->cancelLocal();
+    assert( e->positionsAll().size() == 0 );
+    ///
+
+//    /// run post-fill spread adjustment test
+//    /// bid ticker = 100
+//    /// ask ticker = 110
+//    ///
+//    /// index 0 is a buy at 97
+//    /// index 1 is a sell at 112
+//    /// once index 0 fills, we know the exchange's bid is at most 97,   so index 1's buy  at 98 is now 97
+//    /// once index 1 fills, we know the exchange's ask is at least 112, so index 0's sell at 111 is now 112
+//    ///
+//    /// even though our post-fill bounds are 98|111, we set them to
+//    ///
+//    e->market_info[ "TEST" ].highest_buy = "0.00000100";
+//    e->market_info[ "TEST" ].lowest_sell = "0.00000110";
+//    pp.clear();
+//    pp += e->addPosition( "TEST", SIDE_BUY,  "0.00000097", "0.00000111", "0.1", "active" ); // 0
+//    pp += e->addPosition( "TEST", SIDE_SELL, "0.00000098", "0.00000112", "0.1", "active" ); // 1
+
+//    // simulate fills
+//    e->processFilledOrders( pp, FILL_WSS );
+
+//    kDebug() << "hi_buy: " << e->market_info[ "TEST" ].highest_buy;
+//    kDebug() << "lo_sell:" << e->market_info[ "TEST" ].lowest_sell;
+
+////    assert( e->market_info[ "TEST" ].highest_buy == "0.00000097" );
+////    assert( e->market_info[ "TEST" ].lowest_sell == "0.00000112" );
+
+//    e->cancelLocal();
+//    ///
+
+    // clear some stuff and disable test mode
     e->getMarketInfoStructure().clear(); // clear "TEST" market from market settings
     e->diverging_converging.clear(); // clear "TEST" from dc market index
     e->setTesting( false );
+    e->setVerbosity( 1 );
 
     // make sure the engine was cleared of our test positions and markets
+    assert( e->positions_queued.size() == 0 );
     assert( e->positionsAll().size() == 0 );
     assert( e->getMarketInfoStructure().size() == 0 );
     assert( e->diverge_converge.size() == 0 );
