@@ -188,7 +188,7 @@ Position *Engine::addPosition( QString market, quint8 side, QString buy_price, Q
     if ( ( pos->side == SIDE_BUY  && pos->buy_price.isGreaterThanZero() && buy_limit.isGreaterThanZero() && pos->buy_price < buy_limit ) ||
          ( pos->side == SIDE_SELL && pos->sell_price.isGreaterThanZero() && sell_limit.isGreaterThanZero() && pos->sell_price > sell_limit ) )
     {
-        if ( pos->is_onetime )
+        if ( pos->is_onetime ) // if ping-pong, don't warn
             kDebug() << "local warning: hit PERCENT_PRICE limit for" << market << buy_limit << sell_limit << "for pos" << pos->stringifyOrderWithoutOrderID();
         delete pos;
         return nullptr;
@@ -225,7 +225,6 @@ Position *Engine::addPosition( QString market, quint8 side, QString buy_price, Q
     if ( is_testing )
     {
         pos->order_number = pos->market + QString::number( pos->getLowestMarketIndex() );
-        //kDebug() << pos->order_number;
         positions->activate( pos, pos->order_number );
         return pos;
     }
