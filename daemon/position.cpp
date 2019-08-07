@@ -1,6 +1,7 @@
 #include "position.h"
 #include "trexrest.h"
 #include "engine.h"
+#include "enginesettings.h"
 #include "bncrest.h"
 #include "polorest.h"
 #include "trexrest.h"
@@ -259,7 +260,7 @@ void Position::applyOffset( qreal _offset, bool sentiment )
     }
     //
 
-    const Coin fee = engine ? engine->fee : Coin();
+    const Coin fee = engine != nullptr ? engine->settings->fee : Coin();
 
     // calculate profit multipler while avoiding div0
     Coin profit_multiplier;

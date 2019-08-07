@@ -5,7 +5,6 @@
 #include "position.h"
 #include "baserest.h"
 #include "coinamount.h"
-#include "enginesettings.h"
 
 #include <QObject>
 #include <QNetworkReply>
@@ -13,8 +12,10 @@
 class REST_OBJECT;
 class Stats;
 class WSInterface;
+class PositionMan;
+class EngineSettings;
 
-class Engine : public EngineSettings
+class Engine : public QObject
 {
     Q_OBJECT
 
@@ -70,6 +71,10 @@ public:
     qint32 getMarketOrderTotal( const QString &market, bool onetime_only = false ) const;
     qint32 getBuyTotal( const QString &market ) const;
     qint32 getSellTotal( const QString &market ) const;
+
+    PositionMan *positions;
+    EngineSettings *settings;
+
 
     // utility functions
     void setStats( Stats *_stats ) { stats = _stats; }

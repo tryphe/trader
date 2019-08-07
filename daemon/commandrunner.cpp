@@ -1,6 +1,7 @@
 #include "commandrunner.h"
 #include "global.h"
 #include "engine.h"
+#include "enginesettings.h"
 #include "trexrest.h"
 #include "polorest.h"
 #include "bncrest.h"
@@ -585,8 +586,8 @@ void CommandRunner::command_settickerinterval( QStringList &args )
 
 void CommandRunner::command_setgracetimelimit( QStringList &args )
 {
-    engine->stray_grace_time_limit = args.value( 1 ).toLong();
-    kDebug() << "stray_grace_time_limit set to" << engine->stray_grace_time_limit;
+    engine->settings->stray_grace_time_limit = args.value( 1 ).toLong();
+    kDebug() << "stray_grace_time_limit set to" << engine->settings->stray_grace_time_limit;
 }
 
 void CommandRunner::command_setcheckinterval( QStringList &args )
@@ -603,44 +604,44 @@ void CommandRunner::command_setdcinterval( QStringList &args )
 
 void CommandRunner::command_setclearstrayorders( QStringList &args )
 {
-    engine->should_clear_stray_orders = args.value( 1 ) == "true" ? true : false;
-    kDebug() << "should_clear_stray_orders set to" << engine->should_clear_stray_orders;
+    engine->settings->should_clear_stray_orders = args.value( 1 ) == "true" ? true : false;
+    kDebug() << "should_clear_stray_orders set to" << engine->settings->should_clear_stray_orders;
 }
 
 void CommandRunner::command_setclearstrayordersall( QStringList &args )
 {
-    engine->should_clear_stray_orders_all = args.value( 1 ) == "true" ? true : false;
-    kDebug() << "should_clear_stray_orders_all set to" << engine->should_clear_stray_orders_all;
+    engine->settings->should_clear_stray_orders_all = args.value( 1 ) == "true" ? true : false;
+    kDebug() << "should_clear_stray_orders_all set to" << engine->settings->should_clear_stray_orders_all;
 }
 
 void CommandRunner::command_setslippagecalculated( QStringList &args )
 {
-    engine->should_slippage_be_calculated = args.value( 1 ) == "true" ? true : false;
-    kDebug() << "should_slippage_be_calculated set to" << engine->should_slippage_be_calculated;
+    engine->settings->should_slippage_be_calculated = args.value( 1 ) == "true" ? true : false;
+    kDebug() << "should_slippage_be_calculated set to" << engine->settings->should_slippage_be_calculated;
 }
 
 void CommandRunner::command_setadjustbuysell( QStringList &args )
 {
-    engine->should_adjust_hibuy_losell = args.value( 1 ) == "true" ? true : false;
-    kDebug() << "should_adjust_hibuy_losell set to" << engine->should_adjust_hibuy_losell;
+    engine->settings->should_adjust_hibuy_losell = args.value( 1 ) == "true" ? true : false;
+    kDebug() << "should_adjust_hibuy_losell set to" << engine->settings->should_adjust_hibuy_losell;
 }
 
 void CommandRunner::command_setdcslippage( QStringList &args )
 {
-    engine->should_dc_slippage_orders = args.value( 1 ) == "true" ? true : false;
-    kDebug() << "should_dc_slippage_orders set to" << engine->should_dc_slippage_orders;
+    engine->settings->should_dc_slippage_orders = args.value( 1 ) == "true" ? true : false;
+    kDebug() << "should_dc_slippage_orders set to" << engine->settings->should_dc_slippage_orders;
 }
 
 void CommandRunner::command_sethiloadjustmsgticker( QStringList &args )
 {
-    engine->should_adjust_hibuy_losell_debugmsgs_ticker = args.value( 1 ) == "true" ? true : false;
-    kDebug() << "should_adjust_hibuy_losell_debugmsgs_ticker set to" << engine->should_adjust_hibuy_losell_debugmsgs_ticker;
+    engine->settings->should_adjust_hibuy_losell_debugmsgs_ticker = args.value( 1 ) == "true" ? true : false;
+    kDebug() << "should_adjust_hibuy_losell_debugmsgs_ticker set to" << engine->settings->should_adjust_hibuy_losell_debugmsgs_ticker;
 }
 
 void CommandRunner::command_setpreventblankbookflash( QStringList &args )
 {
-    engine->should_mitigate_blank_orderbook_flash = args.value( 1 ) == "true" ? true : false;
-    kDebug() << "should_mitigate_blank_orderbook_flash set to" << engine->should_mitigate_blank_orderbook_flash;
+    engine->settings->should_mitigate_blank_orderbook_flash = args.value( 1 ) == "true" ? true : false;
+    kDebug() << "should_mitigate_blank_orderbook_flash set to" << engine->settings->should_mitigate_blank_orderbook_flash;
 }
 
 void CommandRunner::command_setorderbookstaletolerance( QStringList &args )
@@ -651,14 +652,14 @@ void CommandRunner::command_setorderbookstaletolerance( QStringList &args )
 
 void CommandRunner::command_setsafetydelaytime( QStringList &args )
 {
-    engine->safety_delay_time = args.value( 1 ).toLongLong();
-    kDebug() << "safety_delay_time set to" << engine->safety_delay_time << "ms";
+    engine->settings->safety_delay_time = args.value( 1 ).toLongLong();
+    kDebug() << "safety_delay_time set to" << engine->settings->safety_delay_time << "ms";
 }
 
 void CommandRunner::command_settickersafetydelaytime( QStringList &args )
 {
-    engine->ticker_safety_delay_time = args.value( 1 ).toLongLong();
-    kDebug() << "ticker_safety_delay_time set to" << engine->ticker_safety_delay_time << "ms";
+    engine->settings->ticker_safety_delay_time = args.value( 1 ).toLongLong();
+    kDebug() << "ticker_safety_delay_time set to" << engine->settings->ticker_safety_delay_time << "ms";
 }
 
 void CommandRunner::command_setslippagestaletime( QStringList &args )
@@ -693,14 +694,14 @@ void CommandRunner::command_settimeoutyield( QStringList &args )
 
 void CommandRunner::command_setrequesttimeout( QStringList &args )
 {
-    engine->request_timeout = args.value( 1 ).toLong();
-    kDebug() << "request timeout is" << engine->request_timeout;
+    engine->settings->request_timeout = args.value( 1 ).toLong();
+    kDebug() << "request timeout is" << engine->settings->request_timeout;
 }
 
 void CommandRunner::command_setcanceltimeout( QStringList &args )
 {
-    engine->cancel_timeout = args.value( 1 ).toLong();
-    kDebug() << "cancel timeout is" << engine->cancel_timeout;
+    engine->settings->cancel_timeout = args.value( 1 ).toLong();
+    kDebug() << "cancel timeout is" << engine->settings->cancel_timeout;
 }
 
 void CommandRunner::command_setslippagetimeout( QStringList &args )
@@ -743,18 +744,18 @@ void CommandRunner::command_getconfig( QStringList &args )
     kDebug() << "limit_commands_sent =" << rest->limit_commands_sent;
     kDebug() << "limit_timeout_yield =" << rest->limit_timeout_yield;
     kDebug() << "market_cancel_thresh =" << rest->market_cancel_thresh;
-    kDebug() << "request_timeout =" << engine->request_timeout;
-    kDebug() << "cancel_timeout =" << engine->cancel_timeout;
-    kDebug() << "should_clear_stray_orders =" << engine->should_clear_stray_orders;
-    kDebug() << "should_clear_stray_orders_all =" << engine->should_clear_stray_orders_all;
-    kDebug() << "should_slippage_be_calculated =" << engine->should_slippage_be_calculated;
-    kDebug() << "should_adjust_hibuy_losell =" << engine->should_adjust_hibuy_losell;
-    kDebug() << "should_adjust_hibuy_losell_debugmsgs_ticker =" << engine->should_adjust_hibuy_losell_debugmsgs_ticker;
-    kDebug() << "should_mitigate_blank_orderbook_flash =" << engine->should_mitigate_blank_orderbook_flash;
-    kDebug() << "should_dc_slippage_orders =" << engine->should_dc_slippage_orders;
-    kDebug() << "stray_grace_time_limit =" << engine->stray_grace_time_limit;
-    kDebug() << "safety_delay_time =" << engine->safety_delay_time;
-    kDebug() << "ticker_safety_delay_time =" << engine->ticker_safety_delay_time;
+    kDebug() << "request_timeout =" << engine->settings->request_timeout;
+    kDebug() << "cancel_timeout =" << engine->settings->cancel_timeout;
+    kDebug() << "should_clear_stray_orders =" << engine->settings->should_clear_stray_orders;
+    kDebug() << "should_clear_stray_orders_all =" << engine->settings->should_clear_stray_orders_all;
+    kDebug() << "should_slippage_be_calculated =" << engine->settings->should_slippage_be_calculated;
+    kDebug() << "should_adjust_hibuy_losell =" << engine->settings->should_adjust_hibuy_losell;
+    kDebug() << "should_adjust_hibuy_losell_debugmsgs_ticker =" << engine->settings->should_adjust_hibuy_losell_debugmsgs_ticker;
+    kDebug() << "should_mitigate_blank_orderbook_flash =" << engine->settings->should_mitigate_blank_orderbook_flash;
+    kDebug() << "should_dc_slippage_orders =" << engine->settings->should_dc_slippage_orders;
+    kDebug() << "stray_grace_time_limit =" << engine->settings->stray_grace_time_limit;
+    kDebug() << "safety_delay_time =" << engine->settings->safety_delay_time;
+    kDebug() << "ticker_safety_delay_time =" << engine->settings->ticker_safety_delay_time;
     kDebug() << "slippage_stale_time =" << rest->slippage_stale_time;
     kDebug() << "orderbook_stale_tolerance =" << rest->orderbook_stale_tolerance;
 
@@ -768,7 +769,7 @@ void CommandRunner::command_getconfig( QStringList &args )
     kDebug() << "ticker interval =" << rest->ticker_timer->interval();
     kDebug() << "timeout interval =" << rest->timeout_timer->interval();
     kDebug() << "dc interval =" << rest->diverge_converge_timer->interval();
-    kDebug() << "is_chatty = " << engine->is_chatty;
+    kDebug() << "is_chatty = " << engine->settings->is_chatty;
 }
 
 void CommandRunner::command_getinternal( QStringList &args )
@@ -843,7 +844,7 @@ void CommandRunner::command_setchatty( QStringList &args )
 
     bool chatty = args.value( 1 ) == "true" ? true : false;
 
-    engine->is_chatty = chatty;
+    engine->settings->is_chatty = chatty;
     kDebug() << "is_chatty set to" << chatty;
 }
 
@@ -853,7 +854,7 @@ void CommandRunner::command_setaggressivespread( QStringList &args )
 
     bool aggressive_spread = args.value( 1 ) == "true" ? true : false;
 
-    engine->should_use_aggressive_spread = aggressive_spread;
+    engine->settings->should_use_aggressive_spread = aggressive_spread;
     kDebug() << "should_use_aggressive_spread set to" << aggressive_spread;
 }
 

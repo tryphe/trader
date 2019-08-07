@@ -3,12 +3,8 @@
 
 #include "coinamount.h"
 
-#include <QObject>
-
-class EngineSettings : public QObject
+struct EngineSettings
 {
-    Q_OBJECT
-public:
     explicit EngineSettings();
     ~EngineSettings();
 

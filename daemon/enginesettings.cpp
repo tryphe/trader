@@ -1,7 +1,6 @@
 #include "enginesettings.h"
 
 EngineSettings::EngineSettings()
-    : QObject( nullptr )
 {
     // global settings (probably shouldn't be modified
     is_chatty = false;

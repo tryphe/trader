@@ -5,6 +5,7 @@
 #include "position.h"
 #include "stats.h"
 #include "engine.h"
+#include "enginesettings.h"
 #include "coinamount.h"
 #include "keydefs.h"
 
@@ -451,7 +452,7 @@ void PoloREST::parseFeeInfo( const QJsonObject &info )
 
     if ( Coin( maker ).isGreaterThanZero() )
     {
-        engine->fee = maker;
+        engine->settings->fee = maker;
         kDebug() << QString( "(fee) maker %1%, taker %2%, 30-day volume %3" )
                              .arg( QString( Coin( maker ) * 100 ).mid( 0, 4 ) )
                              .arg( QString( Coin( taker ) * 100 ).mid( 0, 4 ) )
