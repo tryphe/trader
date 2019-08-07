@@ -20,20 +20,11 @@ class Engine : public QObject
     Q_OBJECT
 
     friend class EngineTest;
+    friend class PositionMan;
 
 public:
     explicit Engine();
     ~Engine();
-
-    // position stuff
-    bool hasActivePositions() const;
-    bool hasQueuedPositions() const;
-
-    bool isActivePosition( Position *const &pos ) const;
-    bool isQueuedPosition( Position *const &pos ) const;
-    bool isPosition( Position *const &pos ) const;
-    bool isPositionOrderID( const QString &order_id ) const;
-    Position *getPositionForOrderID( const QString &order_id ) const;
 
     Position *addPosition( QString market, quint8 side, QString buy_price , QString sell_price,
                            QString order_size, QString type = "active", QString strategy_tag = QLatin1String(),
@@ -53,7 +44,7 @@ public:
     void cancelHighest( const QString &market );
     void cancelLowest( const QString &market );
     //void cancelOrderByPrice( const QString &market, QString price );
-    void setOrderMeat( Position *const &pos, QString order_number );
+    //void setOrderMeat( Position *const &pos, QString order_number );
     void saveMarket( QString market, qint32 num_orders = 15 );
 
     void setNextLowest( const QString &market, quint8 side = SIDE_BUY, bool landmark = false );
@@ -75,7 +66,6 @@ public:
     PositionMan *positions;
     EngineSettings *settings;
 
-
     // utility functions
     void setStats( Stats *_stats ) { stats = _stats; }
     Stats *getStats() const { return stats; }
@@ -86,8 +76,6 @@ public:
 
     void setMaintenanceTime( qint64 time ) { maintenance_time = time; }
     qint64 getMaintenanceTime() const { return maintenance_time; }
-
-    QSet<Position*> &positionsAll() { return positions_all; }
 
     QHash<QString, MarketInfo> &getMarketInfoStructure() { return market_info; }
     MarketInfo &getMarketInfo( const QString &market ) { return market_info[ market ]; }
@@ -130,22 +118,11 @@ private:
     void addLandmarkPositionFor( Position *const &pos );
     void flipPosition( Position *const &pos );
     void cancelOrderMeatDCOrder( Position *const &pos );
-    void removeFromDC( Position *const &pos );
     bool tryMoveOrder( Position *const &pos );
     void fillNQ( const QString &order_id, qint8 fill_type, quint8 extra_data = 0 );
-    void deletePosition( Position * const &pos );
+
 
     QHash<QString, MarketInfo> market_info;
-
-    // maintain a map of queued positions and set positions
-    QHash<QString /* orderNumber */, Position*> positions_by_number;
-    QSet<Position*> positions_active; // ptr list of active positions
-    QSet<Position*> positions_queued; // ptr list of queued positions
-    QSet<Position*> positions_all; // active and queued
-
-    // internal dc stuff
-    QMap<QVector<Position*>/*waiting for cancel*/, QPair<bool/*is_landmark*/,QVector<qint32>/*indices*/>> diverge_converge;
-    QMap<QString/*market*/, QVector<qint32>/*reserved idxs*/> diverging_converging; // store a vector of converging/diverging indices
 
     // other
     QHash<QString/*order_id*/, qint64/*seen_time*/> order_grace_times; // record "seen" time to allow for grace period before we remove stray orders

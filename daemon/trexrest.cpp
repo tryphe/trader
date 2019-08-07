@@ -3,6 +3,7 @@
 #if defined(EXCHANGE_BITTREX)
 
 #include "position.h"
+#include "positionman.h"
 #include "stats.h"
 #include "engine.h"
 #include "keydefs.h"
@@ -156,7 +157,7 @@ void TrexREST::sendNamQueue()
         Position *const &pos = request->pos;
 
         // check for valid pos
-        if ( !pos || !engine->isPosition( pos ) )
+        if ( !pos || !engine->positions->isPosition( pos ) )
         {
             sorted_nam_queue.insert( 0., request );
             continue;
@@ -220,13 +221,13 @@ void TrexREST::sendNamRequest( Request *const &request )
     const QString &api_command = request->api_command;
 
     // set the order request time because we are sending the request
-    if ( engine->isQueuedPosition( request->pos ) &&
+    if ( engine->positions->isQueued( request->pos ) &&
          ( api_command == TREX_COMMAND_BUY || api_command == TREX_COMMAND_SELL ) )
     {
         request->pos->order_request_time = current_time;
     }
     // set cancel time properly
-    else if ( engine->isActivePosition( request->pos ) &&
+    else if ( engine->positions->isActive( request->pos ) &&
               api_command == TREX_COMMAND_CANCEL )
     {
         request->pos->order_cancel_time = current_time;
@@ -289,7 +290,7 @@ void TrexREST::sendCancel( const QString &order_id, Position * const &pos )
 {
     sendRequest( TREX_COMMAND_CANCEL, "uuid=" + order_id, pos );
 
-    if ( pos && engine->isActivePosition( pos ) )
+    if ( pos && engine->positions->isActive( pos ) )
     {
         pos->is_cancelling = true;
 
@@ -364,7 +365,7 @@ void TrexREST::onNamReply( QNetworkReply *const &reply )
             Position *const &pos = request->pos;
 
             // prevent unallocated access (if we are cancelling it should be an active order)
-            if ( !pos || !engine->isActivePosition( pos ) )
+            if ( !pos || !engine->positions->isActive( pos ) )
             {
                 kDebug() << "unknown cancel reply:" << data;
 
@@ -405,7 +406,7 @@ void TrexREST::onNamReply( QNetworkReply *const &reply )
                  api_command == TREX_COMMAND_SELL )
             {
                 // check for bad ptr, and the position should also be queued
-                if ( !request->pos || !engine->isQueuedPosition( request->pos ) )
+                if ( !request->pos || !engine->positions->isQueued( request->pos ) )
                 {
                     engine->deleteReply( reply, request );
                     return;
@@ -539,7 +540,7 @@ void TrexREST::parseBuySell( Request *const &request, const QJsonObject &respons
     }
 
     // check that the position is queued and not set
-    if ( !engine->isQueuedPosition( request->pos ) )
+    if ( !engine->positions->isQueued( request->pos ) )
     {
         //kDebug() << "local warning: position from response not found in positions_queued";
         return;
@@ -560,7 +561,7 @@ void TrexREST::parseBuySell( Request *const &request, const QJsonObject &respons
 
     const QString &order_number = response[ "uuid" ].toString(); // get the order number to track position id
 
-    engine->setOrderMeat( pos, order_number );
+    engine->positions->activate( pos, order_number );
 }
 
 void TrexREST::parseCancelOrder( Request *const &request, const QJsonObject &response )
@@ -575,7 +576,7 @@ void TrexREST::parseCancelOrder( Request *const &request, const QJsonObject &res
     Position *const &pos = request->pos;
 
     // prevent unsafe access
-    if ( !pos || !engine->isActivePosition( pos ) )
+    if ( !pos || !engine->positions->isActive( pos ) )
     {
         kDebug() << "successfully cancelled non-local order:" << response;
         return;
@@ -719,7 +720,7 @@ void TrexREST::parseGetOrder( const QJsonObject &order )
         return;
     }
 
-    Position *const &pos = engine->getPositionForOrderID( order_id );
+    Position *const &pos = engine->positions->getPositionForOrderID( order_id );
 
     if ( !pos )
         return;
@@ -813,7 +814,7 @@ void TrexREST::parseOrderHistory( const QJsonObject &obj )
         const QString &order_id = order.value( "OrderUuid" ).toString();
 
         // make sure order number is valid
-        Position *const &pos = engine->getPositionForOrderID( order_id );
+        Position *const &pos = engine->positions->getPositionForOrderID( order_id );
 
         if ( order_id.isEmpty() || !pos )
             continue;

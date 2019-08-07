@@ -5,6 +5,7 @@
 #include "stats.h"
 #include "engine.h"
 #include "position.h"
+#include "positionman.h"
 
 #include <QTimer>
 #include <QNetworkAccessManager>
@@ -173,7 +174,7 @@ void BncREST::sendNamQueue()
         Position *const &pos = request->pos;
 
         // check for valid pos
-        if ( !pos || !engine->isPosition( pos ) )
+        if ( !pos || !engine->positions->isPosition( pos ) )
         {
             sorted_nam_queue.insert( 0., request );
             continue;
@@ -257,13 +258,13 @@ void BncREST::sendNamRequest( Request *const &request )
 
     // set the order request time because we are sending the request
     if ( api_command == BNC_COMMAND_BUYSELL &&
-         engine->isQueuedPosition( pos ) )
+         engine->positions->isQueued( pos ) )
     {
         pos->order_request_time = current_time;
     }
     // set cancel time properly
     else if ( api_command == BNC_COMMAND_CANCEL &&
-              engine->isActivePosition( pos ) )
+              engine->positions->isActive( pos ) )
     {
         pos->order_cancel_time = current_time;
     }
@@ -418,7 +419,7 @@ void BncREST::sendCancel( const QString &_order_id, Position *const &pos )
 
     sendRequest( BNC_COMMAND_CANCEL, query.toString(), pos, 1 );
 
-    if ( pos && engine->isActivePosition( pos ) )
+    if ( pos && engine->positions->isActive( pos ) )
     {
         pos->is_cancelling = true;
 
@@ -633,7 +634,7 @@ void BncREST::parseBuySell( Request *const &request, const QJsonObject &response
     }
 
     // check that the position is queued and not set
-    if ( !engine->isQueuedPosition( request->pos ) )
+    if ( !engine->positions->isQueued( request->pos ) )
     {
         kDebug() << "local warning: position from response not found in positions_queued";
         return;
@@ -665,7 +666,7 @@ void BncREST::parseBuySell( Request *const &request, const QJsonObject &response
 
     const QString &order_number = response[ "orderId" ].toVariant().toString(); // get the order number to track position id
 
-    engine->setOrderMeat( pos, order_number );
+    engine->positions->activate( pos, order_number );
 }
 
 void BncREST::parseCancelOrder( Request *const &request, const QJsonObject &response )
@@ -675,7 +676,7 @@ void BncREST::parseCancelOrder( Request *const &request, const QJsonObject &resp
     Position *const &pos = request->pos;
 
     // prevent unsafe access
-    if ( !pos || !engine->isActivePosition( pos ) )
+    if ( !pos || !engine->positions->isActive( pos ) )
     {
         kDebug() << "successfully cancelled non-local order:" << response;
         return;

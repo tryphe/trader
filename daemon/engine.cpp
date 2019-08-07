@@ -19,7 +19,7 @@
 
 Engine::Engine()
     : QObject( nullptr ),
-      positions( new PositionMan() ),
+      positions( new PositionMan( this ) ),
       settings( new EngineSettings() ),
       is_running_cancelall( false ), // state
       maintenance_time( 0 ),
@@ -34,9 +34,6 @@ Engine::Engine()
 
 Engine::~Engine()
 {
-    // delete local positions
-    while( positions_all.size() > 0 )
-        deletePosition( *positions_all.begin() );
 
     // these are deleted in trader
     rest = nullptr;
@@ -45,40 +42,7 @@ Engine::~Engine()
     kDebug() << "[Engine] done.";
 }
 
-bool Engine::hasActivePositions() const
-{
-    return positions_active.size();
-}
 
-bool Engine::hasQueuedPositions() const
-{
-    return positions_queued.size();
-}
-
-bool Engine::isActivePosition( Position * const &pos ) const
-{
-    return positions_active.contains( pos );
-}
-
-bool Engine::isQueuedPosition( Position * const &pos ) const
-{
-    return positions_queued.contains( pos );
-}
-
-bool Engine::isPosition( Position * const &pos ) const
-{
-    return positions_all.contains( pos );
-}
-
-bool Engine::isPositionOrderID( const QString &order_id ) const
-{
-    return positions_by_number.contains( order_id );
-}
-
-Position *Engine::getPositionForOrderID( const QString &order_id ) const
-{
-    return positions_by_number.value( order_id, nullptr );
-}
 
 Position *Engine::addPosition( QString market, quint8 side, QString buy_price, QString sell_price,
                                QString order_size, QString type, QString strategy_tag, QVector<qint32> indices,
@@ -252,8 +216,7 @@ Position *Engine::addPosition( QString market, quint8 side, QString buy_price, Q
     }
 
     // position is now queued, update engine state
-    positions_queued.insert( pos );
-    positions_all.insert( pos );
+    positions->add( pos );
     market_info[ market ].order_prices.append( pos->price );
 
     // if running tests, exit early
@@ -261,7 +224,7 @@ Position *Engine::addPosition( QString market, quint8 side, QString buy_price, Q
     {
         pos->order_number = pos->market + QString::number( pos->getLowestMarketIndex() );
         //kDebug() << pos->order_number;
-        setOrderMeat( pos, pos->order_number );
+        positions->activate( pos, pos->order_number );
         return pos;
     }
 
@@ -300,13 +263,13 @@ void Engine::fillNQ( const QString &order_id, qint8 fill_type , quint8 extra_dat
     }
 
     // prevent unsafe execution
-    if ( order_id.isEmpty() || !isPositionOrderID( order_id ) )
+    if ( order_id.isEmpty() || !positions->isPositionOrderID( order_id ) )
     {
         kDebug() << "local warning: uuid not found in positions:" << order_id << "fill_type:" << fill_type << "(hint: getorder timeout is probably too low)";
         return;
     }
 
-    Position *const &pos = getPositionForOrderID( order_id );
+    Position *const &pos = positions->getPositionForOrderID( order_id );
 
     // we should never get here, because we call isPositionOrderID, but check anyways
     if ( !pos )
@@ -352,7 +315,7 @@ if ( !is_testing )
 #endif
 
     // delete
-    deletePosition( pos );
+    positions->remove( pos );
 }
 
 void Engine::processFilledOrders( QVector<Position*> &filled_positions, qint8 fill_type )
@@ -400,7 +363,7 @@ void Engine::processOpenOrders( QVector<QString> &order_numbers, QMultiHash<QStr
             ct_cancelled++;
 
             // cancel stray orders
-            if ( !isPositionOrderID( order_number ) )
+            if ( !positions->isPositionOrderID( order_number ) )
             {
                 kDebug() << "going to cancel order" << market << side << btc_amount << "@" << price << "id:" << order_number;
 
@@ -410,11 +373,11 @@ void Engine::processOpenOrders( QVector<QString> &order_numbers, QMultiHash<QStr
             }
 
             // if it is in our index, cancel that one
-            cancelOrder( getPositionForOrderID( order_number ), false, CANCELLING_FOR_USER );
+            cancelOrder( positions->getPositionForOrderID( order_number ), false, CANCELLING_FOR_USER );
         }
 
         // we haven't seen this order in a buy/sell reply, we should test the order id to see if it matches a queued pos
-        if ( settings->should_clear_stray_orders && !isPositionOrderID( order_number ) )
+        if ( settings->should_clear_stray_orders && !positions->isPositionOrderID( order_number ) )
         {
             // if this isn't a price in any of our positions, we should ignore it
             if ( !settings->should_clear_stray_orders_all && !market_info[ market ].order_prices.contains( price ) )
@@ -427,7 +390,7 @@ void Engine::processOpenOrders( QVector<QString> &order_numbers, QMultiHash<QStr
                 Position *matching_pos = nullptr;
 
                 // try and match a queued position to our json data
-                for ( QSet<Position*>::const_iterator k = positions_queued.begin(); k != positions_queued.end(); k++ )
+                for ( QSet<Position*>::const_iterator k = positions->queued().begin(); k != positions->queued().end(); k++ )
                 {
                     Position *const &pos = *k;
 
@@ -450,11 +413,11 @@ void Engine::processOpenOrders( QVector<QString> &order_numbers, QMultiHash<QStr
 
                 // check if the order details match a currently queued order
                 if (  matching_pos &&
-                     !isPositionOrderID( order_number ) && // order must not be assigned yet
+                     !positions->isPositionOrderID( order_number ) && // order must not be assigned yet
                       matching_pos->order_request_time < current_time - 10000 ) // request must be a little old (so we don't cross scan-set different indices so much)
                 {
                     // order is now set
-                    setOrderMeat( matching_pos, order_number );
+                    positions->activate( matching_pos, order_number );
                 }
                 // it doesn't match a queued order, we should still update the seen time
                 else
@@ -499,7 +462,7 @@ void Engine::processOpenOrders( QVector<QString> &order_numbers, QMultiHash<QStr
     // mitigate blank orderbook flash
     if ( settings->should_mitigate_blank_orderbook_flash &&
          !order_numbers.size() && // the orderbook is blank
-         positions_active.size() > 50 ) // we have some orders, don't make it too low (if it's 2 or 3, we might fill all those orders at once, and the mitigation leads to the orders never getting filled)
+         positions->active().size() > 50 ) // we have some orders, don't make it too low (if it's 2 or 3, we might fill all those orders at once, and the mitigation leads to the orders never getting filled)
     {
         kDebug() << "local warning: blank orderbook flash has been mitigated!";
         return;
@@ -512,7 +475,7 @@ void Engine::processOpenOrders( QVector<QString> &order_numbers, QMultiHash<QStr
 #endif
 
     // now we can look for local positions to invalidate based on if the order exists
-    for ( QSet<Position*>::const_iterator k = positions_active.begin(); k != positions_active.end(); k++ )
+    for ( QSet<Position*>::const_iterator k = positions->active().begin(); k != positions->active().end(); k++ )
     {
         Position *const &pos = *k;
 
@@ -603,7 +566,7 @@ void Engine::processTicker( const QMap<QString, TickerInfo> &ticker_data, qint64
     qint32 filled_count = 0;
 #endif
     // check for any orders that could've been filled
-    for ( QSet<Position*>::const_iterator j = positions_active.begin(); j != positions_active.end(); j++ )
+    for ( QSet<Position*>::const_iterator j = positions->active().begin(); j != positions->active().end(); j++ )
     {
         Position *const &pos = *j;
 
@@ -692,7 +655,7 @@ void Engine::processCancelledOrder( Position * const &pos )
         if ( pos->is_landmark )
         {
             addLandmarkPositionFor( pos );
-            deletePosition( pos );
+            positions->remove( pos );
             return;
         }
         else
@@ -702,7 +665,7 @@ void Engine::processCancelledOrder( Position * const &pos )
             addPosition( pos->market, pos->side, new_pos.buy_price, new_pos.sell_price, new_pos.order_size, "active", "",
                          pos->market_indices, false, true );
 
-            deletePosition( pos );
+            positions->remove( pos );
             return;
         }
     }
@@ -718,7 +681,7 @@ void Engine::processCancelledOrder( Position * const &pos )
         flipPosition( pos );
 
     // delete position
-    deletePosition( pos );
+    positions->remove( pos );
 }
 
 void Engine::cancelAll( QString market )
@@ -728,7 +691,7 @@ void Engine::cancelAll( QString market )
         market = "all";
 
     // safety check to avoid s-filling local positions
-    if ( ( hasActivePositions() || hasQueuedPositions() )
+    if ( ( positions->hasActivePositions() || positions->hasQueuedPositions() )
          && market == "all" )
     {
         kDebug() << "local error: you have open positions, did you mean cancellocal?";
@@ -776,7 +739,7 @@ void Engine::cancelLocal( QString market )
     QQueue<Position*> deleted_positions;
 
     // cancel orders if we matched the market
-    for ( QSet<Position*>::const_iterator i = positions_all.begin(); i != positions_all.end(); i++ )
+    for ( QSet<Position*>::const_iterator i = positions->all().begin(); i != positions->all().end(); i++ )
     {
         Position *const &pos = *i;
 
@@ -784,7 +747,7 @@ void Engine::cancelLocal( QString market )
         if ( market == "all" || pos->market == market )
         {
             // delete queued positions
-            if ( isQueuedPosition( pos ) )
+            if ( positions->isQueued( pos ) )
                 deleted_positions.append( pos );
             else if ( pos->is_landmark )
                 landmark_positions.append( pos );
@@ -795,7 +758,7 @@ void Engine::cancelLocal( QString market )
 
     // delete queued positions
     while ( deleted_positions.size() > 0 )
-        deletePosition( deleted_positions.takeFirst() );
+        positions->remove( deleted_positions.takeFirst() );
 
     // delete and cancel all normal positions
     while ( normal_positions.size() > 0 )
@@ -827,16 +790,16 @@ void Engine::cancelLocal( QString market )
 void Engine::cancelOrder( Position *const &pos, bool quiet, quint8 cancel_reason )
 {
     // check for position in ptr list
-    if ( !pos || !isPosition( pos ) )
+    if ( !pos || !positions->isPosition( pos ) )
     {
         kDebug() << "local error: aborting dangerous cancel not found in positions_all";
         return;
     }
 
-    // if testing, skip ahead to processCancelledOrder logic which just calls deletePosition();
+    // if testing, skip ahead to processCancelledOrder logic which just calls positions->remove();
     if ( is_testing )
     {
-        deletePosition( pos );
+        positions->remove( pos );
         return;
     }
 
@@ -847,7 +810,7 @@ void Engine::cancelOrder( Position *const &pos, bool quiet, quint8 cancel_reason
     pos->cancel_reason = cancel_reason;
 
     // check if this is a queued position so we can properly cancel the order when it gets set
-    if ( isQueuedPosition( pos ) )
+    if ( positions->isQueued( pos ) )
     {
         // let the order timeout if it doesn't have an orderid, but only after it gets set
         pos->is_cancelling = true;
@@ -900,7 +863,7 @@ void Engine::cancelLowest( const QString &market )
 //void Engine::cancelOrderByPrice( const QString &market, QString price )
 //{
 //    // now we can look for the order we should delete
-//    for ( QSet<Position*>::const_iterator k = positions_active.begin(); k != positions_active.end(); k++ )
+//    for ( QSet<Position*>::const_iterator k = positions->active().begin(); k != positions->active().end(); k++ )
 //    {
 //        Position *const &pos = *k;
 
@@ -922,21 +885,21 @@ void Engine::cancelOrderMeatDCOrder( Position * const &pos )
     QVector<qint32> new_indices;
 
     // look for our position's DC list and try to obtain it into cancelling_positions
-    for ( QMap<QVector<Position*>, QPair<bool, QVector<qint32>>>::const_iterator i = diverge_converge.begin(); i != diverge_converge.end(); i++ )
+    for ( QMap<QVector<Position*>, QPair<bool, QVector<qint32>>>::const_iterator i = positions->diverge_converge.begin(); i != positions->diverge_converge.end(); i++ )
     {
-        const QVector<Position*> &positions = i.key();
+        const QVector<Position*> &position_list = i.key();
         const QPair<bool, QVector<qint32>> &pair = i.value();
 
         // look for our pos
-        if ( !positions.contains( pos ) )
+        if ( !position_list.contains( pos ) )
             continue;
 
         // remove the key,val from the map so we can modify it
-        cancelling_positions = positions;
+        cancelling_positions = position_list;
         new_order_is_landmark = pair.first;
         new_indices = pair.second;
 
-        diverge_converge.remove( positions );
+        positions->diverge_converge.remove( position_list );
         break;
     }
 
@@ -955,7 +918,7 @@ void Engine::cancelOrderMeatDCOrder( Position * const &pos )
         {
             // clear from diverging_converging
             for ( int i = 0; i < new_indices.size(); i++ )
-                diverging_converging[ pos->market ].removeOne( new_indices.value( i ) );
+                positions->diverging_converging[ pos->market ].removeOne( new_indices.value( i ) );
 
             pos->market_indices = new_indices;
             addLandmarkPositionFor( pos );
@@ -969,7 +932,7 @@ void Engine::cancelOrderMeatDCOrder( Position * const &pos )
                 qint32 idx = new_indices.value( i );
 
                 // clear from diverging_converging
-                diverging_converging[ pos->market ].removeOne( idx );
+                positions->diverging_converging[ pos->market ].removeOne( idx );
 
                 // check for valid index data - incase we are cancelling
                 if ( !info.position_index.size() )
@@ -990,56 +953,7 @@ void Engine::cancelOrderMeatDCOrder( Position * const &pos )
     // if we didn't clear the dc list, put it back into the map to trigger next time
     else
     {
-        diverge_converge.insert( cancelling_positions, qMakePair( new_order_is_landmark, new_indices ) );
-    }
-}
-
-void Engine::setOrderMeat( Position *const &pos, QString order_number )
-{
-    // pos must be valid!
-
-    if ( order_number.isEmpty() )
-    {
-        kDebug() << "local error: tried to set order with blank orderid" << pos->stringifyOrder();
-        return;
-    }
-
-    // set the order_set_time so we can keep track of a missing order
-    pos->order_set_time = QDateTime::currentMSecsSinceEpoch();
-
-    // the order is set, unflag as new order if set
-    pos->is_new_hilo_order = false;
-
-    // insert our order number into positions
-    positions_queued.remove( pos );
-    positions_active.insert( pos );
-    positions_by_number.insert( order_number, pos );
-
-    if ( is_testing )
-    {
-        pos->order_number = order_number;
-    }
-    else
-    {
-        // on binance, prepend market to orderid for uniqueness (don't remove this or you'll get collisions)
-        #if defined(EXCHANGE_BINANCE)
-        pos->order_number = pos->market + order_number;
-        #else
-        pos->order_number = order_number;
-        #endif
-    }
-
-    // print set order
-    if ( verbosity > 0 )
-        kDebug() << QString( "%1 %2" )
-                    .arg( "set", -15 )
-                    .arg( pos->stringifyOrder() );
-
-    // check if the order was queued for a cancel (manual or automatic) while it was queued
-    if ( pos->is_cancelling &&
-         pos->order_cancel_time < QDateTime::currentMSecsSinceEpoch() - settings->cancel_timeout )
-    {
-        cancelOrder( pos, true, pos->cancel_reason );
+        positions->diverge_converge.insert( cancelling_positions, qMakePair( new_order_is_landmark, new_indices ) );
     }
 }
 
@@ -1084,7 +998,7 @@ void Engine::saveMarket( QString market, qint32 num_orders )
         qint32 highest_sell_idx = 0, lowest_sell_idx = std::numeric_limits<qint32>::max();
         QVector<qint32> buys, sells;
 
-        for ( QSet<Position*>::const_iterator j = positions_all.begin(); j != positions_all.end(); j++ )
+        for ( QSet<Position*>::const_iterator j = positions->all().begin(); j != positions->all().end(); j++ )
         {
             Position *const &pos = *j;
 
@@ -1174,7 +1088,7 @@ void Engine::setNextLowest( const QString &market, quint8 side, bool landmark )
     qint32 new_index = std::numeric_limits<qint32>::max();
 
     // get lowest sell from all positions
-    for ( QSet<Position*>::const_iterator i = positions_all.begin(); i != positions_all.end(); i++ )
+    for ( QSet<Position*>::const_iterator i = positions->all().begin(); i != positions->all().end(); i++ )
     {
         Position *const &pos = *i;
 
@@ -1283,7 +1197,7 @@ void Engine::setNextHighest( const QString &market, quint8 side, bool landmark )
     qint32 new_index = -1;
 
     // look for the highest buy index
-    for ( QSet<Position*>::const_iterator i = positions_all.begin(); i != positions_all.end(); i++ )
+    for ( QSet<Position*>::const_iterator i = positions->all().begin(); i != positions->all().end(); i++ )
     {
         Position *const &pos = *i;
 
@@ -1411,7 +1325,7 @@ void Engine::flipHiBuyPrice( const QString &market, QString tag )
     Position *pos = getHighestActiveBuyPosByPrice( market );
 
     // check pos
-    if ( !isActivePosition( pos ) )
+    if ( !positions->isActive( pos ) )
         return;
 
     pos->strategy_tag = tag;
@@ -1427,7 +1341,7 @@ void Engine::flipHiBuyIndex( const QString &market, QString tag )
     Position *pos = getHighestActiveBuyPosByIndex( market );
 
     // check pos
-    if ( !isActivePosition( pos ) )
+    if ( !positions->isActive( pos ) )
         return;
 
     pos->strategy_tag = tag;
@@ -1443,7 +1357,7 @@ void Engine::flipLoSellPrice( const QString &market, QString tag )
     Position *pos = getLowestActiveSellPosByPrice( market );
 
     // check pos
-    if ( !isActivePosition( pos ) )
+    if ( !positions->isActive( pos ) )
         return;
 
     pos->strategy_tag = tag;
@@ -1459,7 +1373,7 @@ void Engine::flipLoSellIndex( const QString &market, QString tag )
     Position *pos = getLowestActiveSellPosByIndex( market );
 
     // check pos
-    if ( !isActivePosition( pos ) )
+    if ( !positions->isActive( pos ) )
         return;
 
     pos->strategy_tag = tag;
@@ -1485,7 +1399,7 @@ Coin Engine::getHiBuyFlipPrice( const QString &market ) const
     Position *pos = getHighestActiveBuyPosByPrice( market );
 
     // check pos
-    if ( !pos || !isActivePosition( pos ) )
+    if ( !pos || !positions->isActive( pos ) )
         return 0.;
 
     kDebug() << "hi_buy_flip" << pos->stringifyOrder();
@@ -1498,7 +1412,7 @@ Coin Engine::getLoSellFlipPrice( const QString &market ) const
     Position *pos = getLowestActiveSellPosByPrice( market );
 
     // check pos
-    if ( !pos || !isActivePosition( pos ) )
+    if ( !pos || !positions->isActive( pos ) )
         return 0.;
 
     kDebug() << "lo_sell_flip" << pos->stringifyOrder();
@@ -1510,7 +1424,7 @@ Position *Engine::getPositionByIndex( const QString &market, const qint32 idx ) 
 {
     Position *ret = nullptr;
 
-    for ( QSet<Position*>::const_iterator i = positions_all.begin(); i != positions_all.end(); i++ )
+    for ( QSet<Position*>::const_iterator i = positions->all().begin(); i != positions->all().end(); i++ )
     {
         Position *const &pos = *i;
 
@@ -1526,7 +1440,7 @@ Coin Engine::getHighestBuyPrice( const QString &market ) const
 {
     Coin highest_buy_price;
 
-    for ( QSet<Position*>::const_iterator i = positions_all.begin(); i != positions_all.end(); i++ )
+    for ( QSet<Position*>::const_iterator i = positions->all().begin(); i != positions->all().end(); i++ )
     {
         Position *const &pos = *i;
 
@@ -1545,7 +1459,7 @@ Coin Engine::getLowestSellPrice( const QString &market ) const
 {
     Coin lowest_sell_price = CoinAmount::A_LOT;
 
-    for ( QSet<Position*>::const_iterator i = positions_all.begin(); i != positions_all.end(); i++ )
+    for ( QSet<Position*>::const_iterator i = positions->all().begin(); i != positions->all().end(); i++ )
     {
         Position *const &pos = *i;
 
@@ -1562,7 +1476,7 @@ Coin Engine::getLowestSellPrice( const QString &market ) const
 
 inline bool Engine::isIndexDivergingConverging( const QString &market, const qint32 index ) const
 {
-    return diverging_converging[ market ].contains( index );
+    return positions->diverging_converging[ market ].contains( index );
 }
 
 Position *Engine::getHighestActiveBuyPosByIndex( const QString &market ) const
@@ -1570,7 +1484,7 @@ Position *Engine::getHighestActiveBuyPosByIndex( const QString &market ) const
     Position *ret = nullptr;
     qint32 idx_hi_buy = -1;
 
-    for ( QSet<Position*>::const_iterator i = positions_active.begin(); i != positions_active.end(); i++ )
+    for ( QSet<Position*>::const_iterator i = positions->active().begin(); i != positions->active().end(); i++ )
     {
         Position *const &pos = *i;
         if (  pos->side != SIDE_BUY ||         // sells only
@@ -1596,7 +1510,7 @@ Position *Engine::getHighestActiveSellPosByIndex( const QString &market ) const
     Position *ret = nullptr;
     qint32 idx_hi_buy = -1;
 
-    for ( QSet<Position*>::const_iterator i = positions_active.begin(); i != positions_active.end(); i++ )
+    for ( QSet<Position*>::const_iterator i = positions->active().begin(); i != positions->active().end(); i++ )
     {
         Position *const &pos = *i;
         if (  pos->side != SIDE_SELL ||         // sells only
@@ -1622,7 +1536,7 @@ Position *Engine::getLowestActiveSellPosByIndex( const QString &market ) const
     Position *ret = nullptr;
     qint32 idx_lo_sell = std::numeric_limits<qint32>::max();
 
-    for ( QSet<Position*>::const_iterator i = positions_active.begin(); i != positions_active.end(); i++ )
+    for ( QSet<Position*>::const_iterator i = positions->active().begin(); i != positions->active().end(); i++ )
     {
         Position *const &pos = *i;
         if (  pos->side != SIDE_SELL ||         // sells only
@@ -1647,7 +1561,7 @@ Position *Engine::getLowestActiveBuyPosByIndex( const QString &market ) const
     Position *ret = nullptr;
     qint32 idx_lo_sell = std::numeric_limits<qint32>::max();
 
-    for ( QSet<Position*>::const_iterator i = positions_active.begin(); i != positions_active.end(); i++ )
+    for ( QSet<Position*>::const_iterator i = positions->active().begin(); i != positions->active().end(); i++ )
     {
         Position *const &pos = *i;
         if (  pos->side != SIDE_BUY ||          // sells only
@@ -1673,7 +1587,7 @@ Position *Engine::getHighestActiveBuyPosByPrice( const QString &market ) const
     Position *ret = nullptr;
     Coin hi_buy = -1;
 
-    for ( QSet<Position*>::const_iterator i = positions_active.begin(); i != positions_active.end(); i++ )
+    for ( QSet<Position*>::const_iterator i = positions->active().begin(); i != positions->active().end(); i++ )
     {
         Position *const &pos = *i;
         if (  pos->side != SIDE_BUY ||          // sells only
@@ -1698,7 +1612,7 @@ Position *Engine::getLowestActiveSellPosByPrice( const QString &market ) const
     Position *ret = nullptr;
     Coin lo_sell = CoinAmount::A_LOT;
 
-    for ( QSet<Position*>::const_iterator i = positions_active.begin(); i != positions_active.end(); i++ )
+    for ( QSet<Position*>::const_iterator i = positions->active().begin(); i != positions->active().end(); i++ )
     {
         Position *const &pos = *i;
         if (  pos->side != SIDE_SELL ||         // sells only
@@ -1726,7 +1640,7 @@ Position *Engine::getLowestActivePingPong( const QString &market ) const
 
     // look for highest position for a market
     qint32 pos_lo_idx;
-    for ( QSet<Position*>::const_iterator i = positions_all.begin(); i != positions_all.end(); i++ )
+    for ( QSet<Position*>::const_iterator i = positions->all().begin(); i != positions->all().end(); i++ )
     {
         Position *const &pos = *i;
 
@@ -1757,7 +1671,7 @@ Position *Engine::getHighestActivePingPong( const QString &market ) const
 
     // look for highest sell index for a market
     qint32 pos_hi_idx;
-    for ( QSet<Position*>::const_iterator i = positions_all.begin(); i != positions_all.end(); i++ )
+    for ( QSet<Position*>::const_iterator i = positions->all().begin(); i != positions->all().end(); i++ )
     {
         Position *const &pos = *i;
 
@@ -1788,7 +1702,7 @@ qint32 Engine::getMarketOrderTotal( const QString &market, bool onetime_only ) c
     qint32 total = 0;
 
     // get total order count for a market
-    for ( QSet<Position*>::const_iterator i = positions_all.begin(); i != positions_all.end(); i++ )
+    for ( QSet<Position*>::const_iterator i = positions->all().begin(); i != positions->all().end(); i++ )
     {
         const Position *const &pos = *i;
 
@@ -1811,7 +1725,7 @@ qint32 Engine::getBuyTotal( const QString &market ) const
     qint32 total = 0;
 
     // get total order count for a market
-    for ( QSet<Position*>::const_iterator i = positions_all.begin(); i != positions_all.end(); i++ )
+    for ( QSet<Position*>::const_iterator i = positions->all().begin(); i != positions->all().end(); i++ )
     {
         Position *const &pos = *i;
 
@@ -1831,7 +1745,7 @@ qint32 Engine::getSellTotal( const QString &market ) const
     qint32 total = 0;
 
     // get total order count for a market
-    for ( QSet<Position*>::const_iterator i = positions_all.begin(); i != positions_all.end(); i++ )
+    for ( QSet<Position*>::const_iterator i = positions->all().begin(); i != positions->all().end(); i++ )
     {
         Position *const &pos = *i;
 
@@ -1874,7 +1788,7 @@ void Engine::checkBuySellCount()
     sells.clear();
 
     // look for highest index in active and queued positions
-    for ( QSet<Position*>::const_iterator i = positions_all.begin(); i != positions_all.end(); i++ )
+    for ( QSet<Position*>::const_iterator i = positions->all().begin(); i != positions->all().end(); i++ )
     {
         const Position *const &pos = *i;
         const QString &market = pos->market;
@@ -2010,30 +1924,8 @@ void Engine::printInternal()
     kDebug() << "maintenance_time:" << maintenance_time;
     kDebug() << "maintenance_triggered:" << maintenance_triggered;
 
-    kDebug() << "diverge_converge: " << diverge_converge;
-    kDebug() << "diverging_converging: " << diverging_converging;
-}
-
-void Engine::removeFromDC( Position * const &pos )
-{
-    // pos must be valid!
-
-    // remove position from reverse lookup dc list
-    for ( QMap<QVector<Position*>, QPair<bool, QVector<qint32>>>::const_iterator i = diverge_converge.begin(); i != diverge_converge.end(); i++ )
-    {
-        const QVector<Position*> &positions = i.key();
-
-        // remove the key,val from the map so it doesn't hang around
-        if ( positions.contains( pos ) )
-        {
-            diverge_converge.remove( positions );
-            break;
-        }
-    }
-
-    // remove order indices from dc list that contains indices that are converging/diverging
-    for ( int i = 0; i < pos->market_indices.size(); i++ )
-        diverging_converging[ pos->market ].removeOne( pos->market_indices.value( i ) );
+    kDebug() << "diverge_converge: " << positions->diverge_converge;
+    kDebug() << "diverging_converging: " << positions->diverging_converging;
 }
 
 void Engine::findBetterPrice( Position *const &pos )
@@ -2047,7 +1939,7 @@ void Engine::findBetterPrice( Position *const &pos )
     static const quint8 SLIPPAGE_ADDITIVE = 2;
 
     // bad ptr check
-    if ( !pos || !isPosition( pos ) )
+    if ( !pos || !positions->isPosition( pos ) )
         return;
 
     bool is_buy = ( pos->side == SIDE_BUY );
@@ -2297,7 +2189,7 @@ void Engine::onCheckTimeouts()
     const qint64 current_time = QDateTime::currentMSecsSinceEpoch();
 
     // look for timed out requests
-    for ( QSet<Position*>::const_iterator i = positions_queued.begin(); i != positions_queued.end(); i++ )
+    for ( QSet<Position*>::const_iterator i = positions->queued().begin(); i != positions->queued().end(); i++ )
     {
         Position *const &pos = *i;
 
@@ -2314,7 +2206,7 @@ void Engine::onCheckTimeouts()
     }
 
     // look for timed out things
-    for ( QSet<Position*>::const_iterator j = positions_active.begin(); j != positions_active.end(); j++ )
+    for ( QSet<Position*>::const_iterator j = positions->active().begin(); j != positions->active().end(); j++ )
     {
         Position *const &pos = *j;
 
@@ -2374,7 +2266,7 @@ void Engine::onCheckDivergeConverge()
     QMap<QString/*market*/,qint32> market_hi_buy_idx;
     // track lowest/highest non-landmark positions (so we can remove landmark/non-landmark/landmark clutter)
     QMap<QString/*market*/,qint32> market_single_lo_buy, market_single_hi_sell;
-    for ( QSet<Position*>::const_iterator i = positions_all.begin(); i != positions_all.end(); i++ )
+    for ( QSet<Position*>::const_iterator i = positions->all().begin(); i != positions->all().end(); i++ )
     {
         Position *const &pos = *i;
         const QString &market = pos->market;
@@ -2409,7 +2301,7 @@ void Engine::onCheckDivergeConverge()
     QMap<QString/*market*/,QVector<qint32>> converge_buys, converge_sells, diverge_buys, diverge_sells;
 
     // look for orders we should converge/diverge in order from lo->hi
-    for ( QSet<Position*>::const_iterator i = positions_all.begin(); i != positions_all.end(); i++ )
+    for ( QSet<Position*>::const_iterator i = positions->all().begin(); i != positions->all().end(); i++ )
     {
         Position *const &pos = *i;
         const QString &market = pos->market;
@@ -2543,7 +2435,7 @@ void Engine::converge( QMap<QString, QVector<qint32>> &market_map, quint8 side )
                              .arg( Global::printVectorqint32( new_order ) );
 
                 // store positions we are cancelling
-                QVector<Position*> positions;
+                QVector<Position*> position_list;
 
                 // cancel these indices
                 for ( int k = 0; k < new_order.size(); k++ )
@@ -2552,14 +2444,14 @@ void Engine::converge( QMap<QString, QVector<qint32>> &market_map, quint8 side )
                     Position *const &pos = getPositionByIndex( market, idx );
 
                     cancelOrder( pos, true, CANCELLING_FOR_DC );
-                    positions.append( pos );
+                    position_list.append( pos );
 
                     // keep track of indices we should avoid autosetting
-                    diverging_converging[ market ].append( idx );
+                    positions->diverging_converging[ market ].append( idx );
                 }
 
                 // insert into a map for tracking for when cancels are complete
-                diverge_converge.insert( positions, qMakePair( true, new_order ) );
+                positions->diverge_converge.insert( position_list, qMakePair( true, new_order ) );
 
                 new_order.clear(); // clear new_order
                 break; // 1 order per market
@@ -2597,15 +2489,15 @@ void Engine::diverge( QMap<QString, QVector<qint32> > &market_map )
         cancelOrder( pos, true, CANCELLING_FOR_DC );
 
         // store positions we are cancelling
-        QVector<Position*> positions;
-        positions.append( pos );
+        QVector<Position*> position_list;
+        position_list.append( pos );
 
         // store a list of indices we must set after the cancel is complete
         for ( int k = 0; k < pos->market_indices.size(); k++ )
-            diverging_converging[ market ].append( pos->market_indices.value( k ) );
+            positions->diverging_converging[ market ].append( pos->market_indices.value( k ) );
 
         // insert into a map for tracking for when cancels are complete
-        diverge_converge.insert( positions, qMakePair( false, pos->market_indices ) );
+        positions->diverge_converge.insert( position_list, qMakePair( false, pos->market_indices ) );
 
         // flow control
         if ( rest->yieldToFlowControl() || rest->nam_queue.size() >= rest->limit_commands_queued_dc_check )
@@ -2626,51 +2518,6 @@ void Engine::setMarketSettings( QString market, qint32 order_min, qint32 order_m
     info.order_landmark_thresh = landmark_thresh;
     info.market_sentiment = market_sentiment;
     info.market_offset = market_offset;
-}
-
-void Engine::deletePosition( Position *const &pos )
-{
-    // prevent invalid access if pos is bad
-    if ( !positions_active.contains( pos ) && !positions_queued.contains( pos ) )
-    {
-        kDebug() << "local error: called deletePosition with invalid position at" << &*pos;
-        return;
-    }
-
-    /// step 1: clear position from diverge/converge, if we were diverging/converging
-    removeFromDC( pos );
-
-    /// step 2: make sure there's no active requests for this position
-    QQueue<QPair<QNetworkReply*,Request*>> deleted_queue;
-
-    // check nam_sent_queue for requests over timeout
-    for ( QHash<QNetworkReply*,Request*>::const_iterator i = rest->nam_queue_sent.begin(); i != rest->nam_queue_sent.end(); i++ )
-    {
-        const Request *const &req = i.value();
-
-        if ( !req->pos )
-            continue;
-
-        // if we found -this- position, add it to deleted queue
-        if ( req->pos == pos )
-            deleted_queue.append( qMakePair( i.key(), i.value() ) );
-    }
-
-    // delete replies that we handled
-    while ( deleted_queue.size() > 0 )
-    {
-        QPair<QNetworkReply*,Request*> pair = deleted_queue.takeFirst();
-        deleteReply( pair.first, pair.second );
-    }
-
-    /// step 3: remove from maps/containers
-    positions_active.remove( pos ); // remove from active ptr list
-    positions_queued.remove( pos ); // remove from tracking queue
-    positions_all.remove( pos ); // remove from all
-    positions_by_number.remove( pos->order_number ); // remove order from positions
-    market_info[ pos->market ].order_prices.removeOne( pos->price ); // remove from prices
-
-    delete pos; // we're done with this on the heap
 }
 
 void Engine::deleteReply( QNetworkReply * const &reply, Request * const &request )

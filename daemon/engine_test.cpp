@@ -2,6 +2,7 @@
 #include "engine.h"
 #include "global.h"
 #include "position.h"
+#include "positionman.h"
 #include "coinamount.h"
 #include "stats.h"
 
@@ -99,7 +100,7 @@ void EngineTest::test( Engine *e )
 
     // Engine::deletePosition
     e->cancelLocal( "TEST" );
-    assert( e->positionsAll().size() == 0 );
+    assert( e->positions->all().size() == 0 );
 
     // test addPosition()
     Position *p4 = e->addPosition( "TEST", SIDE_SELL, "0.00000000", "0.00000010", "0.02000000", "onetime" );
@@ -109,7 +110,7 @@ void EngineTest::test( Engine *e )
 
     // Engine::deletePosition
     e->cancelLocal( "TEST" );
-    assert( e->positionsAll().size() == 0 );
+    assert( e->positions->all().size() == 0 );
 
     // test non-zero landmark buy price because of shim
     QVector<PositionData> &test_index_1 = e->getMarketInfo( "TEST" ).position_index;
@@ -131,7 +132,7 @@ void EngineTest::test( Engine *e )
 
     // cancel positions and clear mappings
     e->cancelLocal();
-    assert( e->positionsAll().size() == 0 );
+    assert( e->positions->all().size() == 0 );
 
     /// run ticker slippage test for buy price colliding with asks
     ///
@@ -145,7 +146,7 @@ void EngineTest::test( Engine *e )
     assert( pp.value( 0 )->price == "0.00000099" );
 
     e->cancelLocal();
-    assert( e->positionsAll().size() == 0 );
+    assert( e->positions->all().size() == 0 );
     ///
 
     /// run ticker slippage test for sell price colliding with bids
@@ -160,7 +161,7 @@ void EngineTest::test( Engine *e )
     assert( pp.value( 0 )->price == "0.00000051" );
 
     e->cancelLocal();
-    assert( e->positionsAll().size() == 0 );
+    assert( e->positions->all().size() == 0 );
     ///
 
     /// run ping-pong bulk fill test
@@ -187,9 +188,9 @@ void EngineTest::test( Engine *e )
 
     // orders are filled, revamp list
     pp.clear();
-    pp += e->positionsAll().values().toVector();
+    pp += e->positions->all().values().toVector();
 
-    for ( QSet<Position*>::const_iterator i = e->positionsAll().begin(); i != e->positionsAll().end(); i++ )
+    for ( QSet<Position*>::const_iterator i = e->positions->all().begin(); i != e->positions->all().end(); i++ )
     {
         Position *pos = *i;
         if ( pos->side == SIDE_BUY )
@@ -199,21 +200,21 @@ void EngineTest::test( Engine *e )
     }
 
     e->cancelLocal();
-    assert( e->positionsAll().size() == 0 );
+    assert( e->positions->all().size() == 0 );
     ///
 
     // clear some stuff and disable test mode
     e->getMarketInfoStructure().clear(); // clear "TEST" market from market settings
-    e->diverging_converging.clear(); // clear "TEST" from dc market index
+    e->positions->diverging_converging.clear(); // clear "TEST" from dc market index
     e->setTesting( false );
     e->setVerbosity( 1 );
 
     // make sure the engine was cleared of our test positions and markets
-    assert( e->positions_queued.size() == 0 );
-    assert( e->positionsAll().size() == 0 );
+    assert( e->positions->queued().size() == 0 );
+    assert( e->positions->all().size() == 0 );
     assert( e->getMarketInfoStructure().size() == 0 );
-    assert( e->diverge_converge.size() == 0 );
-    assert( e->diverging_converging.size() == 0 );
+    assert( e->positions->getDCCount() == 0 );
+    assert( e->positions->diverging_converging.size() == 0 );
 
     // make sure we are ready to start
     assert( e->getRest() != nullptr );

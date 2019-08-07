@@ -2,6 +2,7 @@
 #include "trexrest.h"
 #include "bncrest.h"
 #include "polorest.h"
+#include "positionman.h"
 #include "global.h"
 #include "position.h"
 #include "engine.h"
@@ -188,7 +189,7 @@ void Stats::printOrders( QString market )
     QMultiMap<QString/*price*/, Position*> sorted_orders;
 
     // sort positions_all into map
-    for ( QSet<Position*>::const_iterator i = engine->positionsAll().begin(); i != engine->positionsAll().end(); i++ )
+    for ( QSet<Position*>::const_iterator i = engine->positions->all().begin(); i != engine->positions->all().end(); i++ )
     {
         Position *pos = *i;
 
@@ -238,7 +239,7 @@ void Stats::printOrdersByIndex( QString market )
     QMultiMap<qint32/*idx*/, Position*> sorted_orders;
 
     // sort positions_all into sorted_orders
-    for ( QSet<Position*>::const_iterator i = engine->positionsAll().begin(); i != engine->positionsAll().end(); i++ )
+    for ( QSet<Position*>::const_iterator i = engine->positions->all().begin(); i != engine->positions->all().end(); i++ )
     {
         Position *pos = *i;
 
@@ -407,7 +408,7 @@ void Stats::printBuySellTotal()
     QMap<QString /*market*/, qint32> buys, sells, total;
 
     // build indexes from active and queued positions
-    for ( QSet<Position*>::const_iterator i = engine->positionsAll().begin(); i != engine->positionsAll().end(); i++ )
+    for ( QSet<Position*>::const_iterator i = engine->positions->all().begin(); i != engine->positions->all().end(); i++ )
     {
         Position *const &pos = *i;
 
