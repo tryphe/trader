@@ -45,11 +45,11 @@ Compiling
 	- Run `python generate_keys.py`
 	- or: Copy the example keydefs file: `cp daemon/keydefs.h.example daemon/keydefs.h` then paste your keys in with your favorite editor, or:
 	- or (*non-hardcoded keys*): Create `keydefs.h` using the example file above, but leave the keys blank or as-is during compile, then use the runtime CLI to enter your keys into the bot: `trader-cli Poloniex setkeyandsecret <key> <secret>` (***be careful, this will leak your keys into the bash history***)
- 5. Now that `daemon/keydefs.h` exists, you can build the project from the project's root directory:
- 6. Run qmake: `/home/username/localqt/Qt-5.13.0-minimal/bin/qmake`
- 7. Modify `daemon/build-config.h` with your build preferences, then choose a build type:
- 	- (scripted) Run `./build-all.sh`. This will build all exchange targets and the CLI using `make -j`.
-	- or (manual) Run `make -j` or similar to build for a single exchange and the CLI.
+ 5. Run qmake: `/home/username/localqt/Qt-5.13.0-minimal/bin/qmake`
+ 6. (optional) Modify `daemon/build-config.h` with your build preferences, then choose a build type:
+ 7. Compile (choose one):
+ 	- (scripted build) Run `./build-all.sh`. This will build all exchange targets and the CLI using `make -j`.
+	- (manual build) Run `make -j` or similar to build for a single exchange and the CLI.
 
 Running the daemon
 ------------------
