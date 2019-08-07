@@ -323,13 +323,15 @@ void Engine::fillNQ( const QString &order_id, qint8 fill_type , quint8 extra_dat
         market_info[ pos->market ].position_index[ pos->market_indices.value( i ) ].resizeByAlternateSize();
     }
 
-    QString fill_str = fill_strings.value( fill_type -1, "unknown-fill" );
-    if ( extra_data > 0 ) fill_str += QChar('-') + QString::number( extra_data );
-
     if ( verbosity > 0 )
+    {
+        QString fill_str = fill_strings.value( fill_type -1, "unknown-fill" );
+        if ( extra_data > 0 ) fill_str += QChar('-') + QString::number( extra_data );
+
         kDebug() << QString( "%1 %2" )
                       .arg( fill_str, -15 )
                       .arg( pos->stringifyPositionChange() );
+    }
 
     // set the next position
     flipPosition( pos );
