@@ -355,9 +355,9 @@ void Engine::processFilledOrders( QVector<Position*> &filled_positions, qint8 fi
     // sort the orders
     QMap<Coin,Position*> sorted; // key = (lo/hi) - lower is better
     for ( QVector<Position*>::const_iterator i = filled_positions.begin(); i != filled_positions.end(); i++ )
-        if ( (*i)->is_onetime )
+        if ( (*i)->is_onetime ) // onetime orders, buy or sell price is zero, we'll process these last
             sorted.insert( Coin(), (*i) );
-        else
+        else // process the fills by greatest distances first in order to guesstimate temporary spread evenly
             sorted.insert( (*i)->buy_price / (*i)->sell_price, (*i) );
 
     for ( QMap<Coin,Position*>::const_iterator i = sorted.begin(); i != sorted.end(); i++ )
