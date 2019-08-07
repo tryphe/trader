@@ -337,16 +337,13 @@ void Engine::fillNQ( const QString &order_id, qint8 fill_type , quint8 extra_dat
     // set the next position
     flipPosition( pos );
 
-    // if testing, delete and return early to avoid rest ptr
-    if ( is_testing )
-    {
-        deletePosition( pos );
-        return;
-    }
-
     // on trex, remove any 'getorder's in queue related to this uuid, to prevent spam
 #if defined(EXCHANGE_BITTREX)
+// if testing, don't access rest because it's null
+if ( !is_testing )
+{
     rest->removeRequest( TREX_COMMAND_GET_ORDER, QString( "uuid=%1" ).arg( order_id ) ); // note: uses pos*
+}
 #endif
 
     // delete
