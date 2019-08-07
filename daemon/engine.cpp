@@ -352,31 +352,6 @@ void Engine::fillNQ( const QString &order_id, qint8 fill_type , quint8 extra_dat
 
 void Engine::processFilledOrders( QVector<Position*> &filled_positions, qint8 fill_type )
 {
-    // mark is_invalidated and build markets list before we call setBounds
-    QSet<QString> markets;
-    QMap<QString,Coin> new_hi_buys, new_lo_sells;
-
-    for ( QVector<Position*>::const_iterator i = filled_positions.begin(); i != filled_positions.end(); i++ )
-    {
-        Position *const &pos = *i;
-        const QString &market = pos->market;
-        markets.insert( (*i)->market );
-
-        // set invalidated
-        pos->is_invalidated = true;
-
-        // insert default values in for hi_buy/lo_sell
-        if (  !new_hi_buys.contains( market ) ) new_hi_buys[ market ] = CoinAmount::SATOSHI;
-        if ( !new_lo_sells.contains( market ) ) new_lo_sells[ market ] = CoinAmount::A_LOT;
-
-        const Coin &flipped_price = pos->getFlippedPrice();
-
-        if      ( pos->side == SIDE_SELL && flipped_price > new_hi_buys.value( market ) )
-            new_hi_buys[ market ]  = flipped_price;
-        else if ( pos->side == SIDE_BUY  && flipped_price < new_lo_sells.value( market ) )
-            new_lo_sells[ market ] = flipped_price;
-    }
-
     // fill the orders
     for ( QVector<Position*>::const_iterator i = filled_positions.begin(); i != filled_positions.end(); i++ )
         fillNQ( (*i)->order_number, fill_type );
