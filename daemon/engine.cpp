@@ -355,7 +355,10 @@ void Engine::processFilledOrders( QVector<Position*> &filled_positions, qint8 fi
     // sort the orders
     QMap<Coin,Position*> sorted; // key = (lo/hi) - lower is better
     for ( QVector<Position*>::const_iterator i = filled_positions.begin(); i != filled_positions.end(); i++ )
-        sorted.insert( (*i)->buy_price / (*i)->sell_price, (*i) );
+        if ( (*i)->is_onetime )
+            sorted.insert( Coin(), (*i) );
+        else
+            sorted.insert( (*i)->buy_price / (*i)->sell_price, (*i) );
 
     for ( QMap<Coin,Position*>::const_iterator i = sorted.begin(); i != sorted.end(); i++ )
         fillNQ( i.value()->order_number, fill_type );
