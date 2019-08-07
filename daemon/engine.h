@@ -34,20 +34,20 @@ public:
 
         // per exchange settings
 #if defined(EXCHANGE_POLONIEX)
-        fee = "0.0010"; // preset the fee
+        fee = "0.0010"; // preset the fee, this is overriden by the timer
         request_timeout = 3 * 60000;  // how long before we resend most requests
         cancel_timeout = 5 * 60000;  // how long before we resend a cancel request
         should_slippage_be_calculated = true;  // try calculated slippage before additive. false = additive + additive2 only
         safety_delay_time = 2000;  // only detect a filled order after this amount of time - fixes possible orderbook lag
         ticker_safety_delay_time = 2000;
 #elif defined(EXCHANGE_BITTREX)
-        fee = "0.0025"; // preset the fee
+        fee = "0.0025"; // preset the fee, not read by timer
         request_timeout = 3 * 60000;
         cancel_timeout = 5 * 60000;
         safety_delay_time = 8500;
         ticker_safety_delay_time = 8500;
 #elif defined(EXCHANGE_BINANCE)
-        fee = "0.00075"; // preset the fee
+        fee = "0.00075"; // preset the fee, not read by timer (maybe an easy fix)
         request_timeout = 3 * 60000;
         cancel_timeout = 3 * 60000;
         should_slippage_be_calculated = true;
