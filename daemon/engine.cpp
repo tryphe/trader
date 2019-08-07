@@ -210,14 +210,14 @@ Position *Engine::addPosition( QString market, quint8 side, QString price_lo, QS
     const MarketInfo &info = market_info.value( market );
 
     // respect the binance limits with a 20% padding (we don't know what the 5min avg is, so we'll just compress the range)
-    const Coin &buy_limit = info.highest_buy * info.price_min_mul.ratio( 1.2 );
-    const Coin &sell_limit = info.lowest_sell * info.price_max_mul.ratio( 0.8 );
+    Coin buy_limit = ( info.highest_buy * info.price_min_mul.ratio( 1.2 ) ).truncatedByTicksize( "0.00000001" );
+    Coin sell_limit = ( info.lowest_sell * info.price_max_mul.ratio( 0.8 ) ).truncatedByTicksize( "0.00000001" );
 
     // regardless of the order type, enforce lo/hi price >0 to be in bounds
-    if ( ( !pos->price_lo.isZeroOrLess() && pos->price_lo < buy_limit ) ||
-         ( !pos->price_hi.isZeroOrLess() && pos->price_hi > sell_limit ) )
+    if ( ( pos->side == SIDE_BUY  && pos->price_lo.isGreaterThanZero() && buy_limit.isGreaterThanZero() && pos->price_lo < buy_limit ) ||
+         ( pos->side == SIDE_SELL && pos->price_hi.isGreaterThanZero() && sell_limit.isGreaterThanZero() && pos->price_hi > sell_limit ) )
     {
-        kDebug() << "hit PERCENT_PRICE limit for" << market << buy_limit << sell_limit << "for pos" << pos->stringifyOrderWithoutOrderID();
+        kDebug() << "local warning(ignore for ping-pongs): hit PERCENT_PRICE limit for" << market << buy_limit << sell_limit << "for pos" << pos->stringifyOrderWithoutOrderID();
         delete pos;
         return nullptr;
     }
