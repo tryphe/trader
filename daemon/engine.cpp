@@ -1520,7 +1520,6 @@ Coin Engine::getHighestBuyPrice( const QString &market ) const
 
         // check for higher buy
         if ( pos->side == SIDE_BUY &&
-            !pos->is_invalidated &&
             !pos->is_cancelling &&
              pos->price_lo > highest_buy_price &&
              pos->market == market )
@@ -1540,7 +1539,6 @@ Coin Engine::getLowestSellPrice( const QString &market ) const
 
         // check for lower sell
         if ( pos->side == SIDE_SELL &&
-            !pos->is_invalidated &&
             !pos->is_cancelling &&
              pos->price_hi < lowest_sell_price &&
              pos->market == market )
@@ -1565,7 +1563,6 @@ Position *Engine::getHighestActiveBuyPosByIndex( const QString &market ) const
         Position *const &pos = *i;
         if (  pos->side != SIDE_BUY ||         // sells only
               pos->is_cancelling ||             // must not be cancelling
-              pos->is_invalidated ||            // must not be invalidated
               pos->order_number.size() == 0 ||  // must be set
               pos->market != market             // check market filter
               )
@@ -1592,7 +1589,6 @@ Position *Engine::getHighestActiveSellPosByIndex( const QString &market ) const
         Position *const &pos = *i;
         if (  pos->side != SIDE_SELL ||         // sells only
               pos->is_cancelling ||             // must not be cancelling
-              pos->is_invalidated ||            // must not be invalidated
               pos->order_number.size() == 0 ||  // must be set
               pos->market != market             // check market filter
               )
@@ -1619,7 +1615,6 @@ Position *Engine::getLowestActiveSellPosByIndex( const QString &market ) const
         Position *const &pos = *i;
         if (  pos->side != SIDE_SELL ||         // sells only
               pos->is_cancelling ||             // must not be cancelling
-              pos->is_invalidated ||            // must not be invalidated
               pos->order_number.size() == 0 ||  // must be set
               pos->market != market             // check market filter
               )
@@ -1645,7 +1640,6 @@ Position *Engine::getLowestActiveBuyPosByIndex( const QString &market ) const
         Position *const &pos = *i;
         if (  pos->side != SIDE_BUY ||          // sells only
               pos->is_cancelling ||             // must not be cancelling
-              pos->is_invalidated ||            // must not be invalidated
               pos->order_number.size() == 0 ||  // must be set
               pos->market != market             // check market filter
               )
@@ -1672,7 +1666,6 @@ Position *Engine::getHighestActiveBuyPosByPrice( const QString &market ) const
         Position *const &pos = *i;
         if (  pos->side != SIDE_BUY ||          // sells only
               pos->is_cancelling ||             // must not be cancelling
-              pos->is_invalidated ||            // must not be invalidated
               pos->order_number.size() == 0 ||  // must be set
               pos->market != market             // check market filter
               )
@@ -1698,7 +1691,6 @@ Position *Engine::getLowestActiveSellPosByPrice( const QString &market ) const
         Position *const &pos = *i;
         if (  pos->side != SIDE_SELL ||         // sells only
               pos->is_cancelling ||             // must not be cancelling
-              pos->is_invalidated ||            // must not be invalidated
               pos->order_number.size() == 0 ||  // must be set
               pos->market != market             // check market filter
               )
