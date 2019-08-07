@@ -674,10 +674,6 @@ void BncREST::parseBuySell( Request *const &request, const QJsonObject &response
     const QString &order_number = response[ "orderId" ].toVariant().toString(); // get the order number to track position id
 
     engine->setOrderMeat( pos, order_number );
-
-    kDebug() << QString( "%1 %2" )
-                .arg( "set", -15 )
-                .arg( pos->stringifyOrder() );
 }
 
 void BncREST::parseCancelOrder( Request *const &request, const QJsonObject &response )
@@ -710,7 +706,7 @@ void BncREST::parseCancelOrder( Request *const &request, const QJsonObject &resp
            pos->cancel_reason == CANCELLING_FOR_DC ) )
     {
         // single order fill
-        engine->processFilledOrderSingle( pos, FILL_CANCEL );
+        engine->processFilledOrders( QVector<Position*>() << pos, FILL_CANCEL );
         return;
     }
 

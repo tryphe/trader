@@ -325,10 +325,6 @@ void PoloREST::parseBuySell( Request *const &request, const QJsonObject &respons
     const QString &order_number = response[ "orderNumber" ].toString(); // get the order number to track position id
 
     engine->setOrderMeat( pos, order_number );
-
-    kDebug() << QString( "%1 %2" )
-                .arg( "set", -15 )
-                .arg( pos->stringifyOrder() );
 }
 
 void PoloREST::parseCancelOrder( Request *const &request, const QJsonObject &response )
@@ -826,8 +822,7 @@ void PoloREST::onNamReply( QNetworkReply *const &reply )
                  pos->cancel_reason == CANCELLING_FOR_DC )
             {
                 // do single order fill
-                engine->processFilledOrderSingle( pos, FILL_CANCEL );
-
+                engine->processFilledOrders( QVector<Position*>() << pos, FILL_CANCEL );
                 engine->deleteReply( reply, request );
                 return;
             }
@@ -1264,7 +1259,7 @@ void PoloREST::wssTextMessageReceived( const QString &msg )
         }
 
         // process the orders
-        engine->processFilledOrderRange( filled_orders, FILL_WSS );
+        engine->processFilledOrders( filled_orders, FILL_WSS );
 
         return;
     }

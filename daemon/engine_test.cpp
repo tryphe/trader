@@ -154,10 +154,6 @@ void EngineTest::test( Engine *e )
 
     // simulate fills
     e->processFilledOrders( pp, FILL_WSS );
-    //e->stats->printOrdersByIndex( "TEST" );
-
-//    kDebug() << "hi_buy: " << e->market_info[ "TEST" ].highest_buy;
-//    kDebug() << "lo_sell:" << e->market_info[ "TEST" ].lowest_sell;
 
     // orders are filled, revamp list
     pp.clear();
@@ -175,35 +171,6 @@ void EngineTest::test( Engine *e )
     e->cancelLocal();
     assert( e->positionsAll().size() == 0 );
     ///
-
-//    /// run post-fill spread adjustment test
-//    /// bid ticker = 100
-//    /// ask ticker = 110
-//    ///
-//    /// index 0 is a buy at 97
-//    /// index 1 is a sell at 112
-//    /// once index 0 fills, we know the exchange's bid is at most 97,   so index 1's buy  at 98 is now 97
-//    /// once index 1 fills, we know the exchange's ask is at least 112, so index 0's sell at 111 is now 112
-//    ///
-//    /// even though our post-fill bounds are 98|111, we set them to
-//    ///
-//    e->market_info[ "TEST" ].highest_buy = "0.00000100";
-//    e->market_info[ "TEST" ].lowest_sell = "0.00000110";
-//    pp.clear();
-//    pp += e->addPosition( "TEST", SIDE_BUY,  "0.00000097", "0.00000111", "0.1", "active" ); // 0
-//    pp += e->addPosition( "TEST", SIDE_SELL, "0.00000098", "0.00000112", "0.1", "active" ); // 1
-
-//    // simulate fills
-//    e->processFilledOrders( pp, FILL_WSS );
-
-//    kDebug() << "hi_buy: " << e->market_info[ "TEST" ].highest_buy;
-//    kDebug() << "lo_sell:" << e->market_info[ "TEST" ].lowest_sell;
-
-////    assert( e->market_info[ "TEST" ].highest_buy == "0.00000097" );
-////    assert( e->market_info[ "TEST" ].lowest_sell == "0.00000112" );
-
-//    e->cancelLocal();
-//    ///
 
     // clear some stuff and disable test mode
     e->getMarketInfoStructure().clear(); // clear "TEST" market from market settings

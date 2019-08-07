@@ -384,8 +384,7 @@ void TrexREST::onNamReply( QNetworkReply *const &reply )
                  pos->cancel_reason == CANCELLING_FOR_DC )
             {
                 // do single position fill
-                engine->processFilledOrderSingle( pos, FILL_CANCEL );
-
+                engine->processFilledOrders( QVector<Position*>() << pos, FILL_CANCEL );
                 engine->deleteReply( reply, request );
                 return;
             }
@@ -569,10 +568,6 @@ void TrexREST::parseBuySell( Request *const &request, const QJsonObject &respons
     const QString &order_number = response[ "uuid" ].toString(); // get the order number to track position id
 
     engine->setOrderMeat( pos, order_number );
-
-    kDebug() << QString( "%1 %2" )
-                .arg( "set", -15 )
-                .arg( pos->stringifyOrder() );
 }
 
 void TrexREST::parseCancelOrder( Request *const &request, const QJsonObject &response )
@@ -737,7 +732,7 @@ void TrexREST::parseGetOrder( const QJsonObject &order )
         return;
 
     // do single order fill
-    engine->processFilledOrderSingle( pos, FILL_GETORDER );
+    engine->processFilledOrders( QVector<Position*>() << pos, FILL_GETORDER );
 }
 
 void TrexREST::parseOrderBook( const QJsonArray &info, qint64 request_time_sent_ms )
@@ -839,7 +834,7 @@ void TrexREST::parseOrderHistory( const QJsonObject &obj )
     }
 
     // process the orders
-    engine->processFilledOrderRange( filled_orders, FILL_HISTORY );
+    engine->processFilledOrders( filled_orders, FILL_HISTORY );
 }
 
 #endif // EXCHANGE_BITTREX

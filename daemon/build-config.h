@@ -1,7 +1,7 @@
 #ifndef BUILDCONFIG_H
 #define BUILDCONFIG_H
 
-#define BUILD_VERSION "1.72o"
+#define BUILD_VERSION "1.73"
 
 /// select your exchange
 //#define EXCHANGE_BITTREX

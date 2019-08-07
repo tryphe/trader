@@ -20,6 +20,7 @@ Engine::Engine()
       maintenance_time( 0 ),
       maintenance_triggered( false ),
       is_testing( false ),
+      verbosity( 1 ),
       rest( nullptr ),
       stats( nullptr )
 {
@@ -204,14 +205,6 @@ Position *Engine::addPosition( QString market, quint8 side, QString price_lo, QS
         return nullptr;
     }
 
-    // if running tests, exit early
-    if ( is_testing )
-    {
-        positions_queued.insert( pos );
-        positions_all.insert( pos );
-        return pos;
-    }
-
     // enforce PERCENT_PRICE on binance
 #if defined(EXCHANGE_BINANCE)
     const MarketInfo &info = market_info.value( market );
@@ -256,6 +249,15 @@ Position *Engine::addPosition( QString market, quint8 side, QString price_lo, QS
     positions_queued.insert( pos );
     positions_all.insert( pos );
     market_info[ market ].order_prices.append( pos->price );
+
+    // if running tests, exit early
+    if ( is_testing )
+    {
+        pos->order_number = pos->market + QString::number( pos->getLowestMarketIndex() );
+        //kDebug() << pos->order_number;
+        setOrderMeat( pos, pos->order_number );
+        return pos;
+    }
 
     // send rest request
     rest->sendBuySell( pos, quiet );
@@ -323,66 +325,61 @@ void Engine::fillNQ( const QString &order_id, qint8 fill_type , quint8 extra_dat
 
     QString fill_str = fill_strings.value( fill_type -1, "unknown-fill" );
     if ( extra_data > 0 ) fill_str += QChar('-') + QString::number( extra_data );
-    kDebug() << QString( "%1 %2" )
-                  .arg( fill_str, -15 )
-                  .arg( pos->stringifyPositionChange() );
 
-    // set the next position and delete this one
+    if ( verbosity > 0 )
+        kDebug() << QString( "%1 %2" )
+                      .arg( fill_str, -15 )
+                      .arg( pos->stringifyPositionChange() );
+
+    // set the next position
     flipPosition( pos );
+
+    // if testing, delete and return early to avoid rest ptr
+    if ( is_testing )
+    {
+        deletePosition( pos );
+        return;
+    }
 
     // on trex, remove any 'getorder's in queue related to this uuid, to prevent spam
 #if defined(EXCHANGE_BITTREX)
     rest->removeRequest( TREX_COMMAND_GET_ORDER, QString( "uuid=%1" ).arg( order_id ) ); // note: uses pos*
 #endif
 
-    const QString &market = pos->market;
-
     // delete
     deletePosition( pos );
-
-    MarketInfo &info = market_info[ market ];
-    const Coin &ticksize = info.price_ticksize;
-
-    // set market bounds by pulling outwards (because filling can only take away, which expands out)
-    if ( pos->price_lo < info.highest_buy )
-    {
-        info.highest_buy = getHighestBuyPrice( market ); // this is why we set is_invalidated
-
-        if ( info.lowest_sell < info.highest_buy )
-            info.lowest_sell = info.highest_buy + ticksize;
-    }
-    if ( pos->price_hi > info.lowest_sell )
-    {
-        info.lowest_sell = getLowestSellPrice( market ); // this is why we set is_invalidated
-
-        if ( info.highest_buy > info.lowest_sell )
-            info.highest_buy = info.lowest_sell - ticksize;
-    }
 }
 
-void Engine::processFilledOrderRange( QVector<Position*> &filled_positions, qint8 fill_type )
+void Engine::processFilledOrders( QVector<Position*> &filled_positions, qint8 fill_type )
 {
     // mark is_invalidated and build markets list before we call setBounds
     QSet<QString> markets;
+    QMap<QString,Coin> new_hi_buys, new_lo_sells;
+
     for ( QVector<Position*>::const_iterator i = filled_positions.begin(); i != filled_positions.end(); i++ )
     {
         Position *const &pos = *i;
+        const QString &market = pos->market;
+        markets.insert( (*i)->market );
+
+        // set invalidated
         pos->is_invalidated = true;
-        markets.insert( pos->market );
+
+        // insert default values in for hi_buy/lo_sell
+        if (  !new_hi_buys.contains( market ) ) new_hi_buys[ market ] = CoinAmount::SATOSHI;
+        if ( !new_lo_sells.contains( market ) ) new_lo_sells[ market ] = CoinAmount::A_LOT;
+
+        const Coin &flipped_price = pos->getFlippedPrice();
+
+        if      ( pos->side == SIDE_SELL && flipped_price > new_hi_buys.value( market ) )
+            new_hi_buys[ market ]  = flipped_price;
+        else if ( pos->side == SIDE_BUY  && flipped_price < new_lo_sells.value( market ) )
+            new_lo_sells[ market ] = flipped_price;
     }
 
-    setMarketBoundsForMarkets( markets );
-
+    // fill the orders
     for ( QVector<Position*>::const_iterator i = filled_positions.begin(); i != filled_positions.end(); i++ )
         fillNQ( (*i)->order_number, fill_type );
-}
-
-void Engine::processFilledOrderSingle( Position *const &pos, qint8 fill_type )
-{
-    // do single position fill
-    pos->is_invalidated = true;
-    setMarketBoundsForMarkets( QSet<QString>() << pos->market );
-    fillNQ( pos->order_number, fill_type );
 }
 
 void Engine::processOpenOrders( QVector<QString> &order_numbers, QMultiHash<QString, OrderInfo> &orders, qint64 request_time_sent_ms )
@@ -471,10 +468,6 @@ void Engine::processOpenOrders( QVector<QString> &order_numbers, QMultiHash<QStr
                 {
                     // order is now set
                     setOrderMeat( matching_pos, order_number );
-
-                    kDebug() << QString( "%1 %2" )
-                                .arg( "scan-set", -15 )
-                                .arg( matching_pos->stringifyOrder() );
                 }
                 // it doesn't match a queued order, we should still update the seen time
                 else
@@ -578,7 +571,7 @@ void Engine::processOpenOrders( QVector<QString> &order_numbers, QMultiHash<QStr
         filled_orders += pos;
     }
 
-    processFilledOrderRange( filled_orders, FILL_GETORDER );
+    processFilledOrders( filled_orders, FILL_GETORDER );
 #endif
 }
 
@@ -695,7 +688,7 @@ void Engine::processTicker( const QMap<QString, TickerInfo> &ticker_data, qint64
     }
 
     // fill positions
-    processFilledOrderRange( filled_orders, FILL_TICKER );
+    processFilledOrders( filled_orders, FILL_TICKER );
 
     // show warning we if we found equal bid/ask
     if ( found_equal_bid_ask )
@@ -1024,13 +1017,6 @@ void Engine::setOrderMeat( Position *const &pos, QString order_number )
         return;
     }
 
-    // on binance, prepend market to orderid for uniqueness (don't remove this or you'll get collisions)
-#if defined(EXCHANGE_BINANCE)
-    pos->order_number = pos->market + order_number;
-#else
-    pos->order_number = order_number;
-#endif
-
     // set the order_set_time so we can keep track of a missing order
     pos->order_set_time = QDateTime::currentMSecsSinceEpoch();
 
@@ -1040,7 +1026,27 @@ void Engine::setOrderMeat( Position *const &pos, QString order_number )
     // insert our order number into positions
     positions_queued.remove( pos );
     positions_active.insert( pos );
-    positions_by_number.insert( pos->order_number, pos );
+    positions_by_number.insert( order_number, pos );
+
+    if ( is_testing )
+    {
+        pos->order_number = order_number;
+    }
+    else
+    {
+        // on binance, prepend market to orderid for uniqueness (don't remove this or you'll get collisions)
+        #if defined(EXCHANGE_BINANCE)
+        pos->order_number = pos->market + order_number;
+        #else
+        pos->order_number = order_number;
+        #endif
+    }
+
+    // print set order
+    if ( verbosity > 0 )
+        kDebug() << QString( "%1 %2" )
+                    .arg( "set", -15 )
+                    .arg( pos->stringifyOrder() );
 
     // check if the order was queued for a cancel (manual or automatic) while it was queued
     if ( pos->is_cancelling &&
@@ -1582,12 +1588,12 @@ Position *Engine::getHighestActiveBuyPosByIndex( const QString &market ) const
     for ( QSet<Position*>::const_iterator i = positions_active.begin(); i != positions_active.end(); i++ )
     {
         Position *const &pos = *i;
-
-        if (  pos->side != SIDE_BUY ||       // buys only
-              pos->is_cancelling ||          // must not be cancelling
-             !pos->order_number.size() ||    // must be set
-              pos->market != market ||       // check market filter
-              pos->is_onetime )              // check for one-time order
+        if (  pos->side != SIDE_BUY ||         // sells only
+              pos->is_cancelling ||             // must not be cancelling
+              pos->is_invalidated ||            // must not be invalidated
+              pos->order_number.size() == 0 ||  // must be set
+              pos->market != market             // check market filter
+              )
             continue;
 
         const qint32 pos_idx = pos->getHighestMarketIndex();
@@ -1609,12 +1615,12 @@ Position *Engine::getHighestActiveSellPosByIndex( const QString &market ) const
     for ( QSet<Position*>::const_iterator i = positions_active.begin(); i != positions_active.end(); i++ )
     {
         Position *const &pos = *i;
-
-        if (  pos->side != SIDE_SELL ||      // sells only
-              pos->is_cancelling ||          // must not be cancelling
-             !pos->order_number.size() ||    // must be set
-              pos->market != market ||       // check market filter
-              pos->is_onetime )              // check for one-time order
+        if (  pos->side != SIDE_SELL ||         // sells only
+              pos->is_cancelling ||             // must not be cancelling
+              pos->is_invalidated ||            // must not be invalidated
+              pos->order_number.size() == 0 ||  // must be set
+              pos->market != market             // check market filter
+              )
             continue;
 
         const qint32 pos_idx = pos->getHighestMarketIndex();
@@ -1636,14 +1642,13 @@ Position *Engine::getLowestActiveSellPosByIndex( const QString &market ) const
     for ( QSet<Position*>::const_iterator i = positions_active.begin(); i != positions_active.end(); i++ )
     {
         Position *const &pos = *i;
-
-        if (  pos->is_onetime ||             // check for one-time order
-              pos->side != SIDE_SELL ||      // sells only
-              pos->is_cancelling ||          // must not be cancelling
-             !pos->order_number.size() ||    // must be set
-              pos->market != market )        // check market filter
+        if (  pos->side != SIDE_SELL ||         // sells only
+              pos->is_cancelling ||             // must not be cancelling
+              pos->is_invalidated ||            // must not be invalidated
+              pos->order_number.size() == 0 ||  // must be set
+              pos->market != market             // check market filter
+              )
             continue;
-
         const qint32 pos_idx = pos->getLowestMarketIndex();
         if ( pos_idx < idx_lo_sell ) // position index is greater than our incrementor
         {
@@ -1663,12 +1668,12 @@ Position *Engine::getLowestActiveBuyPosByIndex( const QString &market ) const
     for ( QSet<Position*>::const_iterator i = positions_active.begin(); i != positions_active.end(); i++ )
     {
         Position *const &pos = *i;
-
-        if (  pos->is_onetime ||             // check for one-time order
-              pos->side != SIDE_BUY ||       // buys only
-              pos->is_cancelling ||          // must not be cancelling
-             !pos->order_number.size() ||    // must be set
-              pos->market != market )     // check market filter
+        if (  pos->side != SIDE_BUY ||          // sells only
+              pos->is_cancelling ||             // must not be cancelling
+              pos->is_invalidated ||            // must not be invalidated
+              pos->order_number.size() == 0 ||  // must be set
+              pos->market != market             // check market filter
+              )
             continue;
 
         const qint32 pos_idx = pos->getLowestMarketIndex();
@@ -1690,11 +1695,12 @@ Position *Engine::getHighestActiveBuyPosByPrice( const QString &market ) const
     for ( QSet<Position*>::const_iterator i = positions_active.begin(); i != positions_active.end(); i++ )
     {
         Position *const &pos = *i;
-
-        if (  pos->side != SIDE_BUY ||       // buys only
-              pos->is_cancelling ||          // must not be cancelling
-             !pos->order_number.size() ||    // must be set
-              pos->market != market )        // check market filter
+        if (  pos->side != SIDE_BUY ||          // sells only
+              pos->is_cancelling ||             // must not be cancelling
+              pos->is_invalidated ||            // must not be invalidated
+              pos->order_number.size() == 0 ||  // must be set
+              pos->market != market             // check market filter
+              )
             continue;
 
         if ( pos->price_lo > hi_buy ) // position index is greater than our incrementor
@@ -1715,11 +1721,12 @@ Position *Engine::getLowestActiveSellPosByPrice( const QString &market ) const
     for ( QSet<Position*>::const_iterator i = positions_active.begin(); i != positions_active.end(); i++ )
     {
         Position *const &pos = *i;
-
-        if (  pos->side != SIDE_SELL ||      // sells only
-              pos->is_cancelling ||          // must not be cancelling
-             !pos->order_number.size() ||    // must be set
-              pos->market != market )        // check market filter
+        if (  pos->side != SIDE_SELL ||         // sells only
+              pos->is_cancelling ||             // must not be cancelling
+              pos->is_invalidated ||            // must not be invalidated
+              pos->order_number.size() == 0 ||  // must be set
+              pos->market != market             // check market filter
+              )
             continue;
 
         if ( pos->price_hi < lo_sell ) // position index is less than our incrementor
@@ -2203,7 +2210,7 @@ bool Engine::tryMoveOrder( Position* const &pos )
     // return early when no ticker is set
     if ( hi_buy.isZeroOrLess() || lo_sell.isZeroOrLess() )
     {
-        kDebug() << "local warning: couldn't call setMarketBoundsForPos because ticker is not yet set";
+        //kDebug() << "local warning: couldn't call tryMoveOrder because ticker is not yet set";
         return false;
     }
 
@@ -2213,7 +2220,8 @@ bool Engine::tryMoveOrder( Position* const &pos )
     if ( pos->side == SIDE_BUY )
     {
         // recalculate buy if needed - don't interfere with spread
-        if ( pos->price_lo >= lo_sell )
+        if ( pos->price_lo >= lo_sell &&
+             lo_sell > ticksize ) // lo_sell <= ticksize shouldn't happen but is triggerable in tests
         {
             // set buy price to low sell - ticksize
             pos->price_lo = lo_sell - ticksize;
@@ -2293,44 +2301,6 @@ bool Engine::tryMoveOrder( Position* const &pos )
     }
 
     return false;
-}
-
-void Engine::setMarketBoundsForMarkets( const QSet<QString> &filled_markets )
-{
-    if ( !m_settings.should_use_aggressive_spread )
-        return;
-
-    for ( QSet<QString>::const_iterator k = filled_markets.begin(); k != filled_markets.end(); k++ )
-    {
-        const QString &market = *k;
-        const Coin &hi_buy  = getHighestBuyPrice( market );
-        const Coin &lo_sell = getLowestSellPrice( market );
-
-        if ( !hi_buy.isZeroOrLess() &&
-             !lo_sell.isZeroOrLess() )
-        {
-            MarketInfo &info = market_info[ market ];
-            const Coin &ticksize = info.price_ticksize;
-
-            // set market bounds by pushing inwards
-            if ( hi_buy > info.highest_buy )
-            {
-                info.highest_buy = hi_buy;
-
-                // fix ticker collision
-                if ( info.highest_buy >= info.lowest_sell )
-                    info.lowest_sell = info.highest_buy + ticksize;
-            }
-            if ( lo_sell < info.lowest_sell )
-            {
-                info.lowest_sell = lo_sell;
-
-                // fix ticker collision
-                if ( info.lowest_sell <= info.highest_buy )
-                    info.highest_buy = info.lowest_sell - ticksize;
-            }
-        }
-    }
 }
 
 void Engine::onCheckTimeouts()

@@ -19,6 +19,7 @@ public:
 
     void calculateQuantity();
     void flip();
+    QString getFlippedPrice() { return side == SIDE_BUY ? price_hi_original : price_lo_original; }
     bool applyPriceSide();
     void applyOffset();
     void applyOffset( qreal offset, bool sentiment = true );
