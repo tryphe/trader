@@ -14,6 +14,9 @@
 class Position;
 class Engine;
 
+//
+// PositionMan, helps Engine manage the positions
+//
 class PositionMan : public QObject
 {
     Q_OBJECT
