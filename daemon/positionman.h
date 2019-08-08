@@ -41,6 +41,8 @@ public:
 
     Position *getByOrderID( const QString &order_id ) const;
     Position *getByIndex( const QString &market, const qint32 idx ) const;
+    Position *getHighestBuyAll( const QString &market ) const;
+    Position *getLowestSellAll( const QString &market ) const;
     Position *getHighestBuyByIndex( const QString &market ) const;
     Position *getHighestSellByIndex( const QString &market ) const;
     Position *getLowestSellByIndex( const QString &market ) const;

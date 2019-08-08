@@ -216,7 +216,27 @@ Position *Engine::addPosition( QString market, quint8 side, QString buy_price, Q
     {
         // if we are setting a new position, try to obtain a better price
         if ( tryMoveOrder( pos ) )
+        {
             pos->applyOffset();
+        }
+
+        if ( pos->side == SIDE_SELL && pos->sell_price < info.lowest_sell )
+        {
+            info.lowest_sell = pos->sell_price;
+
+            // avoid collision
+            if ( info.lowest_sell <= info.highest_buy )
+                info.highest_buy = info.lowest_sell - info.price_ticksize;
+        }
+
+        if ( pos->side == SIDE_BUY  && pos->buy_price > info.highest_buy )
+        {
+            info.highest_buy = pos->buy_price;
+
+            // avoid collision
+            if ( info.highest_buy >= info.lowest_sell )
+                info.lowest_sell = info.highest_buy + info.price_ticksize;
+        }
     }
 
     // position is now queued, update engine state
@@ -284,15 +304,17 @@ void Engine::fillNQ( const QString &order_id, qint8 fill_type , quint8 extra_dat
     // update stats
     stats->updateStats( pos );
 
+    MarketInfo &info = market_info[ pos->market ];
+
     // increment ping-pong "alternate_size" variable to take the place of order_size after 1 fill
     for ( int i = 0; i < pos->market_indices.size(); i++ )
     {
         // assure valid non-const access
-        if ( market_info.value( pos->market ).position_index.size() <= pos->market_indices.value( i ) )
+        if ( info.position_index.size() <= pos->market_indices.value( i ) )
             continue;
 
         // increment fill count and resize by alternate size if one exists
-        market_info[ pos->market ].position_index[ pos->market_indices.value( i ) ].iterateFillCount();
+        info.position_index[ pos->market_indices.value( i ) ].iterateFillCount();
     }
 
     if ( verbosity > 0 )
@@ -326,13 +348,24 @@ void Engine::processFilledOrders( QVector<Position*> &filled_positions, qint8 fi
     // sort the orders
     QMap<Coin,Position*> sorted; // key = (lo/hi) - lower is better
     for ( QVector<Position*>::const_iterator i = filled_positions.begin(); i != filled_positions.end(); i++ )
-        if ( (*i)->is_onetime ) // onetime orders, buy or sell price is zero, we'll process these last
-            sorted.insert( CoinAmount::COIN, (*i) );
+    {
+        Position *const &pos = *i;
+
+        // set invalidated
+        pos->is_invalidated = true;
+
+        // onetime orders, buy or sell price is zero, we'll process these last
+        if ( pos->is_onetime )
+            sorted.insert( CoinAmount::COIN, pos );
         else // process the fills by greatest distances first in order to guesstimate temporary spread evenly
-            sorted.insert( (*i)->buy_price / (*i)->sell_price, (*i) );
+            sorted.insert( pos->buy_price / pos->sell_price, pos );
+    }
 
     for ( QMap<Coin,Position*>::const_iterator i = sorted.begin(); i != sorted.end(); i++ )
-        fillNQ( i.value()->order_number, fill_type );
+    {
+        Position *const &pos = i.value();
+        fillNQ( pos->order_number, fill_type );
+    }
 }
 
 void Engine::processOpenOrders( QVector<QString> &order_numbers, QMultiHash<QString, OrderInfo> &orders, qint64 request_time_sent_ms )
@@ -1125,9 +1158,9 @@ bool Engine::tryMoveOrder( Position* const &pos )
     // pos must be valid!
 
     const QString &market = pos->market;
-    MarketInfo &_info = market_info[ market ];
-    const Coin &hi_buy = _info.highest_buy;
-    const Coin &lo_sell = _info.lowest_sell;
+    MarketInfo &info = market_info[ market ];
+    Coin &hi_buy = info.highest_buy;
+    Coin &lo_sell = info.lowest_sell;
 
     // return early when no ticker is set
     if ( hi_buy.isZeroOrLess() || lo_sell.isZeroOrLess() )
@@ -1136,7 +1169,7 @@ bool Engine::tryMoveOrder( Position* const &pos )
         return false;
     }
 
-    const Coin &ticksize = _info.price_ticksize;
+    const Coin &ticksize = info.price_ticksize;
 
     // replace buy price
     if ( pos->side == SIDE_BUY &&

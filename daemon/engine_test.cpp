@@ -211,9 +211,6 @@ void EngineTest::test( Engine *e )
     // simulate fills
     e->processFilledOrders( pp, FILL_WSS );
 
-    // orders are filled, revamp list
-    pp = e->positions->all().values().toVector();
-
     for ( QSet<Position*>::const_iterator i = e->positions->all().begin(); i != e->positions->all().end(); i++ )
     {
         Position *pos = *i;
@@ -224,6 +221,34 @@ void EngineTest::test( Engine *e )
     }
 
     assert( e->positions->all().size() == 7 );
+    e->positions->cancelLocal();
+    assert( e->positions->all().size() == 0 );
+    ///
+
+    /// suppose our spread simultaneously fills at 55|60 and we set 55->57 and 60->58, ->58 slips to 56(57-1)
+    /// we should get 56|57 and not fill our own orders
+    ///
+    e->market_info[ "TEST" ].highest_buy = "0.00000055";
+    e->market_info[ "TEST" ].lowest_sell = "0.00000060";
+    pp.clear();
+    pp += e->addPosition( "TEST", SIDE_BUY,  "0.00000055", "0.00000057", "0.1", "active" ); // 0
+    pp += e->addPosition( "TEST", SIDE_SELL, "0.00000058", "0.00000060", "0.1", "active" ); // 2
+
+    // simulate fills
+    e->processFilledOrders( pp, FILL_WSS );
+
+    for ( QSet<Position*>::const_iterator i = e->positions->all().begin(); i != e->positions->all().end(); i++ )
+    {
+        Position *pos = *i;
+        if ( pos->side == SIDE_BUY )
+        {
+            assert( pos->price == "0.00000056" );
+            assert( pos->is_slippage );
+        }
+        else
+            assert( pos->price == "0.00000057" );
+    }
+    assert( e->positions->all().size() == 2 );
     e->positions->cancelLocal();
     assert( e->positions->all().size() == 0 );
     ///
