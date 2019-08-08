@@ -174,7 +174,7 @@ void BncREST::sendNamQueue()
         Position *const &pos = request->pos;
 
         // check for valid pos
-        if ( !pos || !engine->positions->isPosition( pos ) )
+        if ( !pos || !engine->positions->isValid( pos ) )
         {
             sorted_nam_queue.insert( 0., request );
             continue;

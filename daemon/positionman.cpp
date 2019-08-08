@@ -40,7 +40,7 @@ bool PositionMan::isQueued( Position * const &pos ) const
     return positions_queued.contains( pos );
 }
 
-bool PositionMan::isPosition( Position * const &pos ) const
+bool PositionMan::isValid( Position * const &pos ) const
 {
     return positions_all.contains( pos );
 }
@@ -514,7 +514,7 @@ void PositionMan::add( Position * const &pos )
 
 void PositionMan::activate( Position * const &pos, const QString &order_number )
 {
-    if ( !isPosition( pos ) || order_number.isEmpty() )
+    if ( !isValid( pos ) || order_number.isEmpty() )
     {
         kDebug() << "local error: tried to set order with blank orderid" << pos->stringifyOrder();
         return;
@@ -732,7 +732,7 @@ void PositionMan::cancelLocal( QString market )
 void PositionMan::cancel( Position *const &pos, bool quiet, quint8 cancel_reason )
 {
     // check for position in ptr list
-    if ( !pos || !isPosition( pos ) )
+    if ( !pos || !isValid( pos ) )
     {
         kDebug() << "local error: aborting dangerous cancel not found in positions_all";
         return;

@@ -37,7 +37,7 @@ public:
 
     bool isActive( Position *const &pos ) const;
     bool isQueued( Position *const &pos ) const;
-    bool isPosition( Position *const &pos ) const;
+    bool isValid( Position *const &pos ) const;
     bool isPositionOrderID( const QString &order_id ) const;
     Position *getPositionForOrderID( const QString &order_id ) const;
     Position *getPositionByIndex( const QString &market, const qint32 idx ) const;

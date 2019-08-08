@@ -990,7 +990,7 @@ void Engine::findBetterPrice( Position *const &pos )
     static const quint8 SLIPPAGE_ADDITIVE = 2;
 
     // bad ptr check
-    if ( !pos || !positions->isPosition( pos ) )
+    if ( !pos || !positions->isValid( pos ) )
         return;
 
     bool is_buy = ( pos->side == SIDE_BUY );

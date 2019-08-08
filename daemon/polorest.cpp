@@ -587,7 +587,7 @@ void PoloREST::sendNamQueue()
         Position *const &pos = request->pos;
 
         // check for valid pos
-        if ( !pos || !engine->positions->isPosition( pos ) )
+        if ( !pos || !engine->positions->isValid( pos ) )
         {
             sorted_nam_queue.insert( 0., request );
             continue;
@@ -778,7 +778,7 @@ void PoloREST::onNamReply( QNetworkReply *const &reply )
             Position *const &pos = request->pos;
 
             // prevent unallocated access (if we are cancelling it should be an active order)
-            if ( !pos || !engine->positions->isPosition( pos ) ) // check positions_all, these should be queued not active
+            if ( !pos || !engine->positions->isValid( pos ) ) // check positions_all, these should be queued not active
             {
                 kDebug() << "unknown" << api_command << "reply:" << data;
                 engine->deleteReply( reply, request );
