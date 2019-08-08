@@ -1153,7 +1153,7 @@ bool Engine::tryMoveOrder( Position* const &pos )
 
         // try to obtain better buy price
         Coin new_buy_price;
-        if ( lo_sell.isGreaterThanZero() )
+        if ( lo_sell >= ticksize *2 ) // sanity bounds check
         {
             new_buy_price = pos->buy_price;
 
@@ -1194,7 +1194,7 @@ bool Engine::tryMoveOrder( Position* const &pos )
 
         // try to obtain a better sell price
         Coin new_sell_price;
-        if ( hi_buy.isGreaterThanZero() )
+        if ( hi_buy >= ticksize ) // sanity bounds check
         {
             new_sell_price = pos->sell_price;
 
