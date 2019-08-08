@@ -18,7 +18,6 @@ struct EngineSettings
     bool should_adjust_hibuy_losell_debugmsgs_ticker;
     bool should_mitigate_blank_orderbook_flash;
     bool should_dc_slippage_orders;
-    bool should_use_aggressive_spread;
     qint64 request_timeout;
     qint64 cancel_timeout;
     qint64 stray_grace_time_limit;

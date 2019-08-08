@@ -102,7 +102,6 @@ private:
     void command_savemarket( QStringList &args );
     void command_sendcommand( QStringList &args );
     void command_setchatty( QStringList &args );
-    void command_setaggressivespread( QStringList &args );
     void command_exit( QStringList &args );
 
 #if defined(EXCHANGE_BITTREX)

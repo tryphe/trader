@@ -94,7 +94,6 @@ CommandRunner::CommandRunner( Engine *_e, REST_OBJECT *_rest, Stats *_stats, QOb
     command_map.insert( "savemarket", std::bind( &CommandRunner::command_savemarket, this, _1 ) );
     command_map.insert( "sendcommand", std::bind( &CommandRunner::command_sendcommand, this, _1 ) );
     command_map.insert( "setchatty", std::bind( &CommandRunner::command_setchatty, this, _1 ) );
-    command_map.insert( "setaggressivespread", std::bind( &CommandRunner::command_setaggressivespread, this, _1 ) );
     command_map.insert( "exit", std::bind( &CommandRunner::command_exit, this, _1 ) );
     command_map.insert( "stop", std::bind( &CommandRunner::command_exit, this, _1 ) );
     command_map.insert( "quit", std::bind( &CommandRunner::command_exit, this, _1 ) );
@@ -809,16 +808,6 @@ void CommandRunner::command_setchatty( QStringList &args )
 
     engine->settings->is_chatty = chatty;
     kDebug() << "is_chatty set to" << chatty;
-}
-
-void CommandRunner::command_setaggressivespread( QStringList &args )
-{
-    if ( !checkArgs( args, 1 ) ) return;
-
-    bool aggressive_spread = args.value( 1 ) == "true" ? true : false;
-
-    engine->settings->should_use_aggressive_spread = aggressive_spread;
-    kDebug() << "should_use_aggressive_spread set to" << aggressive_spread;
 }
 
 void CommandRunner::command_exit( QStringList &args )

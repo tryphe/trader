@@ -10,7 +10,6 @@ EngineSettings::EngineSettings()
     should_adjust_hibuy_losell_debugmsgs_ticker = false; // enable chatty messages for hi/lo bounds adjust for wss-ticker
     should_mitigate_blank_orderbook_flash = true;
     should_dc_slippage_orders = false;
-    should_use_aggressive_spread = true;
     stray_grace_time_limit = 10 * 60000;
 
     // per exchange settings
