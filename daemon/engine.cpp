@@ -366,7 +366,7 @@ void Engine::processOpenOrders( QVector<QString> &order_numbers, QMultiHash<QStr
             // cancel stray orders
             if ( !positions->isValidOrderID( order_number ) )
             {
-                kDebug() << "going to cancel order" << market << side << btc_amount << "@" << price << "id:" << order_number;
+                kDebug() << "cancelling non-bot order" << market << side << btc_amount << "@" << price << "id:" << order_number;
 
                 // send a one time cancel request for orders we don't own
                 rest->sendCancel( order_number );
