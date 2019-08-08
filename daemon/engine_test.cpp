@@ -225,6 +225,7 @@ void EngineTest::test( Engine *e )
     assert( e->positions->all().size() == 0 );
     ///
 
+    /// run "criss-cross" spread test
     /// suppose our spread simultaneously fills at 55|60 and we set 55->57 and 60->58, ->58 slips to 56(57-1)
     /// we should get 56|57 and not fill our own orders
     ///
