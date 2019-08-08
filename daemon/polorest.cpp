@@ -1236,7 +1236,7 @@ void PoloREST::wssTextMessageReceived( const QString &msg )
                 if ( order_id.isEmpty() )
                     continue;
 
-                Position *const &pos = engine->positions->getPositionForOrderID( order_id );
+                Position *const &pos = engine->positions->getByOrderID( order_id );
 
                 // make sure pos is valid
                 if ( !pos )

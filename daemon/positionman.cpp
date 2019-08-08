@@ -50,7 +50,7 @@ bool PositionMan::isValidOrderID( const QString &order_id ) const
     return positions_by_number.contains( order_id );
 }
 
-Position *PositionMan::getPositionForOrderID( const QString &order_id ) const
+Position *PositionMan::getByOrderID( const QString &order_id ) const
 {
     return positions_by_number.value( order_id, nullptr );
 }

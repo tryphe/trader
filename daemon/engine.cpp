@@ -270,7 +270,7 @@ void Engine::fillNQ( const QString &order_id, qint8 fill_type , quint8 extra_dat
         return;
     }
 
-    Position *const &pos = positions->getPositionForOrderID( order_id );
+    Position *const &pos = positions->getByOrderID( order_id );
 
     // we should never get here, because we call isPositionOrderID, but check anyways
     if ( !pos )
@@ -374,7 +374,7 @@ void Engine::processOpenOrders( QVector<QString> &order_numbers, QMultiHash<QStr
             }
 
             // if it is in our index, cancel that one
-            positions->cancel( positions->getPositionForOrderID( order_number ), false, CANCELLING_FOR_USER );
+            positions->cancel( positions->getByOrderID( order_number ), false, CANCELLING_FOR_USER );
         }
 
         // we haven't seen this order in a buy/sell reply, we should test the order id to see if it matches a queued pos

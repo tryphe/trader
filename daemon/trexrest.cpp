@@ -720,7 +720,7 @@ void TrexREST::parseGetOrder( const QJsonObject &order )
         return;
     }
 
-    Position *const &pos = engine->positions->getPositionForOrderID( order_id );
+    Position *const &pos = engine->positions->getByOrderID( order_id );
 
     if ( !pos )
         return;
@@ -814,7 +814,7 @@ void TrexREST::parseOrderHistory( const QJsonObject &obj )
         const QString &order_id = order.value( "OrderUuid" ).toString();
 
         // make sure order number is valid
-        Position *const &pos = engine->positions->getPositionForOrderID( order_id );
+        Position *const &pos = engine->positions->getByOrderID( order_id );
 
         if ( order_id.isEmpty() || !pos )
             continue;

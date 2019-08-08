@@ -39,7 +39,7 @@ public:
     bool isQueued( Position *const &pos ) const;
     bool isValid( Position *const &pos ) const;
     bool isValidOrderID( const QString &order_id ) const;
-    Position *getPositionForOrderID( const QString &order_id ) const;
+    Position *getByOrderID( const QString &order_id ) const;
     Position *getPositionByIndex( const QString &market, const qint32 idx ) const;
     Position *getHighestActiveBuyByIndex( const QString &market ) const;
     Position *getHighestActiveSellByIndex( const QString &market ) const;
