@@ -45,7 +45,7 @@ bool PositionMan::isValid( Position * const &pos ) const
     return positions_all.contains( pos );
 }
 
-bool PositionMan::isPositionOrderID( const QString &order_id ) const
+bool PositionMan::isValidOrderID( const QString &order_id ) const
 {
     return positions_by_number.contains( order_id );
 }

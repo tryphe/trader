@@ -264,7 +264,7 @@ void Engine::fillNQ( const QString &order_id, qint8 fill_type , quint8 extra_dat
     }
 
     // prevent unsafe execution
-    if ( order_id.isEmpty() || !positions->isPositionOrderID( order_id ) )
+    if ( order_id.isEmpty() || !positions->isValidOrderID( order_id ) )
     {
         kDebug() << "local warning: uuid not found in positions:" << order_id << "fill_type:" << fill_type << "(hint: getorder timeout is probably too low)";
         return;
@@ -364,7 +364,7 @@ void Engine::processOpenOrders( QVector<QString> &order_numbers, QMultiHash<QStr
             ct_cancelled++;
 
             // cancel stray orders
-            if ( !positions->isPositionOrderID( order_number ) )
+            if ( !positions->isValidOrderID( order_number ) )
             {
                 kDebug() << "going to cancel order" << market << side << btc_amount << "@" << price << "id:" << order_number;
 
@@ -378,7 +378,7 @@ void Engine::processOpenOrders( QVector<QString> &order_numbers, QMultiHash<QStr
         }
 
         // we haven't seen this order in a buy/sell reply, we should test the order id to see if it matches a queued pos
-        if ( settings->should_clear_stray_orders && !positions->isPositionOrderID( order_number ) )
+        if ( settings->should_clear_stray_orders && !positions->isValidOrderID( order_number ) )
         {
             // if this isn't a price in any of our positions, we should ignore it
             if ( !settings->should_clear_stray_orders_all && !market_info[ market ].order_prices.contains( price ) )
@@ -414,7 +414,7 @@ void Engine::processOpenOrders( QVector<QString> &order_numbers, QMultiHash<QStr
 
                 // check if the order details match a currently queued order
                 if (  matching_pos &&
-                     !positions->isPositionOrderID( order_number ) && // order must not be assigned yet
+                     !positions->isValidOrderID( order_number ) && // order must not be assigned yet
                       matching_pos->order_request_time < current_time - 10000 ) // request must be a little old (so we don't cross scan-set different indices so much)
                 {
                     // order is now set
