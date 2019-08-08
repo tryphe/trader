@@ -1,6 +1,7 @@
 #ifndef POSITIONMAN_H
 #define POSITIONMAN_H
 
+#include "global.h"
 #include "coinamount.h"
 
 #include <QObject>
@@ -63,12 +64,25 @@ public:
     void add( Position *const &pos );
     void activate( Position *const &pos, const QString &order_number );
     void remove( Position *const &pos );
-    void removeFromDC( Position *const &pos );
-    int getDCCount() { return diverge_converge.size(); }
+
+    // ping-pong routines
+    void checkBuySellCount();
+    void setNextLowest( const QString &market, quint8 side = SIDE_BUY, bool landmark = false );
+    void setNextHighest( const QString &market, quint8 side = SIDE_SELL, bool landmark = false );
+
+    // cancel commands
+    void cancel( Position *const &pos, bool quiet = false, quint8 cancel_reason = 0 );
+    void cancelAll( QString market );
+    void cancelLocal( QString market = "" );
+    void cancelHighest( const QString &market );
+    void cancelLowest( const QString &market );
 
     bool isDivergingConverging( const QString &market, const qint32 index ) const;
+    int getDCCount() { return diverge_converge.size(); }
 
 private:
+    void removeFromDC( Position *const &pos );
+
     // maintain a map of queued positions and set positions
     QHash<QString /* orderNumber */, Position*> positions_by_number;
     QSet<Position*> positions_active; // ptr list of active positions

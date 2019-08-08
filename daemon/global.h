@@ -40,6 +40,7 @@ static const QLatin1String BUY                              ( "buy" );
 static const QLatin1String SELL                             ( "sell" );
 static const QLatin1String COMMAND                          ( "command" );
 static const QLatin1String NONCE                            ( "nonce" );
+static const QLatin1String ALL                              ( "all" );
 static const QByteArray    KEY                              ( "key" );
 static const QByteArray    SIGN                             ( "sign" );
 static const QByteArray    CONTENT_TYPE                     ( "Content-Type" );

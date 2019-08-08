@@ -423,7 +423,7 @@ void PositionMan::flipLoSellIndex( const QString &market, QString tag )
     kDebug() << QString( "queued long     %1" )
                   .arg( pos->stringifyPositionChange() );
 
-    engine->cancelOrder( pos, false, CANCELLING_FOR_SHORTLONG );
+    cancel( pos, false, CANCELLING_FOR_SHORTLONG );
 }
 
 Coin PositionMan::getLoSell( const QString &market ) const
@@ -469,7 +469,7 @@ void PositionMan::flipHiBuyPrice( const QString &market, QString tag )
     kDebug() << QString( "queued short    %1" )
                   .arg( pos->stringifyPositionChange() );
 
-    engine->cancelOrder( pos, false, CANCELLING_FOR_SHORTLONG );
+    cancel( pos, false, CANCELLING_FOR_SHORTLONG );
 }
 
 void PositionMan::flipHiBuyIndex( const QString &market, QString tag )
@@ -485,7 +485,7 @@ void PositionMan::flipHiBuyIndex( const QString &market, QString tag )
     kDebug() << QString( "queued short    %1" )
                   .arg( pos->stringifyPositionChange() );
 
-    engine->cancelOrder( pos, false, CANCELLING_FOR_SHORTLONG );
+    cancel( pos, false, CANCELLING_FOR_SHORTLONG );
 }
 
 void PositionMan::flipLoSellPrice( const QString &market, QString tag )
@@ -501,7 +501,7 @@ void PositionMan::flipLoSellPrice( const QString &market, QString tag )
     kDebug() << QString( "queued long     %1" )
                   .arg( pos->stringifyPositionChange() );
 
-    engine->cancelOrder( pos, false, CANCELLING_FOR_SHORTLONG );
+    cancel( pos, false, CANCELLING_FOR_SHORTLONG );
 }
 
 
@@ -555,7 +555,7 @@ void PositionMan::activate( Position * const &pos, const QString &order_number )
     if ( pos->is_cancelling &&
          pos->order_cancel_time < QDateTime::currentMSecsSinceEpoch() - engine->settings->cancel_timeout )
     {
-        engine->cancelOrder( pos, true, pos->cancel_reason );
+        cancel( pos, true, pos->cancel_reason );
     }
 }
 
@@ -626,3 +626,483 @@ void PositionMan::removeFromDC( Position * const &pos )
         diverging_converging[ pos->market ].removeOne( pos->market_indices.value( i ) );
 }
 
+void PositionMan::cancelAll( QString market )
+{
+    // the arg will always be supplied; set the default arg here instead of the function def
+    if ( market.isEmpty() )
+        market = ALL;
+
+    // safety check to avoid s-filling local positions
+    if ( ( hasActivePositions() || hasQueuedPositions() )
+         && market == ALL )
+    {
+        kDebug() << "local error: you have open positions, did you mean cancellocal?";
+        return;
+    }
+
+    // clear market index
+    if ( market == ALL )
+    {
+        for ( QHash<QString, MarketInfo>::iterator i = engine->market_info.begin(); i != engine->market_info.end(); i++ )
+        {
+            (*i).order_prices.clear();
+            (*i).position_index.clear();
+        }
+        kDebug() << "cleared all market indexes";
+    }
+    else
+    {
+        engine->market_info[ market ].order_prices.clear();
+        engine->market_info[ market ].position_index.clear();
+        kDebug() << "cleared" << market << "market index";
+    }
+
+    engine->is_running_cancelall = true;
+    engine->cancel_market_filter = market;
+
+#if defined(EXCHANGE_BITTREX)
+    engine->rest->sendRequest( TREX_COMMAND_GET_ORDERS );
+#elif defined(EXCHANGE_BINANCE)
+    engine->rest->sendRequest( BNC_COMMAND_GETORDERS, "", nullptr, 40 );
+#elif defined(EXCHANGE_POLONIEX)
+    engine->rest->sendRequest( POLO_COMMAND_GETORDERS, POLO_COMMAND_GETORDERS_ARGS );
+#endif
+}
+
+void PositionMan::cancelLocal( QString market )
+{
+    // the arg will always be supplied; set the default arg here instead of the function def
+    if ( market.isEmpty() )
+        market = ALL;
+
+    // copy the list so we can iterate and delete freely
+    QQueue<Position*> normal_positions;
+    QQueue<Position*> landmark_positions;
+    QQueue<Position*> deleted_positions;
+
+    // cancel orders if we matched the market
+    for ( QSet<Position*>::const_iterator i = all().begin(); i != all().end(); i++ )
+    {
+        Position *const &pos = *i;
+
+        // we must match or filter, or it must be null/empty
+        if ( market == ALL || pos->market == market )
+        {
+            // delete queued positions
+            if ( isQueued( pos ) )
+                deleted_positions.append( pos );
+            else if ( pos->is_landmark )
+                landmark_positions.append( pos );
+            else
+                normal_positions.append( pos );
+        }
+    }
+
+    // delete queued positions
+    while ( deleted_positions.size() > 0 )
+        remove( deleted_positions.takeFirst() );
+
+    // delete and cancel all normal positions
+    while ( normal_positions.size() > 0 )
+        cancel( normal_positions.takeFirst() );
+
+    // delete and cancel all landmark positions
+    while ( landmark_positions.size() > 0 )
+        cancel( landmark_positions.takeFirst() );
+
+    // clear market index
+    if ( market == ALL )
+    {
+        for ( QHash<QString, MarketInfo>::iterator i = engine->market_info.begin(); i != engine->market_info.end(); i++ )
+        {
+            (*i).order_prices.clear();
+            (*i).position_index.clear();
+        }
+    }
+    else
+    {
+        engine->market_info[ market ].order_prices.clear();
+        engine->market_info[ market ].position_index.clear();
+    }
+
+    if ( !engine->is_testing )
+        kDebug() << "cleared" << market << "market indices";
+}
+
+void PositionMan::cancel( Position *const &pos, bool quiet, quint8 cancel_reason )
+{
+    // check for position in ptr list
+    if ( !pos || !isPosition( pos ) )
+    {
+        kDebug() << "local error: aborting dangerous cancel not found in positions_all";
+        return;
+    }
+
+    // if testing, skip ahead to processCancelledOrder logic which just calls remove();
+    if ( engine->is_testing )
+    {
+        remove( pos );
+        return;
+    }
+
+    // flag if the order was cancelling already
+    const bool recancelling = pos->order_cancel_time > 0 || pos->is_cancelling;
+
+    // set cancel reason (override if neccesary to change reason)
+    pos->cancel_reason = cancel_reason;
+
+    // check if this is a queued position so we can properly cancel the order when it gets set
+    if ( isQueued( pos ) )
+    {
+        // let the order timeout if it doesn't have an orderid, but only after it gets set
+        pos->is_cancelling = true;
+        pos->order_cancel_time = 1; // set cancel time >0 to trip the next timeout check
+        //kDebug() << "local warning: trying to cancel order, but order is in flight";
+        return;
+    }
+
+    if ( !quiet )
+    {
+        const QString prefix_str = QString( "%1%2" )
+                    .arg( pos->is_onetime ? "cancelling" :
+                          pos->is_slippage ? "resetting " :
+                          recancelling ?     "recancelling   " : "cancelling" )
+                    .arg( cancel_reason == CANCELLING_LOWEST             ? " lo  " :
+                          cancel_reason == CANCELLING_HIGHEST            ? " hi  " :
+                          cancel_reason == CANCELLING_FOR_MAX_AGE        ? " age " :
+                          cancel_reason == CANCELLING_FOR_SHORTLONG      ? " s/l " :
+                                                                           "" ); // CANCELLING_FOR_SLIPPAGE_RESET
+
+        kDebug() << QString( "%1 %2" )
+                    .arg( prefix_str, -15 )
+                    .arg( pos->stringifyOrder() );
+    }
+
+    // send request
+    engine->rest->sendCancel( pos->order_number, pos );
+}
+
+void PositionMan::cancelHighest( const QString &market )
+{
+    // store hi and high pointer
+    Position *const &hi_pos = getHighestActivePingPong( market );
+
+    // cancel highest order
+    if ( hi_pos )
+        cancel( hi_pos, false, CANCELLING_HIGHEST );
+}
+
+void PositionMan::cancelLowest( const QString &market )
+{
+    // store lo and lo pointer
+    Position *const &lo_pos = getLowestActivePingPong( market );
+
+    // cancel lowest order
+    if ( lo_pos )
+        cancel( lo_pos, false, CANCELLING_LOWEST );
+}
+
+void PositionMan::checkBuySellCount()
+{
+    static QMap<QString /*market*/, qint32> buys, sells;
+    buys.clear();
+    sells.clear();
+
+    // look for highest index in active and queued positions
+    for ( QSet<Position*>::const_iterator i = all().begin(); i != all().end(); i++ )
+    {
+        const Position *const &pos = *i;
+        const QString &market = pos->market;
+
+        if ( market.isEmpty() )
+            continue;
+        // tally buys
+        else if ( pos->side == SIDE_BUY && !pos->is_cancelling )
+            buys[ market ]++;
+        // tally sells
+        else if ( pos->side == SIDE_SELL && !pos->is_cancelling )
+            sells[ market ]++;
+    }
+
+    // run until we stop setting new orders or flow control returns
+    const QList<QString> &markets = engine->market_info.keys();
+    quint16 new_orders_ct;
+    do
+    {
+        new_orders_ct = 0;
+
+        // check buy counts
+        for ( QList<QString>::const_iterator i = markets.begin(); i != markets.end(); i++ )
+        {
+            const QString &market = *i;
+            const MarketInfo &info = engine->market_info[ market ];
+            const qint32 &order_min = info.order_min;
+            const qint32 &order_max = info.order_max;
+            qint32 buy_count = buys[ market ];
+            qint32 sell_count = sells[ market ];
+
+            // if we are cancelling, don't set more orders
+            if ( info.position_index.isEmpty() )
+                continue;
+
+            // allow skipping of automation by setting a market min/max to 0
+            if ( order_min <= 0 || order_max <= 0 )
+                continue;
+
+            /// check buy counts
+            // did we reach the max orders for this market?
+            while ( buy_count > order_max )
+            {
+                cancelLowest( market );
+                buys[ market ]--;
+                buy_count--;
+
+                // flow control
+                if ( engine->rest->yieldToFlowControl() )
+                    return;
+            }
+
+            // count < min
+            if ( buy_count < order_min )
+            {
+                setNextLowest( market );
+                buys[ market ]++;
+                new_orders_ct++;
+            }
+            // count >= min and count < max
+            else if ( info.order_dc > 1 &&
+                 buy_count >= order_min &&
+                 buy_count < order_max - info.order_landmark_thresh )
+            {
+                setNextLowest( market, SIDE_BUY, true );
+                buys[ market ]++;
+                new_orders_ct++;
+            }
+
+            // flow control
+            if ( engine->rest->yieldToFlowControl() )
+                return;
+            ///
+
+            /// check sell counts
+            // did we reach the max orders for this market?
+            while ( sell_count > order_max )
+            {
+                cancelHighest( market );
+                sells[ market ]--;
+                sell_count--;
+
+                // flow control
+                if ( engine->rest->yieldToFlowControl() )
+                    return;
+            }
+
+            // count < min
+            if ( sell_count < order_min )
+            {
+                setNextHighest( market );
+                sells[ market ]++;
+                new_orders_ct++;
+            }
+            // count >= min and count < max
+            else if ( info.order_dc > 1 &&
+                 sell_count >= order_min &&
+                 sell_count < order_max - info.order_landmark_thresh )
+            {
+                setNextHighest( market, SIDE_SELL, true );
+                sells[ market ]++;
+                new_orders_ct++;
+            }
+
+            // flow control
+            if ( engine->rest->yieldToFlowControl() )
+                return;
+            ///
+        }
+    }
+    while( new_orders_ct > 0 );
+
+    buys.clear();
+    sells.clear();
+}
+
+void PositionMan::setNextLowest( const QString &market, quint8 side, bool landmark )
+{
+    // somebody fucked up
+    if ( side != SIDE_SELL && side != SIDE_BUY )
+    {
+        kDebug() << "local error: invalid order 'side'";
+        return;
+    }
+
+    qint32 new_index = getLowestPingPongIndex( market );
+
+    // subtract 1
+    new_index--;
+
+    // check for index ok
+    if ( new_index < 0 || new_index > std::numeric_limits<qint32>::max() -2 )
+        return;
+
+    const MarketInfo &info = engine->market_info[ market ];
+    const qint32 dc_val = info.order_dc;
+
+    // count down until we find an index without a position
+    while ( getPositionByIndex( market, new_index ) ||
+            isDivergingConverging( market, new_index ) )
+        new_index--;
+
+    QVector<qint32> indices = QVector<qint32>() << new_index;
+
+    // check if we ran out of indexed positions so we don't make a bogus order
+    if ( indices.value( 0 ) < 0 )
+        return; // we need at least 1 valid index
+
+    // add an index until we run out of bounds or our landmark size is matched
+    while ( landmark && indices.size() < dc_val )
+    {
+        new_index = indices.value( indices.size() -1 ) -1;
+
+        // are we about to add an out of bounds index?
+        if ( new_index < 0 )
+        {
+            // preserve the indices and break here
+            break;
+        }
+
+        // if we can't use the new index, go to the -next lowest- index and restart the loop
+        if ( getPositionByIndex( market, new_index ) ||
+             isDivergingConverging( market, new_index ) )
+        {
+            while ( indices.size() > 1 )
+                indices.removeLast();
+
+            break;
+        }
+
+        indices.append( new_index );
+    }
+
+    // enforce full landmark size or return, except on the boundary of our positions
+    if ( ( landmark && indices.size() != dc_val ) &&  // tried to set a landmark order with the wrong size
+         !indices.contains( 0 ) ) // contains lowest position index
+        return;
+
+    // enforce return on normal order with >1 size
+    if ( !landmark && indices.size() > 1 )
+        return;
+
+    // check for out of bounds indices[0] and [n]
+    if ( indices.isEmpty() ||
+         indices.value( 0 ) >= info.position_index.size() )
+        return;
+
+    // get the index data
+    const PositionData &data = info.position_index.value( indices.value( 0 ) );
+
+//    kDebug() << "adding idx" << indices.value( 0 ) << "from indices" << indices;
+//    kDebug() << "adding next lo pos" << market << side << data.buy_price << data.sell_price << data.order_size;
+
+    Position *pos = engine->addPosition( market, side, data.buy_price, data.sell_price, data.order_size, "active", "",
+                                 indices, landmark, true );
+
+    // check for valid ptr
+    if ( !pos )
+        return;
+
+    // flag as non-profitable api call (it's far from the spread)
+    pos->is_new_hilo_order = true;
+
+    kDebug() << QString( "setting next lo %1" )
+                 .arg( pos->stringifyNewPosition() );
+}
+
+void PositionMan::setNextHighest( const QString &market, quint8 side, bool landmark )
+{
+    // somebody fucked up
+    if ( side != SIDE_SELL && side != SIDE_BUY )
+    {
+        kDebug() << "local error: invalid order 'side'";
+        return;
+    }
+
+    qint32 new_index = getHighestPingPongIndex( market );
+
+    // add 1
+    new_index++;
+
+    // check for index ok
+    if ( new_index < 1 || new_index > std::numeric_limits<qint32>::max() -1 )
+        return;
+
+    const MarketInfo &info = engine->market_info[ market ];
+    const qint32 dc_val = info.order_dc;
+
+    // count up until we find an index without a position
+    while ( getPositionByIndex( market, new_index ) ||
+            isDivergingConverging( market, new_index ) )
+        new_index++;
+
+    QVector<qint32> indices = QVector<qint32>() << new_index;
+
+    // check if we ran out of indexed positions
+    if ( indices.value( 0 ) >= info.position_index.size() )
+        return;
+
+    // add an index until we run out of bounds or our landmark size is matched
+    while ( landmark && indices.size() < dc_val )
+    {
+        new_index = indices.value( indices.size() -1 ) +1;
+
+        // are we about to add an out of bounds index or one that already exists?
+        if ( new_index >= info.position_index.size() )
+        {
+            // preserve the indices and break here
+            break;
+        }
+
+        // if we can't use the new index, find the next valid index and restart the loop
+        if ( getPositionByIndex( market, new_index ) ||
+             isDivergingConverging( market, new_index ) )
+        {
+            while ( indices.size() > 1 )
+                indices.removeLast();
+
+            break;
+        }
+
+        indices.append( new_index );
+    }
+
+    // enforce full landmark size or return, except on the boundary of our positions
+    if ( ( landmark && indices.size() != dc_val ) &&  // tried to set a landmark order with the wrong size
+         !indices.contains( info.position_index.size() -1 ) ) // contains highest position index
+        return;
+
+    // enforce return on normal order with >1 size
+    if ( !landmark && indices.size() > 1 )
+        return;
+
+    // check for out of bounds indices[0] and [n]
+    if ( indices.isEmpty() ||
+         indices.value( 0 ) >= info.position_index.size() )
+        return;
+
+    // get the index data
+    const PositionData &data = info.position_index.value( indices.value( 0 ) );
+
+//    kDebug() << "adding next hi pos" << market << side << data.buy_price << data.sell_price << data.order_size;
+
+    Position *pos = engine->addPosition( market, side, data.buy_price, data.sell_price, data.order_size, "active", "",
+                                     indices, landmark, true );
+
+    // check for valid ptr
+    if ( !pos )
+        return;
+
+    // flag as non-profitable api call (it's far from the spread)
+    pos->is_new_hilo_order = true;
+
+    kDebug() << QString( "setting next hi %1" )
+                .arg( pos->stringifyNewPosition() );
+}

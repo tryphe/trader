@@ -37,28 +37,8 @@ public:
     void processTicker( const QMap<QString, TickerInfo> &ticker_data, qint64 request_time_sent_ms = 0 );
     void processCancelledOrder( Position *const &pos );
 
-    // user/local commands
-    void cancelOrder( Position *const &pos, bool quiet = false, quint8 cancel_reason = 0 );
-    void cancelAll( QString market );
-    void cancelLocal( QString market = "" );
-    void cancelHighest( const QString &market );
-    void cancelLowest( const QString &market );
     //void cancelOrderByPrice( const QString &market, QString price );
     void saveMarket( QString market, qint32 num_orders = 15 );
-
-    void setNextLowest( const QString &market, quint8 side = SIDE_BUY, bool landmark = false );
-    void setNextHighest( const QString &market, quint8 side = SIDE_SELL, bool landmark = false );
-
-    void flipHiBuyPrice( const QString &market, QString tag = QLatin1String() );
-    void flipHiBuyIndex( const QString &market, QString tag = QLatin1String() );
-    void flipLoSellPrice( const QString &market, QString tag = QLatin1String() );
-    void flipLoSellIndex( const QString &market, QString tag = QLatin1String() );
-    Coin getLoSell( const QString &market ) const;
-    Coin getHiBuy( const QString &market ) const;
-    Coin getHiBuyFlipPrice( const QString &market ) const;
-    Coin getLoSellFlipPrice( const QString &market ) const;
-
-
 
     PositionMan *positions;
     EngineSettings *settings;
@@ -94,7 +74,6 @@ public Q_SLOTS:
 private:
     // timer routines
     void cleanGraceTimes();
-    void checkBuySellCount();
     void checkMaintenance();
 
     void converge( QMap<QString/*market*/,QVector<qint32>> &market_map, quint8 side );

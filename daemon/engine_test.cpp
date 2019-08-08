@@ -99,7 +99,7 @@ void EngineTest::test( Engine *e )
     assert( p3.sell_price == "0.00000063" );
 
     // Engine::deletePosition
-    e->cancelLocal( "TEST" );
+    e->positions->cancelLocal( "TEST" );
     assert( e->positions->all().size() == 0 );
 
     // test addPosition()
@@ -109,7 +109,7 @@ void EngineTest::test( Engine *e )
     assert( p4->quantity == "200000.00000000" );
 
     // Engine::deletePosition
-    e->cancelLocal( "TEST" );
+    e->positions->cancelLocal( "TEST" );
     assert( e->positions->all().size() == 0 );
 
     // test non-zero landmark buy price because of shim
@@ -131,7 +131,7 @@ void EngineTest::test( Engine *e )
     assert( e->positions->getSellTotal( "TEST" ) == 0 );
 
     // cancel positions and clear mappings
-    e->cancelLocal();
+    e->positions->cancelLocal();
     assert( e->positions->all().size() == 0 );
 
     /// run basic ping-pong test for sell price equal to ticker ask price
@@ -151,7 +151,7 @@ void EngineTest::test( Engine *e )
 
     assert( pp.value( 0 )->price == "0.00000084" );
 
-    e->cancelLocal();
+    e->positions->cancelLocal();
     assert( e->positions->all().size() == 0 );
     ///
 
@@ -166,7 +166,7 @@ void EngineTest::test( Engine *e )
 
     assert( pp.value( 0 )->price == "0.00000099" );
 
-    e->cancelLocal();
+    e->positions->cancelLocal();
     assert( e->positions->all().size() == 0 );
     ///
 
@@ -181,7 +181,7 @@ void EngineTest::test( Engine *e )
 
     assert( pp.value( 0 )->price == "0.00000051" );
 
-    e->cancelLocal();
+    e->positions->cancelLocal();
     assert( e->positions->all().size() == 0 );
     ///
 
@@ -219,7 +219,7 @@ void EngineTest::test( Engine *e )
             assert( pos->price == "0.00000005" );
     }
 
-    e->cancelLocal();
+    e->positions->cancelLocal();
     assert( e->positions->all().size() == 0 );
     ///
 

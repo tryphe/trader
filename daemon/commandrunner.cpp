@@ -244,12 +244,12 @@ void CommandRunner::command_getbuyselltotal( QStringList &args )
 
 void CommandRunner::command_cancelall( QStringList &args )
 {
-    engine->cancelAll( args.value( 1 ) );
+    engine->positions->cancelAll( args.value( 1 ) );
 }
 
 void CommandRunner::command_cancellocal( QStringList &args )
 {
-    engine->cancelLocal( args.value( 1 ) );
+    engine->positions->cancelLocal( args.value( 1 ) );
 }
 
 //void CommandRunner::command_cancelorder( QStringList &args )
@@ -259,12 +259,12 @@ void CommandRunner::command_cancellocal( QStringList &args )
 
 void CommandRunner::command_cancelhighest( QStringList &args )
 {
-    engine->cancelHighest( args.value( 1 ) );
+    engine->positions->cancelHighest( args.value( 1 ) );
 }
 
 void CommandRunner::command_cancellowest( QStringList &args )
 {
-    engine->cancelLowest( args.value( 1 ) );
+    engine->positions->cancelLowest( args.value( 1 ) );
 }
 
 void CommandRunner::command_getorders( QStringList &args )
@@ -372,7 +372,7 @@ void CommandRunner::command_setnextlowest( QStringList &args )
     quint8 side = args.value( 2 ) == BUY ? SIDE_BUY :
                   args.value( 2 ) == SELL ? SIDE_SELL : 0;
 
-    engine->setNextLowest( market, side );
+    engine->positions->setNextLowest( market, side );
 }
 
 void CommandRunner::command_setnexthighest( QStringList &args )
@@ -383,7 +383,7 @@ void CommandRunner::command_setnexthighest( QStringList &args )
     quint8 side = args.value( 2 ) == BUY ? SIDE_BUY :
                   args.value( 2 ) == SELL ? SIDE_SELL : 0;
 
-    engine->setNextHighest( market, side );
+    engine->positions->setNextHighest( market, side );
 }
 
 void CommandRunner::command_long( QStringList &args )
@@ -720,7 +720,7 @@ void CommandRunner::command_getconfig( QStringList &args )
     const QString &market = args.value( 1 );
 
     // print all market options
-    if ( market.isEmpty() || market == "all" )
+    if ( market.isEmpty() || market == ALL )
     {
         for ( QHash<QString, MarketInfo>::iterator i = engine->getMarketInfoStructure().begin(); i != engine->getMarketInfoStructure().end(); i++ )
         {
