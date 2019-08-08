@@ -683,8 +683,6 @@ void Engine::processCancelledOrder( Position * const &pos )
     positions->remove( pos );
 }
 
-
-
 //void Engine::cancelOrderByPrice( const QString &market, QString price )
 //{
 //    // now we can look for the order we should delete
@@ -1175,7 +1173,8 @@ bool Engine::tryMoveOrder( Position* const &pos )
                      << "hi_buy" << hi_buy << "lo_sell" << lo_sell;
     }
     // replace sell price
-    else if ( hi_buy >= ticksize ) // sanity bounds check
+    else if ( pos->side == SIDE_SELL &&
+              hi_buy >= ticksize ) // sanity bounds check
     {
         // recalculate sell if needed - don't interfere with spread
         if ( pos->sell_price <= hi_buy )
