@@ -44,8 +44,6 @@ Engine::~Engine()
     kDebug() << "[Engine] done.";
 }
 
-
-
 Position *Engine::addPosition( QString market, quint8 side, QString buy_price, QString sell_price,
                                QString order_size, QString type, QString strategy_tag, QVector<qint32> indices,
                                bool landmark, bool quiet )

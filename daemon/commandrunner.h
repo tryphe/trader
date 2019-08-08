@@ -48,8 +48,6 @@ private:
     void command_setorderdcnice( QStringList &args );
     void command_setorderlandmarkthresh( QStringList &args );
     void command_setorderlandmarkstart( QStringList &args );
-    void command_setnextlowest( QStringList &args );
-    void command_setnexthighest( QStringList &args );
     void command_long( QStringList &args );
     void command_longindex( QStringList &args );
     void command_short( QStringList &args );
@@ -85,8 +83,6 @@ private:
     void command_setslippagecalculated( QStringList &args );
     void command_setadjustbuysell( QStringList &args );
     void command_setdcslippage( QStringList &args );
-    void command_sethiloadjustmsgticker( QStringList &args );
-    void command_setpreventblankbookflash( QStringList &args );
     void command_setorderbookstaletolerance( QStringList &args );
     void command_setsafetydelaytime( QStringList &args );
     void command_settickersafetydelaytime( QStringList &args );

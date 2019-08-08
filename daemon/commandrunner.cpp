@@ -40,8 +40,6 @@ CommandRunner::CommandRunner( Engine *_e, REST_OBJECT *_rest, Stats *_stats, QOb
     command_map.insert( "setorderdcnice", std::bind( &CommandRunner::command_setorderdcnice, this, _1 ) );
     command_map.insert( "setorderlandmarkthresh", std::bind( &CommandRunner::command_setorderlandmarkthresh, this, _1 ) );
     command_map.insert( "setorderlandmarkstart", std::bind( &CommandRunner::command_setorderlandmarkstart, this, _1 ) );
-    command_map.insert( "setnextlowest", std::bind( &CommandRunner::command_setnextlowest, this, _1 ) );
-    command_map.insert( "setnexthighest", std::bind( &CommandRunner::command_setnexthighest, this, _1 ) );
     command_map.insert( "long", std::bind( &CommandRunner::command_long, this, _1 ) );
     command_map.insert( "longindex", std::bind( &CommandRunner::command_longindex, this, _1 ) );
     command_map.insert( "short", std::bind( &CommandRunner::command_short, this, _1 ) );
@@ -77,8 +75,6 @@ CommandRunner::CommandRunner( Engine *_e, REST_OBJECT *_rest, Stats *_stats, QOb
     command_map.insert( "setslippagecalculated", std::bind( &CommandRunner::command_setslippagecalculated, this, _1 ) );
     command_map.insert( "setadjustbuysell", std::bind( &CommandRunner::command_setadjustbuysell, this, _1 ) );
     command_map.insert( "setdcslippage", std::bind( &CommandRunner::command_setdcslippage, this, _1 ) );
-    command_map.insert( "sethiloadjustmsgticker", std::bind( &CommandRunner::command_sethiloadjustmsgticker, this, _1 ) );
-    command_map.insert( "setpreventblankbookflash", std::bind( &CommandRunner::command_setpreventblankbookflash, this, _1 ) );
     command_map.insert( "setorderbookstaletolerance", std::bind( &CommandRunner::command_setorderbookstaletolerance, this, _1 ) );
     command_map.insert( "setsafetydelaytime", std::bind( &CommandRunner::command_setsafetydelaytime, this, _1 ) );
     command_map.insert( "settickersafetydelaytime", std::bind( &CommandRunner::command_settickersafetydelaytime, this, _1 ) );
@@ -364,28 +360,6 @@ void CommandRunner::command_setorderlandmarkstart( QStringList &args )
     kDebug() << "market landmark start for" << market << "is now" << val;
 }
 
-void CommandRunner::command_setnextlowest( QStringList &args )
-{
-    if ( !checkArgs( args, 2 ) ) return;
-
-    const QString &market = args.value( 1 );
-    quint8 side = args.value( 2 ) == BUY ? SIDE_BUY :
-                  args.value( 2 ) == SELL ? SIDE_SELL : 0;
-
-    engine->positions->setNextLowest( market, side );
-}
-
-void CommandRunner::command_setnexthighest( QStringList &args )
-{
-    if ( !checkArgs( args, 2 ) ) return;
-
-    const QString &market = args.value( 1 );
-    quint8 side = args.value( 2 ) == BUY ? SIDE_BUY :
-                  args.value( 2 ) == SELL ? SIDE_SELL : 0;
-
-    engine->positions->setNextHighest( market, side );
-}
-
 void CommandRunner::command_long( QStringList &args )
 {
     engine->positions->flipLoSellPrice( args.value( 1 ), args.value( 2 ) );
@@ -631,18 +605,6 @@ void CommandRunner::command_setdcslippage( QStringList &args )
 {
     engine->settings->should_dc_slippage_orders = args.value( 1 ) == "true" ? true : false;
     kDebug() << "should_dc_slippage_orders set to" << engine->settings->should_dc_slippage_orders;
-}
-
-void CommandRunner::command_sethiloadjustmsgticker( QStringList &args )
-{
-    engine->settings->should_adjust_hibuy_losell_debugmsgs_ticker = args.value( 1 ) == "true" ? true : false;
-    kDebug() << "should_adjust_hibuy_losell_debugmsgs_ticker set to" << engine->settings->should_adjust_hibuy_losell_debugmsgs_ticker;
-}
-
-void CommandRunner::command_setpreventblankbookflash( QStringList &args )
-{
-    engine->settings->should_mitigate_blank_orderbook_flash = args.value( 1 ) == "true" ? true : false;
-    kDebug() << "should_mitigate_blank_orderbook_flash set to" << engine->settings->should_mitigate_blank_orderbook_flash;
 }
 
 void CommandRunner::command_setorderbookstaletolerance( QStringList &args )
