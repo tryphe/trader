@@ -4,6 +4,7 @@ Features
  - [x] Order engine is adaptable to any exchange
  - [x] Runtime sanity testing and order execution simulation for consistency
  - [x] No floating point math operations are used for any prices or amounts. They are only used to store ratios which are fed as strings into GMP. [how can floats fail?](https://github.com/tryphe/trader/blob/master/daemon/coinamount_test.cpp#L12)
+ - [x] Real-time slippage calculation which disables local order collision and greatly reduces the frequency of exchange post-only collisions.
  - [x] Poloniex REST and WSS feed support
  - [x] Bittrex REST support
  - [x] Binance REST support
