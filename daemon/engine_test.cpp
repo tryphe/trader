@@ -134,10 +134,31 @@ void EngineTest::test( Engine *e )
     e->cancelLocal();
     assert( e->positions->all().size() == 0 );
 
+    /// run basic ping-pong test for sell price equal to ticker ask price
+    ///
+    /// if bid|asks are at 83|84, our buy fill at 83 goes to 84
+    QVector<Position*> pp;
+    e->market_info[ "TEST" ].highest_buy = "0.00000083";
+    e->market_info[ "TEST" ].lowest_sell = "0.00000084";
+
+    pp += e->addPosition( "TEST", SIDE_BUY,  "0.00000083", "0.00000084", "0.1", "active" ); // 0
+
+    // simulate fills
+    e->processFilledOrders( pp, FILL_WSS );
+
+    // orders are filled, revamp list
+    pp = e->positions->all().values().toVector();
+
+    assert( pp.value( 0 )->price == "0.00000084" );
+
+    e->cancelLocal();
+    assert( e->positions->all().size() == 0 );
+    ///
+
     /// run ticker slippage test for buy price colliding with asks
     ///
     /// if asks are at 100, our bid at 105 goes to 99
-    QVector<Position*> pp;
+    pp.clear();
     e->market_info[ "TEST" ].highest_buy = "0.00000095";
     e->market_info[ "TEST" ].lowest_sell = "0.00000100";
 
@@ -187,8 +208,7 @@ void EngineTest::test( Engine *e )
     e->processFilledOrders( pp, FILL_WSS );
 
     // orders are filled, revamp list
-    pp.clear();
-    pp += e->positions->all().values().toVector();
+    pp = e->positions->all().values().toVector();
 
     for ( QSet<Position*>::const_iterator i = e->positions->all().begin(); i != e->positions->all().end(); i++ )
     {
