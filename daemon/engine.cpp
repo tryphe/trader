@@ -1139,11 +1139,11 @@ bool Engine::tryMoveOrder( Position* const &pos )
     const Coin &ticksize = _info.price_ticksize;
 
     // replace buy price
-    if ( pos->side == SIDE_BUY )
+    if ( pos->side == SIDE_BUY &&
+         lo_sell >= ticksize *2 ) // sanity bounds check
     {
         // recalculate buy if needed - don't interfere with spread
-        if ( pos->buy_price >= lo_sell &&
-             lo_sell > ticksize ) // lo_sell <= ticksize shouldn't happen but is triggerable in tests
+        if ( pos->buy_price >= lo_sell ) // lo_sell <= ticksize shouldn't happen but is triggerable in tests
         {
             // set buy price to low sell - ticksize
             pos->buy_price = lo_sell - ticksize;
@@ -1152,16 +1152,12 @@ bool Engine::tryMoveOrder( Position* const &pos )
         }
 
         // try to obtain better buy price
-        Coin new_buy_price;
-        if ( lo_sell >= ticksize *2 ) // sanity bounds check
-        {
-            new_buy_price = pos->buy_price;
+        Coin new_buy_price = pos->buy_price;
 
-            while ( new_buy_price >= ticksize && // new_buy_price >= SATOSHI
-                    new_buy_price < lo_sell - ticksize && //  new_buy_price < lo_sell - SATOSHI
-                    new_buy_price < pos->buy_price_original ) // new_buy_price < pos->buy_price_original
-                new_buy_price += ticksize;
-        }
+        while ( new_buy_price >= ticksize && // new_buy_price >= SATOSHI
+                new_buy_price < lo_sell - ticksize && //  new_buy_price < lo_sell - SATOSHI
+                new_buy_price < pos->buy_price_original ) // new_buy_price < pos->buy_price_original
+            new_buy_price += ticksize;
 
         // new possible price is better than current price and different
         if ( new_buy_price != pos->price &&
@@ -1175,13 +1171,13 @@ bool Engine::tryMoveOrder( Position* const &pos )
             return true;
         }
 
-        if ( pos->is_slippage && settings->is_chatty )
+        if ( settings->is_chatty )
             kDebug() << "couldn't find better buy price for" << pos->stringifyOrder() << "new_buy_price"
                      << new_buy_price << "original_buy_price" << pos->buy_price_original
                      << "hi_buy" << hi_buy << "lo_sell" << lo_sell;
     }
     // replace sell price
-    else
+    else if ( hi_buy >= ticksize ) // sanity bounds check
     {
         // recalculate sell if needed - don't interfere with spread
         if ( pos->sell_price <= hi_buy )
@@ -1193,16 +1189,12 @@ bool Engine::tryMoveOrder( Position* const &pos )
         }
 
         // try to obtain a better sell price
-        Coin new_sell_price;
-        if ( hi_buy >= ticksize ) // sanity bounds check
-        {
-            new_sell_price = pos->sell_price;
+        Coin new_sell_price = pos->sell_price;
 
-            while ( new_sell_price > ticksize * 2. && // only iterate down to 2 sat for a sell
-                    new_sell_price > hi_buy + ticksize &&
-                    new_sell_price > pos->sell_price_original )
-                new_sell_price -= ticksize;
-        }
+        while ( new_sell_price > ticksize * 2. && // only iterate down to 2 sat for a sell
+                new_sell_price > hi_buy + ticksize &&
+                new_sell_price > pos->sell_price_original )
+            new_sell_price -= ticksize;
 
         // new possible price is better than current price and different
         if ( new_sell_price != pos->price &&
@@ -1216,7 +1208,7 @@ bool Engine::tryMoveOrder( Position* const &pos )
             return true;
         }
 
-        if ( pos->is_slippage && settings->is_chatty )
+        if ( settings->is_chatty )
             kDebug() << "couldn't find better sell price for" << pos->stringifyOrder() << "new_sell_price"
                      << new_sell_price << "original_sell_price" << pos->sell_price_original
                      << "hi_buy" << hi_buy << "lo_sell" << lo_sell;
