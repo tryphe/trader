@@ -85,7 +85,6 @@ private:
     bool tryMoveOrder( Position *const &pos );
     void fillNQ( const QString &order_id, qint8 fill_type, quint8 extra_data = 0 );
 
-
     QHash<QString, MarketInfo> market_info;
 
     // other

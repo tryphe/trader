@@ -41,14 +41,14 @@ public:
     bool isValidOrderID( const QString &order_id ) const;
     Position *getByOrderID( const QString &order_id ) const;
     Position *getByIndex( const QString &market, const qint32 idx ) const;
-    Position *getHighestActiveBuyByIndex( const QString &market ) const;
-    Position *getHighestActiveSellByIndex( const QString &market ) const;
-    Position *getLowestActiveSellByIndex( const QString &market ) const;
-    Position *getLowestActiveBuyByIndex( const QString &market ) const;
-    Position *getHighestActiveBuyByPrice( const QString &market ) const;
-    Position *getLowestActiveSellByPrice( const QString &market ) const;
-    Position *getLowestActivePingPong( const QString &market ) const;
-    Position *getHighestActivePingPong( const QString &market ) const;
+    Position *getHighestBuyByIndex( const QString &market ) const;
+    Position *getHighestSellByIndex( const QString &market ) const;
+    Position *getLowestSellByIndex( const QString &market ) const;
+    Position *getLowestBuyByIndex( const QString &market ) const;
+    Position *getHighestBuyByPrice( const QString &market ) const;
+    Position *getLowestSellByPrice( const QString &market ) const;
+    Position *getLowestPingPong( const QString &market ) const;
+    Position *getHighestPingPong( const QString &market ) const;
     qint32 getLowestPingPongIndex( const QString &market ) const;
     qint32 getHighestPingPongIndex( const QString &market ) const;
     qint32 getMarketOrderTotal( const QString &market, bool onetime_only = false ) const;
@@ -70,8 +70,6 @@ public:
 
     // ping-pong routines
     void checkBuySellCount();
-    void setNextLowest( const QString &market, quint8 side = SIDE_BUY, bool landmark = false );
-    void setNextHighest( const QString &market, quint8 side = SIDE_SELL, bool landmark = false );
 
     // cancel commands
     void cancel( Position *const &pos, bool quiet = false, quint8 cancel_reason = 0 );
@@ -84,6 +82,8 @@ public:
     int getDCCount() { return diverge_converge.size(); }
 
 private:
+    void setNextLowest( const QString &market, quint8 side = SIDE_BUY, bool landmark = false );
+    void setNextHighest( const QString &market, quint8 side = SIDE_SELL, bool landmark = false );
     void removeFromDC( Position *const &pos );
 
     // maintain a map of queued positions and set positions

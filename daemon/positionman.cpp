@@ -57,7 +57,7 @@ Position *PositionMan::getByOrderID( const QString &order_id ) const
 
 Coin PositionMan::getHiBuyFlipPrice( const QString &market ) const
 {
-    Position *pos = getHighestActiveBuyByPrice( market );
+    Position *pos = getHighestBuyByPrice( market );
 
     // check pos
     if ( !pos || !isActive( pos ) )
@@ -70,7 +70,7 @@ Coin PositionMan::getHiBuyFlipPrice( const QString &market ) const
 
 Coin PositionMan::getLoSellFlipPrice( const QString &market ) const
 {
-    Position *pos = getLowestActiveSellByPrice( market );
+    Position *pos = getLowestSellByPrice( market );
 
     // check pos
     if ( !pos || !isActive( pos ) )
@@ -102,7 +102,7 @@ bool PositionMan::isDivergingConverging( const QString &market, const qint32 ind
     return diverging_converging[ market ].contains( index );
 }
 
-Position *PositionMan::getHighestActiveBuyByIndex( const QString &market ) const
+Position *PositionMan::getHighestBuyByIndex( const QString &market ) const
 {
     Position *ret = nullptr;
     qint32 idx_hi_buy = -1;
@@ -128,7 +128,7 @@ Position *PositionMan::getHighestActiveBuyByIndex( const QString &market ) const
     return ret;
 }
 
-Position *PositionMan::getHighestActiveSellByIndex( const QString &market ) const
+Position *PositionMan::getHighestSellByIndex( const QString &market ) const
 {
     Position *ret = nullptr;
     qint32 idx_hi_buy = -1;
@@ -154,7 +154,7 @@ Position *PositionMan::getHighestActiveSellByIndex( const QString &market ) cons
     return ret;
 }
 
-Position *PositionMan::getLowestActiveSellByIndex( const QString &market ) const
+Position *PositionMan::getLowestSellByIndex( const QString &market ) const
 {
     Position *ret = nullptr;
     qint32 idx_lo_sell = std::numeric_limits<qint32>::max();
@@ -179,7 +179,7 @@ Position *PositionMan::getLowestActiveSellByIndex( const QString &market ) const
     return ret;
 }
 
-Position *PositionMan::getLowestActiveBuyByIndex( const QString &market ) const
+Position *PositionMan::getLowestBuyByIndex( const QString &market ) const
 {
     Position *ret = nullptr;
     qint32 idx_lo_sell = std::numeric_limits<qint32>::max();
@@ -205,7 +205,7 @@ Position *PositionMan::getLowestActiveBuyByIndex( const QString &market ) const
     return ret;
 }
 
-Position *PositionMan::getHighestActiveBuyByPrice( const QString &market ) const
+Position *PositionMan::getHighestBuyByPrice( const QString &market ) const
 {
     Position *ret = nullptr;
     Coin hi_buy = -1;
@@ -230,7 +230,7 @@ Position *PositionMan::getHighestActiveBuyByPrice( const QString &market ) const
     return ret;
 }
 
-Position *PositionMan::getLowestActiveSellByPrice( const QString &market ) const
+Position *PositionMan::getLowestSellByPrice( const QString &market ) const
 {
     Position *ret = nullptr;
     Coin lo_sell = CoinAmount::A_LOT;
@@ -255,7 +255,7 @@ Position *PositionMan::getLowestActiveSellByPrice( const QString &market ) const
     return ret;
 }
 
-Position *PositionMan::getLowestActivePingPong( const QString &market ) const
+Position *PositionMan::getLowestPingPong( const QString &market ) const
 {
     // store lo and lo pointer
     Position *lo_pos = nullptr;
@@ -286,7 +286,7 @@ Position *PositionMan::getLowestActivePingPong( const QString &market ) const
     return lo_pos;
 }
 
-Position *PositionMan::getHighestActivePingPong( const QString &market ) const
+Position *PositionMan::getHighestPingPong( const QString &market ) const
 {
     // store hi and high pointer
     Position *hi_pos = nullptr;
@@ -412,7 +412,7 @@ qint32 PositionMan::getBuyTotal( const QString &market ) const
 
 void PositionMan::flipLoSellIndex( const QString &market, QString tag )
 {
-    Position *pos = getLowestActiveSellByIndex( market );
+    Position *pos = getLowestSellByIndex( market );
 
     // check pos
     if ( !isActive( pos ) )
@@ -458,7 +458,7 @@ qint32 PositionMan::getSellTotal( const QString &market ) const
 
 void PositionMan::flipHiBuyPrice( const QString &market, QString tag )
 {
-    Position *pos = getHighestActiveBuyByPrice( market );
+    Position *pos = getHighestBuyByPrice( market );
 
     // check pos
     if ( !isActive( pos ) )
@@ -474,7 +474,7 @@ void PositionMan::flipHiBuyPrice( const QString &market, QString tag )
 
 void PositionMan::flipHiBuyIndex( const QString &market, QString tag )
 {
-    Position *pos = getHighestActiveBuyByIndex( market );
+    Position *pos = getHighestBuyByIndex( market );
 
     // check pos
     if ( !isActive( pos ) )
@@ -490,7 +490,7 @@ void PositionMan::flipHiBuyIndex( const QString &market, QString tag )
 
 void PositionMan::flipLoSellPrice( const QString &market, QString tag )
 {
-    Position *pos = getLowestActiveSellByPrice( market );
+    Position *pos = getLowestSellByPrice( market );
 
     // check pos
     if ( !isActive( pos ) )
@@ -785,7 +785,7 @@ void PositionMan::cancel( Position *const &pos, bool quiet, quint8 cancel_reason
 void PositionMan::cancelHighest( const QString &market )
 {
     // store hi and high pointer
-    Position *const &hi_pos = getHighestActivePingPong( market );
+    Position *const &hi_pos = getHighestPingPong( market );
 
     // cancel highest order
     if ( hi_pos )
@@ -795,7 +795,7 @@ void PositionMan::cancelHighest( const QString &market )
 void PositionMan::cancelLowest( const QString &market )
 {
     // store lo and lo pointer
-    Position *const &lo_pos = getLowestActivePingPong( market );
+    Position *const &lo_pos = getLowestPingPong( market );
 
     // cancel lowest order
     if ( lo_pos )
