@@ -41,12 +41,12 @@ public:
     bool isPositionOrderID( const QString &order_id ) const;
     Position *getPositionForOrderID( const QString &order_id ) const;
     Position *getPositionByIndex( const QString &market, const qint32 idx ) const;
-    Position *getHighestActiveBuyPosByIndex( const QString &market ) const;
-    Position *getHighestActiveSellPosByIndex( const QString &market ) const;
-    Position *getLowestActiveSellPosByIndex( const QString &market ) const;
-    Position *getLowestActiveBuyPosByIndex( const QString &market ) const;
-    Position *getHighestActiveBuyPosByPrice( const QString &market ) const;
-    Position *getLowestActiveSellPosByPrice( const QString &market ) const;
+    Position *getHighestActiveBuyByIndex( const QString &market ) const;
+    Position *getHighestActiveSellByIndex( const QString &market ) const;
+    Position *getLowestActiveSellByIndex( const QString &market ) const;
+    Position *getLowestActiveBuyByIndex( const QString &market ) const;
+    Position *getHighestActiveBuyByPrice( const QString &market ) const;
+    Position *getLowestActiveSellByPrice( const QString &market ) const;
     Position *getLowestActivePingPong( const QString &market ) const;
     Position *getHighestActivePingPong( const QString &market ) const;
     qint32 getLowestPingPongIndex( const QString &market ) const;

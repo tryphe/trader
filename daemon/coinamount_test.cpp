@@ -312,7 +312,7 @@ void CoinAmountTest::test()
     assert( Coin( "0.00001000" ) - Coin( "0.00000006" ) == "0.00000994" );
     assert( Coin( "0.00001000" ) + Coin( "0.00000006" ) == "0.00001006" );
 
-    // getHighestActiveBuyPosByPrice(), bad hi_buy price is negative 1
+    // getHighestActiveBuyByPrice(), bad hi_buy price is negative 1
     Coin hi_buy = -1;
     assert( hi_buy == "-1.00000000" );
     assert( hi_buy.isZeroOrLess() );
