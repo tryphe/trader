@@ -34,11 +34,11 @@ public:
 
     bool hasActivePositions() const;
     bool hasQueuedPositions() const;
-
     bool isActive( Position *const &pos ) const;
     bool isQueued( Position *const &pos ) const;
     bool isValid( Position *const &pos ) const;
     bool isValidOrderID( const QString &order_id ) const;
+
     Position *getByOrderID( const QString &order_id ) const;
     Position *getByIndex( const QString &market, const qint32 idx ) const;
     Position *getHighestBuyByIndex( const QString &market ) const;
@@ -49,6 +49,7 @@ public:
     Position *getLowestSellByPrice( const QString &market ) const;
     Position *getLowestPingPong( const QString &market ) const;
     Position *getHighestPingPong( const QString &market ) const;
+
     qint32 getLowestPingPongIndex( const QString &market ) const;
     qint32 getHighestPingPongIndex( const QString &market ) const;
     qint32 getMarketOrderTotal( const QString &market, bool onetime_only = false ) const;
@@ -59,6 +60,7 @@ public:
     void flipHiBuyIndex( const QString &market, QString tag = QLatin1String() );
     void flipLoSellPrice( const QString &market, QString tag = QLatin1String() );
     void flipLoSellIndex( const QString &market, QString tag = QLatin1String() );
+
     Coin getLoSell( const QString &market ) const;
     Coin getHiBuy( const QString &market ) const;
     Coin getHiBuyFlipPrice( const QString &market ) const;

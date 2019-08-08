@@ -11,7 +11,6 @@
 
 class REST_OBJECT;
 class Stats;
-class WSInterface;
 class PositionMan;
 class EngineSettings;
 
