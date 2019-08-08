@@ -102,6 +102,10 @@ void EngineTest::test( Engine *e )
     e->positions->cancelLocal( "TEST" );
     assert( e->positions->all().size() == 0 );
 
+    // insert ticker price to pass sanity check
+    e->market_info[ "TEST" ].highest_buy = "0.00000001";
+    e->market_info[ "TEST" ].lowest_sell = "0.00000100";
+
     // test addPosition()
     Position *p4 = e->addPosition( "TEST", SIDE_SELL, "0.00000000", "0.00000010", "0.02000000", "onetime" );
     assert( p4 != nullptr );

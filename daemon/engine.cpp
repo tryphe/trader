@@ -55,6 +55,14 @@ Position *Engine::addPosition( QString market, quint8 side, QString buy_price, Q
     market.replace( QChar('-'), QChar('_') );
 #endif
 
+    MarketInfo &info = market_info[ market ];
+    // check if bid/ask price exists
+    if ( info.highest_buy.isZeroOrLess() || info.lowest_sell.isZeroOrLess() )
+    {
+        kDebug() << "local error: ticker has not been read yet. (try again)";
+        return nullptr;
+    }
+
     // parse alternate size from order_size, format: 0.001/0.002 (the alternate size is 0.002)
     QStringList parse = order_size.split( QChar( '/' ) );
     QString alternate_size;
@@ -136,10 +144,10 @@ Position *Engine::addPosition( QString market, quint8 side, QString buy_price, Q
 
     // anti-stupid check: did we put in a taker price that's <>10% of the current bid/ask?
     if ( !is_override && is_taker &&
-        ( ( side == SIDE_SELL && positions->getHiBuy( market ).ratio( 0.9 ) > Coin( sell_price ) ) ||  // bid * 0.9 > sell_price
-          ( side == SIDE_SELL && positions->getHiBuy( market ).ratio( 1.1 ) < Coin( sell_price ) ) ||  // bid * 1.1 < sell_price
-          ( side == SIDE_BUY && positions->getLoSell( market ).ratio( 1.1 ) < Coin( buy_price ) ) ||  // ask * 1.1 < buy_price
-          ( side == SIDE_BUY && positions->getLoSell( market ).ratio( 0.9 ) > Coin( buy_price ) ) ) ) // ask * 0.9 > buy_price
+        ( ( side == SIDE_SELL && info.highest_buy.ratio( 0.9 ) > Coin( sell_price ) ) ||  // bid * 0.9 > sell_price
+          ( side == SIDE_SELL && info.highest_buy.ratio( 1.1 ) < Coin( sell_price ) ) ||  // bid * 1.1 < sell_price
+          ( side == SIDE_BUY && info.lowest_sell.ratio( 1.1 ) < Coin( buy_price ) ) ||  // ask * 1.1 < buy_price
+          ( side == SIDE_BUY && info.lowest_sell.ratio( 0.9 ) > Coin( buy_price ) ) ) ) // ask * 0.9 > buy_price
     {
         kDebug() << "local error: taker sell_price:" << sell_price << "buy_price:" << buy_price << "is >10% from spread, aborting order. add '-override' if intentional.";
         return nullptr;
@@ -151,12 +159,10 @@ Position *Engine::addPosition( QString market, quint8 side, QString buy_price, Q
         const PositionData posdata = PositionData( buy_price, sell_price, order_size, alternate_size );
 
         // get the next position index and append to our positions
-        indices.append( market_info[ market ].position_index.size() );
+        indices.append( info.position_index.size() );
 
         // add position indices to our market info
-        market_info[ market ].position_index.append( posdata );
-
-        //kDebug() << "added index for" << market << "#" << indices.value( 0 );
+        info.position_index.append( posdata );
     }
 
     // if it's a ghost just exit here. we added it to the index, but don't set the order.
@@ -176,8 +182,6 @@ Position *Engine::addPosition( QString market, quint8 side, QString buy_price, Q
 
     // enforce PERCENT_PRICE on binance
 #if defined(EXCHANGE_BINANCE)
-    const MarketInfo &info = market_info.value( market );
-
     // respect the binance limits with a 20% padding (we don't know what the 5min avg is, so we'll just compress the range)
     Coin buy_limit = ( info.highest_buy * info.price_min_mul.ratio( 1.2 ) ).truncatedByTicksize( "0.00000001" );
     Coin sell_limit = ( info.lowest_sell * info.price_max_mul.ratio( 0.8 ) ).truncatedByTicksize( "0.00000001" );
@@ -217,7 +221,7 @@ Position *Engine::addPosition( QString market, quint8 side, QString buy_price, Q
 
     // position is now queued, update engine state
     positions->add( pos );
-    market_info[ market ].order_prices.append( pos->price );
+    info.order_prices.append( pos->price );
 
     // if running tests, exit early
     if ( is_testing )
