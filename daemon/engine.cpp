@@ -1492,7 +1492,7 @@ void Engine::converge( QMap<QString, QVector<qint32>> &market_map, quint8 side )
                 for ( int k = 0; k < new_order.size(); k++ )
                 {
                     const qint32 idx = new_order.value( k );
-                    Position *const &pos = positions->getPositionByIndex( market, idx );
+                    Position *const &pos = positions->getByIndex( market, idx );
 
                     positions->cancel( pos, true, CANCELLING_FOR_DC );
                     position_list.append( pos );
@@ -1530,7 +1530,7 @@ void Engine::diverge( QMap<QString, QVector<qint32> > &market_map )
         std::sort( indices.begin(), indices.end() );
 
         const qint32 index = indices.value( 0 );
-        Position *const &pos = positions->getPositionByIndex( market, index ); // get position for index
+        Position *const &pos = positions->getByIndex( market, index ); // get position for index
 
         kDebug() << QString( "diverging  %1 %2" )
                      .arg( market, -8 )

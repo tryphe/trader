@@ -81,7 +81,7 @@ Coin PositionMan::getLoSellFlipPrice( const QString &market ) const
     return pos->buy_price;
 }
 
-Position *PositionMan::getPositionByIndex( const QString &market, const qint32 idx ) const
+Position *PositionMan::getByIndex( const QString &market, const qint32 idx ) const
 {
     Position *ret = nullptr;
 
@@ -948,7 +948,7 @@ void PositionMan::setNextLowest( const QString &market, quint8 side, bool landma
     const qint32 dc_val = info.order_dc;
 
     // count down until we find an index without a position
-    while ( getPositionByIndex( market, new_index ) ||
+    while ( getByIndex( market, new_index ) ||
             isDivergingConverging( market, new_index ) )
         new_index--;
 
@@ -971,7 +971,7 @@ void PositionMan::setNextLowest( const QString &market, quint8 side, bool landma
         }
 
         // if we can't use the new index, go to the -next lowest- index and restart the loop
-        if ( getPositionByIndex( market, new_index ) ||
+        if ( getByIndex( market, new_index ) ||
              isDivergingConverging( market, new_index ) )
         {
             while ( indices.size() > 1 )
@@ -1039,7 +1039,7 @@ void PositionMan::setNextHighest( const QString &market, quint8 side, bool landm
     const qint32 dc_val = info.order_dc;
 
     // count up until we find an index without a position
-    while ( getPositionByIndex( market, new_index ) ||
+    while ( getByIndex( market, new_index ) ||
             isDivergingConverging( market, new_index ) )
         new_index++;
 
@@ -1062,7 +1062,7 @@ void PositionMan::setNextHighest( const QString &market, quint8 side, bool landm
         }
 
         // if we can't use the new index, find the next valid index and restart the loop
-        if ( getPositionByIndex( market, new_index ) ||
+        if ( getByIndex( market, new_index ) ||
              isDivergingConverging( market, new_index ) )
         {
             while ( indices.size() > 1 )
