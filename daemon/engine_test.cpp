@@ -223,6 +223,7 @@ void EngineTest::test( Engine *e )
             assert( pos->price == "0.00000005" );
     }
 
+    assert( e->positions->all().size() == 7 );
     e->positions->cancelLocal();
     assert( e->positions->all().size() == 0 );
     ///
