@@ -1076,6 +1076,10 @@ void Engine::findBetterPrice( Position *const &pos )
         // set new boundary
         info.lowest_sell = pos->buy_price;
         lo_sell = pos->buy_price;
+
+        // avoid collision
+        if ( info.lowest_sell <= info.highest_buy )
+            info.highest_buy = info.lowest_sell - info.price_ticksize;
     }
     // adjust hi_buy
     else if ( settings->should_adjust_hibuy_losell &&
@@ -1090,6 +1094,10 @@ void Engine::findBetterPrice( Position *const &pos )
         // set new boundary
         info.highest_buy = pos->sell_price;
         hi_buy = pos->sell_price;
+
+        // avoid collision
+        if ( info.highest_buy >= info.lowest_sell )
+            info.lowest_sell = info.highest_buy + info.price_ticksize;
     }
 
     quint8 haggle_type = 0;
