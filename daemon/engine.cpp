@@ -372,8 +372,8 @@ void Engine::processFilledOrders( QVector<Position*> &to_be_filled, qint8 fill_t
             if ( ( pos->side == SIDE_SELL && pos->getFlippedPrice() <= price_avg ) || // new buy is lt avg
                  ( pos->side == SIDE_BUY  && pos->getFlippedPrice() >  price_avg ) )  // new sell is gte avg
             {
-                fillNQ( pos->order_number, fill_type );
                 to_be_filled.removeOne( pos );
+                fillNQ( pos->order_number, fill_type );
             }
         }
     }
