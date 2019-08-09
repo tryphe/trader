@@ -123,10 +123,11 @@ static inline const QString printVectorqint32( const QVector<qint32> &vec )
                 .arg( vec.value( i ) );
 
     // trim last comma
-    if ( ret.size() > 1 )
-        ret.truncate( ret.size() -2 );
+    int sz = ret.size();
+    if ( sz > 1 )
+        ret.truncate( sz -2 );
 
-    ret += "]";
+    ret += QChar( ']' );
 
     return ret;
 }
