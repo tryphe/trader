@@ -408,14 +408,13 @@ void PoloREST::parseReturnBalances( const QJsonObject &balances )
 
         const QString &currency = i.key();
         const QJsonObject &stats = i.value().toObject();
-
-        const QString &available = stats.value( "available" ).toString();
         const Coin &btcValue = stats.value( "btcValue" ).toString();
+        const Coin &available = stats.value( "available" ).toString();
         const Coin &onOrders = stats.value( "onOrders" ).toString();
         const Coin &total = available + onOrders;
 
         // skip zero balances
-        if ( btcValue.isZeroOrLess() )
+        if ( total.isZeroOrLess() )
             continue;
 
         QString out = QString( "%1 TOTAL: %2 AVAIL: %3 ORDER: %4 BTC_VAL: %5" )
