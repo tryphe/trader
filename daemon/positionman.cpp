@@ -105,8 +105,7 @@ Position *PositionMan::getHighestBuyAll( const QString &market ) const
     for ( QSet<Position*>::const_iterator i = positions_active.begin(); i != positions_active.end(); i++ )
     {
         Position *const &pos = *i;
-        if (  pos->is_invalidated ||
-              pos->side != SIDE_BUY ||          // sells only
+        if (  pos->side != SIDE_BUY ||          // sells only
               pos->market != market             // check market filter
               )
             continue;
@@ -129,8 +128,7 @@ Position *PositionMan::getLowestSellAll( const QString &market ) const
     for ( QSet<Position*>::const_iterator i = positions_active.begin(); i != positions_active.end(); i++ )
     {
         Position *const &pos = *i;
-        if (  pos->is_invalidated ||
-              pos->side != SIDE_SELL ||         // sells only
+        if (  pos->side != SIDE_SELL ||         // sells only
               pos->market != market             // check market filter
               )
             continue;
@@ -159,7 +157,6 @@ Position *PositionMan::getHighestBuyByIndex( const QString &market ) const
     {
         Position *const &pos = *i;
         if (  pos->side != SIDE_BUY ||         // sells only
-              pos->is_invalidated ||
               pos->is_cancelling ||             // must not be cancelling
               pos->order_number.size() == 0 ||  // must be set
               pos->market != market             // check market filter
@@ -186,7 +183,6 @@ Position *PositionMan::getHighestSellByIndex( const QString &market ) const
     {
         Position *const &pos = *i;
         if (  pos->side != SIDE_SELL ||         // sells only
-              pos->is_invalidated ||
               pos->is_cancelling ||             // must not be cancelling
               pos->order_number.size() == 0 ||  // must be set
               pos->market != market             // check market filter
@@ -213,7 +209,6 @@ Position *PositionMan::getLowestSellByIndex( const QString &market ) const
     {
         Position *const &pos = *i;
         if (  pos->side != SIDE_SELL ||         // sells only
-              pos->is_invalidated ||
               pos->is_cancelling ||             // must not be cancelling
               pos->order_number.size() == 0 ||  // must be set
               pos->market != market             // check market filter
@@ -239,7 +234,6 @@ Position *PositionMan::getLowestBuyByIndex( const QString &market ) const
     {
         Position *const &pos = *i;
         if (  pos->side != SIDE_BUY ||          // sells only
-              pos->is_invalidated ||
               pos->is_cancelling ||             // must not be cancelling
               pos->order_number.size() == 0 ||  // must be set
               pos->market != market             // check market filter
@@ -266,7 +260,6 @@ Position *PositionMan::getHighestBuyByPrice( const QString &market ) const
     {
         Position *const &pos = *i;
         if (  pos->side != SIDE_BUY ||          // sells only
-              pos->is_invalidated ||
               pos->is_cancelling ||             // must not be cancelling
               pos->order_number.size() == 0 ||  // must be set
               pos->market != market             // check market filter
@@ -292,7 +285,6 @@ Position *PositionMan::getLowestSellByPrice( const QString &market ) const
     {
         Position *const &pos = *i;
         if (  pos->side != SIDE_SELL ||         // sells only
-              pos->is_invalidated ||
               pos->is_cancelling ||             // must not be cancelling
               pos->order_number.size() == 0 ||  // must be set
               pos->market != market             // check market filter
@@ -323,8 +315,7 @@ Position *PositionMan::getLowestPingPong( const QString &market ) const
 
         // note: cancelLowest() uses this. we must exlude one-time orders otherwise automatic ping-pong
         //       maintenance interferes with one-time orders.
-        if ( pos->is_onetime ||
-             pos->is_invalidated )
+        if ( pos->is_onetime )
             continue;
 
         pos_lo_idx = pos->getLowestMarketIndex();
@@ -355,8 +346,7 @@ Position *PositionMan::getHighestPingPong( const QString &market ) const
 
         // note: cancelHighest() uses this. we must exlude one-time orders otherwise automatic ping-pong
         //       maintenance interferes with one-time orders.
-        if ( pos->is_onetime ||
-             pos->is_invalidated )
+        if ( pos->is_onetime )
             continue;
 
         pos_hi_idx = pos->getHighestMarketIndex();
@@ -383,8 +373,7 @@ qint32 PositionMan::getLowestPingPongIndex( const QString &market ) const
         Position *const &pos = *i;
 
         // skip if one-time order
-        if ( pos->is_onetime ||
-             pos->is_invalidated )
+        if ( pos->is_onetime )
             continue;
 
         const qint32 pos_lowest_idx = pos->getLowestMarketIndex();
@@ -410,8 +399,7 @@ qint32 PositionMan::getHighestPingPongIndex( const QString &market ) const
         Position *const &pos = *i;
 
         // skip if one-time order
-        if ( pos->is_onetime ||
-             pos->is_invalidated )
+        if ( pos->is_onetime )
             continue;
 
         const qint32 pos_highest_idx = pos->getHighestMarketIndex();
@@ -441,8 +429,7 @@ qint32 PositionMan::getMarketOrderTotal( const QString &market, bool onetime_onl
         if ( onetime_only && !pos->is_onetime )
             continue;
 
-        if ( !pos->is_invalidated &&
-              pos->market == market )
+        if ( pos->market == market )
             total++;
     }
 
@@ -462,7 +449,6 @@ qint32 PositionMan::getBuyTotal( const QString &market ) const
         Position *const &pos = *i;
 
         if ( pos->side == SIDE_BUY &&
-            !pos->is_invalidated &&
              pos->market == market )
             total++;
     }

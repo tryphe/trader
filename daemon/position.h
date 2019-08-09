@@ -66,8 +66,7 @@ public:
     is_slippage, // order has slippage
     is_new_hilo_order,
     is_onetime, // is a one-time order, ping-pong disabled
-    is_taker, // is taker, post-only disabled
-    is_invalidated;
+    is_taker; // is taker, post-only disabled
 
 private:
     Engine *engine;
