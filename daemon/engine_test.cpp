@@ -249,7 +249,7 @@ void EngineTest::test( Engine *e )
     ///
 
     /// run "non-chalant spread fill" spread test
-    /// rather than converging to a point, sort our pre-fill by a more optimal value - the average of flipped prices
+    /// rather than converging to a point, sort our pre-fill by a more optimal value: the average of flipped prices
     ///
     ///   BUYS   |  SELLS
     ///   1 2 3  |  14 15 16 17
@@ -285,10 +285,102 @@ void EngineTest::test( Engine *e )
     assert( e->positions->all().size() == 7 );
     e->positions->cancelLocal();
     assert( e->positions->all().size() == 0 );
+
+    /// test diverge/converge
+    ///
+    e->market_info[ "TEST" ].order_dc = 5;
+    e->market_info[ "TEST" ].order_dc_nice = 0;
+    e->market_info[ "TEST" ].order_landmark_start = 2;
+    e->market_info[ "TEST" ].order_landmark_thresh = 2;
+    e->market_info[ "TEST" ].order_max = 40;
+    e->market_info[ "TEST" ].order_min = 15;
+    e->market_info[ "TEST" ].highest_buy = "0.00000023";
+    e->market_info[ "TEST" ].lowest_sell = "0.00000033";
+    pp.clear();
+    pp += e->addPosition( "TEST", SIDE_BUY,  "0.00000006", "0.00000015", "0.1", "active" ); // 0
+    pp += e->addPosition( "TEST", SIDE_BUY,  "0.00000007", "0.00000016", "0.1", "active" );
+    pp += e->addPosition( "TEST", SIDE_BUY,  "0.00000008", "0.00000017", "0.1", "active" );
+    pp += e->addPosition( "TEST", SIDE_BUY,  "0.00000009", "0.00000018", "0.1", "active" );
+    pp += e->addPosition( "TEST", SIDE_BUY,  "0.00000010", "0.00000019", "0.1", "active" );
+    pp += e->addPosition( "TEST", SIDE_BUY,  "0.00000011", "0.00000020", "0.1", "active" ); // 5
+    pp += e->addPosition( "TEST", SIDE_BUY,  "0.00000012", "0.00000021", "0.1", "active" );
+    pp += e->addPosition( "TEST", SIDE_BUY,  "0.00000013", "0.00000022", "0.1", "active" );
+    pp += e->addPosition( "TEST", SIDE_BUY,  "0.00000014", "0.00000023", "0.1", "active" );
+    pp += e->addPosition( "TEST", SIDE_BUY,  "0.00000015", "0.00000024", "0.1", "active" );
+    pp += e->addPosition( "TEST", SIDE_BUY,  "0.00000016", "0.00000025", "0.1", "active" ); // 10
+    pp += e->addPosition( "TEST", SIDE_BUY,  "0.00000017", "0.00000026", "0.1", "active" );
+    pp += e->addPosition( "TEST", SIDE_BUY,  "0.00000018", "0.00000027", "0.1", "active" );
+    pp += e->addPosition( "TEST", SIDE_BUY,  "0.00000019", "0.00000028", "0.1", "active" );
+    pp += e->addPosition( "TEST", SIDE_BUY,  "0.00000020", "0.00000029", "0.1", "active" );
+    pp += e->addPosition( "TEST", SIDE_BUY,  "0.00000021", "0.00000030", "0.1", "active" ); // 15
+    pp += e->addPosition( "TEST", SIDE_BUY,  "0.00000022", "0.00000031", "0.1", "active" );
+    pp += e->addPosition( "TEST", SIDE_BUY,  "0.00000023", "0.00000032", "0.1", "active" );
+
+    pp += e->addPosition( "TEST", SIDE_SELL, "0.00000024", "0.00000033", "0.1", "active" );
+    pp += e->addPosition( "TEST", SIDE_SELL, "0.00000025", "0.00000034", "0.1", "active" );
+    pp += e->addPosition( "TEST", SIDE_SELL, "0.00000026", "0.00000035", "0.1", "active" ); // 20
+    pp += e->addPosition( "TEST", SIDE_SELL, "0.00000027", "0.00000036", "0.1", "active" );
+    pp += e->addPosition( "TEST", SIDE_SELL, "0.00000028", "0.00000037", "0.1", "active" );
+    pp += e->addPosition( "TEST", SIDE_SELL, "0.00000029", "0.00000038", "0.1", "active" );
+    pp += e->addPosition( "TEST", SIDE_SELL, "0.00000030", "0.00000039", "0.1", "active" );
+    pp += e->addPosition( "TEST", SIDE_SELL, "0.00000031", "0.00000040", "0.1", "active" );
+    pp += e->addPosition( "TEST", SIDE_SELL, "0.00000032", "0.00000041", "0.1", "active" );
+    pp += e->addPosition( "TEST", SIDE_SELL, "0.00000033", "0.00000042", "0.1", "active" );
+    pp += e->addPosition( "TEST", SIDE_SELL, "0.00000034", "0.00000043", "0.1", "active" );
+    pp += e->addPosition( "TEST", SIDE_SELL, "0.00000035", "0.00000044", "0.1", "active" );
+    pp += e->addPosition( "TEST", SIDE_SELL, "0.00000036", "0.00000045", "0.1", "active" );
+    pp += e->addPosition( "TEST", SIDE_SELL, "0.00000037", "0.00000046", "0.1", "active" );
+    pp += e->addPosition( "TEST", SIDE_SELL, "0.00000038", "0.00000047", "0.1", "active" );
+    pp += e->addPosition( "TEST", SIDE_SELL, "0.00000039", "0.00000048", "0.1", "active" );
+    pp += e->addPosition( "TEST", SIDE_SELL, "0.00000040", "0.00000049", "0.1", "active" );
+    pp += e->addPosition( "TEST", SIDE_SELL, "0.00000041", "0.00000050", "0.1", "active" );
+    pp += e->addPosition( "TEST", SIDE_SELL, "0.00000042", "0.00000051", "0.1", "active" );
+
+    e->onCheckDivergeConverge();
+    e->onCheckDivergeConverge();
+    e->onCheckDivergeConverge();
+
+    quint16 buy_count = 0, sell_count = 0;
+    for ( QSet<Position*>::const_iterator i = e->positions->all().begin(); i != e->positions->all().end(); i++ )
+        ( (*i)->side == SIDE_BUY ) ? buy_count++ : sell_count++;
+
+    // there's 3 landmark orders of 5 orders each, on both sides, plus 3 buys and 4 sells
+    assert( buy_count == 6 );
+    assert( sell_count == 7 );
+
+    QVector<Position*> filled = QVector<Position*>();
+    filled += e->positions->getByIndex( "TEST", 18 );
+    filled += e->positions->getByIndex( "TEST", 19 );
+    filled += e->positions->getByIndex( "TEST", 20 );
+    filled += e->positions->getByIndex( "TEST", 21 );
+
+    e->processFilledOrders( filled, FILL_WSS ); // fill 4 sells
+
+    buy_count = 0, sell_count = 0;
+    for ( QSet<Position*>::const_iterator i = e->positions->all().begin(); i != e->positions->all().end(); i++ )
+        ( (*i)->side == SIDE_BUY ) ? buy_count++ : sell_count++;
+
+    // there's 3 landmark orders of 5 orders each, on both sides, plus 7 buys and 0 sells
+    assert( buy_count == 10 );
+    assert( sell_count == 3 );
+
+    e->onCheckDivergeConverge(); // diverge landmark sell
+
+    buy_count = 0, sell_count = 0;
+    for ( QSet<Position*>::const_iterator i = e->positions->all().begin(); i != e->positions->all().end(); i++ )
+        ( (*i)->side == SIDE_BUY ) ? buy_count++ : sell_count++;
+
+    // there's 3 landmark buys and 2 landmark sells, plus 7 buys and 5 sells
+    assert( buy_count == 10 );
+    assert( sell_count == 7 );
+
+    e->positions->cancelLocal();
+    assert( e->positions->all().size() == 0 );
     ///
 
     // clear some stuff and disable test mode
     e->getMarketInfoStructure().clear(); // clear "TEST" market from market settings
+    e->positions->diverge_converge.clear(); // clear "TEST" from dc market index
     e->positions->diverging_converging.clear(); // clear "TEST" from dc market index
     e->setTesting( false );
     e->setVerbosity( 1 );

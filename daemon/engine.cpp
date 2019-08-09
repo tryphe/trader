@@ -246,8 +246,7 @@ Position *Engine::addPosition( QString market, quint8 side, QString buy_price, Q
     // if running tests, exit early
     if ( is_testing )
     {
-        pos->order_number = pos->market + QString::number( pos->getLowestMarketIndex() );
-        positions->activate( pos, pos->order_number );
+        positions->activate( pos, pos->market + QString::number( pos->getLowestMarketIndex() ) );
         return pos;
     }
 
@@ -722,9 +721,10 @@ void Engine::processCancelledOrder( Position * const &pos )
         }
     }
 
-    kDebug() << QString( "%1 %2" )
-                .arg( "cancelled", -15 )
-                .arg( pos->stringifyOrder() );
+    if ( verbosity > 0 )
+        kDebug() << QString( "%1 %2" )
+                    .arg( "cancelled", -15 )
+                    .arg( pos->stringifyOrder() );
 
     // depending on the type of cancel, we should take some action
     if ( pos->cancel_reason == CANCELLING_FOR_DC )
@@ -774,6 +774,13 @@ void Engine::cancelOrderMeatDCOrder( Position * const &pos )
         cancelling_positions = position_list;
         new_order_is_landmark = pair.first;
         new_indices = pair.second;
+
+        // cheat and skip ahead for testing
+        if ( is_testing )
+        {
+             cancelling_positions = QVector<Position*>() << pos;
+             break;
+        }
 
         positions->diverge_converge.remove( position_list );
         break;
@@ -1531,9 +1538,10 @@ void Engine::converge( QMap<QString, QVector<qint32>> &market_map, quint8 side )
             // check if we have enough orders to make a landmark
             if ( new_order.size() == dc_value )
             {
-                kDebug() << QString( "converging %1 %2" )
-                             .arg( market, -8 )
-                             .arg( Global::printVectorqint32( new_order ) );
+                if ( verbosity > 0 )
+                    kDebug() << QString( "converging %1 %2" )
+                                 .arg( market, -8 )
+                                 .arg( Global::printVectorqint32( new_order ) );
 
                 // store positions we are cancelling
                 QVector<Position*> position_list;
@@ -1544,15 +1552,17 @@ void Engine::converge( QMap<QString, QVector<qint32>> &market_map, quint8 side )
                     const qint32 idx = new_order.value( k );
                     Position *const &pos = positions->getByIndex( market, idx );
 
-                    positions->cancel( pos, true, CANCELLING_FOR_DC );
                     position_list.append( pos );
 
                     // keep track of indices we should avoid autosetting
                     positions->diverging_converging[ market ].append( idx );
-                }
 
-                // insert into a map for tracking for when cancels are complete
-                positions->diverge_converge.insert( position_list, qMakePair( true, new_order ) );
+                    // insert into a map for tracking for when cancels are complete
+                    if ( position_list.size() == dc_value )
+                        positions->diverge_converge.insert( position_list, qMakePair( true, new_order ) );
+
+                    positions->cancel( pos, true, CANCELLING_FOR_DC );
+                }
 
                 new_order.clear(); // clear new_order
                 break; // 1 order per market
@@ -1582,12 +1592,10 @@ void Engine::diverge( QMap<QString, QVector<qint32> > &market_map )
         const qint32 index = indices.value( 0 );
         Position *const &pos = positions->getByIndex( market, index ); // get position for index
 
-        kDebug() << QString( "diverging  %1 %2" )
-                     .arg( market, -8 )
-                     .arg( Global::printVectorqint32( pos->market_indices ) );
-
-        // cancel the order
-        positions->cancel( pos, true, CANCELLING_FOR_DC );
+        if ( verbosity > 0 )
+            kDebug() << QString( "diverging  %1 %2" )
+                         .arg( market, -8 )
+                         .arg( Global::printVectorqint32( pos->market_indices ) );
 
         // store positions we are cancelling
         QVector<Position*> position_list;
@@ -1599,6 +1607,9 @@ void Engine::diverge( QMap<QString, QVector<qint32> > &market_map )
 
         // insert into a map for tracking for when cancels are complete
         positions->diverge_converge.insert( position_list, qMakePair( false, pos->market_indices ) );
+
+        // cancel the order
+        positions->cancel( pos, true, CANCELLING_FOR_DC );
 
         // flow control
         if ( rest->yieldToFlowControl() || rest->nam_queue.size() >= rest->limit_commands_queued_dc_check )

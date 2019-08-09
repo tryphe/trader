@@ -550,8 +550,6 @@ void PositionMan::flipLoSellPrice( const QString &market, QString tag )
     cancel( pos, false, CANCELLING_FOR_SHORTLONG );
 }
 
-
-
 void PositionMan::add( Position * const &pos )
 {
     positions_queued.insert( pos );
@@ -784,18 +782,24 @@ void PositionMan::cancel( Position *const &pos, bool quiet, quint8 cancel_reason
         return;
     }
 
-    // if testing, skip ahead to processCancelledOrder logic which just calls remove();
-    if ( engine->is_testing )
-    {
-        remove( pos );
-        return;
-    }
-
     // flag if the order was cancelling already
     const bool recancelling = pos->order_cancel_time > 0 || pos->is_cancelling;
 
     // set cancel reason (override if neccesary to change reason)
     pos->cancel_reason = cancel_reason;
+
+    // if testing, skip ahead to processCancelledOrder logic which just calls remove();
+    if ( engine->is_testing )
+    {
+        if ( cancel_reason == CANCELLING_FOR_DC )
+        {
+            engine->processCancelledOrder( pos );
+            return;
+        }
+
+        remove( pos );
+        return;
+    }
 
     // check if this is a queued position so we can properly cancel the order when it gets set
     if ( isQueued( pos ) )
@@ -1023,7 +1027,7 @@ void PositionMan::setNextLowest( const QString &market, quint8 side, bool landma
             while ( indices.size() > 1 )
                 indices.removeLast();
 
-            break;
+            continue;
         }
 
         indices.append( new_index );
@@ -1114,7 +1118,7 @@ void PositionMan::setNextHighest( const QString &market, quint8 side, bool landm
             while ( indices.size() > 1 )
                 indices.removeLast();
 
-            break;
+            continue;
         }
 
         indices.append( new_index );
