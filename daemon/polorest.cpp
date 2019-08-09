@@ -1204,10 +1204,6 @@ void PoloREST::wssTextMessageReceived( const QString &msg )
         wss_1000_state = true;
         return;
     }
-    else if ( message_type == 1000 )
-    {
-        kDebug() << "(wss) 1000 bad status:" << status;
-    }
 
     if ( message_type == 1002 && status > 0 )
     {
