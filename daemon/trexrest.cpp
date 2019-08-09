@@ -369,7 +369,7 @@ void TrexREST::onNamReply( QNetworkReply *const &reply )
             {
                 kDebug() << "unknown cancel reply:" << data;
 
-                engine->deleteReply( reply, request );
+                deleteReply( reply, request );
                 return;
             }
 
@@ -379,7 +379,7 @@ void TrexREST::onNamReply( QNetworkReply *const &reply )
             {
                 // do single position fill
                 engine->processFilledOrders( QVector<Position*>() << pos, FILL_CANCEL );
-                engine->deleteReply( reply, request );
+                deleteReply( reply, request );
                 return;
             }
 
@@ -391,7 +391,7 @@ void TrexREST::onNamReply( QNetworkReply *const &reply )
             // there are some errors that we don't handle yet, so we just go on with handling them as if everything is fine
             engine->processCancelledOrder( pos );
 
-            engine->deleteReply( reply, request );
+            deleteReply( reply, request );
             return;
         }
         // resend for all commands except common commands
@@ -408,7 +408,7 @@ void TrexREST::onNamReply( QNetworkReply *const &reply )
                 // check for bad ptr, and the position should also be queued
                 if ( !request->pos || !engine->positions->isQueued( request->pos ) )
                 {
-                    engine->deleteReply( reply, request );
+                    deleteReply( reply, request );
                     return;
                 }
 
@@ -416,7 +416,7 @@ void TrexREST::onNamReply( QNetworkReply *const &reply )
                 if ( request->pos->order_set_time > 0 )
                 {
                     kDebug() << "local warning: avoiding re-sent request for order already set";
-                    engine->deleteReply( reply, request );
+                    deleteReply( reply, request );
                     return;
                 }
             }
@@ -442,7 +442,7 @@ void TrexREST::onNamReply( QNetworkReply *const &reply )
                     .arg( api_command )
                     .arg( QString::fromLocal8Bit( data ) );
 
-        engine->deleteReply( reply, request );
+        deleteReply( reply, request );
         return;
     }
 
@@ -481,7 +481,7 @@ void TrexREST::onNamReply( QNetworkReply *const &reply )
     }
 
     // cleanup
-    engine->deleteReply( reply, request );
+    deleteReply( reply, request );
 }
 
 void TrexREST::onCheckBotOrders()

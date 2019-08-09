@@ -529,7 +529,7 @@ void BncREST::onNamReply( QNetworkReply *const &reply )
                     .arg( api_command )
                     .arg( QString::fromLocal8Bit( data ) );
 
-        engine->deleteReply( reply, request );
+        deleteReply( reply, request );
         return;
     }
 
@@ -564,7 +564,7 @@ void BncREST::onNamReply( QNetworkReply *const &reply )
     }
 
     // cleanup
-    engine->deleteReply( reply, request );
+    deleteReply( reply, request );
 }
 
 void BncREST::onCheckBotOrders()

@@ -726,7 +726,7 @@ void PoloREST::onNamReply( QNetworkReply *const &reply )
             // check for bad ptr, and the position should also be queued
             if ( !request->pos || !engine->positions->isQueued( request->pos ) )
             {
-                engine->deleteReply( reply, request );
+                deleteReply( reply, request );
                 return;
             }
 
@@ -751,7 +751,7 @@ void PoloREST::onNamReply( QNetworkReply *const &reply )
                     .arg( api_command )
                     .arg( QString::fromLocal8Bit( data ) );
 
-        engine->deleteReply( reply, request );
+        deleteReply( reply, request );
         return;
     }
 
@@ -777,7 +777,7 @@ void PoloREST::onNamReply( QNetworkReply *const &reply )
             if ( !pos || !engine->positions->isValid( pos ) ) // check positions_all, these should be queued not active
             {
                 kDebug() << "unknown" << api_command << "reply:" << data;
-                engine->deleteReply( reply, request );
+                deleteReply( reply, request );
                 return;
             }
 
@@ -787,7 +787,7 @@ void PoloREST::onNamReply( QNetworkReply *const &reply )
             // resend command
             sendBuySell( pos );
 
-            engine->deleteReply( reply, request );
+            deleteReply( reply, request );
             return;
         }
         // correctly delete orders we tried to cancel but are already filled/gone
@@ -801,7 +801,7 @@ void PoloREST::onNamReply( QNetworkReply *const &reply )
             if ( !pos || !engine->positions->isActive( pos ) )
             {
                 kDebug() << "unknown cancel reply:" << data;
-                engine->deleteReply( reply, request );
+                deleteReply( reply, request );
                 return;
             }
 
@@ -811,7 +811,7 @@ void PoloREST::onNamReply( QNetworkReply *const &reply )
             {
                 // do single order fill
                 engine->processFilledOrders( QVector<Position*>() << pos, FILL_CANCEL );
-                engine->deleteReply( reply, request );
+                deleteReply( reply, request );
                 return;
             }
 
@@ -823,7 +823,7 @@ void PoloREST::onNamReply( QNetworkReply *const &reply )
             // there are some errors that we don't handle yet, so we just go on with handling them as if everything is fine
             engine->processCancelledOrder( pos );
 
-            engine->deleteReply( reply, request );
+            deleteReply( reply, request );
             return;
         }
         // react to some common errors
@@ -839,7 +839,7 @@ void PoloREST::onNamReply( QNetworkReply *const &reply )
                 // check for bad ptr, and the position should also be queued
                 if ( !request->pos || !engine->positions->isQueued( request->pos ) )
                 {
-                    engine->deleteReply( reply, request );
+                    deleteReply( reply, request );
                     return;
                 }
 
@@ -847,7 +847,7 @@ void PoloREST::onNamReply( QNetworkReply *const &reply )
                 if ( request->pos->order_set_time > 0 )
                 {
                     kDebug() << "local warning: avoiding re-sent request for order already set";
-                    engine->deleteReply( reply, request );
+                    deleteReply( reply, request );
                     return;
                 }
 
@@ -890,7 +890,7 @@ void PoloREST::onNamReply( QNetworkReply *const &reply )
 
             if ( api_command == POLO_COMMAND_GETORDERS )
             {
-                engine->deleteReply( reply, request );
+                deleteReply( reply, request );
                 return;
             }
             else
@@ -905,7 +905,7 @@ void PoloREST::onNamReply( QNetworkReply *const &reply )
                     .arg( api_command )
                     .arg( error_str );
 
-        engine->deleteReply( reply, request );
+        deleteReply( reply, request );
         return;
     }
 
@@ -940,7 +940,7 @@ void PoloREST::onNamReply( QNetworkReply *const &reply )
     }
 
     // cleanup
-    engine->deleteReply( reply, request );
+    deleteReply( reply, request );
 }
 
 void PoloREST::wssConnected()

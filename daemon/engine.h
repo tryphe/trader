@@ -64,7 +64,6 @@ public:
                             qint32 landmark_start, qint32 landmark_thresh, bool market_sentiment, qreal market_offset );
 
     void findBetterPrice( Position *const &pos );
-    void deleteReply( QNetworkReply *const &reply, Request *const &request );
 
 public Q_SLOTS:
     void onCheckTimeouts();

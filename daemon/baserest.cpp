@@ -158,3 +158,25 @@ void BaseREST::removeRequest( const QString &api_command, const QString &body )
     while ( removed_requests.size() > 0 )
         nam_queue.removeOne( removed_requests.takeFirst() );
 }
+
+void BaseREST::deleteReply( QNetworkReply * const &reply, Request * const &request )
+{
+    // remove from tracking queue
+    if ( reply == nullptr || request == nullptr )
+    {
+        kDebug() << "local error: got bad request/reply" << &request << &reply;
+        return;
+    }
+
+    delete request;
+
+    // if we took it out, it won't be in there. remove incase it's still there.
+    nam_queue_sent.remove( reply );
+
+    // send interrupt signal if we need to (if we are cleaning up replies in transit)
+    if ( !reply->isFinished() )
+        reply->abort();
+
+    // delete from heap
+    reply->deleteLater();
+}

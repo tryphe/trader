@@ -31,6 +31,7 @@ struct BaseREST : public QObject
     bool isCommandQueued( const QString &api_command ) const;
     bool isCommandSent( const QString &api_command, qint32 min_times = 1 ) const;
     void removeRequest( const QString &api_command, const QString &body );
+    void deleteReply( QNetworkReply *const &reply, Request *const &request );
 
     QQueue<Request*> nam_queue; // queue for requests so we can load balance timestamp/hmac generation
     QHash<QNetworkReply*,Request*> nam_queue_sent; // request tracking queue

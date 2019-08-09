@@ -635,7 +635,7 @@ void PositionMan::remove( Position * const &pos )
     while ( deleted_queue.size() > 0 )
     {
         QPair<QNetworkReply*,Request*> pair = deleted_queue.takeFirst();
-        engine->deleteReply( pair.first, pair.second );
+        engine->rest->deleteReply( pair.first, pair.second );
     }
 
     /// step 3: remove from maps/containers

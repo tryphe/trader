@@ -1630,25 +1630,3 @@ void Engine::setMarketSettings( QString market, qint32 order_min, qint32 order_m
     info.market_sentiment = market_sentiment;
     info.market_offset = market_offset;
 }
-
-void Engine::deleteReply( QNetworkReply * const &reply, Request * const &request )
-{
-    // remove from tracking queue
-    if ( reply == nullptr || request == nullptr )
-    {
-        kDebug() << "local error: got bad request/reply" << &request << &reply;
-        return;
-    }
-
-    delete request;
-
-    // if we took it out, it won't be in there. remove incase it's still there.
-    rest->nam_queue_sent.remove( reply );
-
-    // send interrupt signal if we need to (if we are cleaning up replies in transit)
-    if ( !reply->isFinished() )
-        reply->abort();
-
-    // delete from heap
-    reply->deleteLater();
-}
