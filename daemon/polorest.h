@@ -78,7 +78,6 @@ public:
     QMap<QString /*market*/, qreal> slippage_multiplier;
 
     qint64 poloniex_throttle_time; // when we should wait until to sent the next request
-    bool should_correct_nonce;
     qint64 wss_safety_delay_time;
 
     bool wss_1000_state, wss_1002_state;

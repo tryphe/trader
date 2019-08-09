@@ -164,28 +164,6 @@ static inline QByteArray getBncSignature( const QByteArray &body, const QByteArr
     return QMessageAuthenticationCode::hash( body, secret, QCryptographicHash::Sha256 ).toHex();
 }
 
-static inline QString getExchangeNonce( qint64 *current_nonce, bool should_correct_nonce = false )
-{
-    // calculate a new nonce and compare it against the old nonce
-    qint64 request_nonce_new = QDateTime::currentMSecsSinceEpoch();// 1423753004519 + QDateTime::currentMSecsSinceEpoch();
-    QString request_nonce_str;
-
-    // let a corrected nonce past incase we got a nonce error (allow multi-bot per key)
-    if ( request_nonce_new <= *current_nonce &&
-         should_correct_nonce )
-    {
-        // let it past incase we overwrote with new_nonce
-        request_nonce_str = QString::number( ++*current_nonce );
-    }
-    else
-    {
-        request_nonce_str = QString::number( request_nonce_new );
-        *current_nonce = request_nonce_new;
-    }
-
-    return request_nonce_str;
-}
-
 static inline const QString getConfigPath()
 {
     return QStandardPaths::writableLocation( QStandardPaths::ConfigLocation );

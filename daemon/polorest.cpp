@@ -147,14 +147,11 @@ void PoloREST::init()
     wss_timer = new QTimer( this );
     connect( wss_timer, &QTimer::timeout, this, &PoloREST::wssCheckConnection );
     wss_timer->setTimerType( Qt::VeryCoarseTimer );
-    wss_timer->start( 15000 );
-    wssCheckConnection();
 
 #ifdef SECONDARY_BOT
     send_timer->setInterval( 400 );
     orderbook_timer->setInterval( 10000 );
     ticker_timer->setInterval( 20000 );
-    should_correct_nonce = true;
     engine->should_clear_stray_orders = false;
     engine->should_clear_stray_orders_all = false;
 #endif
@@ -202,9 +199,7 @@ void PoloREST::sendNamRequest( Request *const &request )
     if ( !query.hasQueryItem( COMMAND ) )
         query.addQueryItem( COMMAND, api_command );
 
-    const QString request_nonce_str = Global::getExchangeNonce( &request_nonce, should_correct_nonce );
-
-    query.addQueryItem( NONCE, request_nonce_str );
+    query.addQueryItem( NONCE, QString::number( ++request_nonce ) );
 
     // form nam request and body
     QNetworkRequest nam_request;
@@ -447,18 +442,20 @@ void PoloREST::parseFeeInfo( const QJsonObject &info )
         return;
     }
 
-    const QString &maker = info[ "makerFee" ].toString();
-    const QString &taker = info[ "takerFee" ].toString();
+    const Coin maker = info[ "makerFee" ].toString();
+    const Coin taker = info[ "takerFee" ].toString();
     const QString &thirty_day_volume = info[ "thirtyDayVolume" ].toString();
 
-    if ( Coin( maker ).isGreaterThanZero() )
+    if ( maker.isGreaterThanZero() )
     {
         engine->settings->fee = maker;
         kDebug() << QString( "(fee) maker %1%, taker %2%, 30-day volume %3" )
-                             .arg( QString( Coin( maker ) * 100 ).mid( 0, 4 ) )
-                             .arg( QString( Coin( taker ) * 100 ).mid( 0, 4 ) )
+                             .arg( ( maker * 100 ).toAmountString().mid( 0, 4 ) )
+                             .arg( ( taker * 100 ).toAmountString().mid( 0, 4 ) )
                              .arg( thirty_day_volume );
-        //kDebug() << info;
+
+        wss_timer->start( 30000 );
+        wssCheckConnection(); // piggyback, submit wss stuff after first command sent
     }
     else
     {
@@ -870,18 +867,26 @@ void PoloREST::onNamReply( QNetworkReply *const &reply )
         // nonce error
         if ( error_str.startsWith( "Nonce must be great" ) )
         {
-            if ( should_correct_nonce )
-            {
-                // set the nonce to what it says
-                const QStringList words = error_str.split( QChar( ' ' ) );
-                qint64 new_nonce = words.value( 5 ).remove( QChar( '.' ) ).toLongLong() +1;
+            // read the nonce from the message
+            const QStringList words = error_str.split( QChar( ' ' ) );
+            bool ok = false;
+            qint64 new_nonce = words.value( 5 ).remove( QChar( '.' ) ).toLongLong( &ok ) +1;
 
-                // make sure our local nonce is older than the new calculated nonce
-                if ( request_nonce < new_nonce )
-                {
-                    request_nonce = new_nonce;
-                    kDebug() << "local info: nonce adjusted";
-                }
+            // make sure our local nonce is older than the new calculated nonce
+            if ( ok == true && request_nonce < new_nonce )
+            {
+                kDebug() << "local info: nonce adjusted from" << request_nonce << "to" << new_nonce;
+                request_nonce = new_nonce;
+            }
+            // if conversion failed, leave an error message
+            else if ( ok == false )
+            {
+                kDebug() << "local error: got nonce error but conversion failed";
+            }
+            // if the nonce was old, leave an info message
+            else
+            {
+                kDebug() << "local info: got nonce error but new nonce" << new_nonce << "is older than local nonce" << request_nonce;
             }
 
             if ( api_command == POLO_COMMAND_GETORDERS )
@@ -952,7 +957,7 @@ void PoloREST::wssSendSubscriptions()
     if ( !wss_1000_state &&
          wss_1000_subscribe_try_time < current_time - 30000 )
     {
-        const QString nonce_payload = QString( "nonce=%1" ).arg( Global::getExchangeNonce( &request_nonce, should_correct_nonce ) );
+        const QString nonce_payload = QString( "nonce=%1" ).arg( ++request_nonce );
         const QString sign = Global::getBittrexPoloSignature( nonce_payload.toUtf8(), keystore.getSecret() );
 
         const QJsonObject subscribe_account_notifications
@@ -1199,6 +1204,10 @@ void PoloREST::wssTextMessageReceived( const QString &msg )
         kDebug() << "(wss) 1000 account feed active";
         wss_1000_state = true;
         return;
+    }
+    else if ( message_type == 1000 )
+    {
+        kDebug() << "(wss) 1000 bad status:" << status;
     }
 
     if ( message_type == 1002 && status > 0 )
