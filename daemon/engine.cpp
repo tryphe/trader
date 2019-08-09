@@ -343,29 +343,45 @@ if ( !is_testing )
     positions->remove( pos );
 }
 
-void Engine::processFilledOrders( QVector<Position*> &filled_positions, qint8 fill_type )
+void Engine::processFilledOrders( QVector<Position*> &to_be_filled, qint8 fill_type )
 {
-    // sort the orders
-    QMap<Coin,Position*> sorted; // key = (lo/hi) - lower is better
-    for ( QVector<Position*>::const_iterator i = filled_positions.begin(); i != filled_positions.end(); i++ )
+    /// step 1: build markets list
+    QMap<QString,QVector<Position*>> markets;
+    for ( QVector<Position*>::const_iterator i = to_be_filled.begin(); i != to_be_filled.end(); i++ )
+        markets[ (*i)->market ] += (*i);
+
+    /// step 2: get avg for each market and process new buys <= avg and new sells > avg
+    for ( QMap<QString,QVector<Position*>>::const_iterator i = markets.begin(); i != markets.end(); i++ )
     {
-        Position *const &pos = *i;
+        const QString &market = i.key();
+        const MarketInfo &info = market_info[ market ];
+        const QVector<Position*> &positions = i.value();
 
-        // set invalidated
-        pos->is_invalidated = true;
+        // find price avg
+        Coin price_avg;
+        for ( QVector<Position*>::const_iterator j = positions.begin(); j != positions.end(); j++ )
+            price_avg += (*j)->getFlippedPrice();
 
-        // onetime orders, buy or sell price is zero, we'll process these last
-        if ( pos->is_onetime )
-            sorted.insert( CoinAmount::COIN, pos );
-        else // process the fills by greatest distances first in order to guesstimate temporary spread evenly
-            sorted.insert( pos->buy_price / pos->sell_price, pos );
+        price_avg /= positions.size();
+        price_avg.truncateByTicksize( info.price_ticksize ); // floor by satoshis
+
+        // process in-bounds orders and save outliers for later
+        for ( QVector<Position*>::const_iterator j = positions.begin(); j != positions.end(); j++ )
+        {
+            Position *const &pos = *j;
+
+            if ( ( pos->side == SIDE_SELL && pos->getFlippedPrice() <= price_avg ) || // new buy is lt avg
+                 ( pos->side == SIDE_BUY  && pos->getFlippedPrice() >  price_avg ) )  // new sell is gte avg
+            {
+                fillNQ( pos->order_number, fill_type );
+                to_be_filled.removeOne( pos );
+            }
+        }
     }
 
-    for ( QMap<Coin,Position*>::const_iterator i = sorted.begin(); i != sorted.end(); i++ )
-    {
-        Position *const &pos = i.value();
-        fillNQ( pos->order_number, fill_type );
-    }
+    /// step 3: fill remaining outliers
+    for ( QVector<Position*>::const_iterator i = to_be_filled.begin(); i != to_be_filled.end(); i++ )
+        fillNQ( (*i)->order_number, fill_type );
 }
 
 void Engine::processOpenOrders( QVector<QString> &order_numbers, QMultiHash<QString, OrderInfo> &orders, qint64 request_time_sent_ms )

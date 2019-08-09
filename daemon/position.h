@@ -35,7 +35,7 @@ public:
 
     // exchange data
     QString market, // BTC_CLAM...
-            price,
+            price, // cache price to avoid toSatoshiFormat conversion
             original_size,
             order_number;
 

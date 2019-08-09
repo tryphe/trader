@@ -211,14 +211,12 @@ void EngineTest::test( Engine *e )
     // simulate fills
     e->processFilledOrders( pp, FILL_WSS );
 
+    QMap<QString,qint32> price_count;
     for ( QSet<Position*>::const_iterator i = e->positions->all().begin(); i != e->positions->all().end(); i++ )
-    {
-        Position *pos = *i;
-        if ( pos->side == SIDE_BUY )
-            assert( pos->price == "0.00000004" );
-        else
-            assert( pos->price == "0.00000005" );
-    }
+        price_count[ (*i)->price ]++;
+
+    assert( price_count[ QLatin1String( "0.00000004" ) ] == 4 ); // 4 buys at 4
+    assert( price_count[ QLatin1String( "0.00000005" ) ] == 3 ); // 3 sells at 5
 
     assert( e->positions->all().size() == 7 );
     e->positions->cancelLocal();
@@ -238,18 +236,53 @@ void EngineTest::test( Engine *e )
     // simulate fills
     e->processFilledOrders( pp, FILL_WSS );
 
+    price_count.clear();
     for ( QSet<Position*>::const_iterator i = e->positions->all().begin(); i != e->positions->all().end(); i++ )
-    {
-        Position *pos = *i;
-        if ( pos->side == SIDE_BUY )
-        {
-            assert( pos->price == "0.00000056" );
-            assert( pos->is_slippage );
-        }
-        else
-            assert( pos->price == "0.00000057" );
-    }
+        price_count[ (*i)->price ]++;
+
+    assert( price_count[ QLatin1String( "0.00000056" ) ] == 1 ); // buy at 56
+    assert( price_count[ QLatin1String( "0.00000057" ) ] == 1 ); // sell at 57
+
     assert( e->positions->all().size() == 2 );
+    e->positions->cancelLocal();
+    assert( e->positions->all().size() == 0 );
+    ///
+
+    /// run "non-chalant spread fill" spread test
+    /// rather than converging to a point, sort our pre-fill by a more optimal value - the average of flipped prices
+    ///
+    ///   BUYS   |  SELLS
+    ///   1 2 3  |  14 15 16 17
+    ///         \_/
+    ///
+    ///  7 8 8 8 | 9 9 9
+    ///
+    /// hi/lo sort method would converge at 6|7 which would be suboptimal, 8|9 is much better
+    ///
+    e->market_info[ "TEST" ].highest_buy = "0.00000004";
+    e->market_info[ "TEST" ].lowest_sell = "0.00000010";
+    pp.clear();
+    pp += e->addPosition( "TEST", SIDE_BUY,  "0.00000001", "0.00000007", "0.1", "active" ); // 0
+    pp += e->addPosition( "TEST", SIDE_BUY,  "0.00000002", "0.00000008", "0.1", "active" ); // 1
+    pp += e->addPosition( "TEST", SIDE_BUY,  "0.00000003", "0.00000009", "0.1", "active" ); // 2
+    pp += e->addPosition( "TEST", SIDE_SELL, "0.00000007", "0.00000014", "0.1", "active" ); // 3
+    pp += e->addPosition( "TEST", SIDE_SELL, "0.00000008", "0.00000015", "0.1", "active" ); // 4
+    pp += e->addPosition( "TEST", SIDE_SELL, "0.00000009", "0.00000016", "0.1", "active" ); // 5
+    pp += e->addPosition( "TEST", SIDE_SELL, "0.00000010", "0.00000017", "0.1", "active" ); // 6
+
+    // simulate fills
+    e->processFilledOrders( pp, FILL_WSS );
+
+    // spread at 8|9
+    price_count.clear();
+    for ( QSet<Position*>::const_iterator i = e->positions->all().begin(); i != e->positions->all().end(); i++ )
+        price_count[ (*i)->price ]++;
+
+    assert( price_count[ QLatin1String( "0.00000007" ) ] == 1 ); // 1 buy at 7
+    assert( price_count[ QLatin1String( "0.00000008" ) ] == 3 ); // 3 buys at 8
+    assert( price_count[ QLatin1String( "0.00000009" ) ] == 3 ); // 3 sells at 9
+
+    assert( e->positions->all().size() == 7 );
     e->positions->cancelLocal();
     assert( e->positions->all().size() == 0 );
     ///
@@ -262,7 +295,6 @@ void EngineTest::test( Engine *e )
 
     // make sure the engine was cleared of our test positions and markets
     assert( e->positions->queued().size() == 0 );
-    assert( e->positions->all().size() == 0 );
     assert( e->getMarketInfoStructure().size() == 0 );
     assert( e->positions->getDCCount() == 0 );
     assert( e->positions->diverging_converging.size() == 0 );

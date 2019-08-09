@@ -29,7 +29,7 @@ public:
                            QString order_size, QString type = "active", QString strategy_tag = QLatin1String(),
                            QVector<qint32> indices = QVector<qint32>(), bool landmark = false, bool quiet = false );
 
-    void processFilledOrders( QVector<Position*> &filled_positions, qint8 fill_type );
+    void processFilledOrders( QVector<Position*> &to_be_filled, qint8 fill_type );
 
     // post-parse processing stuff
     void processOpenOrders( QVector<QString> &order_numbers, QMultiHash<QString, OrderInfo> &orders, qint64 request_time_sent_ms );
