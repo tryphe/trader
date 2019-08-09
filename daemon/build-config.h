@@ -1,7 +1,7 @@
 #ifndef BUILDCONFIG_H
 #define BUILDCONFIG_H
 
-#define BUILD_VERSION "1.73j"
+#define BUILD_VERSION "1.73k"
 
 /// select your exchange
 //#define EXCHANGE_BITTREX
@@ -17,13 +17,13 @@
 //#define PRINT_LOGS_WITH_FUNCTION_NAMES
 #define PRINT_ENABLED_SSL_CIPHERS
 //#define PRINT_DISABLED_SSL_CIPHERS
-#define PRINT_TEST_PERFORMANCE
 
 /// allow bulk input from in.txt? (deprecated with ipc sockets)
 #define FALLBACK_FILE_INPUT
 
 /// build options
-//#define TRYPHE_BUILD
-//#define SECONDARY_BOT
+#define EXTRA_NICE // be extra nice to the exchange api
+#define TRYPHE_BUILD
+
 
 #endif // BUILDCONFIG_H

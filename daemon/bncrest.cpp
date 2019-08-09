@@ -123,15 +123,13 @@ void BncREST::init()
     onCheckTicker();
     onCheckBotOrders();
 
-#ifdef SECONDARY_BOT
+#ifdef EXTRA_NICE
     send_timer->setInterval( 400 );
-    orderbook_timer->setInterval( 10000 );
-    ticker_timer->setInterval( 20000 );
-    engine->should_clear_stray_orders = false;
-    engine->should_clear_stray_orders_all = false;
+    orderbook_timer->setInterval( 20000 );
+    ticker_timer->setInterval( 30000 );
 #endif
 
-    //sendRequest( "sign-get-order", "symbol=XMRBTC&orderId=53849332" );
+    //sendRequest( "sign-get-order", "symbol=XMRBTC&orderId=53842" );
 }
 
 void BncREST::sendNamQueue()

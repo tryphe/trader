@@ -119,9 +119,10 @@ void TrexREST::init()
     ticker_timer->start( 10000 );
     onCheckOrderBooks();
 
-#ifdef SECONDARY_BOT
-    engine->should_clear_stray_orders = false;
-    engine->should_clear_stray_orders_all = false;
+#ifdef EXTRA_NICE
+    order_history_timer->setInterval( 20000 );
+    orderbook_timer->setInterval( 30000 );
+    ticker_timer->setInterval( 30000 );
 #endif
 
     //sendRequest( "account/getdepositaddress", "NXT" );
