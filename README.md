@@ -90,7 +90,7 @@ A ping-pong position is simple. It's defined as a price variation with an order 
 - Buy price
 - Sell price
 - Order size
-- Initial state (buy or sell)
+- State - buy or sell
 	
 Suppose you want to ping-pong between buying 0.1 BTC worth of DOGE at 10 satoshi, and selling it at 30 satoshis. You'd run this command:\
 `trader-poloniex setorder BTC_DOGE buy 0.00000010 0.00000030 0.1 active`
