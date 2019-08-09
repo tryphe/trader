@@ -4,7 +4,7 @@
 class Engine;
 
 struct EngineTest {
-static void test( Engine *e );
+    void test( Engine *e );
 };
 
 #endif // ENGINE_TEST_H

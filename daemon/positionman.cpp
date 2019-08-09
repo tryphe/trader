@@ -854,9 +854,7 @@ void PositionMan::cancelLowest( const QString &market )
 
 void PositionMan::checkBuySellCount()
 {
-    static QMap<QString /*market*/, qint32> buys, sells;
-    buys.clear();
-    sells.clear();
+    QMap<QString /*market*/, qint32> buys, sells;
 
     // look for highest index in active and queued positions
     for ( QSet<Position*>::const_iterator i = all().begin(); i != all().end(); i++ )
@@ -1002,13 +1000,12 @@ void PositionMan::setNextLowest( const QString &market, quint8 side, bool landma
             isDivergingConverging( market, new_index ) )
         new_index--;
 
-    QVector<qint32> indices = QVector<qint32>() << new_index;
-
     // check if we ran out of indexed positions so we don't make a bogus order
-    if ( indices.value( 0 ) < 0 )
+    if ( new_index < 0 )
         return; // we need at least 1 valid index
 
     // add an index until we run out of bounds or our landmark size is matched
+    QVector<qint32> indices = QVector<qint32>() << new_index;
     while ( landmark && indices.size() < dc_val )
     {
         new_index = indices.value( indices.size() -1 ) -1;
@@ -1093,13 +1090,12 @@ void PositionMan::setNextHighest( const QString &market, quint8 side, bool landm
             isDivergingConverging( market, new_index ) )
         new_index++;
 
-    QVector<qint32> indices = QVector<qint32>() << new_index;
-
     // check if we ran out of indexed positions
-    if ( indices.value( 0 ) >= info.position_index.size() )
+    if ( new_index >= info.position_index.size() )
         return;
 
     // add an index until we run out of bounds or our landmark size is matched
+    QVector<qint32> indices = QVector<qint32>() << new_index;
     while ( landmark && indices.size() < dc_val )
     {
         new_index = indices.value( indices.size() -1 ) +1;

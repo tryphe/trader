@@ -388,8 +388,7 @@ void Engine::processOpenOrders( QVector<QString> &order_numbers, QMultiHash<QStr
     const qint64 current_time = QDateTime::currentMSecsSinceEpoch(); // cache time
     qint32 ct_cancelled = 0, ct_all = 0;
 
-    static QQueue<QString> stray_orders;
-    stray_orders.clear();
+    QQueue<QString> stray_orders;
 
     for ( QMultiHash<QString, OrderInfo>::const_iterator i = orders.begin(); i != orders.end(); i++ )
     {

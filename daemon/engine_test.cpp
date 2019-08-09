@@ -14,6 +14,10 @@
 
 void EngineTest::test( Engine *e )
 {
+    // make sure we are ready to start
+    assert( e->getRest() != nullptr );
+    assert( e->getStats() != nullptr );
+
     e->setTesting( true );
     e->setVerbosity( 0 );
 
@@ -390,8 +394,4 @@ void EngineTest::test( Engine *e )
     assert( e->getMarketInfoStructure().size() == 0 );
     assert( e->positions->getDCCount() == 0 );
     assert( e->positions->diverging_converging.size() == 0 );
-
-    // make sure we are ready to start
-    assert( e->getRest() != nullptr );
-    assert( e->getStats() != nullptr );
 }
