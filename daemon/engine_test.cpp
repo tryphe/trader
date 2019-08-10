@@ -126,7 +126,7 @@ void EngineTest::test( Engine *e )
     test_index_1 += PositionData( "0.00000001", "0.00000060", "0.02", QLatin1String() ); // idx 1
     test_index_1 += PositionData( "0.00000001", "0.00000070", "0.03", QLatin1String() ); // idx 2
     landmark_indices = QVector<qint32>() << 0 << 1 << 2;
-    Position *p5 = e->addPosition( "TEST", SIDE_BUY, "0.00000001", "0.00000002", "0.00000000", "active", "test-strat", landmark_indices, true );
+    Position *p5 = e->addPosition( "TEST", SIDE_BUY, "0.00000001", "0.00000002", "0.00000000", ACTIVE, "test-strat", landmark_indices, true );
     assert( p5 != nullptr );
     assert( p5->btc_amount == "0.06000000" );
     assert( p5->quantity == "6000000.00000000" );
@@ -149,7 +149,7 @@ void EngineTest::test( Engine *e )
     e->market_info[ "TEST" ].highest_buy = "0.00000083";
     e->market_info[ "TEST" ].lowest_sell = "0.00000084";
 
-    pp += e->addPosition( "TEST", SIDE_BUY,  "0.00000083", "0.00000084", "0.1", "active" ); // 0
+    pp += e->addPosition( "TEST", SIDE_BUY,  "0.00000083", "0.00000084", "0.1", ACTIVE ); // 0
 
     // simulate fills
     e->processFilledOrders( pp, FILL_WSS );
@@ -170,7 +170,7 @@ void EngineTest::test( Engine *e )
     e->market_info[ "TEST" ].highest_buy = "0.00000095";
     e->market_info[ "TEST" ].lowest_sell = "0.00000100";
 
-    pp += e->addPosition( "TEST", SIDE_BUY,  "0.00000105", "0.00000200", "0.1", "active" ); // 0
+    pp += e->addPosition( "TEST", SIDE_BUY,  "0.00000105", "0.00000200", "0.1", ACTIVE ); // 0
 
     assert( pp.value( 0 )->price == "0.00000099" );
 
@@ -185,7 +185,7 @@ void EngineTest::test( Engine *e )
     e->market_info[ "TEST" ].highest_buy = "0.00000050";
     e->market_info[ "TEST" ].lowest_sell = "0.00000055";
 
-    pp += e->addPosition( "TEST", SIDE_SELL,  "0.00000030", "0.00000045", "0.1", "active" ); // 0
+    pp += e->addPosition( "TEST", SIDE_SELL,  "0.00000030", "0.00000045", "0.1", ACTIVE ); // 0
 
     assert( pp.value( 0 )->price == "0.00000051" );
 
@@ -204,13 +204,13 @@ void EngineTest::test( Engine *e )
     e->market_info[ "TEST" ].highest_buy = "0.00000004";
     e->market_info[ "TEST" ].lowest_sell = "0.00000005";
     pp.clear();
-    pp += e->addPosition( "TEST", SIDE_BUY,  "0.00000001", "0.00000002", "0.1", "active" ); // 0
-    pp += e->addPosition( "TEST", SIDE_BUY,  "0.00000002", "0.00000003", "0.1", "active" ); // 1
-    pp += e->addPosition( "TEST", SIDE_BUY,  "0.00000003", "0.00000004", "0.1", "active" ); // 2
-    pp += e->addPosition( "TEST", SIDE_SELL, "0.00000004", "0.00000005", "0.1", "active" ); // 3
-    pp += e->addPosition( "TEST", SIDE_SELL, "0.00000005", "0.00000006", "0.1", "active" ); // 4
-    pp += e->addPosition( "TEST", SIDE_SELL, "0.00000006", "0.00000007", "0.1", "active" ); // 5
-    pp += e->addPosition( "TEST", SIDE_SELL, "0.00000007", "0.00000008", "0.1", "active" ); // 6
+    pp += e->addPosition( "TEST", SIDE_BUY,  "0.00000001", "0.00000002", "0.1", ACTIVE ); // 0
+    pp += e->addPosition( "TEST", SIDE_BUY,  "0.00000002", "0.00000003", "0.1", ACTIVE ); // 1
+    pp += e->addPosition( "TEST", SIDE_BUY,  "0.00000003", "0.00000004", "0.1", ACTIVE ); // 2
+    pp += e->addPosition( "TEST", SIDE_SELL, "0.00000004", "0.00000005", "0.1", ACTIVE ); // 3
+    pp += e->addPosition( "TEST", SIDE_SELL, "0.00000005", "0.00000006", "0.1", ACTIVE ); // 4
+    pp += e->addPosition( "TEST", SIDE_SELL, "0.00000006", "0.00000007", "0.1", ACTIVE ); // 5
+    pp += e->addPosition( "TEST", SIDE_SELL, "0.00000007", "0.00000008", "0.1", ACTIVE ); // 6
 
     // simulate fills
     e->processFilledOrders( pp, FILL_WSS );
@@ -234,8 +234,8 @@ void EngineTest::test( Engine *e )
     e->market_info[ "TEST" ].highest_buy = "0.00000055";
     e->market_info[ "TEST" ].lowest_sell = "0.00000060";
     pp.clear();
-    pp += e->addPosition( "TEST", SIDE_BUY,  "0.00000055", "0.00000057", "0.1", "active" ); // 0
-    pp += e->addPosition( "TEST", SIDE_SELL, "0.00000058", "0.00000060", "0.1", "active" ); // 2
+    pp += e->addPosition( "TEST", SIDE_BUY,  "0.00000055", "0.00000057", "0.1", ACTIVE ); // 0
+    pp += e->addPosition( "TEST", SIDE_SELL, "0.00000058", "0.00000060", "0.1", ACTIVE ); // 2
 
     // simulate fills
     e->processFilledOrders( pp, FILL_WSS );
@@ -266,13 +266,13 @@ void EngineTest::test( Engine *e )
     e->market_info[ "TEST" ].highest_buy = "0.00000004";
     e->market_info[ "TEST" ].lowest_sell = "0.00000010";
     pp.clear();
-    pp += e->addPosition( "TEST", SIDE_BUY,  "0.00000001", "0.00000007", "0.1", "active" ); // 0
-    pp += e->addPosition( "TEST", SIDE_BUY,  "0.00000002", "0.00000008", "0.1", "active" ); // 1
-    pp += e->addPosition( "TEST", SIDE_BUY,  "0.00000003", "0.00000009", "0.1", "active" ); // 2
-    pp += e->addPosition( "TEST", SIDE_SELL, "0.00000007", "0.00000014", "0.1", "active" ); // 3
-    pp += e->addPosition( "TEST", SIDE_SELL, "0.00000008", "0.00000015", "0.1", "active" ); // 4
-    pp += e->addPosition( "TEST", SIDE_SELL, "0.00000009", "0.00000016", "0.1", "active" ); // 5
-    pp += e->addPosition( "TEST", SIDE_SELL, "0.00000010", "0.00000017", "0.1", "active" ); // 6
+    pp += e->addPosition( "TEST", SIDE_BUY,  "0.00000001", "0.00000007", "0.1", ACTIVE ); // 0
+    pp += e->addPosition( "TEST", SIDE_BUY,  "0.00000002", "0.00000008", "0.1", ACTIVE ); // 1
+    pp += e->addPosition( "TEST", SIDE_BUY,  "0.00000003", "0.00000009", "0.1", ACTIVE ); // 2
+    pp += e->addPosition( "TEST", SIDE_SELL, "0.00000007", "0.00000014", "0.1", ACTIVE ); // 3
+    pp += e->addPosition( "TEST", SIDE_SELL, "0.00000008", "0.00000015", "0.1", ACTIVE ); // 4
+    pp += e->addPosition( "TEST", SIDE_SELL, "0.00000009", "0.00000016", "0.1", ACTIVE ); // 5
+    pp += e->addPosition( "TEST", SIDE_SELL, "0.00000010", "0.00000017", "0.1", ACTIVE ); // 6
 
     // simulate fills
     e->processFilledOrders( pp, FILL_WSS );
@@ -301,44 +301,44 @@ void EngineTest::test( Engine *e )
     e->market_info[ "TEST" ].highest_buy = "0.00000023";
     e->market_info[ "TEST" ].lowest_sell = "0.00000033";
     pp.clear();
-    pp += e->addPosition( "TEST", SIDE_BUY,  "0.00000006", "0.00000015", "0.1", "active" ); // 0
-    pp += e->addPosition( "TEST", SIDE_BUY,  "0.00000007", "0.00000016", "0.1", "active" );
-    pp += e->addPosition( "TEST", SIDE_BUY,  "0.00000008", "0.00000017", "0.1", "active" );
-    pp += e->addPosition( "TEST", SIDE_BUY,  "0.00000009", "0.00000018", "0.1", "active" );
-    pp += e->addPosition( "TEST", SIDE_BUY,  "0.00000010", "0.00000019", "0.1", "active" );
-    pp += e->addPosition( "TEST", SIDE_BUY,  "0.00000011", "0.00000020", "0.1", "active" ); // 5
-    pp += e->addPosition( "TEST", SIDE_BUY,  "0.00000012", "0.00000021", "0.1", "active" );
-    pp += e->addPosition( "TEST", SIDE_BUY,  "0.00000013", "0.00000022", "0.1", "active" );
-    pp += e->addPosition( "TEST", SIDE_BUY,  "0.00000014", "0.00000023", "0.1", "active" );
-    pp += e->addPosition( "TEST", SIDE_BUY,  "0.00000015", "0.00000024", "0.1", "active" );
-    pp += e->addPosition( "TEST", SIDE_BUY,  "0.00000016", "0.00000025", "0.1", "active" ); // 10
-    pp += e->addPosition( "TEST", SIDE_BUY,  "0.00000017", "0.00000026", "0.1", "active" );
-    pp += e->addPosition( "TEST", SIDE_BUY,  "0.00000018", "0.00000027", "0.1", "active" );
-    pp += e->addPosition( "TEST", SIDE_BUY,  "0.00000019", "0.00000028", "0.1", "active" );
-    pp += e->addPosition( "TEST", SIDE_BUY,  "0.00000020", "0.00000029", "0.1", "active" );
-    pp += e->addPosition( "TEST", SIDE_BUY,  "0.00000021", "0.00000030", "0.1", "active" ); // 15
-    pp += e->addPosition( "TEST", SIDE_BUY,  "0.00000022", "0.00000031", "0.1", "active" );
-    pp += e->addPosition( "TEST", SIDE_BUY,  "0.00000023", "0.00000032", "0.1", "active" );
+    pp += e->addPosition( "TEST", SIDE_BUY,  "0.00000006", "0.00000015", "0.1", ACTIVE ); // 0
+    pp += e->addPosition( "TEST", SIDE_BUY,  "0.00000007", "0.00000016", "0.1", ACTIVE );
+    pp += e->addPosition( "TEST", SIDE_BUY,  "0.00000008", "0.00000017", "0.1", ACTIVE );
+    pp += e->addPosition( "TEST", SIDE_BUY,  "0.00000009", "0.00000018", "0.1", ACTIVE );
+    pp += e->addPosition( "TEST", SIDE_BUY,  "0.00000010", "0.00000019", "0.1", ACTIVE );
+    pp += e->addPosition( "TEST", SIDE_BUY,  "0.00000011", "0.00000020", "0.1", ACTIVE ); // 5
+    pp += e->addPosition( "TEST", SIDE_BUY,  "0.00000012", "0.00000021", "0.1", ACTIVE );
+    pp += e->addPosition( "TEST", SIDE_BUY,  "0.00000013", "0.00000022", "0.1", ACTIVE );
+    pp += e->addPosition( "TEST", SIDE_BUY,  "0.00000014", "0.00000023", "0.1", ACTIVE );
+    pp += e->addPosition( "TEST", SIDE_BUY,  "0.00000015", "0.00000024", "0.1", ACTIVE );
+    pp += e->addPosition( "TEST", SIDE_BUY,  "0.00000016", "0.00000025", "0.1", ACTIVE ); // 10
+    pp += e->addPosition( "TEST", SIDE_BUY,  "0.00000017", "0.00000026", "0.1", ACTIVE );
+    pp += e->addPosition( "TEST", SIDE_BUY,  "0.00000018", "0.00000027", "0.1", ACTIVE );
+    pp += e->addPosition( "TEST", SIDE_BUY,  "0.00000019", "0.00000028", "0.1", ACTIVE );
+    pp += e->addPosition( "TEST", SIDE_BUY,  "0.00000020", "0.00000029", "0.1", ACTIVE );
+    pp += e->addPosition( "TEST", SIDE_BUY,  "0.00000021", "0.00000030", "0.1", ACTIVE ); // 15
+    pp += e->addPosition( "TEST", SIDE_BUY,  "0.00000022", "0.00000031", "0.1", ACTIVE );
+    pp += e->addPosition( "TEST", SIDE_BUY,  "0.00000023", "0.00000032", "0.1", ACTIVE );
 
-    pp += e->addPosition( "TEST", SIDE_SELL, "0.00000024", "0.00000033", "0.1", "active" );
-    pp += e->addPosition( "TEST", SIDE_SELL, "0.00000025", "0.00000034", "0.1", "active" );
-    pp += e->addPosition( "TEST", SIDE_SELL, "0.00000026", "0.00000035", "0.1", "active" ); // 20
-    pp += e->addPosition( "TEST", SIDE_SELL, "0.00000027", "0.00000036", "0.1", "active" );
-    pp += e->addPosition( "TEST", SIDE_SELL, "0.00000028", "0.00000037", "0.1", "active" );
-    pp += e->addPosition( "TEST", SIDE_SELL, "0.00000029", "0.00000038", "0.1", "active" );
-    pp += e->addPosition( "TEST", SIDE_SELL, "0.00000030", "0.00000039", "0.1", "active" );
-    pp += e->addPosition( "TEST", SIDE_SELL, "0.00000031", "0.00000040", "0.1", "active" );
-    pp += e->addPosition( "TEST", SIDE_SELL, "0.00000032", "0.00000041", "0.1", "active" );
-    pp += e->addPosition( "TEST", SIDE_SELL, "0.00000033", "0.00000042", "0.1", "active" );
-    pp += e->addPosition( "TEST", SIDE_SELL, "0.00000034", "0.00000043", "0.1", "active" );
-    pp += e->addPosition( "TEST", SIDE_SELL, "0.00000035", "0.00000044", "0.1", "active" );
-    pp += e->addPosition( "TEST", SIDE_SELL, "0.00000036", "0.00000045", "0.1", "active" );
-    pp += e->addPosition( "TEST", SIDE_SELL, "0.00000037", "0.00000046", "0.1", "active" );
-    pp += e->addPosition( "TEST", SIDE_SELL, "0.00000038", "0.00000047", "0.1", "active" );
-    pp += e->addPosition( "TEST", SIDE_SELL, "0.00000039", "0.00000048", "0.1", "active" );
-    pp += e->addPosition( "TEST", SIDE_SELL, "0.00000040", "0.00000049", "0.1", "active" );
-    pp += e->addPosition( "TEST", SIDE_SELL, "0.00000041", "0.00000050", "0.1", "active" );
-    pp += e->addPosition( "TEST", SIDE_SELL, "0.00000042", "0.00000051", "0.1", "active" );
+    pp += e->addPosition( "TEST", SIDE_SELL, "0.00000024", "0.00000033", "0.1", ACTIVE );
+    pp += e->addPosition( "TEST", SIDE_SELL, "0.00000025", "0.00000034", "0.1", ACTIVE );
+    pp += e->addPosition( "TEST", SIDE_SELL, "0.00000026", "0.00000035", "0.1", ACTIVE ); // 20
+    pp += e->addPosition( "TEST", SIDE_SELL, "0.00000027", "0.00000036", "0.1", ACTIVE );
+    pp += e->addPosition( "TEST", SIDE_SELL, "0.00000028", "0.00000037", "0.1", ACTIVE );
+    pp += e->addPosition( "TEST", SIDE_SELL, "0.00000029", "0.00000038", "0.1", ACTIVE );
+    pp += e->addPosition( "TEST", SIDE_SELL, "0.00000030", "0.00000039", "0.1", ACTIVE );
+    pp += e->addPosition( "TEST", SIDE_SELL, "0.00000031", "0.00000040", "0.1", ACTIVE );
+    pp += e->addPosition( "TEST", SIDE_SELL, "0.00000032", "0.00000041", "0.1", ACTIVE );
+    pp += e->addPosition( "TEST", SIDE_SELL, "0.00000033", "0.00000042", "0.1", ACTIVE );
+    pp += e->addPosition( "TEST", SIDE_SELL, "0.00000034", "0.00000043", "0.1", ACTIVE );
+    pp += e->addPosition( "TEST", SIDE_SELL, "0.00000035", "0.00000044", "0.1", ACTIVE );
+    pp += e->addPosition( "TEST", SIDE_SELL, "0.00000036", "0.00000045", "0.1", ACTIVE );
+    pp += e->addPosition( "TEST", SIDE_SELL, "0.00000037", "0.00000046", "0.1", ACTIVE );
+    pp += e->addPosition( "TEST", SIDE_SELL, "0.00000038", "0.00000047", "0.1", ACTIVE );
+    pp += e->addPosition( "TEST", SIDE_SELL, "0.00000039", "0.00000048", "0.1", ACTIVE );
+    pp += e->addPosition( "TEST", SIDE_SELL, "0.00000040", "0.00000049", "0.1", ACTIVE );
+    pp += e->addPosition( "TEST", SIDE_SELL, "0.00000041", "0.00000050", "0.1", ACTIVE );
+    pp += e->addPosition( "TEST", SIDE_SELL, "0.00000042", "0.00000051", "0.1", ACTIVE );
 
     e->onCheckDivergeConverge();
     e->onCheckDivergeConverge();

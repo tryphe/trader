@@ -75,8 +75,8 @@ Position *Engine::addPosition( QString market, quint8 side, QString buy_price, Q
 
     const bool is_onetime = type.startsWith( "onetime" );
     const bool is_taker = type.contains( "-taker" );
-    const bool is_ghost = type == "ghost";
-    const bool is_active = type == "active";
+    const bool is_ghost = type == GHOST;
+    const bool is_active = type == ACTIVE;
     const bool is_override = type.contains( "-override" );
 
     // check for incorrect order type
@@ -258,7 +258,7 @@ Position *Engine::addPosition( QString market, quint8 side, QString buy_price, Q
 void Engine::addLandmarkPositionFor( Position *const &pos )
 {
     // add position with dummy elements
-    addPosition( pos->market, pos->side, "0.00000001", "0.00000002", "0.00000000", "active", "",
+    addPosition( pos->market, pos->side, "0.00000001", "0.00000002", "0.00000000", ACTIVE, "",
                  pos->market_indices, true, true );
 }
 
@@ -713,7 +713,7 @@ void Engine::processCancelledOrder( Position * const &pos )
         {
             const PositionData &new_pos = market_info[ pos->market ].position_index.value( pos->market_indices.value( 0 ) );
 
-            addPosition( pos->market, pos->side, new_pos.buy_price, new_pos.sell_price, new_pos.order_size, "active", "",
+            addPosition( pos->market, pos->side, new_pos.buy_price, new_pos.sell_price, new_pos.order_size, ACTIVE, "",
                          pos->market_indices, false, true );
 
             positions->remove( pos );
@@ -828,7 +828,7 @@ void Engine::cancelOrderMeatDCOrder( Position * const &pos )
                 QVector<qint32> new_index_single;
                 new_index_single.append( new_indices.value( i ) );
 
-                addPosition( pos->market, pos->side, data.buy_price, data.sell_price, data.order_size, "active", "",
+                addPosition( pos->market, pos->side, data.buy_price, data.sell_price, data.order_size, ACTIVE, "",
                              new_index_single, false, true );
             }
         }
@@ -935,7 +935,7 @@ void Engine::saveMarket( QString market, qint32 num_orders )
                             .arg( pos_data.buy_price )
                             .arg( pos_data.sell_price )
                             .arg( order_size )
-                            .arg( is_active ? "active" : "ghost" );
+                            .arg( is_active ? ACTIVE : GHOST );
 
             current_index++;
         }
@@ -982,7 +982,7 @@ void Engine::flipPosition( Position *const &pos )
         // we could use the same prices, but instead we reset the data incase there was slippage
         const PositionData &new_data = market_info[ pos->market ].position_index.value( pos->market_indices.value( 0 ) );
 
-        addPosition( pos->market, pos->side, new_data.buy_price, new_data.sell_price, new_data.order_size, "active", "",
+        addPosition( pos->market, pos->side, new_data.buy_price, new_data.sell_price, new_data.order_size, ACTIVE, "",
                      pos->market_indices, false, true );
     }
 }
