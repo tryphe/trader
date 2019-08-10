@@ -13,9 +13,9 @@ class KeyStore
 {
 public:
     static const int pad_size = 32; // pad_size must be divisible by 4
-    static const int junk_factor = 2; // set greater than 0
+    static const int junk_factor = 12; // set greater than 1
     static const int sane_minimum_size = 32*2;
-    static const int pad_size_final = std::max( sane_minimum_size, std::min( pad_size * ( junk_factor +1 ), std::numeric_limits<quint16>::max() - ( pad_size * junk_factor ) ) );
+    static const int pad_size_final = std::max( sane_minimum_size, std::min( pad_size * ( junk_factor ), std::numeric_limits<qint16>::max() - ( pad_size * junk_factor ) ) );
 
     explicit KeyStore() { test(); }
     void setKeys( const QByteArray &key, const QByteArray &secret )
@@ -50,7 +50,7 @@ public:
     {
         assert( pad_size % 4 == 0 );
         assert( pad_size > 0 );
-        assert( junk_factor > 0 );
+        assert( junk_factor > 1 );
 
         const QByteArray test_key = QByteArray::fromHex("07D1");
         const QByteArray test_secret = QByteArray::fromHex("F877");
