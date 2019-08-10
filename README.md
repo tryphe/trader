@@ -56,13 +56,13 @@ Running the daemon
 1. Sessionize traderd so it stays running: `setsid ./traderd-poloniex`
 2. Edit `~/.bashrc` using your favorite text editor, adding these lines:
 ~~~
-alias trader-poloniex='~/src/trader/trader-cli Poloniex'
-alias trader-bittrex='~/src/trader/trader-cli Bittrex'
-alias trader-binance='~/src/trader/trader-cli Binance'
+alias poloniex='~/src/trader/trader-cli Poloniex'
+alias bittrex='~/src/trader/trader-cli Bittrex'
+alias binance='~/src/trader/trader-cli Binance'
  ~~~
  3. Then run `source ~/.bashrc`
 
-Now you can access each daemon with a simple command, eg. Poloniex: `trader-poloniex getbalances`
+Now you can access each daemon with a simple command, eg. Poloniex: `poloniex getbalances`
 
 **Tailing the logs (note: CLI output goes to the logs)**\
 Running the daemons and relying terminal output is suboptimal if the terminal closes. It's enabled by default, but can be disabled in `daemon/build-config.h`. All output is also routed to the logfiles. There's a color log, and a noncolor log. To tail, run:
@@ -93,7 +93,7 @@ A ping-pong position is simple. It's defined as a price variation with an order 
 - State - buy or sell
 	
 Suppose you want to ping-pong between buying 0.1 BTC worth of DOGE at 10 satoshi, and selling it at 30 satoshis. You'd run this command:\
-`trader-poloniex setorder BTC_DOGE buy 0.00000010 0.00000030 0.1 active`
+`poloniex setorder BTC_DOGE buy 0.00000010 0.00000030 0.1 active` (or `BTC-DOGE` on Bittrex and `DOGEBTC` on Binance)
 - `buy` is the initial state
 - `0.00000010` is the buy price
 - `0.00000030` is the sell price
@@ -103,19 +103,19 @@ Suppose you want to ping-pong between buying 0.1 BTC worth of DOGE at 10 satoshi
 **Placing different types of orders**
 
 One-time taker order, buy 0.025 BTC of DOGE at 30 satoshi:\
-`trader-poloniex setorder BTC_DOGE buy 0.00000030 0.00000000 0.025 onetime-taker`
+`poloniex setorder BTC_DOGE buy 0.00000030 0.00000000 0.025 onetime-taker`
 
 One-time maker order, sell 0.025 BTC of DOGE at 100 satoshi (maker-limit order):\
-`trader-poloniex setorder BTC_DOGE sell 0.00000000 0.00000100 0.025 onetime`
+`poloniex setorder BTC_DOGE sell 0.00000000 0.00000100 0.025 onetime`
 
 Same as above, but cancel if 5 minutes elapses (delayed fill or kill order):\
-`trader-poloniex setorder BTC_DOGE sell 0.00000000 0.00000100 0.025 onetime-timeout5`
+`poloniex setorder BTC_DOGE sell 0.00000000 0.00000100 0.025 onetime-timeout5`
 
 Ping-pong order, buy at 17 satoshis, sell at 18, size 0.011:\
-`trader-poloniex setorder BTC_OMG buy 0.00000017 0.00000018 0.011 active`
+`poloniex setorder BTC_OMG buy 0.00000017 0.00000018 0.011 active`
 
 Same as above, but when the ping-pong order is filled once, set size to 0.001 (effectively buys 0.011 and ping-pongs 0.001 of it):\
-`trader-poloniex setorder BTC_OMG buy 0.00000017 0.00000018 0.011/0.001 active`
+`poloniex setorder BTC_OMG buy 0.00000017 0.00000018 0.011/0.001 active`
 
 **Enough of that, give me a real ping-pong example!**\
 Note: For exchange commands, the formatting is literally `command <required-arg> [optional-arg=default-value]`\
