@@ -22,8 +22,8 @@
 #define FALLBACK_FILE_INPUT
 
 /// build options
-#define EXTRA_NICE // be extra nice to the exchange api
-#define TRYPHE_BUILD
+//#define EXTRA_NICE // be extra nice to the exchange api
+//#define TRYPHE_BUILD
 
 
 #endif // BUILDCONFIG_H
