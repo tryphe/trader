@@ -347,7 +347,8 @@ void Engine::processFilledOrders( QVector<Position*> &to_be_filled, qint8 fill_t
     /// step 1: build markets list
     QMap<QString,QVector<Position*>> markets;
     for ( QVector<Position*>::const_iterator i = to_be_filled.begin(); i != to_be_filled.end(); i++ )
-        markets[ (*i)->market ] += (*i);
+        if ( !(*i)->is_onetime )
+            markets[ (*i)->market ] += (*i);
 
     /// step 2: get avg for each market and process new buys <= avg and new sells > avg
     for ( QMap<QString,QVector<Position*>>::const_iterator i = markets.begin(); i != markets.end(); i++ )
