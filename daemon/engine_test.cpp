@@ -389,6 +389,9 @@ void EngineTest::test( Engine *e )
     e->setTesting( false );
     e->setVerbosity( 1 );
 
+    // clear "TEST" market stats
+    e->stats->clearAll();
+
     // make sure the engine was cleared of our test positions and markets
     assert( e->positions->queued().size() == 0 );
     assert( e->getMarketInfoStructure().size() == 0 );
