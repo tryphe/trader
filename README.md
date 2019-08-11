@@ -22,7 +22,7 @@ Trader requires a Qt >= 5.10 build with the *core*, *network*, and *websockets* 
  1. Open your source directory, ie. `cd ~/src`. If it doesn't exist, run `mkdir ~/src` first.
  3. Pull any currently maintained Qt source: `wget https://download.qt.io/archive/qt/5.13/5.13.0/single/qt-everywhere-src-5.13.0.tar.xz`
  4. Extract: `tar xf qt-everywhere-src-5.13.0.tar.xz`
- 5. Go there: `cd qt-everywhere-src-5.13.0.tar.xz`
+ 5. Go there: `cd qt-everywhere-src-5.13.0`
  6. Install dependencies: 
  	- `sudo apt build-dep qt5-default`
 	- `sudo apt install libgmp-dev`
