@@ -59,3 +59,6 @@ HEADERS += build-config.h \
     ssl_policy.h \
     coinamount_test.h
 
+RESOURCES += \
+    ../res/resources.server.qrc
+
