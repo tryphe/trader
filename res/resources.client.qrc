@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/">
+        <file>x509.cert</file>
+        <file>session.token</file>
+    </qresource>
+</RCC>
