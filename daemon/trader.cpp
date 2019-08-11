@@ -71,9 +71,7 @@ Trader::~Trader()
     delete listener;
     delete runner;
 
-#ifdef FALLBACK_FILE_INPUT
-    delete listener_fallback;
-#endif
+    if ( listener_fallback ) delete listener_fallback;
 
     delete engine;
     delete rest;

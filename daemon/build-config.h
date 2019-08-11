@@ -18,8 +18,11 @@
 #define PRINT_ENABLED_SSL_CIPHERS
 //#define PRINT_DISABLED_SSL_CIPHERS
 
+/// allow remote wss?
+#define WSS_INTERFACE
+
 /// allow bulk input from in.txt? (deprecated with ipc sockets)
-#define FALLBACK_FILE_INPUT
+//#define FALLBACK_FILE_INPUT
 
 /// build options
 //#define EXTRA_NICE // be extra nice to the exchange api

@@ -27,9 +27,7 @@ public slots:
 private:
     CommandRunner *runner;
     CommandListener *listener;
-#ifdef FALLBACK_FILE_INPUT
     FallbackListener *listener_fallback;
-#endif
 
     Stats *stats;
     Engine *engine;
