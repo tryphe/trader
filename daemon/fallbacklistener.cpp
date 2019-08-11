@@ -1,7 +1,5 @@
-#include "global.h"
-
-#ifdef FALLBACK_FILE_INPUT
 #include "fallbacklistener.h"
+#include "global.h"
 
 #include <QTimer>
 #include <QFile>
@@ -83,4 +81,3 @@ void FallbackListener::parseInputFile()
     emit gotDataChunk( data );
 }
 
-#endif // FALLBACK_FILE_INPUT

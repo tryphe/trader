@@ -21,9 +21,6 @@
 /// allow remote wss?
 #define WSS_INTERFACE
 
-/// allow bulk input from in.txt? (deprecated with ipc sockets)
-//#define FALLBACK_FILE_INPUT
-
 /// build options
 //#define EXTRA_NICE // be extra nice to the exchange api
 //#define TRYPHE_BUILD

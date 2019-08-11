@@ -59,11 +59,10 @@ Trader::Trader( QObject *parent )
     listener = new CommandListener();
     connect( listener, &CommandListener::gotDataChunk, runner, &CommandRunner::runCommandChunk );
 
-#ifdef FALLBACK_FILE_INPUT
     // open fallback listener that uses a plain file, useful for copying a 'setorder' dump into a file
     listener_fallback = new FallbackListener();
     connect( listener_fallback, &FallbackListener::gotDataChunk, runner, &CommandRunner::runCommandChunk );
-#endif
+
 }
 
 Trader::~Trader()

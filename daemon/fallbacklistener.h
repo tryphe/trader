@@ -3,7 +3,7 @@
 
 #include "build-config.h"
 
-#ifdef FALLBACK_FILE_INPUT
+class FallbackListener;
 
 #include <QObject>
 
@@ -30,5 +30,4 @@ private:
     QTimer *input_timer;
 };
 
-#endif // FALLBACK_FILE_INPUT
 #endif // FALLBACKLISTENER_H
