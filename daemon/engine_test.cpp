@@ -397,4 +397,9 @@ void EngineTest::test( Engine *e )
     assert( e->getMarketInfoStructure().size() == 0 );
     assert( e->positions->getDCCount() == 0 );
     assert( e->positions->diverging_converging.size() == 0 );
+
+    // enable wss interface flag here, since we need it disabled during tests anyways
+#ifdef WSS_INTERFACE
+    e->wss_interface = true;
+#endif
 }

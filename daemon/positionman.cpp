@@ -595,6 +595,14 @@ void PositionMan::activate( Position * const &pos, const QString &order_number )
                     .arg( "set", -15 )
                     .arg( pos->stringifyOrder() );
 
+    if ( engine->wss_interface )
+    {
+        QJsonArray ext_updates;
+        pos->jsonifyPositionSet( ext_updates );
+        QString msg = Global::jsonArrayToString( ext_updates );
+        emit engine->newEngineMessage( msg );
+    }
+
     // check if the order was queued for a cancel (manual or automatic) while it was queued
     if ( pos->is_cancelling &&
          pos->order_cancel_time < QDateTime::currentMSecsSinceEpoch() - engine->settings->cancel_timeout )

@@ -16,6 +16,9 @@
 #include <QPair>
 #include <QStringList>
 #include <QObject>
+#include <QJsonObject>
+#include <QJsonArray>
+#include <QJsonDocument>
 
 Engine::Engine()
     : QObject( nullptr ),
@@ -26,6 +29,7 @@ Engine::Engine()
       maintenance_triggered( false ),
       is_testing( false ),
       verbosity( 1 ),
+      wss_interface( false ),
       rest( nullptr ),
       stats( nullptr )
 {
@@ -344,6 +348,8 @@ if ( !is_testing )
 
 void Engine::processFilledOrders( QVector<Position*> &to_be_filled, qint8 fill_type )
 {
+    static QJsonArray ext_updates;
+
     /// step 1: build markets list
     QMap<QString,QVector<Position*>> markets;
     for ( QVector<Position*>::const_iterator i = to_be_filled.begin(); i != to_be_filled.end(); i++ )
@@ -375,13 +381,27 @@ void Engine::processFilledOrders( QVector<Position*> &to_be_filled, qint8 fill_t
             {
                 to_be_filled.removeOne( pos );
                 fillNQ( pos->order_number, fill_type );
+                if ( wss_interface ) pos->jsonifyPositionFill( ext_updates );
             }
         }
     }
 
     /// step 3: fill remaining outliers
     for ( QVector<Position*>::const_iterator i = to_be_filled.begin(); i != to_be_filled.end(); i++ )
-        fillNQ( (*i)->order_number, fill_type );
+    {
+        Position *const &pos = *i;
+
+        fillNQ( pos->order_number, fill_type );
+        if ( wss_interface ) pos->jsonifyPositionFill( ext_updates );
+    }
+
+    /// step 4: send updates to wss if enabled
+    if ( wss_interface && !ext_updates.isEmpty() )
+    {
+        QString msg = Global::jsonArrayToString( ext_updates );
+        emit newEngineMessage( msg );
+        ext_updates = QJsonArray(); // clear static variable
+    }
 }
 
 void Engine::processOpenOrders( QVector<QString> &order_numbers, QMultiHash<QString, OrderInfo> &orders, qint64 request_time_sent_ms )
@@ -582,6 +602,7 @@ void Engine::processTicker( const QMap<QString, TickerInfo> &ticker_data, qint64
 
     // store deleted positions, because we can't delete and iterate a hash<>
     QVector<Position*> filled_orders;
+    static QJsonArray ext_updates;
 
     for ( QMap<QString, TickerInfo>::const_iterator i = ticker_data.begin(); i != ticker_data.end(); i++ )
     {
@@ -595,8 +616,37 @@ void Engine::processTicker( const QMap<QString, TickerInfo> &ticker_data, qint64
             continue;
 
         MarketInfo &info = market_info[ market ];
-        info.highest_buy = bid;
-        info.lowest_sell = ask;
+
+        // update both values
+        if      ( info.highest_buy != bid &&
+                  info.lowest_sell != ask )
+        {
+            info.highest_buy = bid;
+            info.lowest_sell = ask;
+
+            if ( wss_interface ) info.jsonifyTicker( ext_updates, market );
+        }
+        // update bid price
+        else if ( info.highest_buy != bid )
+        {
+            info.highest_buy = bid;
+
+            if ( wss_interface ) info.jsonifyBid( ext_updates, market );
+        }
+        // update ask price
+        else if ( info.lowest_sell != ask )
+        {
+            info.lowest_sell = ask;
+
+            if ( wss_interface ) info.jsonifyAsk( ext_updates, market );
+        }
+    }
+
+    if ( wss_interface && !ext_updates.isEmpty() )
+    {
+        QString ret = Global::jsonArrayToString( ext_updates );
+        emit newEngineMessage( ret );
+        ext_updates = QJsonArray(); // clear static variable
     }
 
     // if this is a ticker feed, just process the ticker data. the fill feed will cause false fills when the ticker comes in just as new positions were set,
@@ -725,6 +775,15 @@ void Engine::processCancelledOrder( Position * const &pos )
         kDebug() << QString( "%1 %2" )
                     .arg( "cancelled", -15 )
                     .arg( pos->stringifyOrder() );
+
+    if ( wss_interface )
+    {
+        static QJsonArray cancel_data;
+        pos->jsonifyPositionCancel( cancel_data );
+        QString msg = Global::jsonArrayToString( cancel_data );
+        emit newEngineMessage( msg );
+        cancel_data = QJsonArray(); // clear static variable
+    }
 
     // depending on the type of cancel, we should take some action
     if ( pos->cancel_reason == CANCELLING_FOR_DC )
@@ -1485,6 +1544,34 @@ void Engine::onCheckDivergeConverge()
     diverge( diverge_sells ); // diverge sell (one)->(many)
 }
 
+void Engine::handleUserMessage( const QString &str )
+{
+    kDebug() << QString( "[Engine] got WSS command: %1" )
+                .arg( str );
+
+    // init current state
+    if ( str == "getstate" )
+    {
+        QJsonArray reply;
+
+        for( QHash<QString, MarketInfo>::const_iterator i = market_info.begin(); i != market_info.end(); i++ )
+        {
+            const QString &market = i.key();
+            const MarketInfo &info = i.value();
+
+            info.jsonifyTicker( reply, market );
+        }
+
+        for( QSet<Position*>::const_iterator i = positions->all().begin(); i != positions->all().end(); i++ )
+        {
+            (*i)->jsonifyPositionSet( reply );
+        }
+
+        QString msg = Global::jsonArrayToString( reply );
+        emit newEngineMessage( msg );
+    }
+}
+
 void Engine::converge( QMap<QString, QVector<qint32>> &market_map, quint8 side )
 {
     int index_offset = side == SIDE_BUY ? 1 : -1;
@@ -1611,6 +1698,7 @@ void Engine::diverge( QMap<QString, QVector<qint32> > &market_map )
         if ( rest->yieldToFlowControl() || rest->nam_queue.size() >= rest->limit_commands_queued_dc_check )
             return;
     }
+
 }
 
 void Engine::setMarketSettings( QString market, qint32 order_min, qint32 order_max, qint32 order_dc, qint32 order_dc_nice,

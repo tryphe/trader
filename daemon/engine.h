@@ -65,9 +65,13 @@ public:
 
     void findBetterPrice( Position *const &pos );
 
+signals:
+    void newEngineMessage( QString &str );
+
 public Q_SLOTS:
     void onCheckTimeouts();
     void onCheckDivergeConverge();
+    void handleUserMessage( const QString &str );
 
 private:
     // timer routines
@@ -99,6 +103,8 @@ private:
     // state for initial runtime tests
     bool is_testing;
     int verbosity; // 0 = none, 1 = normal, 2 = extra
+
+    bool wss_interface;
 
     REST_OBJECT *rest;
     Stats *stats;
