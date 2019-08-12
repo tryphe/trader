@@ -12,6 +12,8 @@ Features
  
  TODO
  ----
+  - [ ] GUI (in progress)
+  - [ ] WSS notifications (in progress)
   - [ ] Extensible API and querying system (CLI input and log output are the only interface at the moment)
   - [ ] External stats tracker for stats persistence
   - [ ] User settings file
