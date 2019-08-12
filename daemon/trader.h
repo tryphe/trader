@@ -8,6 +8,7 @@
 class CommandRunner;
 class CommandListener;
 class FallbackListener;
+class WSSServer;
 
 class Stats;
 class Engine;
@@ -28,6 +29,7 @@ private:
     CommandRunner *runner;
     CommandListener *listener;
     FallbackListener *listener_fallback;
+    WSSServer *wss_server;
 
     Stats *stats;
     Engine *engine;

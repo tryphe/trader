@@ -12,6 +12,7 @@
 #include "fallbacklistener.h"
 #include "commandlistener.h"
 #include "commandrunner.h"
+#include "wssserver.h"
 
 #include <QByteArray>
 #include <QTimer>
@@ -63,14 +64,20 @@ Trader::Trader( QObject *parent )
     listener_fallback = new FallbackListener();
     connect( listener_fallback, &FallbackListener::gotDataChunk, runner, &CommandRunner::runCommandChunk );
 
+    // open wss server
+#ifdef WSS_INTERFACE
+    wss_server = new WSSServer();
+    connect( engine, &Engine::newEngineMessage, wss_server, &WSSServer::handleEngineMessage );
+    connect( wss_server, &WSSServer::newUserMessage, engine, &Engine::handleUserMessage );
+#endif
 }
 
 Trader::~Trader()
 {
     delete listener;
     delete runner;
-
-    if ( listener_fallback ) delete listener_fallback;
+    delete listener_fallback;
+    if ( wss_server) delete wss_server;
 
     delete engine;
     delete rest;
