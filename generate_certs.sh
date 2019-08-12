@@ -17,7 +17,7 @@ fi
 #generate base session token
 sha512sum daemon/keydefs.h | head -n1 | sed -e 's/\s.*$//' > res/session.token
 
-if [ -f res/session.token ]; then
+if [ -f daemon/keydefs.h ] || [ -f res/session.token ]; then
   failureHints+='token SUCCESS. '
 else
   failureHints+='token FAILED. '
