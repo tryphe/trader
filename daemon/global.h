@@ -114,7 +114,17 @@ static const QLatin1String BINANCE_SUBPATH                  ( "bt" );
     static const QLatin1String POLO_COMMAND_GETFEE          ( "returnFeeInfo" );
 #endif
 
+#include <QJsonArray>
+#include <QJsonDocument>
+
 namespace Global {
+
+static inline QString jsonArrayToString( QJsonArray &arr )
+{
+    QJsonDocument doc;
+    doc.setArray( arr );
+    return doc.toJson( QJsonDocument::Compact );
+}
 
 static inline const QString printVectorqint32( const QVector<qint32> &vec )
 {

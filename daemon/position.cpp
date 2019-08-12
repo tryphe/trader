@@ -9,6 +9,7 @@
 
 #include <algorithm>
 #include <QDebug>
+#include <QJsonArray>
 
 Position::Position( QString _market, quint8 _side, QString _buy_price, QString _sell_price,
                     QString _order_size, QString _strategy_tag, QVector<qint32> _market_indices,
@@ -288,6 +289,32 @@ void Position::applyOffset( qreal _offset, bool sentiment )
         return;
 
     calculateQuantity(); // set quantity
+}
+
+void Position::jsonifyPositionFill( QJsonArray &arr )
+{
+    arr += "f";
+    arr += order_number;
+}
+
+void Position::jsonifyPositionSet( QJsonArray &arr )
+{
+    arr += "s";
+    arr += order_number;
+    arr += market;
+    arr += is_onetime;
+    arr += is_landmark;
+    arr += is_slippage;
+    arr += side;
+    arr += price;
+    arr += original_size;
+}
+
+void Position::jsonifyPositionCancel( QJsonArray &arr )
+{
+    arr += "c";
+    arr += order_number;
+    arr += cancel_reason;
 }
 
 //QJsonObject Position::jsonify()

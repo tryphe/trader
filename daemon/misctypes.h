@@ -7,6 +7,7 @@
 #include <QString>
 #include <QByteArray>
 #include <QVector>
+#include <QJsonArray>
 
 struct Request
 {
@@ -59,6 +60,26 @@ struct MarketInfo
                                    .arg( slippage_timeout, -6 )
                                    .arg( market_offset, -6 )
                                    .arg( market_sentiment ); } // TODO: fill in this string for binance stuff
+
+    void jsonifyTicker( QJsonArray &arr, const QString &market ) const
+    {
+        arr += "t";
+        arr += market;
+        arr += highest_buy.toAmountString();
+        arr += lowest_sell.toAmountString();
+    }
+    void jsonifyBid( QJsonArray &arr, const QString &market ) const
+    {
+        arr += "b";
+        arr += market;
+        arr += highest_buy.toAmountString();
+    }
+    void jsonifyAsk( QJsonArray &arr, const QString &market ) const
+    {
+        arr += "a";
+        arr += market;
+        arr += lowest_sell.toAmountString();
+    }
 
     // prices for this market
     QVector<QString> order_prices;

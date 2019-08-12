@@ -23,7 +23,9 @@ public:
     bool applyPriceSide();
     void applyOffset();
     void applyOffset( qreal offset, bool sentiment = true );
-    //QJsonObject jsonify();
+    void jsonifyPositionFill( QJsonArray &arr );
+    void jsonifyPositionSet( QJsonArray &arr );
+    void jsonifyPositionCancel( QJsonArray &arr );
     QString stringifyOrder();
     QString stringifyOrderWithoutOrderID();
     QString stringifyNewPosition();
