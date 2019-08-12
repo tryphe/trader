@@ -117,7 +117,7 @@ void BncREST::init()
     ticker_timer = new QTimer( this );
     connect( ticker_timer, &QTimer::timeout, this, &BncREST::onCheckTicker );
     ticker_timer->setTimerType( Qt::VeryCoarseTimer );
-    ticker_timer->start( 2000 );
+    ticker_timer->start( 10000 );
 
     onCheckExchangeInfo();
     onCheckTicker();
