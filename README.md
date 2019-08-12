@@ -21,18 +21,18 @@ Features
 Dependencies: Compiling Qt and installing libgmp (unix/linux)
 ---------------------------------
 Trader requires a Qt >= 5.10 build with the *core*, *network*, and *websockets* modules. To build:
- 1. Open your source directory, ie. `cd ~/src`. If it doesn't exist, run `mkdir ~/src` first.
+ 1. Install dependencies: 
+ 	- `sudo apt build-dep qt5-default`
+	- `sudo apt install libgmp-dev`
+ 2. Open your source directory, ie. `cd ~/src`. If it doesn't exist, run `mkdir ~/src` first.
  3. Pull any currently maintained Qt source: `wget https://download.qt.io/archive/qt/5.13/5.13.0/single/qt-everywhere-src-5.13.0.tar.xz`
  4. Extract: `tar xf qt-everywhere-src-5.13.0.tar.xz`
  5. Go there: `cd qt-everywhere-src-5.13.0`
- 6. Install dependencies: 
- 	- `sudo apt build-dep qt5-default`
-	- `sudo apt install libgmp-dev`
- 7. Configure Qt and skip some things to improve compile time. Replace `username` with your user. Note: If you want to build for another machine, [click here to configure a static build](https://gist.githubusercontent.com/tryphe/e3d17209ff6d53d2ca3c5d192471e12e/raw/3e85caf5c2e0fc63f36b7e7772771dff58bc174e/configure.static):\
+ 6. Configure Qt and skip some things to improve compile time. Replace `username` with your user. Note: If you want to build for another machine, [click here to configure a static build](https://gist.githubusercontent.com/tryphe/e3d17209ff6d53d2ca3c5d192471e12e/raw/3e85caf5c2e0fc63f36b7e7772771dff58bc174e/configure.static):\
 `./configure -prefix /home/username/localqt/Qt-5.13.0-minimal/ -opensource -confirm-license -shared -release -nomake examples -nomake tests -skip qt3d -skip qtactiveqt -skip qtandroidextras -skip qtcanvas3d -skip qtcharts -skip qtdatavis3d -skip qtgamepad -skip qtgraphicaleffects -skip qtlocation -skip qtmultimedia -skip qtpurchasing -skip qtquickcontrols -skip qtquickcontrols2 -skip qtscript -skip qtscxml -skip qtsensors -skip qtserialbus -skip qtserialport -skip qtwebengine -skip qtwebview -skip qttools`
- 8. If there are no errors, now you can run make: `make -j` (if low on RAM or single CPU, you can skip the `-j`)
- 9. If there are no errors, run `make install`
- 11. Now try and run `qmake -v` from your installation path: 
+ 7. If there are no errors, now you can run make: `make -j` (if low on RAM or single CPU, you can skip the `-j`)
+ 8. If there are no errors, run `make install`
+ 9. Now try and run `qmake -v` from your installation path: 
 	 `/home/username/localqt/Qt-5.13.0-minimal/bin/qmake -v`
 	You should get:
 ~~~
