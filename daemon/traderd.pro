@@ -34,7 +34,8 @@ SOURCES += main.cpp \
     baserest.cpp \
     engine_test.cpp \
     coinamount.cpp \
-    coinamount_test.cpp
+    coinamount_test.cpp \
+    wssserver.cpp
 
 HEADERS += build-config.h \
     commandlistener.h \
@@ -57,7 +58,8 @@ HEADERS += build-config.h \
     baserest.h \
     misctypes.h \
     ssl_policy.h \
-    coinamount_test.h
+    coinamount_test.h \
+    wssserver.h
 
 RESOURCES += \
     ../res/resources.server.qrc
