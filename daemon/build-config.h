@@ -1,7 +1,7 @@
 #ifndef BUILDCONFIG_H
 #define BUILDCONFIG_H
 
-#define BUILD_VERSION "1.73k"
+#define BUILD_VERSION "1.73l"
 
 /// select your exchange
 //#define EXCHANGE_BITTREX
@@ -18,8 +18,14 @@
 #define PRINT_ENABLED_SSL_CIPHERS
 //#define PRINT_DISABLED_SSL_CIPHERS
 
-/// allow remote wss?
-#define WSS_INTERFACE
+/// allow wss connections?
+//#define WSS_INTERFACE
+
+/// allow wss on which interface? valid entries are:
+/// ip address strings, hostname strings, Any, AnyIPv4, AnyIPv6, LocalHost, LocalHostIPv6
+#define WSS_ADDRESS LocalHost
+#define WSS_ADDRESS_FAR "127.0.0.1" // the daemon address from the perspective of the gui
+#define WSS_PORT 1234
 
 /// build options
 //#define EXTRA_NICE // be extra nice to the exchange api
