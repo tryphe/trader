@@ -11,12 +11,12 @@ if not os.path.exists( KEYDEFS_FILE ):
   print( "NOTE: If you don't want to hardcode these values, leave them blank and you can use 'setkeyandsecret <key> <secret>' in the bot upon startup. Alternately, if you don't want to use this script, but still want to hardcode your keys, CTRL-C and 'cp daemon/keydefs.h.example daemon/keydefs.h' and paste your keys in there." )
   print( "Generating keydefs.h..." )
 
-  polo_key = add_quotes( raw_input( "Enter Poloniex Key" + MSG ) )
-  polo_secret = add_quotes( raw_input( "Enter Poloniex Secret" + MSG ) )
-  trex_key = add_quotes( raw_input( "Enter Bittrex Key" + MSG ) )
-  trex_secret = add_quotes( raw_input( "Enter Bittrex Secret" + MSG ) )
-  bnc_key = add_quotes( raw_input( "Enter Binance Key" + MSG ) )
-  bnc_secret = add_quotes( raw_input( "Enter Binance Secret" + MSG ) )
+  polo_key = add_quotes( raw_input( "Enter Poloniex API Key" + MSG ) )
+  polo_secret = add_quotes( raw_input( "Enter Poloniex API Secret" + MSG ) )
+  trex_key = add_quotes( raw_input( "Enter Bittrex API Key" + MSG ) )
+  trex_secret = add_quotes( raw_input( "Enter Bittrex API Secret" + MSG ) )
+  bnc_key = add_quotes( raw_input( "Enter Binance API Key" + MSG ) )
+  bnc_secret = add_quotes( raw_input( "Enter Binance API Secret" + MSG ) )
 
   file = open( KEYDEFS_FILE, "w" )
   file.write( "#ifndef KEYDEFS_H\n" )
