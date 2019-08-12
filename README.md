@@ -56,7 +56,7 @@ Compiling
 
 Running the daemon
 ------------------
-1. Sessionize traderd so it stays running: `setsid ./traderd-poloniex`
+1. Sessionize traderd so it stays running(one for each exchange): `setsid ./traderd-poloniex`
 2. Edit `~/.bashrc` using your favorite text editor, adding these lines:
 ~~~
 alias poloniex='~/src/trader/trader-cli Poloniex'
