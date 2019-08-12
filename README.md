@@ -52,7 +52,7 @@ Compiling
  5. Run qmake: `/home/username/localqt/Qt-5.13.0-minimal/bin/qmake`
  6. Compile (choose one):
  	- (scripted build) Run `./build-all.sh`. This will build the CLI and all exchange targets using `make -j`.
-	- (manual build) Run `make -j` or similar to build the CLI and the exchange selected in `daemon/build-config.h`.
+	- (manual build) First, run `./generate_certs.sh` to generate x509 certs and an auth token (for websockets). Then run `make -j` or similar to build the exchange selected in `daemon/build-config.h` and the CLI.
 
 Running the daemon
 ------------------
