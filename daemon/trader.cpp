@@ -77,7 +77,7 @@ Trader::~Trader()
     delete listener;
     delete runner;
     delete listener_fallback;
-    if ( wss_server) delete wss_server;
+    if ( wss_server ) delete wss_server;
 
     delete engine;
     delete rest;

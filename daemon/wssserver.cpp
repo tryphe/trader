@@ -49,7 +49,7 @@ WSSServer::WSSServer()
 
     if ( !listen( host, WSS_PORT ) )
     {
-        kDebug() << "[WSS Server] error: couldn't listen on" << serverUrl().toString();
+        kDebug() << "[WSS Server] error: couldn't listen on" << host.toString();
         return;
     }
 
