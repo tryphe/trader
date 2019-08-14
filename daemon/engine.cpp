@@ -778,11 +778,10 @@ void Engine::processCancelledOrder( Position * const &pos )
 
     if ( wss_interface )
     {
-        static QJsonArray cancel_data;
+        QJsonArray cancel_data;
         pos->jsonifyPositionCancel( cancel_data );
         QString msg = Global::jsonArrayToString( cancel_data );
         emit newEngineMessage( msg );
-        cancel_data = QJsonArray(); // clear static variable
     }
 
     // depending on the type of cancel, we should take some action

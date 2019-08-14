@@ -314,7 +314,7 @@ void Position::jsonifyPositionCancel( QJsonArray &arr )
 {
     arr += "c";
     arr += order_number;
-    arr += cancel_reason;
+    //arr += cancel_reason;
 }
 
 //QJsonObject Position::jsonify()
