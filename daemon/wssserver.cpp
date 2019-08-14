@@ -191,7 +191,9 @@ void WSSServer::handleEngineMessage( QString &str )
 
 void WSSServer::remove( QWebSocket *const &sck )
 {
-    sck->abort();
+    // abort if we are not closed(0)
+    if ( sck->state() != QAbstractSocket::UnconnectedState )
+        sck->abort();
 
     m_clients.remove( sck );
     m_authed.remove( sck );
