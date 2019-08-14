@@ -750,6 +750,14 @@ void Engine::processCancelledOrder( Position * const &pos )
 {
     // pos must be valid!
 
+    if ( wss_interface )
+    {
+        QJsonArray cancel_data;
+        pos->jsonifyPositionCancel( cancel_data );
+        QString msg = Global::jsonArrayToString( cancel_data );
+        emit newEngineMessage( msg );
+    }
+
     // we succeeded at resetting(cancelling) a slippage position, now put it back to the -same side- and at its original prices
     if ( pos->is_slippage && pos->cancel_reason == CANCELLING_FOR_SLIPPAGE_RESET )
     {
@@ -775,14 +783,6 @@ void Engine::processCancelledOrder( Position * const &pos )
         kDebug() << QString( "%1 %2" )
                     .arg( "cancelled", -15 )
                     .arg( pos->stringifyOrder() );
-
-    if ( wss_interface )
-    {
-        QJsonArray cancel_data;
-        pos->jsonifyPositionCancel( cancel_data );
-        QString msg = Global::jsonArrayToString( cancel_data );
-        emit newEngineMessage( msg );
-    }
 
     // depending on the type of cancel, we should take some action
     if ( pos->cancel_reason == CANCELLING_FOR_DC )
