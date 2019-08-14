@@ -380,8 +380,8 @@ void Engine::processFilledOrders( QVector<Position*> &to_be_filled, qint8 fill_t
                  ( pos->side == SIDE_BUY  && pos->getFlippedPrice() >  price_avg ) )  // new sell is gte avg
             {
                 to_be_filled.removeOne( pos );
-                fillNQ( pos->order_number, fill_type );
                 if ( wss_interface ) pos->jsonifyPositionFill( ext_updates );
+                fillNQ( pos->order_number, fill_type );
             }
         }
     }
@@ -391,8 +391,8 @@ void Engine::processFilledOrders( QVector<Position*> &to_be_filled, qint8 fill_t
     {
         Position *const &pos = *i;
 
-        fillNQ( pos->order_number, fill_type );
         if ( wss_interface ) pos->jsonifyPositionFill( ext_updates );
+        fillNQ( pos->order_number, fill_type );
     }
 
     /// step 4: send updates to wss if enabled

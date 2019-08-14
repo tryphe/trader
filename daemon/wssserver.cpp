@@ -47,7 +47,7 @@ WSSServer::WSSServer()
     else
         host = QHostAddress::WSS_ADDRESS;
 
-    if ( !listen( host, WSS_PORT ) )
+    if ( !listen( host, INTERFACE_PORT ) )
     {
         kDebug() << "[WSS Server] error: couldn't listen on" << host.toString();
         return;
