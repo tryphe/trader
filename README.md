@@ -45,7 +45,7 @@ Compiling
  1. Open your source directory, ie. `cd ~/src` 
  2. Clone this repo: `git clone https://github.com/tryphe/trader`
  3. Go there: `cd trader`
- 4. Hardcode your keys into `daemon/keydefs.h` (choose only one):
+ 4. Hardcode your API keys into `daemon/keydefs.h` (choose only one):
 	- Run `python generate_keys.py`
 	- or: Copy the example keydefs file: `cp daemon/keydefs.h.example daemon/keydefs.h` then paste your keys in with your favorite editor, or:
 	- or (*non-hardcoded keys*): Create `keydefs.h` using the example file above, but leave the keys blank or as-is during compile, then use the runtime CLI to enter your keys into the bot: `trader-cli Poloniex setkeyandsecret <key> <secret>` (***be careful, this will leak your keys into the bash history***)
@@ -213,7 +213,7 @@ Now that you've tried ping-pong orders, you should realize that you can shift th
 
 **Rules of Thumb**
 
-When botting long-term, you MUST keep at least 50 orders total. This lets us mitigate an erroneous "blank but valid" exchange order list response where the exchange tells us we have no orders, but actually do. Does this happen? Yes it does, on every exchange, although very rarely (although WSS on Poloniex relieves us from polling the order list on there).
+When botting long-term, you MUST keep at least 50 orders total. This lets us mitigate an erroneous "blank but valid" exchange order list response where the exchange tells us we have no orders, but actually do. Does this happen? Yes it does, on every exchange, although very rarely.
 
 
 [todo] explain ghost positions, other stuff
