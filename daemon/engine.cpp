@@ -1428,14 +1428,19 @@ void Engine::onCheckDivergeConverge()
     if ( rest->yieldToFlowControl() || rest->nam_queue.size() >= rest->limit_commands_queued_dc_check )
         return;
 
-    // calculate hi_buy position for each market (if there isn't a low buy now, it will be set by checkBuySellCount)
-    QMap<QString/*market*/,qint32> market_hi_buy_idx;
-    // track lowest/highest non-landmark positions (so we can remove landmark/non-landmark/landmark clutter)
-    QMap<QString/*market*/,qint32> market_single_lo_buy, market_single_hi_sell;
+    QMap<QString/*market*/,qint32> market_hi_buy_idx; // calculate hi_buy position for each market
+    QMap<QString/*market*/,bool> market_has_slippage; // track if market has a slippage order
     for ( QSet<Position*>::const_iterator i = positions->all().begin(); i != positions->all().end(); i++ )
     {
         Position *const &pos = *i;
         const QString &market = pos->market;
+
+        // track market_has_slippage
+        if ( pos->is_slippage )
+        {
+            market_has_slippage[ market ] = true;
+            continue;
+        }
 
         // skip if one-time order
         if ( pos->is_onetime )
@@ -1444,23 +1449,10 @@ void Engine::onCheckDivergeConverge()
         if ( pos->side == SIDE_BUY )
         {
             const qint32 highest_idx = pos->getHighestMarketIndex();
-            const qint32 lowest_idx = pos->getLowestMarketIndex();
 
             // fill market_hi_buy_idx
             if ( highest_idx > market_hi_buy_idx.value( market, -1 ) )
                 market_hi_buy_idx[ market ] = highest_idx;
-
-            // fill market_single_lo_buy
-            if ( lowest_idx < market_single_lo_buy.value( market, std::numeric_limits<qint32>::max() ) )
-                market_single_lo_buy[ market ] = lowest_idx;
-        }
-        else // sell
-        {
-            const qint32 highest_idx = pos->getHighestMarketIndex();
-
-            // fill market_single_hi_sell
-            if ( highest_idx > market_single_hi_sell.value( market, -1 ) )
-                market_single_hi_sell[ market ] = highest_idx;
         }
     }
 
@@ -1473,8 +1465,8 @@ void Engine::onCheckDivergeConverge()
         const QString &market = pos->market;
         const MarketInfo &info = market_info[ pos->market ];
 
-        // skip if one-time order
-        if ( pos->is_onetime )
+        // skip if one-time order or market has slippage
+        if ( pos->is_onetime || market_has_slippage.value( market ) )
             continue;
 
         // check for market dc size
@@ -1669,7 +1661,6 @@ void Engine::diverge( QMap<QString, QVector<qint32> > &market_map )
         if ( rest->yieldToFlowControl() || rest->nam_queue.size() >= rest->limit_commands_queued_dc_check )
             return;
     }
-
 }
 
 void Engine::handleUserMessage( const QString &str )
