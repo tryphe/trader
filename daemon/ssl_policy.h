@@ -15,7 +15,7 @@ namespace GlobalSsl {
 static inline void enableSecureSsl()
 {
     // disable chatty messages for disabled ssl stuff (might suppress problems with ssl in the future)
-    QLoggingCategory::setFilterRules( "qt.network.ssl.warning=false" );
+    //QLoggingCategory::setFilterRules( "qt.network.ssl.warning=false" );
 
     // get default config
     QSslConfiguration ssl_config = QSslConfiguration::defaultConfiguration();
