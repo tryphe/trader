@@ -150,10 +150,10 @@ void Spruce::equalizeDates()
     RelativeCoeffs relative = getHiLoCoeffs( coeffs );
 
     Coin ticksize = Coin( "0.00100000" );
-    Coin leverage = Coin( "1.0" ); // not really leverage, just for scaling
+    Coin leverage = Coin( "1.05" ); // not really leverage, just for scaling
 
     QList<Node*> &new_nodes = nodes_now;
-    while ( relative.hi_coeff.ratio( 0.991 ) > relative.lo_coeff )
+    while ( relative.hi_coeff.ratio( 0.982 ) > relative.lo_coeff )
     {
         // find highest/lowest coeff market
         for ( QList<Node*>::const_iterator i = new_nodes.begin(); i != new_nodes.end(); i++ )
@@ -199,15 +199,6 @@ void Spruce::equalizeDates()
 
         amount_to_shortlong[ market ] = i.value();
     }
-
-    // print shorts/longs
-//    qDebug() << "[Spruce] projected shortlongs:";
-//    for ( QMap<QString,Coin>::const_iterator i = shortlongs.begin(); i != shortlongs.end(); i++ )
-//    {
-//        qDebug() << QString( "%1 %2" )
-//                    .arg( i.key(), -5 )
-//                    .arg( i.value(), 13 );
-//    }
 }
 
 void Spruce::normalizeEquity()

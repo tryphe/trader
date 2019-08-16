@@ -1651,7 +1651,17 @@ void Engine::onSpruceUp()
 
     spruce.calculateAmountToShortLong();
 
-    static const Coin SPRUCE_ORDER_SIZE = Coin( "0.00067000" );
+    static const Coin SPRUCE_ORDER_SIZE = Coin( "0.00100000" );
+
+    // count value of spruce positions for each market
+    QMap<QString,Coin> spruce_active;
+    for( QSet<Position*>::const_iterator i = positions->all().begin(); i != positions->all().end(); i++ )
+    {
+        Position *const &pos = *i;
+
+        if ( pos->is_onetime && pos->strategy_tag == "spruce" )
+            spruce_active[ pos->market ] += pos->btc_amount;
+    }
 
     for ( QList<QString>::const_iterator i = currencies.begin(); i != currencies.end(); i++ )
     {
@@ -1660,9 +1670,20 @@ void Engine::onSpruceUp()
 
         Coin amount_to_shortlong = spruce.getAmountToShortLongNow( market );
 
+        // find abs value
+        Coin amount_to_shortlong_abs;
+        if ( amount_to_shortlong_abs.isZeroOrLess() )
+            amount_to_shortlong_abs = Coin() - amount_to_shortlong;
+        else
+            amount_to_shortlong_abs = amount_to_shortlong;
+
+        // check if we have too much active equity open for this market to make another order
+        if ( spruce_active.value( market ) + SPRUCE_ORDER_SIZE *2 > amount_to_shortlong_abs )
+            continue;
+
         // skip amount below order size
-        if ( ( amount_to_shortlong.isGreaterThanZero() && amount_to_shortlong < SPRUCE_ORDER_SIZE *7 ) ||
-             ( amount_to_shortlong.isZeroOrLess() && amount_to_shortlong > Coin() - SPRUCE_ORDER_SIZE *7 ) )
+        if ( ( amount_to_shortlong.isGreaterThanZero() && amount_to_shortlong < SPRUCE_ORDER_SIZE *3 ) ||
+             ( amount_to_shortlong.isZeroOrLess() && amount_to_shortlong > Coin() - SPRUCE_ORDER_SIZE *3 ) )
             continue;
 
         Coin buy_price = getSpreadPriceForCurrency( currency, spruce.getBaseCurrency() );
@@ -1676,7 +1697,7 @@ void Engine::onSpruceUp()
                        .arg( buy_price, 15 );
 
         addPosition( market, is_buy ? SIDE_BUY : SIDE_SELL, buy_price, sell_price, SPRUCE_ORDER_SIZE,
-                     "onetime-timeout11", "spruce" );
+                     "onetime-timeout120", "spruce" );
     }
 }
 
