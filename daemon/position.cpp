@@ -391,7 +391,8 @@ QString Position::stringifyPositionChange()
 
     QString price_str = price;
 
-    if ( next_price.isGreaterThanZero() )
+    // don't display "next" price for onetime order
+    if ( !is_onetime )
         price_str += QString( " -> %1" )
                      .arg( next_price );
 
