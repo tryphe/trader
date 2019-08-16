@@ -123,7 +123,7 @@ void TrexREST::init()
     QTimer *spruce_timer = new QTimer( this );
     connect( spruce_timer, &QTimer::timeout, engine, &Engine::onSpruceUp );
     spruce_timer->setTimerType( Qt::VeryCoarseTimer );
-    spruce_timer->start( 4 * 60000 );
+    spruce_timer->start( 3 * 60000 );
 
 #ifdef EXTRA_NICE
     order_history_timer->setInterval( 40000 );

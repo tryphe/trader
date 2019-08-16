@@ -1651,7 +1651,7 @@ void Engine::onSpruceUp()
 
     spruce.calculateAmountToShortLong();
 
-    static const Coin SPRUCE_ORDER_SIZE = Coin( "0.00070000" );
+    static const Coin SPRUCE_ORDER_SIZE = Coin( "0.00067000" );
 
     for ( QList<QString>::const_iterator i = currencies.begin(); i != currencies.end(); i++ )
     {
@@ -1661,8 +1661,8 @@ void Engine::onSpruceUp()
         Coin amount_to_shortlong = spruce.getAmountToShortLongNow( market );
 
         // skip amount below order size
-        if ( ( amount_to_shortlong.isGreaterThanZero() && amount_to_shortlong < SPRUCE_ORDER_SIZE ) ||
-             ( amount_to_shortlong.isZeroOrLess() && amount_to_shortlong > Coin() - SPRUCE_ORDER_SIZE ) )
+        if ( ( amount_to_shortlong.isGreaterThanZero() && amount_to_shortlong < SPRUCE_ORDER_SIZE *7 ) ||
+             ( amount_to_shortlong.isZeroOrLess() && amount_to_shortlong > Coin() - SPRUCE_ORDER_SIZE *7 ) )
             continue;
 
         Coin buy_price = getSpreadPriceForCurrency( currency, spruce.getBaseCurrency() );
@@ -1676,7 +1676,7 @@ void Engine::onSpruceUp()
                        .arg( buy_price, 15 );
 
         addPosition( market, is_buy ? SIDE_BUY : SIDE_SELL, buy_price, sell_price, SPRUCE_ORDER_SIZE,
-                     "onetime-timeout120", "spruce" );
+                     "onetime-timeout11", "spruce" );
     }
 }
 
