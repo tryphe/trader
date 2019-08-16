@@ -5,6 +5,7 @@
 #include "position.h"
 #include "baserest.h"
 #include "coinamount.h"
+#include "spruce.h"
 
 #include <QObject>
 #include <QNetworkReply>
@@ -20,6 +21,7 @@ class Engine : public QObject
 
     friend class EngineTest;
     friend class PositionMan;
+    friend class CommandRunner;
 
 public:
     explicit Engine();
@@ -38,6 +40,8 @@ public:
 
     //void cancelOrderByPrice( const QString &market, QString price );
     void saveMarket( QString market, qint32 num_orders = 15 );
+    void saveSettings();
+    void loadSettings();
 
     PositionMan *positions;
     EngineSettings *settings;
@@ -56,6 +60,8 @@ public:
     QHash<QString, MarketInfo> &getMarketInfoStructure() { return market_info; }
     MarketInfo &getMarketInfo( const QString &market ) { return market_info[ market ]; }
 
+    Spruce spruce;
+
     void setTesting( bool testing ) { is_testing = testing; }
     bool isTesting() const { return is_testing; }
     void setVerbosity( int v ) { verbosity = v; }
@@ -66,11 +72,13 @@ public:
     void findBetterPrice( Position *const &pos );
 
 signals:
-    void newEngineMessage( QString &str );
+    void newEngineMessage( QString &str ); // new wss message
+    void gotUserCommandChunk( QString &s ); // loaded settings file
 
 public Q_SLOTS:
     void onCheckTimeouts();
     void onCheckDivergeConverge();
+    void onSpruceUp();
     void handleUserMessage( const QString &str );
 
 private:
@@ -86,6 +94,8 @@ private:
     void cancelOrderMeatDCOrder( Position *const &pos );
     bool tryMoveOrder( Position *const &pos );
     void fillNQ( const QString &order_id, qint8 fill_type, quint8 extra_data = 0 );
+
+    Coin getSpreadPriceForCurrency( QString currency, QString base );
 
     QHash<QString, MarketInfo> market_info;
 

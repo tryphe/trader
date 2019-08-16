@@ -70,6 +70,7 @@ private:
     void command_getfills( QStringList &args );
     void command_getshortlong( QStringList &args );
     void command_gethibuylosell( QStringList &args );
+    void command_setmarketsettings( QStringList &args );
     void command_setmarketoffset( QStringList &args );
     void command_setmarketsentiment( QStringList &args );
     void command_setnaminterval( QStringList &args );
@@ -94,12 +95,18 @@ private:
     void command_setrequesttimeout( QStringList &args );
     void command_setcanceltimeout( QStringList &args );
     void command_setslippagetimeout( QStringList &args );
+    void command_setsprucebasecurrency( QStringList &args );
+    void command_setspruceweight( QStringList &args );
+    void command_setsprucestartnode( QStringList &args );
+    void command_setspruceshortlongtotal( QStringList &args );
+
     void command_getconfig( QStringList &args );
     void command_getinternal( QStringList &args );
     void command_setmaintenancetime( QStringList &args );
     void command_clearstratstats( QStringList &args );
     void command_clearallstats( QStringList &args );
     void command_savemarket( QStringList &args );
+    void command_savesettings( QStringList &args );
     void command_sendcommand( QStringList &args );
     void command_setchatty( QStringList &args );
     void command_exit( QStringList &args );

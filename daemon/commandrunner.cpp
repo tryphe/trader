@@ -62,6 +62,7 @@ CommandRunner::CommandRunner( Engine *_e, REST_OBJECT *_rest, Stats *_stats, QOb
     command_map.insert( "getfills", std::bind( &CommandRunner::command_getfills, this, _1 ) );
     command_map.insert( "getshortlong", std::bind( &CommandRunner::command_getshortlong, this, _1 ) );
     command_map.insert( "gethibuylosell", std::bind( &CommandRunner::command_gethibuylosell, this, _1 ) );
+    command_map.insert( "setmarketsettings", std::bind( &CommandRunner::command_setmarketsettings, this, _1 ) );
     command_map.insert( "setmarketoffset", std::bind( &CommandRunner::command_setmarketoffset, this, _1 ) );
     command_map.insert( "setmarketsentiment", std::bind( &CommandRunner::command_setmarketsentiment, this, _1 ) );
     command_map.insert( "setnaminterval", std::bind( &CommandRunner::command_setnaminterval, this, _1 ) );
@@ -86,12 +87,17 @@ CommandRunner::CommandRunner( Engine *_e, REST_OBJECT *_rest, Stats *_stats, QOb
     command_map.insert( "setrequesttimeout", std::bind( &CommandRunner::command_setrequesttimeout, this, _1 ) );
     command_map.insert( "setcanceltimeout", std::bind( &CommandRunner::command_setcanceltimeout, this, _1 ) );
     command_map.insert( "setslippagetimeout", std::bind( &CommandRunner::command_setslippagetimeout, this, _1 ) );
+    command_map.insert( "setsprucebasecurrency", std::bind( &CommandRunner::command_setsprucebasecurrency, this, _1 ) );
+    command_map.insert( "setspruceweight", std::bind( &CommandRunner::command_setspruceweight, this, _1 ) );
+    command_map.insert( "setsprucestartnode", std::bind( &CommandRunner::command_setsprucestartnode, this, _1 ) );
+    command_map.insert( "setspruceshortlongtotal", std::bind( &CommandRunner::command_setspruceshortlongtotal, this, _1 ) );
     command_map.insert( "getconfig", std::bind( &CommandRunner::command_getconfig, this, _1 ) );
     command_map.insert( "getinternal", std::bind( &CommandRunner::command_getinternal, this, _1 ) );
     command_map.insert( "setmaintenancetime", std::bind( &CommandRunner::command_setmaintenancetime, this, _1 ) );
     command_map.insert( "clearstratstats", std::bind( &CommandRunner::command_clearstratstats, this, _1 ) );
     command_map.insert( "clearallstats", std::bind( &CommandRunner::command_clearallstats, this, _1 ) );
     command_map.insert( "savemarket", std::bind( &CommandRunner::command_savemarket, this, _1 ) );
+    command_map.insert( "savesettings", std::bind( &CommandRunner::command_savesettings, this, _1 ) );
     command_map.insert( "sendcommand", std::bind( &CommandRunner::command_sendcommand, this, _1 ) );
     command_map.insert( "setchatty", std::bind( &CommandRunner::command_setchatty, this, _1 ) );
     command_map.insert( "exit", std::bind( &CommandRunner::command_exit, this, _1 ) );
@@ -518,6 +524,25 @@ void CommandRunner::command_gethibuylosell( QStringList &args )
         kDebug() << i.value();
 }
 
+void CommandRunner::command_setmarketsettings( QStringList &args )
+{
+    if ( !checkArgs( args, 9 ) ) return;
+
+    const QString &market = args.value( 1 );
+
+    engine->setMarketSettings( market,
+                               args.value( 2 ).toInt(),
+                               args.value( 3 ).toInt(),
+                               args.value( 4 ).toInt(),
+                               args.value( 5 ).toInt(),
+                               args.value( 6 ).toInt(),
+                               args.value( 7 ).toInt(),
+                               args.value( 8 ).toInt() == 0 ? false : true,
+                               args.value( 9 ).toDouble() );
+
+    kDebug() << "loaded market settings for" << market;
+}
+
 void CommandRunner::command_setmarketoffset( QStringList &args )
 {
     if ( !checkArgs( args, 2 ) ) return;
@@ -676,6 +701,42 @@ void CommandRunner::command_setslippagetimeout( QStringList &args )
     kDebug() << "slippage timeout for" << market << "is" << engine->getMarketInfo( market ).slippage_timeout;
 }
 
+void CommandRunner::command_setsprucebasecurrency( QStringList &args )
+{
+    if ( !checkArgs( args, 1 ) ) return;
+
+    engine->spruce.setBaseCurrency( args.value( 1 ) );
+    kDebug() << "spruce base currency is now" << engine->spruce.getBaseCurrency();
+}
+
+void CommandRunner::command_setspruceweight( QStringList &args )
+{
+    if ( !checkArgs( args, 2 ) ) return;
+
+    engine->spruce.setMarketWeight( args.value( 1 ),
+                                    args.value( 2 ) );
+    kDebug() << "spruce market weight for" << args.value( 1 ) << "is" << args.value( 2 );
+}
+
+void CommandRunner::command_setsprucestartnode( QStringList &args )
+{
+    if ( !checkArgs( args, 3 ) ) return;
+
+    engine->spruce.addStartNode( args.value( 1 ),
+                                 args.value( 2 ),
+                                 args.value( 3 ) );
+    kDebug() << "spruce added start node for" << args.value( 1 ) << args.value( 2 ) << args.value( 3 );
+}
+
+void CommandRunner::command_setspruceshortlongtotal( QStringList &args )
+{
+    if ( !checkArgs( args, 2 ) ) return;
+
+    engine->spruce.addToShortLonged( args.value( 1 ),
+                                     args.value( 2 ) );
+    kDebug() << "spruce shortlong total for" << args.value( 1 ) << "is" << args.value( 2 );
+}
+
 void CommandRunner::command_getconfig( QStringList &args )
 {
     const QString &market = args.value( 1 );
@@ -793,6 +854,12 @@ void CommandRunner::command_clearallstats( QStringList &args )
 void CommandRunner::command_savemarket( QStringList &args )
 {
     engine->saveMarket( args.value( 1 ), args.value( 2 ).toInt() );
+}
+
+void CommandRunner::command_savesettings( QStringList &args )
+{
+    Q_UNUSED( args )
+    engine->saveSettings();
 }
 
 void CommandRunner::command_sendcommand( QStringList &args )

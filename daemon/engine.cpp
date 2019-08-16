@@ -346,6 +346,19 @@ if ( !is_testing )
     positions->remove( pos );
 }
 
+Coin Engine::getSpreadPriceForCurrency( QString currency, QString base )
+{
+    QString market = base + "-" + currency;
+
+    if ( !market_info.contains( market ) )
+        return Coin();
+
+    Coin midprice = ( market_info[ market ].highest_buy + market_info[ market ].lowest_sell ) / 2;
+    midprice.truncateByTicksize( CoinAmount::SATOSHI );
+
+    return midprice;
+}
+
 void Engine::processFilledOrders( QVector<Position*> &to_be_filled, qint8 fill_type )
 {
     static QJsonArray ext_updates;
@@ -911,9 +924,8 @@ void Engine::saveMarket( QString market, qint32 num_orders )
     // open dump file
     QString path = Global::getTraderPath() + QDir::separator() + QString( "index-%1.txt" ).arg( market );
     QFile savefile( path );
-    bool is_open = savefile.open( QIODevice::WriteOnly | QIODevice::Text );
 
-    if ( !is_open )
+    if ( !savefile.open( QIODevice::WriteOnly | QIODevice::Text ) )
     {
         kDebug() << "local error: couldn't open savemarket file" << path;
         return;
@@ -1015,6 +1027,92 @@ void Engine::saveMarket( QString market, qint32 num_orders )
     // save the buffer
     out_savefile.flush();
     savefile.close();
+}
+
+void Engine::saveSettings()
+{
+    // open settings file
+    QString path = Global::getMarketSettingsPath();
+    QFile savefile( path );
+
+    if ( !savefile.open( QIODevice::WriteOnly | QIODevice::Text ) )
+    {
+        kDebug() << "local error: couldn't open savemarket file" << path;
+        return;
+    }
+
+    MarketInfo default_market;
+    QTextStream out_savefile( &savefile );
+
+    quint32 items_saved = 0;
+    for ( QHash<QString, MarketInfo>::const_iterator i = market_info.begin(); i != market_info.end(); i++ )
+    {
+        const QString &market = i.key();
+        const MarketInfo &info = i.value();
+
+        // check if settings are not default
+        if ( info.order_min != default_market.order_min ||
+             info.order_max != default_market.order_max ||
+             info.order_dc  != default_market.order_dc ||
+             info.order_dc_nice != default_market.order_dc_nice ||
+             info.order_landmark_thresh != default_market.order_landmark_thresh ||
+             info.order_landmark_start != default_market.order_landmark_start ||
+             info.market_sentiment != default_market.market_sentiment ||
+             info.market_offset != default_market.market_offset )
+        {
+            out_savefile << QString( "setmarketsettings %1 %2 %3 %4 %5 %6 %7 %8 %9\n" )
+                            .arg( market )
+                            .arg( info.order_min )
+                            .arg( info.order_max )
+                            .arg( info.order_dc )
+                            .arg( info.order_dc_nice )
+                            .arg( info.order_landmark_thresh )
+                            .arg( info.order_landmark_start )
+                            .arg( info.market_sentiment )
+                            .arg( info.market_offset );
+
+            items_saved++;
+        }
+    }
+
+    // save spruce state
+    if ( spruce.isActive() )
+    {
+        out_savefile << spruce.getSaveState();
+        items_saved++;
+    }
+
+    // if we didn't save anything, just exit
+    if ( items_saved == 0 )
+        return;
+
+    // save the buffer
+    out_savefile.flush();
+    savefile.close();
+}
+
+void Engine::loadSettings()
+{
+    QString path = Global::getMarketSettingsPath();
+    QFile loadfile( path );
+
+    if ( !loadfile.open( QIODevice::ReadWrite | QIODevice::Text ) )
+    {
+        kDebug() << "local error: couldn't load savemarket file" << path;
+        return;
+    }
+
+    if ( loadfile.bytesAvailable() == 0 )
+        return;
+
+    spruce = Spruce(); // cleanup leftover spruce
+
+    // emit new lines
+    QString data = loadfile.readAll();
+    kDebug() << "[Engine] loaded settings," << data.size() << "bytes.";
+
+    emit gotUserCommandChunk( data );
+    return;
 }
 
 void Engine::flipPosition( Position *const &pos )
@@ -1533,6 +1631,53 @@ void Engine::onCheckDivergeConverge()
 
     diverge( diverge_buys ); // diverge buy (one)->(many)
     diverge( diverge_sells ); // diverge sell (one)->(many)
+}
+
+void Engine::onSpruceUp()
+{
+    if ( !spruce.isActive() )
+        return;
+
+    spruce.clearLiveNodes();
+    QMap<QString/*currency*/,Coin> spread_price;
+    const QList<QString> &currencies = spruce.getCurrencies();
+    for ( QList<QString>::const_iterator i = currencies.begin(); i != currencies.end(); i++ )
+    {
+        const QString &currency = *i;
+        Coin price = getSpreadPriceForCurrency( currency, spruce.getBaseCurrency() );
+        spread_price.insert( currency, price );
+        spruce.addLiveNode( currency, price );
+    }
+
+    spruce.calculateAmountToShortLong();
+
+    static const Coin SPRUCE_ORDER_SIZE = Coin( "0.00070000" );
+
+    for ( QList<QString>::const_iterator i = currencies.begin(); i != currencies.end(); i++ )
+    {
+        const QString &currency = *i;
+        QString market = spruce.getBaseCurrency() + "-" + currency;
+
+        Coin amount_to_shortlong = spruce.getAmountToShortLongNow( market );
+
+        // skip amount below order size
+        if ( ( amount_to_shortlong.isGreaterThanZero() && amount_to_shortlong < SPRUCE_ORDER_SIZE ) ||
+             ( amount_to_shortlong.isZeroOrLess() && amount_to_shortlong > Coin() - SPRUCE_ORDER_SIZE ) )
+            continue;
+
+        Coin buy_price = getSpreadPriceForCurrency( currency, spruce.getBaseCurrency() );
+        Coin sell_price = buy_price + market_info[ market ].price_ticksize;
+
+        bool is_buy = amount_to_shortlong.isZeroOrLess();
+
+        kDebug() << QString( "[Spruce] %1 %2 midprice: %3" )
+                       .arg( market, -10 )
+                       .arg( amount_to_shortlong, 15 )
+                       .arg( buy_price, 15 );
+
+        addPosition( market, is_buy ? SIDE_BUY : SIDE_SELL, buy_price, sell_price, SPRUCE_ORDER_SIZE,
+                     "onetime-timeout120", "spruce" );
+    }
 }
 
 void Engine::converge( QMap<QString, QVector<qint32>> &market_map, quint8 side )

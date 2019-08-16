@@ -59,6 +59,9 @@ Trader::Trader( QObject *parent )
     // open IPC command listener
     listener = new CommandListener();
     connect( listener, &CommandListener::gotDataChunk, runner, &CommandRunner::runCommandChunk );
+    connect( engine, &Engine::gotUserCommandChunk, runner, &CommandRunner::runCommandChunk );
+
+    engine->loadSettings();
 
     // open fallback listener that uses a plain file, useful for copying a 'setorder' dump into a file
     listener_fallback = new FallbackListener();

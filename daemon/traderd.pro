@@ -26,6 +26,7 @@ SOURCES += main.cpp \
     position.cpp \
     engine.cpp \
     positionman.cpp \
+    spruce.cpp \
     trader.cpp \
     stats.cpp \
     trexrest.cpp \
@@ -48,6 +49,7 @@ HEADERS += build-config.h \
     position.h \
     engine.h \
     positionman.h \
+    spruce.h \
     trader.h \
     stats.h \
     trexrest.h \

@@ -197,6 +197,11 @@ static inline const QString getIPCPath( QString subpath = EXCHANGE_SUBPATH )
     return getTraderPath( subpath ) + QDir::separator() + "trader.ipc";
 }
 
+static inline const QString getMarketSettingsPath()
+{
+    return getTraderPath() + QDir::separator() + "settings.txt";
+}
+
 static inline void ensurePath()
 {
     // get dir ~/.config/<trader_dir>

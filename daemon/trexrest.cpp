@@ -119,10 +119,16 @@ void TrexREST::init()
     ticker_timer->start( 10000 );
     onCheckOrderBooks();
 
+    // this timer requests the order book
+    QTimer *spruce_timer = new QTimer( this );
+    connect( spruce_timer, &QTimer::timeout, engine, &Engine::onSpruceUp );
+    spruce_timer->setTimerType( Qt::VeryCoarseTimer );
+    spruce_timer->start( 4 * 60000 );
+
 #ifdef EXTRA_NICE
-    order_history_timer->setInterval( 20000 );
-    orderbook_timer->setInterval( 30000 );
-    ticker_timer->setInterval( 30000 );
+    order_history_timer->setInterval( 40000 );
+    orderbook_timer->setInterval( 41000 );
+    ticker_timer->setInterval( 42000 );
 #endif
 
     //sendRequest( "account/getdepositaddress", "NXT" );
