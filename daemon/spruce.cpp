@@ -52,7 +52,9 @@ Coin Spruce::getAmountToShortLongNow( QString market )
     if ( !amount_to_shortlong.contains( market ) )
         return Coin();
 
-    return amount_to_shortlong.value( market ) + shortlonged_total.value( market );
+    Coin ret = ( Coin() - amount_to_shortlong.value( market ) ) + shortlonged_total.value( market );
+
+    return ret;
 }
 
 void Spruce::addToShortLonged( QString market, Coin amount )
@@ -150,10 +152,10 @@ void Spruce::equalizeDates()
     RelativeCoeffs relative = getHiLoCoeffs( coeffs );
 
     Coin ticksize = Coin( "0.00100000" );
-    Coin leverage = Coin( "1.05" ); // not really leverage, just for scaling
+    Coin leverage = Coin( "1.40" ); // not really leverage, just for scaling
 
     QList<Node*> &new_nodes = nodes_now;
-    while ( relative.hi_coeff.ratio( 0.982 ) > relative.lo_coeff )
+    while ( relative.hi_coeff.ratio( 0.97 ) > relative.lo_coeff )
     {
         // find highest/lowest coeff market
         for ( QList<Node*>::const_iterator i = new_nodes.begin(); i != new_nodes.end(); i++ )
@@ -190,9 +192,6 @@ void Spruce::equalizeDates()
     for ( QMap<QString,Coin>::const_iterator i = shortlongs.begin(); i != shortlongs.end(); i++ )
     {
         QString market = i.key();
-
-        shortlongs[ i.key() ] = ( Coin() - i.value() );
-        shortlongs[ i.key() ] += shortlonged_total.value( market );
 
         // TODO: adapt this to each exchange
         market.prepend( base_currency + "-" );

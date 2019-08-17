@@ -60,6 +60,8 @@ public:
     QHash<QString, MarketInfo> &getMarketInfoStructure() { return market_info; }
     MarketInfo &getMarketInfo( const QString &market ) { return market_info[ market ]; }
 
+    QPair<Coin,Coin> getSpruceSpread( const QString &market );
+
     Spruce spruce;
 
     void setTesting( bool testing ) { is_testing = testing; }

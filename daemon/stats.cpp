@@ -96,7 +96,7 @@ void Stats::addStrategyStats( Position *const &pos )
 
     if ( pos->strategy_tag == "spruce" )
     {
-        engine->spruce.addToShortLonged( pos->market, pos->side == SIDE_BUY ? pos->btc_amount : Coin() - pos->btc_amount );
+        engine->spruce.addToShortLonged( pos->market, amount );
     }
 }
 

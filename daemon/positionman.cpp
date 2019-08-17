@@ -829,6 +829,8 @@ void PositionMan::cancel( Position *const &pos, bool quiet, quint8 cancel_reason
                           cancel_reason == CANCELLING_HIGHEST            ? " hi  " :
                           cancel_reason == CANCELLING_FOR_MAX_AGE        ? " age " :
                           cancel_reason == CANCELLING_FOR_SHORTLONG      ? " s/l " :
+                          cancel_reason == CANCELLING_FOR_SPRUCE         ? " sp1 " :
+                          cancel_reason == CANCELLING_FOR_SPRUCE_2       ? " sp2 " :
                                                                            "" ); // CANCELLING_FOR_SLIPPAGE_RESET
 
         kDebug() << QString( "%1 %2" )
