@@ -49,9 +49,6 @@ Trader::Trader( QObject *parent )
     // print build info
     kDebug() << "[Trader] Startup success." << Global::getBuildString();
 
-    // tests passed. start rest interface which powers the engine
-    rest->init();
-
     // create command runner
     runner = new CommandRunner( engine, rest, stats );
     connect( runner, &CommandRunner::exitSignal, this, &Trader::handleExitSignal );
@@ -73,6 +70,9 @@ Trader::Trader( QObject *parent )
     connect( engine, &Engine::newEngineMessage, wss_server, &WSSServer::handleEngineMessage );
     connect( wss_server, &WSSServer::newUserMessage, engine, &Engine::handleUserMessage );
 #endif
+
+    // tests passed. start rest interface which powers the engine
+    rest->init();
 }
 
 Trader::~Trader()
