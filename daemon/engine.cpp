@@ -1556,8 +1556,8 @@ void Engine::onCheckTimeouts()
 
             // if the price is suboptimal, we should cancel it
             if ( buy_price.isGreaterThanZero() && sell_price.isGreaterThanZero() &&
-                 ( ( pos->side == SIDE_BUY  && pos->price < buy_price.ratio( 0.98 ) ) ||
-                   ( pos->side == SIDE_SELL && pos->price > sell_price.ratio( 1.02 ) ) ) )
+                 ( ( pos->side == SIDE_BUY  && pos->price < buy_price.ratio( 0.99 ) ) ||
+                   ( pos->side == SIDE_SELL && pos->price > sell_price.ratio( 1.01 ) ) ) )
             {
                 positions->cancel( pos, false, CANCELLING_FOR_SPRUCE );
                 return;
@@ -1748,13 +1748,15 @@ void Engine::onSpruceUp()
         const QString &market = i.key();
         const Coin &amount_to_shortlong = i.value();
 
-        static const Coin SPRUCE_ORDER_SIZE = Coin( "0.00300000" );
-        static const Coin SPRUCE_LONG_MAX = Coin( "0.08000000" ); // max long total
-        static const Coin SPRUCE_SHORT_MAX = Coin( "-0.16000000" ); // max short total
+        static const Coin SPRUCE_LONG_MAX = Coin( "0.25000000" ); // max long total
+        static const Coin SPRUCE_SHORT_MAX = Coin( "-0.40000000" ); // max short total
 
-        // scale market max to the spruce weight of the currency
-        Coin SPRUCE_ORDER_MARKET_MAX = Coin( "0.05000000" ); // max orders active for each market
-        SPRUCE_ORDER_MARKET_MAX *= market_weight.value( market );
+        // scale order size to the spruce weight
+        static const Coin SPRUCE_MIN_ORDER_SIZE = Coin( "0.00070000" );
+        const Coin SPRUCE_ORDER_SIZE = std::max( Coin( "0.00500000" ) * market_weight.value( market ), SPRUCE_MIN_ORDER_SIZE );
+
+        // scale market max to the spruce weight
+        const Coin SPRUCE_ORDER_MARKET_MAX = std::max( Coin( "0.15000000" ) * market_weight.value( market ),  Coin( "0.01500000" ) );
 
         kDebug() << QString( "[Spruce] %1 rating %2 on-order %3" )
                        .arg( market, -10 )
@@ -1769,7 +1771,7 @@ void Engine::onSpruceUp()
             amount_to_shortlong_abs = amount_to_shortlong;
 
         // skip noisy amount
-        if ( amount_to_shortlong_abs < ( SPRUCE_ORDER_MARKET_MAX /2 ) )
+        if ( amount_to_shortlong_abs < SPRUCE_ORDER_SIZE *5 )
             continue;
 
         // don't go over our per-market max
@@ -1777,7 +1779,7 @@ void Engine::onSpruceUp()
             continue;
 
         // don't go over the abs value of our new projected position
-        if ( spruce_active.value( market ) + ( SPRUCE_ORDER_MARKET_MAX /2 ) >= amount_to_shortlong_abs )
+        if ( spruce_active.value( market ) + SPRUCE_ORDER_SIZE *5 >= amount_to_shortlong_abs )
             continue;
 
         // get spread price for new spruce order
@@ -1790,18 +1792,18 @@ void Engine::onSpruceUp()
         // are we too long/short to place another order on this side?
         if ( is_buy && total > SPRUCE_LONG_MAX )
         {
-            kDebug() << "local info: spruce too long";
+            kDebug() << "[Spruce] info: too long for now";
             continue;
         }
         else if ( !is_buy && total < SPRUCE_SHORT_MAX )
         {
-            kDebug() << "local info: spruce too short";
+            kDebug() << "[Spruce] info: too short for now";
             continue;
         }
 
         // queue the order quietly
-//        addPosition( market, is_buy ? SIDE_BUY : SIDE_SELL, buy_price, sell_price, SPRUCE_ORDER_SIZE,
-//                     "onetime", "spruce", QVector<qint32>(), false, true );
+        addPosition( market, is_buy ? SIDE_BUY : SIDE_SELL, buy_price, sell_price, SPRUCE_ORDER_SIZE,
+                     "onetime", "spruce", QVector<qint32>(), false, true );
     }
 }
 
