@@ -13,6 +13,26 @@ Spruce::~Spruce()
     clearLiveNodes();
 }
 
+Coin Spruce::getMarketWeight( QString currency )
+{
+    QString market = getBaseCurrency() + "-" + currency;
+
+    if ( !market_weight.values().contains( currency ) )
+        return Coin();
+
+    Coin ret;
+    for ( QMultiMap<Coin,QString>::const_iterator i = market_weight.begin(); i != market_weight.end(); i++ )
+    {
+        if ( i.value() == currency )
+        {
+            ret = i.key();
+            break;
+        }
+    }
+
+    return ret;
+}
+
 void Spruce::addStartNode( QString _currency, QString _quantity, QString _price )
 {
     Node *n = new Node();

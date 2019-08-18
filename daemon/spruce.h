@@ -32,6 +32,8 @@ struct RelativeCoeffs // tracks hi/lo coeffs with their corresponding markets
 
 class Spruce
 {
+    friend class Engine;
+
 public:
     explicit Spruce();
     ~Spruce();
@@ -39,6 +41,7 @@ public:
     void setBaseCurrency( QString currency ) { base_currency = currency; }
     QString getBaseCurrency() { return base_currency; }
     void setMarketWeight( QString market, Coin weight ) { market_weight.insert( weight, market ); }
+    Coin getMarketWeight( QString currency );
 
     void addStartNode( QString _currency, QString _quantity, QString _price );
     void addLiveNode( QString _currency, QString _price );
