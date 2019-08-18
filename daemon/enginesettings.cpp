@@ -1,4 +1,5 @@
 #include "enginesettings.h"
+#include "build-config.h"
 
 EngineSettings::EngineSettings()
 {
