@@ -32,15 +32,13 @@ struct RelativeCoeffs // tracks hi/lo coeffs with their corresponding markets
 
 class Spruce
 {
-    friend class Engine;
-
 public:
     explicit Spruce();
     ~Spruce();
 
     void setBaseCurrency( QString currency ) { base_currency = currency; }
     QString getBaseCurrency() { return base_currency; }
-    void setMarketWeight( QString market, Coin weight ) { market_weight.insert( weight, market ); }
+    void setMarketWeight( QString market, Coin weight );
     Coin getMarketWeight( QString currency );
 
     void addStartNode( QString _currency, QString _quantity, QString _price );
@@ -64,7 +62,8 @@ private:
     RelativeCoeffs getHiLoCoeffs( QMap<QString,Coin> &coeffs );
 
     QString base_currency;
-    QMultiMap<Coin,QString> market_weight; // note: weights are >0 and <=1
+    QMap<QString,Coin> market_weight; // note: weights are >0 and <=1
+    QMultiMap<Coin,QString> market_weight_by_coin; // note: weights are >0 and <=1
     QMap<QString,Coin> shortlonged_total; // running total of shorted/longed coins
     QMap<QString,Coin> amount_to_shortlong; // amount to shortlong now based on total above
     QMap<QString,Coin> original_quantity; // track original start quantity, since it changes

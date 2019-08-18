@@ -100,6 +100,7 @@ CommandRunner::CommandRunner( Engine *_e, REST_OBJECT *_rest, Stats *_stats, QOb
     command_map.insert( "savesettings", std::bind( &CommandRunner::command_savesettings, this, _1 ) );
     command_map.insert( "sendcommand", std::bind( &CommandRunner::command_sendcommand, this, _1 ) );
     command_map.insert( "setchatty", std::bind( &CommandRunner::command_setchatty, this, _1 ) );
+    command_map.insert( "spruceup", std::bind( &CommandRunner::command_spruceup, this, _1 ) );
     command_map.insert( "exit", std::bind( &CommandRunner::command_exit, this, _1 ) );
     command_map.insert( "stop", std::bind( &CommandRunner::command_exit, this, _1 ) );
     command_map.insert( "quit", std::bind( &CommandRunner::command_exit, this, _1 ) );
@@ -219,9 +220,8 @@ bool CommandRunner::checkArgs( const QStringList &args, qint32 expected_args_min
     return true;
 }
 
-void CommandRunner::command_getbalances( QStringList &args )
+void CommandRunner::command_getbalances( QStringList & )
 {
-    Q_UNUSED( args )
 #if defined(EXCHANGE_BITTREX)
     rest->sendRequest( TREX_COMMAND_GET_BALANCES );
 #elif defined(EXCHANGE_BINANCE)
@@ -231,15 +231,13 @@ void CommandRunner::command_getbalances( QStringList &args )
 #endif
 }
 
-void CommandRunner::command_getlastprices( QStringList &args )
+void CommandRunner::command_getlastprices( QStringList & )
 {
-    Q_UNUSED( args )
     stats->printLastPrices();
 }
 
-void CommandRunner::command_getbuyselltotal( QStringList &args )
+void CommandRunner::command_getbuyselltotal( QStringList & )
 {
-    Q_UNUSED( args )
     stats->printBuySellTotal();
 }
 
@@ -735,6 +733,11 @@ void CommandRunner::command_setspruceshortlongtotal( QStringList &args )
     engine->spruce.addToShortLonged( args.value( 1 ),
                                      args.value( 2 ) );
     kDebug() << "spruce shortlong total for" << args.value( 1 ) << "is" << args.value( 2 );
+}
+
+void CommandRunner::command_spruceup( QStringList & )
+{
+    engine->onSpruceUp();
 }
 
 void CommandRunner::command_getconfig( QStringList &args )

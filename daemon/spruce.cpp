@@ -13,24 +13,28 @@ Spruce::~Spruce()
     clearLiveNodes();
 }
 
-Coin Spruce::getMarketWeight( QString currency )
+void Spruce::setMarketWeight( QString market, Coin weight )
 {
-    QString market = getBaseCurrency() + "-" + currency;
-
-    if ( !market_weight.values().contains( currency ) )
-        return Coin();
-
-    Coin ret;
-    for ( QMultiMap<Coin,QString>::const_iterator i = market_weight.begin(); i != market_weight.end(); i++ )
+    // clear by coin
+    for ( QMultiMap<Coin,QString>::const_iterator i = market_weight_by_coin.begin(); i != market_weight_by_coin.end(); i++ )
     {
-        if ( i.value() == currency )
+        if ( i.value() == market )
         {
-            ret = i.key();
+            market_weight_by_coin.remove( i.key(), i.value() );
             break;
         }
     }
 
-    return ret;
+    market_weight[ market ] = weight;
+    market_weight_by_coin.insert( weight, market );
+}
+
+Coin Spruce::getMarketWeight( QString currency )
+{
+    if ( !market_weight.contains( currency ) )
+        return Coin();
+
+    return market_weight[ currency ];
 }
 
 void Spruce::addStartNode( QString _currency, QString _quantity, QString _price )
@@ -114,11 +118,11 @@ QString Spruce::getSaveState()
             .arg( base_currency );
 
     // save market weights
-    for ( QMultiMap<Coin,QString>::const_iterator i = market_weight.begin(); i != market_weight.end(); i++ )
+    for ( QMap<QString,Coin>::const_iterator i = market_weight.begin(); i != market_weight.end(); i++ )
     {
         ret += QString( "setspruceweight %1 %2\n" )
-                .arg( i.value() )
-                .arg( i.key() );
+                .arg( i.key() )
+                .arg( i.value() );
     }
 
     // save start nodes
@@ -172,10 +176,10 @@ void Spruce::equalizeDates()
     RelativeCoeffs relative = getHiLoCoeffs( coeffs );
 
     Coin ticksize = Coin( "0.00100000" );
-    Coin leverage = Coin( "1.40" ); // not really leverage, just for scaling
+    Coin leverage = Coin( "1.5" ); // not really leverage, just for scaling
 
     QList<Node*> &new_nodes = nodes_now;
-    while ( relative.hi_coeff.ratio( 0.97 ) > relative.lo_coeff )
+    while ( relative.hi_coeff.ratio( 0.975 ) > relative.lo_coeff )
     {
         // find highest/lowest coeff market
         for ( QList<Node*>::const_iterator i = new_nodes.begin(); i != new_nodes.end(); i++ )
@@ -248,7 +252,7 @@ void Spruce::normalizeEquity()
     // step 3: calculate weighted equity from lowest to highest weight (multimap is sorted by weight)
     //         for each market and recalculate mean/total equity
     int ct = nodes_start.size();
-    for ( QMultiMap<Coin,QString>::const_iterator i = market_weight.begin(); i != market_weight.end(); i++ )
+    for ( QMap<Coin,QString>::const_iterator i = market_weight_by_coin.begin(); i != market_weight_by_coin.end(); i++ )
     {
         const QString &currency = i.value();
         const Coin &weight = i.key();

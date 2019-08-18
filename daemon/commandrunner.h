@@ -99,6 +99,7 @@ private:
     void command_setspruceweight( QStringList &args );
     void command_setsprucestartnode( QStringList &args );
     void command_setspruceshortlongtotal( QStringList &args );
+    void command_spruceup( QStringList &args );
 
     void command_getconfig( QStringList &args );
     void command_getinternal( QStringList &args );
