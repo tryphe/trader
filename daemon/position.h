@@ -51,7 +51,7 @@ public:
 
     // our position data
     QString indices_str;
-    Coin buy_price, sell_price, price;
+    Coin price, buy_price, sell_price;
     Coin buy_price_original, sell_price_original;
     Coin original_size, btc_amount, per_trade_profit, profit_margin;
     quint32 price_reset_count;

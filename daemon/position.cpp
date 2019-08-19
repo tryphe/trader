@@ -97,6 +97,10 @@ Position::Position( QString _market, quint8 _side, QString _buy_price, QString _
         sell_price = ( hi_price_weight_total / ordersize_weight_total ) + shim;
         original_size = ordersize_amount_total;
 
+        // truncate price by satoshi
+        buy_price.truncateByTicksize( CoinAmount::SATOSHI );
+        sell_price.truncateByTicksize( CoinAmount::SATOSHI );
+
         // catch bad buy price due to shim
         if ( CoinAmount::SATOSHI > buy_price )
             buy_price = CoinAmount::SATOSHI;
