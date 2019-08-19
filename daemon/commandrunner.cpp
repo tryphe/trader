@@ -91,6 +91,7 @@ CommandRunner::CommandRunner( Engine *_e, REST_OBJECT *_rest, Stats *_stats, QOb
     command_map.insert( "setspruceweight", std::bind( &CommandRunner::command_setspruceweight, this, _1 ) );
     command_map.insert( "setsprucestartnode", std::bind( &CommandRunner::command_setsprucestartnode, this, _1 ) );
     command_map.insert( "setspruceshortlongtotal", std::bind( &CommandRunner::command_setspruceshortlongtotal, this, _1 ) );
+    command_map.insert( "setspruceleverage", std::bind( &CommandRunner::command_setspruceleverage, this, _1 ) );
     command_map.insert( "getconfig", std::bind( &CommandRunner::command_getconfig, this, _1 ) );
     command_map.insert( "getinternal", std::bind( &CommandRunner::command_getinternal, this, _1 ) );
     command_map.insert( "setmaintenancetime", std::bind( &CommandRunner::command_setmaintenancetime, this, _1 ) );
@@ -733,6 +734,11 @@ void CommandRunner::command_setspruceshortlongtotal( QStringList &args )
     engine->spruce.addToShortLonged( args.value( 1 ),
                                      args.value( 2 ) );
     kDebug() << "spruce shortlong total for" << args.value( 1 ) << "is" << args.value( 2 );
+}
+
+void CommandRunner::command_setspruceleverage( QStringList &args )
+{
+    engine->spruce.setLeverage( args.value( 1 ) );
 }
 
 void CommandRunner::command_spruceup( QStringList & )

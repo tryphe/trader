@@ -41,6 +41,8 @@ public:
     void setMarketWeight( QString market, Coin weight );
     Coin getMarketWeight( QString currency );
 
+    void setLeverage( Coin leverage ) { m_leverage = leverage; }
+
     void addStartNode( QString _currency, QString _quantity, QString _price );
     void addLiveNode( QString _currency, QString _price );
     void clearLiveNodes();
@@ -67,6 +69,7 @@ private:
     QMap<QString,Coin> shortlonged_total; // running total of shorted/longed coins
     QMap<QString,Coin> amount_to_shortlong; // amount to shortlong now based on total above
     QMap<QString,Coin> original_quantity; // track original start quantity, since it changes
+    Coin m_leverage;
 
     QList<Node*> nodes_start, nodes_now;
 };

@@ -3,6 +3,7 @@
 
 Spruce::Spruce()
 {
+    m_leverage = Coin( "0.5" );
 }
 
 Spruce::~Spruce()
@@ -117,6 +118,10 @@ QString Spruce::getSaveState()
     ret += QString( "setsprucebasecurrency %1\n" )
             .arg( base_currency );
 
+    // save leverage
+    ret += QString( "setspruceleverage %1\n" )
+            .arg( m_leverage );
+
     // save market weights
     for ( QMap<QString,Coin>::const_iterator i = market_weight.begin(); i != market_weight.end(); i++ )
     {
@@ -175,12 +180,16 @@ void Spruce::equalizeDates()
     // find hi/lo coeffs
     RelativeCoeffs relative = getHiLoCoeffs( coeffs );
 
-    Coin ticksize = Coin( "0.00100000" );
-    Coin leverage = Coin( "1.5" ); // not really leverage, just for scaling
+    Coin ticksize = CoinAmount::SATOSHI * 100000;
 
     QList<Node*> &new_nodes = nodes_now;
-    while ( relative.hi_coeff.ratio( 0.975 ) > relative.lo_coeff )
+    quint64 ct = 1;
+    while ( relative.hi_coeff.ratio( 0.970 ) > relative.lo_coeff )
     {
+        // if we are dealing with a lot of btc, speed up the ratio convergence
+        if ( ct++ % 10000 == 0 )
+            ticksize += CoinAmount::SATOSHI * 100000;
+
         // find highest/lowest coeff market
         for ( QList<Node*>::const_iterator i = new_nodes.begin(); i != new_nodes.end(); i++ )
         {
@@ -189,14 +198,12 @@ void Spruce::equalizeDates()
             if ( n->currency == relative.hi_currency &&
                  n->amount > ticksize *10 ) // check if we have enough to short
             {
-                //qDebug() << n->currency << "has coeff" << relative.hi_coeff << ", shorting" << pip_size;
-                shortlongs[ n->currency ] -= ticksize * leverage;
+                shortlongs[ n->currency ] -= ticksize * m_leverage;
                 n->amount -= ticksize;
             }
             else if ( n->currency == relative.lo_currency )
             {
-                //qDebug() << n->currency << "has coeff" << relative.lo_coeff << ", longing" << pip_size;
-                shortlongs[ n->currency ] += ticksize * leverage;
+                shortlongs[ n->currency ] += ticksize * m_leverage;
                 n->amount += ticksize;
             }
             else
@@ -204,7 +211,6 @@ void Spruce::equalizeDates()
                 continue;
             }
 
-            //n->quantity *= Coin( old_amount / n->amount ); // adjust the quantity by modified amount ratio
             n->recalculateQuantityByPrice();
         }
 
