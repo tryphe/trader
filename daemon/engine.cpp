@@ -177,7 +177,7 @@ Position *Engine::addPosition( QString market, quint8 side, QString buy_price, Q
     Position *const &pos = new Position( market, side, buy_price, sell_price, order_size, strategy_tag, indices, landmark, this );
 
     // check for correctly loaded position data
-    if ( !pos || pos->market.isEmpty() || pos->price.isEmpty() || pos->btc_amount.isZeroOrLess() || pos->quantity.isZeroOrLess() )
+    if ( !pos || pos->market.isEmpty() || pos->price.isZeroOrLess() || pos->btc_amount.isZeroOrLess() || pos->quantity.isZeroOrLess() )
     {
         kDebug() << "local warning: new position failed to initialize" << market << side << buy_price << sell_price << order_size << indices << landmark;
         if ( pos ) delete pos;

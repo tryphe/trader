@@ -306,8 +306,8 @@ void Position::jsonifyPositionSet( QJsonArray &arr )
     arr += is_landmark;
     arr += is_slippage;
     arr += side;
-    arr += price;
-    arr += original_size;
+    arr += price.toAmountString();
+    arr += original_size.toAmountString();
 }
 
 void Position::jsonifyPositionCancel( QJsonArray &arr )

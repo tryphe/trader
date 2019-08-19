@@ -37,8 +37,6 @@ public:
 
     // exchange data
     QString market, // BTC_CLAM...
-            price, // cache price to avoid toSatoshiFormat conversion
-            original_size,
             order_number;
 
     Coin quantity;
@@ -53,9 +51,9 @@ public:
 
     // our position data
     QString indices_str;
-    Coin buy_price, sell_price;
-    QString buy_price_original, sell_price_original;
-    Coin btc_amount, per_trade_profit, profit_margin;
+    Coin buy_price, sell_price, price;
+    Coin buy_price_original, sell_price_original;
+    Coin original_size, btc_amount, per_trade_profit, profit_margin;
     quint32 price_reset_count;
     quint32 max_age_minutes; // how many minutes the order should exist for before we cancel it
     QString strategy_tag; // tag for short/long
