@@ -3,7 +3,9 @@
 
 Spruce::Spruce()
 {
-    m_leverage = Coin( "0.5" );
+    m_leverage = "0.5";
+    m_hedge_target = "0.95"; // keep our market valuations at most 1-x% apart
+    m_order_greed = "0.99"; // keep our spread at least 1-x% apart
 }
 
 Spruce::~Spruce()
@@ -122,6 +124,15 @@ QString Spruce::getSaveState()
     ret += QString( "setspruceleverage %1\n" )
             .arg( m_leverage );
 
+    // save hedge target
+    ret += QString( "setsprucehedgetarget %1\n" )
+            .arg( m_hedge_target );
+
+    // save order greed
+    ret += QString( "setspruceordergreed %1\n" )
+            .arg( m_order_greed );
+
+
     // save market weights
     for ( QMap<QString,Coin>::const_iterator i = market_weight.begin(); i != market_weight.end(); i++ )
     {
@@ -184,7 +195,7 @@ void Spruce::equalizeDates()
 
     QList<Node*> &new_nodes = nodes_now;
     quint64 ct = 1;
-    while ( relative.hi_coeff.ratio( 0.970 ) > relative.lo_coeff )
+    while ( relative.hi_coeff * m_hedge_target > relative.lo_coeff )
     {
         // if we are dealing with a lot of btc, speed up the ratio convergence
         if ( ct++ % 10000 == 0 )

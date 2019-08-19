@@ -1210,7 +1210,7 @@ QPair<Coin, Coin> Engine::getSpruceSpread( const QString &market )
 
     // ensure the spread is more profitable than fee*2
     int j = 0;
-    while ( buy_price > sell_price.ratio( 0.994 ) )
+    while ( buy_price > sell_price * spruce.getOrderGreed() )
     {
         if ( j++ % 2 == 0 )
             buy_price -= ticksize;
@@ -1558,8 +1558,8 @@ void Engine::onCheckTimeouts()
             // if the price is suboptimal, we should cancel it
             if ( pos->order_set_time < current_time - ( 20 * 60000 ) &&
                  buy_price.isGreaterThanZero() && sell_price.isGreaterThanZero() &&
-                 ( ( pos->side == SIDE_BUY  && pos->price < buy_price.ratio( 0.98 ) ) ||
-                   ( pos->side == SIDE_SELL && pos->price > sell_price.ratio( 1.02 ) ) ) )
+                 ( ( pos->side == SIDE_BUY  && pos->price < buy_price.ratio( 0.97 ) ) ||
+                   ( pos->side == SIDE_SELL && pos->price > sell_price.ratio( 1.03 ) ) ) )
             {
                 positions->cancel( pos, false, CANCELLING_FOR_SPRUCE );
                 return;
@@ -1811,8 +1811,8 @@ void Engine::onSpruceUp()
             if ( pos->market != market )
                 continue;
 
-            if ( (  is_buy && pos->side == SIDE_SELL && buy_price  >= pos->sell_price.ratio( 0.994 ) ) ||
-                 ( !is_buy && pos->side == SIDE_BUY  && sell_price <= pos->buy_price.ratio( 1.006 ) ) )
+            if ( (  is_buy && pos->side == SIDE_SELL && buy_price  >= pos->sell_price.ratio( 0.9945 ) ) ||
+                 ( !is_buy && pos->side == SIDE_BUY  && sell_price <= pos->buy_price.ratio( 1.0055 ) ) )
             {
                 kDebug() << "[Spruce] cancelling conflicting order" << pos->order_number;
                 positions->cancel( pos );

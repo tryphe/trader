@@ -42,6 +42,10 @@ public:
     Coin getMarketWeight( QString currency );
 
     void setLeverage( Coin leverage ) { m_leverage = leverage; }
+    void setHedgeTarget( Coin ratio ) { m_hedge_target = ratio; }
+
+    void setOrderGreed( Coin ratio ) { m_order_greed = ratio; }
+    Coin getOrderGreed() { return m_order_greed; }
 
     void addStartNode( QString _currency, QString _quantity, QString _price );
     void addLiveNode( QString _currency, QString _price );
@@ -69,7 +73,7 @@ private:
     QMap<QString,Coin> shortlonged_total; // running total of shorted/longed coins
     QMap<QString,Coin> amount_to_shortlong; // amount to shortlong now based on total above
     QMap<QString,Coin> original_quantity; // track original start quantity, since it changes
-    Coin m_leverage;
+    Coin m_leverage, m_hedge_target, m_order_greed;
 
     QList<Node*> nodes_start, nodes_now;
 };
