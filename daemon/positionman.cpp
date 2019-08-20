@@ -88,6 +88,9 @@ QMap<QString, Coin> PositionMan::getActiveSpruceOrdersTotal()
     {
         Position *const &pos = *i;
 
+        if ( pos->is_cancelling )
+            continue;
+
         if ( pos->is_onetime && pos->strategy_tag == "spruce" )
             spruce_total[ pos->market ] += pos->btc_amount;
     }
@@ -101,6 +104,9 @@ QMap<QString, Coin> PositionMan::getActiveSpruceOrdersOffset()
     for( QSet<Position*>::const_iterator i = positions_all.begin(); i != positions_all.end(); i++ )
     {
         Position *const &pos = *i;
+
+        if ( pos->is_cancelling )
+            continue;
 
         if ( pos->is_onetime && pos->strategy_tag == "spruce" )
         {
@@ -392,6 +398,58 @@ Position *PositionMan::getHighestPingPong( const QString &market ) const
     }
 
     return hi_pos;
+}
+
+Position *PositionMan::getHighestSpruceBuy( const QString &market ) const
+{
+    Position *ret = nullptr;
+    Coin hi_buy = -1;
+
+    for ( QSet<Position*>::const_iterator i = positions_active.begin(); i != positions_active.end(); i++ )
+    {
+        Position *const &pos = *i;
+        if (  pos->side != SIDE_BUY ||          // buys only
+              pos->is_cancelling ||             // must not be cancelling
+             !pos->is_onetime ||
+              pos->strategy_tag != "spruce" ||
+              pos->market != market             // check market filter
+              )
+            continue;
+
+        if ( pos->buy_price > hi_buy ) // position index is greater than our incrementor
+        {
+            hi_buy = pos->buy_price;
+            ret = pos;
+        }
+    }
+
+    return ret;
+}
+
+Position *PositionMan::getLowestSpruceSell( const QString &market ) const
+{
+    Position *ret = nullptr;
+    Coin lo_sell = CoinAmount::A_LOT;
+
+    for ( QSet<Position*>::const_iterator i = positions_active.begin(); i != positions_active.end(); i++ )
+    {
+        Position *const &pos = *i;
+        if (  pos->side != SIDE_SELL ||         // sells only
+              pos->is_cancelling ||             // must not be cancelling
+             !pos->is_onetime ||
+              pos->strategy_tag != "spruce" ||
+              pos->market != market             // check market filter
+              )
+            continue;
+
+        if ( pos->sell_price < lo_sell ) // position index is less than our incrementor
+        {
+            lo_sell = pos->sell_price;
+            ret = pos;
+        }
+    }
+
+    return ret;
 }
 
 qint32 PositionMan::getLowestPingPongIndex( const QString &market ) const
