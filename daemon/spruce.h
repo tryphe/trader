@@ -37,9 +37,9 @@ public:
     ~Spruce();
 
     void setBaseCurrency( QString currency ) { base_currency = currency; }
-    QString getBaseCurrency() { return base_currency; }
+    QString getBaseCurrency() const { return base_currency; }
     void setMarketWeight( QString market, Coin weight );
-    Coin getMarketWeight( QString currency );
+    Coin getMarketWeight( QString market ) const;
 
     void setLeverage( Coin leverage ) { m_leverage = leverage; }
     void setHedgeTarget( Coin ratio ) { m_hedge_target = ratio; }
@@ -55,10 +55,19 @@ public:
     Coin getAmountToShortLongNow( QString market );
     void addToShortLonged( QString market, Coin amount );
 
-    QList<QString> getCurrencies();
-    QList<QString> getMarkets();
+    QList<QString> getCurrencies() const;
+    QList<QString> getMarkets() const;
     bool isActive() { return !( base_currency.isEmpty() || nodes_start.isEmpty() || market_weight.isEmpty() ); }
     QString getSaveState();
+
+    void setLongMax( Coin longmax ) { m_long_max = longmax; }
+    Coin getLongMax() const { return m_long_max; }
+    void setShortMax( Coin shortmax ) { m_short_max = shortmax; }
+    Coin getShortMax() const { return m_short_max; }
+    void setMarketMax( Coin marketmax ) { m_market_max = marketmax; }
+    Coin getMarketMax( QString market = "" ) const { return market.isEmpty() ? m_market_max : std::max( m_market_max * getMarketWeight( market ),  m_market_max * Coin( "0.1" ) ); }
+    void setOrderSize( Coin ordersize ) { m_order_size = ordersize; }
+    Coin getOrderSize( QString market = "" ) const { return market.isEmpty() ? m_order_size : std::max( m_order_size * getMarketWeight( market ), m_order_size_min ); }
 
 private:
     void equalizeDates();
@@ -73,7 +82,7 @@ private:
     QMap<QString,Coin> shortlonged_total; // running total of shorted/longed coins
     QMap<QString,Coin> amount_to_shortlong; // amount to shortlong now based on total above
     QMap<QString,Coin> original_quantity; // track original start quantity, since it changes
-    Coin m_leverage, m_hedge_target, m_order_greed;
+    Coin m_leverage, m_hedge_target, m_order_greed, m_long_max, m_short_max, m_market_max, m_order_size, m_order_size_min;
 
     QList<Node*> nodes_start, nodes_now;
 };

@@ -102,6 +102,10 @@ private:
     void command_setspruceleverage( QStringList &args );
     void command_setsprucehedgetarget( QStringList &args );
     void command_setspruceordergreed( QStringList &args );
+    void command_setsprucelongmax( QStringList &args );
+    void command_setspruceshortmax( QStringList &args );
+    void command_setsprucemarketmax( QStringList &args );
+    void command_setspruceordersize( QStringList &args );
     void command_spruceup( QStringList &args );
 
     void command_getconfig( QStringList &args );

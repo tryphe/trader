@@ -3,9 +3,18 @@
 
 Spruce::Spruce()
 {
+    /// user settings
     m_leverage = "0.5";
     m_hedge_target = "0.95"; // keep our market valuations at most 1-x% apart
     m_order_greed = "0.99"; // keep our spread at least 1-x% apart
+
+    m_long_max = "0.3000000"; // max long total
+    m_short_max = "-0.50000000"; // max short total
+    m_market_max = "0.20000000";
+    m_order_size = "0.00500000";
+
+    /// per-exchange constants
+    m_order_size_min = "0.00070000"; // TODO: scale this minimum to each exchange
 }
 
 Spruce::~Spruce()
@@ -32,12 +41,18 @@ void Spruce::setMarketWeight( QString market, Coin weight )
     market_weight_by_coin.insert( weight, market );
 }
 
-Coin Spruce::getMarketWeight( QString currency )
+Coin Spruce::getMarketWeight( QString market ) const
 {
-    if ( !market_weight.contains( currency ) )
-        return Coin();
+    for ( QList<QString>::const_iterator i = getCurrencies().begin(); i != getCurrencies().end(); i++ )
+    {
+        const QString &currency = *i;
+        const QString market_recreated = getBaseCurrency() + "-" + currency;
 
-    return market_weight[ currency ];
+        if ( market == market_recreated )
+            return market_weight.value( currency );
+    }
+
+    return Coin();
 }
 
 void Spruce::addStartNode( QString _currency, QString _quantity, QString _price )
@@ -89,12 +104,12 @@ void Spruce::addToShortLonged( QString market, Coin amount )
     shortlonged_total[ market ] += amount;
 }
 
-QList<QString> Spruce::getCurrencies()
+QList<QString> Spruce::getCurrencies() const
 {
     return original_quantity.keys();
 }
 
-QList<QString> Spruce::getMarkets()
+QList<QString> Spruce::getMarkets() const
 {
     QList<QString> keys = original_quantity.keys(), ret;
 
@@ -117,21 +132,28 @@ QString Spruce::getSaveState()
         return ret;
 
     // save base
-    ret += QString( "setsprucebasecurrency %1\n" )
-            .arg( base_currency );
+    ret += QString( "setsprucebasecurrency %1\n" ).arg( base_currency );
 
     // save leverage
-    ret += QString( "setspruceleverage %1\n" )
-            .arg( m_leverage );
+    ret += QString( "setspruceleverage %1\n" ).arg( m_leverage );
 
     // save hedge target
-    ret += QString( "setsprucehedgetarget %1\n" )
-            .arg( m_hedge_target );
+    ret += QString( "setsprucehedgetarget %1\n" ).arg( m_hedge_target );
 
     // save order greed
-    ret += QString( "setspruceordergreed %1\n" )
-            .arg( m_order_greed );
+    ret += QString( "setspruceordergreed %1\n" ).arg( m_order_greed );
 
+    // save long max
+    ret += QString( "setsprucelongmax %1\n" ).arg( m_long_max );
+
+    // save short max
+    ret += QString( "setspruceshortmax %1\n" ).arg( m_short_max );
+
+    // save market max
+    ret += QString( "setsprucemarketmax %1\n" ).arg( m_market_max );
+
+    // save order size
+    ret += QString( "setspruceordersize %1\n" ).arg( m_order_size );
 
     // save market weights
     for ( QMap<QString,Coin>::const_iterator i = market_weight.begin(); i != market_weight.end(); i++ )

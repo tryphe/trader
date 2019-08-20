@@ -1723,7 +1723,6 @@ void Engine::onSpruceUp()
 
     spruce.clearLiveNodes();
     QMap<QString/*currency*/,Coin> spread_price;
-    QMap<QString/*market*/,Coin> market_weight;
     const QList<QString> &currencies = spruce.getCurrencies();
     for ( QList<QString>::const_iterator i = currencies.begin(); i != currencies.end(); i++ )
     {
@@ -1739,9 +1738,6 @@ void Engine::onSpruceUp()
 
         spread_price.insert( currency, price );
         spruce.addLiveNode( currency, price );
-
-        // insert market, weight
-        market_weight.insert( spruce.getBaseCurrency() + "-" + currency, spruce.getMarketWeight( currency ) );
     }
 
     spruce.calculateAmountToShortLong();
@@ -1762,20 +1758,13 @@ void Engine::onSpruceUp()
     }
     kDebug() << "[Spruce] shortlong:" << total;
 
+    const Coin long_max = spruce.getLongMax();
+    const Coin short_max = spruce.getShortMax();
+
     for ( QMap<QString,Coin>::const_iterator i = amount_to_shortlong_map.begin(); i != amount_to_shortlong_map.end(); i++ )
     {
         const QString &market = i.key();
         const Coin &amount_to_shortlong = i.value();
-
-        static const Coin SPRUCE_LONG_MAX = Coin( "0.3000000" ); // max long total
-        static const Coin SPRUCE_SHORT_MAX = Coin( "-0.50000000" ); // max short total
-
-        // scale order size to the spruce weight
-        static const Coin SPRUCE_MIN_ORDER_SIZE = Coin( "0.00070000" );
-        const Coin SPRUCE_ORDER_SIZE = std::max( Coin( "0.00500000" ) * market_weight.value( market ), SPRUCE_MIN_ORDER_SIZE );
-
-        // scale market max to the spruce weight
-        const Coin SPRUCE_ORDER_MARKET_MAX = std::max( Coin( "0.20000000" ) * market_weight.value( market ),  Coin( "0.02000000" ) );
 
         kDebug() << QString( "[Spruce] %1 rating %2 on-order %3" )
                        .arg( market, -10 )
@@ -1783,38 +1772,38 @@ void Engine::onSpruceUp()
                        .arg( spruce_active.value( market ), -13 );
 
         // find abs value
-        Coin amount_to_shortlong_abs;
-        if ( amount_to_shortlong.isZeroOrLess() )
-            amount_to_shortlong_abs = Coin() - amount_to_shortlong;
-        else
-            amount_to_shortlong_abs = amount_to_shortlong;
+        const Coin amount_to_shortlong_abs = amount_to_shortlong.isZeroOrLess() ? Coin() - amount_to_shortlong :
+                                                                                  amount_to_shortlong;
+
+        const Coin order_size = spruce.getOrderSize( market );
+        const Coin order_max = spruce.getMarketMax( market );
 
         // skip noisy amount
-        if ( amount_to_shortlong_abs < SPRUCE_ORDER_SIZE *2 )
+        if ( amount_to_shortlong_abs < order_size *2 )
             continue;
 
         // don't go over our per-market max
-        if ( spruce_active.value( market ) + SPRUCE_ORDER_SIZE >= SPRUCE_ORDER_MARKET_MAX )
+        if ( spruce_active.value( market ) + order_size >= order_max )
             continue;
 
         // don't go over the abs value of our new projected position
-        if ( spruce_active.value( market ) + SPRUCE_ORDER_SIZE *2 >= amount_to_shortlong_abs )
+        if ( spruce_active.value( market ) + order_size *2 >= amount_to_shortlong_abs )
             continue;
 
         // get spread price for new spruce order
-        QPair<Coin,Coin> spread = getSpruceSpread( market );
-        Coin &buy_price = spread.first;
-        Coin &sell_price = spread.second;
+        const QPair<Coin,Coin> spread = getSpruceSpread( market );
+        const Coin &buy_price = spread.first;
+        const Coin &sell_price = spread.second;
 
-        bool is_buy = amount_to_shortlong.isZeroOrLess();
+        const bool is_buy = amount_to_shortlong.isZeroOrLess();
 
         // are we too long/short to place another order on this side?
-        if ( is_buy && total > SPRUCE_LONG_MAX )
+        if ( is_buy && total > long_max )
         {
             kDebug() << "[Spruce] info: too long for now";
             continue;
         }
-        else if ( !is_buy && total < SPRUCE_SHORT_MAX )
+        else if ( !is_buy && total < short_max )
         {
             kDebug() << "[Spruce] info: too short for now";
             continue;
@@ -1837,7 +1826,7 @@ void Engine::onSpruceUp()
         }
 
         // queue the order quietly
-        addPosition( market, is_buy ? SIDE_BUY : SIDE_SELL, buy_price, sell_price, SPRUCE_ORDER_SIZE,
+        addPosition( market, is_buy ? SIDE_BUY : SIDE_SELL, buy_price, sell_price, order_size,
                      "onetime", "spruce", QVector<qint32>(), false, true );
     }
 }
