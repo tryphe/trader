@@ -1482,6 +1482,11 @@ void Engine::onCheckTimeouts()
 
     const qint64 current_time = QDateTime::currentMSecsSinceEpoch();
 
+    // store active spruce positions, but only if spruce is active
+    static QMap<QString, Coin> spruce_offset;
+    if ( spruce.isActive() )
+        spruce_offset = positions->getActiveSpruceOrdersOffset();
+
     // look for timed out requests
     for ( QSet<Position*>::const_iterator i = positions->queued().begin(); i != positions->queued().end(); i++ )
     {
@@ -1550,10 +1555,12 @@ void Engine::onCheckTimeouts()
              pos->order_set_time > 0 &&
              pos->strategy_tag == "spruce" )
         {
+            /// step 1: look for bad/stale prices
             // get spread price for new spruce order
             QPair<Coin,Coin> spread = getSpruceSpread( pos->market );
-            Coin &buy_price = spread.first;
-            Coin &sell_price = spread.second;
+            const Coin &buy_price = spread.first;
+            const Coin &sell_price = spread.second;
+            const Coin amount_to_shortlong = spruce.getAmountToShortLongNow( pos->market );
 
             // if the price is suboptimal, we should cancel it
             if ( pos->order_set_time < current_time - ( 20 * 60000 ) &&
@@ -1565,9 +1572,18 @@ void Engine::onCheckTimeouts()
                 return;
             }
 
+            /// step 2: look for spruce active <> what we should short/long
+            if ( ( pos->side == SIDE_BUY  && amount_to_shortlong.isZeroOrLess()      && amount_to_shortlong + spruce_offset.value( pos->market ) > Coin() ) ||
+                 ( pos->side == SIDE_SELL && amount_to_shortlong.isGreaterThanZero() && amount_to_shortlong + spruce_offset.value( pos->market ) < Coin() ) )
+            {
+                positions->cancel( pos, false, CANCELLING_FOR_SPRUCE_3 );
+                return;
+            }
+
             // if the order is stale and on the wrong side, cancel it
-            if ( ( spruce.getAmountToShortLongNow( pos->market ).isGreaterThanZero() && pos->side == SIDE_BUY ) ||
-                 ( spruce.getAmountToShortLongNow( pos->market ).isZeroOrLess() &&      pos->side == SIDE_SELL ) )
+            // NOTE: not sure if we still need this or not, because the above logic is similar
+            if ( ( amount_to_shortlong.isGreaterThanZero() && pos->side == SIDE_BUY ) ||
+                 ( amount_to_shortlong.isZeroOrLess() &&      pos->side == SIDE_SELL ) )
             {
                 positions->cancel( pos, false, CANCELLING_FOR_SPRUCE_2 );
                 return;
@@ -1723,14 +1739,7 @@ void Engine::onSpruceUp()
     spruce.calculateAmountToShortLong();
 
     // count value of spruce positions for each market
-    QMap<QString,Coin> spruce_active;
-    for( QSet<Position*>::const_iterator i = positions->all().begin(); i != positions->all().end(); i++ )
-    {
-        Position *const &pos = *i;
-
-        if ( pos->is_onetime && pos->strategy_tag == "spruce" )
-            spruce_active[ pos->market ] += pos->btc_amount;
-    }
+    QMap<QString,Coin> spruce_active = positions->getActiveSpruceOrdersTotal();
 
     QMap<QString,Coin> amount_to_shortlong_map;
 

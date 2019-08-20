@@ -31,6 +31,7 @@ static const quint8 CANCELLING_FOR_MAX_AGE                  ( 6 );
 static const quint8 CANCELLING_FOR_USER                     ( 7 );
 static const quint8 CANCELLING_FOR_SPRUCE                   ( 8 );
 static const quint8 CANCELLING_FOR_SPRUCE_2                 ( 9 );
+static const quint8 CANCELLING_FOR_SPRUCE_3                 ( 10 );
 
 static const quint8 FILL_GETORDER                           ( 1 );
 static const quint8 FILL_HISTORY                            ( 2 );

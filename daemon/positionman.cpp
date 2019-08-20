@@ -81,6 +81,37 @@ Coin PositionMan::getLoSellFlipPrice( const QString &market ) const
     return pos->buy_price;
 }
 
+QMap<QString, Coin> PositionMan::getActiveSpruceOrdersTotal()
+{
+    QMap<QString,Coin> spruce_total;
+    for( QSet<Position*>::const_iterator i = positions_all.begin(); i != positions_all.end(); i++ )
+    {
+        Position *const &pos = *i;
+
+        if ( pos->is_onetime && pos->strategy_tag == "spruce" )
+            spruce_total[ pos->market ] += pos->btc_amount;
+    }
+
+    return spruce_total;
+}
+
+QMap<QString, Coin> PositionMan::getActiveSpruceOrdersOffset()
+{
+    QMap<QString,Coin> spruce_offset;
+    for( QSet<Position*>::const_iterator i = positions_all.begin(); i != positions_all.end(); i++ )
+    {
+        Position *const &pos = *i;
+
+        if ( pos->is_onetime && pos->strategy_tag == "spruce" )
+        {
+            if      ( pos->side == SIDE_BUY  ) spruce_offset[ pos->market ] += pos->btc_amount;
+            else if ( pos->side == SIDE_SELL ) spruce_offset[ pos->market ] -= pos->btc_amount;
+        }
+    }
+
+    return spruce_offset;
+}
+
 Position *PositionMan::getByIndex( const QString &market, const qint32 idx ) const
 {
     Position *ret = nullptr;
@@ -831,6 +862,7 @@ void PositionMan::cancel( Position *const &pos, bool quiet, quint8 cancel_reason
                           cancel_reason == CANCELLING_FOR_SHORTLONG      ? " s/l " :
                           cancel_reason == CANCELLING_FOR_SPRUCE         ? " sp1 " :
                           cancel_reason == CANCELLING_FOR_SPRUCE_2       ? " sp2 " :
+                          cancel_reason == CANCELLING_FOR_SPRUCE_3       ? " sp3 " :
                                                                            "" ); // CANCELLING_FOR_SLIPPAGE_RESET
 
         kDebug() << QString( "%1 %2" )
