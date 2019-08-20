@@ -25,20 +25,20 @@ Spruce::~Spruce()
     clearLiveNodes();
 }
 
-void Spruce::setMarketWeight( QString market, Coin weight )
+void Spruce::setCurrencyWeight( QString currency, Coin weight )
 {
     // clear by coin
-    for ( QMultiMap<Coin,QString>::const_iterator i = market_weight_by_coin.begin(); i != market_weight_by_coin.end(); i++ )
+    for ( QMultiMap<Coin,QString>::const_iterator i = currency_weight_by_coin.begin(); i != currency_weight_by_coin.end(); i++ )
     {
-        if ( i.value() == market )
+        if ( i.value() == currency )
         {
-            market_weight_by_coin.remove( i.key(), i.value() );
+            currency_weight_by_coin.remove( i.key(), i.value() );
             break;
         }
     }
 
-    market_weight[ market ] = weight;
-    market_weight_by_coin.insert( weight, market );
+    currency_weight[ currency ] = weight;
+    currency_weight_by_coin.insert( weight, currency );
 }
 
 Coin Spruce::getMarketWeight( QString market ) const
@@ -49,7 +49,7 @@ Coin Spruce::getMarketWeight( QString market ) const
         const QString market_recreated = getBaseCurrency() + "-" + currency;
 
         if ( market == market_recreated )
-            return market_weight.value( currency );
+            return currency_weight.value( currency );
     }
 
     return Coin();
@@ -156,7 +156,7 @@ QString Spruce::getSaveState()
     ret += QString( "setspruceordersize %1\n" ).arg( m_order_size );
 
     // save market weights
-    for ( QMap<QString,Coin>::const_iterator i = market_weight.begin(); i != market_weight.end(); i++ )
+    for ( QMap<QString,Coin>::const_iterator i = currency_weight.begin(); i != currency_weight.end(); i++ )
     {
         ret += QString( "setspruceweight %1 %2\n" )
                 .arg( i.key() )
@@ -291,7 +291,7 @@ void Spruce::normalizeEquity()
     // step 3: calculate weighted equity from lowest to highest weight (multimap is sorted by weight)
     //         for each market and recalculate mean/total equity
     int ct = nodes_start.size();
-    for ( QMap<Coin,QString>::const_iterator i = market_weight_by_coin.begin(); i != market_weight_by_coin.end(); i++ )
+    for ( QMap<Coin,QString>::const_iterator i = currency_weight_by_coin.begin(); i != currency_weight_by_coin.end(); i++ )
     {
         const QString &currency = i.value();
         const Coin &weight = i.key();

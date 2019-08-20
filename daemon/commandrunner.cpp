@@ -718,9 +718,9 @@ void CommandRunner::command_setspruceweight( QStringList &args )
 {
     if ( !checkArgs( args, 2 ) ) return;
 
-    engine->spruce.setMarketWeight( args.value( 1 ),
-                                    args.value( 2 ) );
-    kDebug() << "spruce market weight for" << args.value( 1 ) << "is" << args.value( 2 );
+    engine->spruce.setCurrencyWeight( args.value( 1 ),
+                                      args.value( 2 ) );
+    kDebug() << "spruce currency weight for" << args.value( 1 ) << "is" << args.value( 2 );
 }
 
 void CommandRunner::command_setsprucestartnode( QStringList &args )

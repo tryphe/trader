@@ -38,7 +38,7 @@ public:
 
     void setBaseCurrency( QString currency ) { base_currency = currency; }
     QString getBaseCurrency() const { return base_currency; }
-    void setMarketWeight( QString market, Coin weight );
+    void setCurrencyWeight( QString currency, Coin weight );
     Coin getMarketWeight( QString market ) const;
 
     void setLeverage( Coin leverage ) { m_leverage = leverage; }
@@ -57,7 +57,7 @@ public:
 
     QList<QString> getCurrencies() const;
     QList<QString> getMarkets() const;
-    bool isActive() { return !( base_currency.isEmpty() || nodes_start.isEmpty() || market_weight.isEmpty() ); }
+    bool isActive() { return !( base_currency.isEmpty() || nodes_start.isEmpty() || currency_weight.isEmpty() ); }
     QString getSaveState();
 
     void setLongMax( Coin longmax ) { m_long_max = longmax; }
@@ -77,8 +77,8 @@ private:
     RelativeCoeffs getHiLoCoeffs( QMap<QString,Coin> &coeffs );
 
     QString base_currency;
-    QMap<QString,Coin> market_weight; // note: weights are >0 and <=1
-    QMultiMap<Coin,QString> market_weight_by_coin; // note: weights are >0 and <=1
+    QMap<QString,Coin> currency_weight; // note: weights are >0 and <=1
+    QMultiMap<Coin,QString> currency_weight_by_coin; // note: weights are >0 and <=1
     QMap<QString,Coin> shortlonged_total; // running total of shorted/longed coins
     QMap<QString,Coin> amount_to_shortlong; // amount to shortlong now based on total above
     QMap<QString,Coin> original_quantity; // track original start quantity, since it changes
