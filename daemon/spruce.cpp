@@ -213,23 +213,26 @@ void Spruce::equalizeDates()
     // find hi/lo coeffs
     RelativeCoeffs relative = getHiLoCoeffs( coeffs );
 
-    Coin ticksize = CoinAmount::SATOSHI * 100000;
+    Coin ticksize = CoinAmount::SATOSHI * 50000;
 
-    QList<Node*> &new_nodes = nodes_now;
+    // avoid infinite loop
+    if ( m_hedge_target > Coin( "0.998" ) )
+        m_hedge_target = "0.998";
+
     quint64 ct = 1;
     while ( relative.hi_coeff * m_hedge_target > relative.lo_coeff )
     {
         // if we are dealing with a lot of btc, speed up the ratio convergence
         if ( ct++ % 10000 == 0 )
-            ticksize += CoinAmount::SATOSHI * 100000;
+            ticksize += CoinAmount::SATOSHI * 50000;
 
         // find highest/lowest coeff market
-        for ( QList<Node*>::const_iterator i = new_nodes.begin(); i != new_nodes.end(); i++ )
+        for ( QList<Node*>::const_iterator i = nodes_now.begin(); i != nodes_now.end(); i++ )
         {
             Node *n = *i;
 
             if ( n->currency == relative.hi_currency &&
-                 n->amount > ticksize *10 ) // check if we have enough to short
+                 n->amount > ticksize ) // check if we have enough to short
             {
                 shortlongs[ n->currency ] -= ticksize * m_leverage;
                 n->amount -= ticksize;

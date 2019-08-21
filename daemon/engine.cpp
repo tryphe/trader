@@ -1562,6 +1562,7 @@ void Engine::onCheckTimeouts()
             const Coin &buy_price = spread.first;
             const Coin &sell_price = spread.second;
             const Coin amount_to_shortlong = spruce.getAmountToShortLongNow( market );
+            const Coin order_size = spruce.getOrderSize( market );
 
             // if the price is suboptimal, we should cancel it
             if ( pos->order_set_time < current_time - ( 20 * 60000 ) &&
@@ -1574,20 +1575,22 @@ void Engine::onCheckTimeouts()
             }
 
             // if the order is active but our rating is the opposite polarity, cancel it
-            if ( ( amount_to_shortlong.isGreaterThanZero() && pos->side == SIDE_BUY ) ||
-                 ( amount_to_shortlong.isZeroOrLess() &&      pos->side == SIDE_SELL ) )
+            if ( ( amount_to_shortlong > order_size *2              && pos->side == SIDE_BUY ) ||
+                 ( amount_to_shortlong < Coin() - ( order_size *2 ) && pos->side == SIDE_SELL ) )
             {
                 positions->cancel( pos, false, CANCELLING_FOR_SPRUCE_2 );
                 return;
             }
 
             /// step 2: look for spruce active <> what we should short/long
-            if ( ( pos->side == SIDE_BUY  && amount_to_shortlong.isZeroOrLess()      && amount_to_shortlong + spruce_offset.value( market ) > Coin() ) ||
-                 ( pos->side == SIDE_SELL && amount_to_shortlong.isGreaterThanZero() && amount_to_shortlong + spruce_offset.value( market ) < Coin() ) )
+            if ( ( pos->side == SIDE_BUY  && amount_to_shortlong.isZeroOrLess() &&
+                   amount_to_shortlong + spruce_offset.value( market ) > order_size *2 ) ||
+                 ( pos->side == SIDE_SELL && amount_to_shortlong.isGreaterThanZero() &&
+                   amount_to_shortlong + spruce_offset.value( market ) < Coin() - ( order_size *2 ) ) )
             {
-                // if it's a buy, we should cancel the highest price. if it's a sell, cancel the lowest price.
-                Position *const &pos_to_cancel = pos->side == SIDE_BUY ? positions->getHighestSpruceBuy( market ) :
-                                                                         positions->getLowestSpruceSell( market );
+                // if it's a buy, we should cancel the lowest price. if it's a sell, cancel the highets price.
+                Position *const &pos_to_cancel = pos->side == SIDE_BUY ? positions->getLowestSpruceBuy( market ) :
+                                                                         positions->getHighestSpruceSell( market );
 
                 // check badptr just incase, but should be impossible to get here
                 if ( !pos )

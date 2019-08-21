@@ -400,10 +400,10 @@ Position *PositionMan::getHighestPingPong( const QString &market ) const
     return hi_pos;
 }
 
-Position *PositionMan::getHighestSpruceBuy( const QString &market ) const
+Position *PositionMan::getLowestSpruceBuy( const QString &market ) const
 {
     Position *ret = nullptr;
-    Coin hi_buy = -1;
+    Coin lo_buy = CoinAmount::A_LOT;
 
     for ( QSet<Position*>::const_iterator i = positions_active.begin(); i != positions_active.end(); i++ )
     {
@@ -416,9 +416,9 @@ Position *PositionMan::getHighestSpruceBuy( const QString &market ) const
               )
             continue;
 
-        if ( pos->buy_price > hi_buy ) // position index is greater than our incrementor
+        if ( pos->buy_price < lo_buy ) // position index is greater than our incrementor
         {
-            hi_buy = pos->buy_price;
+            lo_buy = pos->buy_price;
             ret = pos;
         }
     }
@@ -426,10 +426,10 @@ Position *PositionMan::getHighestSpruceBuy( const QString &market ) const
     return ret;
 }
 
-Position *PositionMan::getLowestSpruceSell( const QString &market ) const
+Position *PositionMan::getHighestSpruceSell( const QString &market ) const
 {
     Position *ret = nullptr;
-    Coin lo_sell = CoinAmount::A_LOT;
+    Coin hi_sell = -1;
 
     for ( QSet<Position*>::const_iterator i = positions_active.begin(); i != positions_active.end(); i++ )
     {
@@ -442,9 +442,9 @@ Position *PositionMan::getLowestSpruceSell( const QString &market ) const
               )
             continue;
 
-        if ( pos->sell_price < lo_sell ) // position index is less than our incrementor
+        if ( pos->sell_price > hi_sell ) // position index is less than our incrementor
         {
-            lo_sell = pos->sell_price;
+            hi_sell = pos->sell_price;
             ret = pos;
         }
     }
