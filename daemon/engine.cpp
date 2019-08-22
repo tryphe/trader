@@ -1484,9 +1484,13 @@ void Engine::onCheckTimeouts()
 
     const qint64 current_time = QDateTime::currentMSecsSinceEpoch();
 
-    // store active spruce positions, but only if spruce is active
-    static QMap<QString, Coin> spruce_offset;
-    if ( spruce.isActive() ) spruce_offset = positions->getActiveSpruceOrdersOffset();
+    static QMap<QString, Coin> spruce_offset; // store active spruce positions,
+    static QMap<QString, QPair<Coin,Coin>> spread_map; // store spruce spread for each market
+    if ( spruce.isActive() )
+    {
+        spruce_offset = positions->getActiveSpruceOrdersOffset();
+        if ( !spread_map.isEmpty() ) spread_map.clear();
+    }
 
     // look for timed out requests
     for ( QSet<Position*>::const_iterator i = positions->queued().begin(); i != positions->queued().end(); i++ )
@@ -1559,7 +1563,12 @@ void Engine::onCheckTimeouts()
             /// step 1: look for bad/stale prices
             // get spread price for new spruce order
             const QString &market = pos->market;
-            const QPair<Coin,Coin> spread = getSpruceSpread( market );
+
+            // initialize greedy spread cache
+            if ( !spread_map.contains( market ) )
+                spread_map.insert( market, getSpruceSpread( market ) );
+
+            const QPair<Coin,Coin> &spread = spread_map.value( market );
             const Coin &buy_price = spread.first;
             const Coin &sell_price = spread.second;
             const Coin amount_to_shortlong = spruce.getAmountToShortLongNow( market );
