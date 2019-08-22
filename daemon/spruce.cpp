@@ -109,7 +109,7 @@ Coin Spruce::getAmountToShortLongNow( QString market )
     if ( !amount_to_shortlong.contains( market ) )
         return Coin();
 
-    Coin ret = ( Coin() - amount_to_shortlong.value( market ) ) + shortlonged_total.value( market );
+    Coin ret = -amount_to_shortlong.value( market ) + shortlonged_total.value( market );
 
     return ret;
 }
