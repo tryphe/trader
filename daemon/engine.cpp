@@ -78,6 +78,7 @@ Position *Engine::addPosition( QString market, quint8 side, QString buy_price, Q
     parse.clear(); // cleanup
 
     const bool is_onetime = type.startsWith( "onetime" );
+    const bool is_spruce = type.contains( "-spruce" );
     const bool is_taker = type.contains( "-taker" );
     const bool is_ghost = type == GHOST;
     const bool is_active = type == ACTIVE;
@@ -203,6 +204,7 @@ Position *Engine::addPosition( QString market, quint8 side, QString buy_price, Q
 
     pos->is_onetime = is_onetime;
     pos->is_taker = is_taker;
+    pos->is_spruce = is_spruce;
 
     // allow one-time orders to set a timeout
     if ( is_onetime && type.contains( "-timeout" ) )
@@ -1484,8 +1486,7 @@ void Engine::onCheckTimeouts()
 
     // store active spruce positions, but only if spruce is active
     static QMap<QString, Coin> spruce_offset;
-    if ( spruce.isActive() )
-        spruce_offset = positions->getActiveSpruceOrdersOffset();
+    if ( spruce.isActive() ) spruce_offset = positions->getActiveSpruceOrdersOffset();
 
     // look for timed out requests
     for ( QSet<Position*>::const_iterator i = positions->queued().begin(); i != positions->queued().end(); i++ )
@@ -1552,13 +1553,13 @@ void Engine::onCheckTimeouts()
 
         // search for stale spruce order
         if ( pos->is_onetime &&
-             pos->order_set_time > 0 &&
-             pos->strategy_tag == "spruce" )
+             pos->is_spruce &&
+             pos->order_set_time > 0 )
         {
             /// step 1: look for bad/stale prices
             // get spread price for new spruce order
             const QString &market = pos->market;
-            QPair<Coin,Coin> spread = getSpruceSpread( market );
+            const QPair<Coin,Coin> spread = getSpruceSpread( market );
             const Coin &buy_price = spread.first;
             const Coin &sell_price = spread.second;
             const Coin amount_to_shortlong = spruce.getAmountToShortLongNow( market );
@@ -1768,6 +1769,7 @@ void Engine::onSpruceUp()
     {
         const QString &market = i.key();
         const Coin &amount_to_shortlong = i.value();
+        const Coin amount_to_shortlong_abs = amount_to_shortlong.abs();
 
         kDebug() << QString( "[Spruce] %1 rating %2 on-order %3" )
                        .arg( market, 10 )
@@ -1777,7 +1779,6 @@ void Engine::onSpruceUp()
         const bool is_buy = amount_to_shortlong.isZeroOrLess();
         const Coin order_size = spruce.getOrderSize( market );
         const Coin order_max = spruce.getMarketMax( market );
-        const Coin amount_to_shortlong_abs = amount_to_shortlong.abs();
 
         // skip noisy amount
         if ( amount_to_shortlong_abs < order_size *2 )
@@ -1808,7 +1809,6 @@ void Engine::onSpruceUp()
         const Coin &buy_price = spread.first;
         const Coin &sell_price = spread.second;
 
-
         // cancel conflicting positions
         for ( QSet<Position*>::const_iterator j = positions->all().begin(); j != positions->all().end(); j++ )
         {
@@ -1827,7 +1827,7 @@ void Engine::onSpruceUp()
 
         // queue the order quietly
         addPosition( market, is_buy ? SIDE_BUY : SIDE_SELL, buy_price, sell_price, order_size,
-                     "onetime", "spruce", QVector<qint32>(), false, true );
+                     "onetime-spruce", "spruce", QVector<qint32>(), false, true );
     }
 }
 

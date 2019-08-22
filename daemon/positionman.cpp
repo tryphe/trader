@@ -91,7 +91,7 @@ QMap<QString, Coin> PositionMan::getActiveSpruceOrdersTotal()
         if ( pos->is_cancelling )
             continue;
 
-        if ( pos->is_onetime && pos->strategy_tag == "spruce" )
+        if ( pos->is_spruce )
             spruce_total[ pos->market ] += pos->btc_amount;
     }
 
@@ -108,7 +108,7 @@ QMap<QString, Coin> PositionMan::getActiveSpruceOrdersOffset()
         if ( pos->is_cancelling )
             continue;
 
-        if ( pos->is_onetime && pos->strategy_tag == "spruce" )
+        if ( pos->is_spruce )
         {
             if      ( pos->side == SIDE_BUY  ) spruce_offset[ pos->market ] += pos->btc_amount;
             else if ( pos->side == SIDE_SELL ) spruce_offset[ pos->market ] -= pos->btc_amount;
@@ -410,8 +410,7 @@ Position *PositionMan::getLowestSpruceBuy( const QString &market ) const
         Position *const &pos = *i;
         if (  pos->side != SIDE_BUY ||          // buys only
               pos->is_cancelling ||             // must not be cancelling
-             !pos->is_onetime ||
-              pos->strategy_tag != "spruce" ||
+             !pos->is_spruce ||
               pos->market != market             // check market filter
               )
             continue;
@@ -436,8 +435,7 @@ Position *PositionMan::getHighestSpruceSell( const QString &market ) const
         Position *const &pos = *i;
         if (  pos->side != SIDE_SELL ||         // sells only
               pos->is_cancelling ||             // must not be cancelling
-             !pos->is_onetime ||
-              pos->strategy_tag != "spruce" ||
+             !pos->is_spruce ||
               pos->market != market             // check market filter
               )
             continue;
