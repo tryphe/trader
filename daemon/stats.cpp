@@ -95,9 +95,7 @@ void Stats::addStrategyStats( Position *const &pos )
     shortlong[ pos->strategy_tag ][ pos->market ] += amount;
 
     if ( pos->is_spruce )
-    {
         engine->spruce.addToShortLonged( pos->market, amount );
-    }
 }
 
 void Stats::clearSome( const QString &market )
