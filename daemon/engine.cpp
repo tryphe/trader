@@ -1485,11 +1485,13 @@ void Engine::onCheckTimeouts()
     const qint64 current_time = QDateTime::currentMSecsSinceEpoch();
 
     static QMap<QString, Coin> spruce_offset; // store active spruce positions,
-    static QMap<QString, QPair<Coin,Coin>> spread_map; // store spruce spread for each market
+    static QMap<QString, QPair<Coin,Coin>> spruce_spread; // store spruce spread for each market
+    static QMap<QString, Coin> spruce_amount_to_shortlong;
     if ( spruce.isActive() )
     {
         spruce_offset = positions->getActiveSpruceOrdersOffset();
-        if ( !spread_map.isEmpty() ) spread_map.clear();
+        if ( !spruce_spread.isEmpty() ) spruce_spread.clear();
+        if ( !spruce_amount_to_shortlong.isEmpty() ) spruce_amount_to_shortlong.clear();
     }
 
     // look for timed out requests
@@ -1510,7 +1512,9 @@ void Engine::onCheckTimeouts()
     }
 
     // look for timed out things
-    for ( QSet<Position*>::const_iterator j = positions->active().begin(); j != positions->active().end(); j++ )
+    const QSet<Position*>::const_iterator begin = positions->active().begin(),
+                                          end = positions->active().end();
+    for ( QSet<Position*>::const_iterator j = begin; j != end; j++ )
     {
         Position *const &pos = *j;
 
@@ -1564,15 +1568,18 @@ void Engine::onCheckTimeouts()
             // get spread price for new spruce order
             const QString &market = pos->market;
 
-            // initialize greedy spread cache
-            if ( !spread_map.contains( market ) )
-                spread_map.insert( market, getSpruceSpread( market ) );
+            if ( !spruce_spread.contains( market ) )
+            {
+                // initialize greedy spread
+                spruce_spread.insert( market, getSpruceSpread( market ) );
 
-            const QPair<Coin,Coin> &spread = spread_map.value( market );
+                // initialize how much to short/long
+                spruce_amount_to_shortlong.insert( market, spruce.getAmountToShortLongNow( market ) );
+            }
+
+            const QPair<Coin,Coin> &spread = spruce_spread.value( market );
             const Coin &buy_price = spread.first;
             const Coin &sell_price = spread.second;
-            const Coin amount_to_shortlong = spruce.getAmountToShortLongNow( market );
-            const Coin order_size_limit = spruce.getOrderSize( market ) *2;
 
             // if the price is suboptimal, we should cancel it
             if ( pos->order_set_time < current_time - ( 20 * 60000 ) &&
@@ -1583,6 +1590,9 @@ void Engine::onCheckTimeouts()
                 positions->cancel( pos, false, CANCELLING_FOR_SPRUCE );
                 return;
             }
+
+            const Coin &amount_to_shortlong = spruce_amount_to_shortlong.value( market );
+            const Coin order_size_limit = spruce.getOrderSize( market ) *2;
 
             // if the order is active but our rating is the opposite polarity, cancel it
             if ( ( amount_to_shortlong >  order_size_limit && pos->side == SIDE_BUY ) ||

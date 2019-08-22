@@ -67,7 +67,7 @@ public:
     void setShortMax( Coin shortmax ) { m_short_max = shortmax; }
     Coin getShortMax() const { return m_short_max; }
     void setMarketMax( Coin marketmax ) { m_market_max = marketmax; }
-    Coin getMarketMax( QString market = "" ) const { return market.isEmpty() ? m_market_max : std::max( m_market_max * getMarketWeight( market ),  m_market_max * Coin( "0.1" ) ); }
+    Coin getMarketMax( QString market = "" ) const { return market.isEmpty() ? m_market_max : std::max( m_market_max * getMarketWeight( market ), m_market_max * Coin( "0.1" ) ); }
     void setOrderSize( Coin ordersize ) { m_order_size = ordersize; }
     Coin getOrderSize( QString market = "" ) const { return market.isEmpty() ? m_order_size : std::max( m_order_size * getMarketWeight( market ), m_order_size_min ); }
 
