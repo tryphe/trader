@@ -218,6 +218,12 @@ bool Coin::operator >=( const Coin &c ) const
     return mpz_cmp( b, c.b ) >= 0;
 }
 
+Coin Coin::abs() const
+{
+    return isGreaterThanZero() ? *this :
+                                 Coin() - *this;
+}
+
 bool Coin::isZero() const
 {
     return mpz_cmp_ui( b, 0 ) == 0;
