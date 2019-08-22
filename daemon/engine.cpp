@@ -1592,7 +1592,7 @@ void Engine::onCheckTimeouts()
             }
 
             const Coin &amount_to_shortlong = spruce_amount_to_shortlong.value( market );
-            const Coin order_size_limit = spruce.getOrderSize( market ) *2;
+            const Coin order_size_limit = spruce.getOrderSize( market ) * spruce.getOrderNice();
 
             // if the order is active but our rating is the opposite polarity, cancel it
             if ( ( amount_to_shortlong >  order_size_limit && pos->side == SIDE_BUY ) ||
@@ -1798,9 +1798,10 @@ void Engine::onSpruceUp()
         const bool is_buy = amount_to_shortlong.isZeroOrLess();
         const Coin order_size = spruce.getOrderSize( market );
         const Coin order_max = spruce.getMarketMax( market );
+        const Coin order_size_limit = order_size * spruce.getOrderNice();
 
         // skip noisy amount
-        if ( amount_to_shortlong_abs < order_size *2 )
+        if ( amount_to_shortlong_abs < order_size_limit )
             continue;
 
         // don't go over our per-market max
@@ -1808,7 +1809,7 @@ void Engine::onSpruceUp()
             continue;
 
         // don't go over the abs value of our new projected position
-        if ( spruce_active.value( market ) + order_size *2 >= amount_to_shortlong_abs )
+        if ( spruce_active.value( market ) + order_size_limit >= amount_to_shortlong_abs )
             continue;
 
         // are we too long/short to place another order on this side?

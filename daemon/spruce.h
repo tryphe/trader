@@ -49,6 +49,9 @@ public:
     void setOrderGreed( Coin ratio ) { m_order_greed = ratio; }
     Coin getOrderGreed() { return m_order_greed; }
 
+    void setOrderNice( Coin nice ) { m_order_nice = nice; }
+    Coin getOrderNice() const { return m_order_nice; }
+
     void addStartNode( QString _currency, QString _quantity, QString _price );
     void addLiveNode( QString _currency, QString _price );
     void clearLiveNodes();
@@ -94,7 +97,8 @@ private:
     QMap<QString,Coin> amount_to_shortlong; // amount to shortlong now based on total above
     QMap<QString,Coin> original_quantity; // track original start quantity, since it changes
     QMap<Coin,Coin> m_leverage_cutoff;
-    Coin m_default_leverage, m_leverage, m_hedge_target, m_order_greed, m_long_max, m_short_max, m_market_max, m_order_size, m_order_size_min;
+    Coin m_default_leverage, m_leverage, m_hedge_target, m_order_greed, m_long_max, m_short_max,
+    m_market_max, m_order_size, m_order_size_min, m_order_nice;
 
     QList<Node*> nodes_start, nodes_now;
 };
