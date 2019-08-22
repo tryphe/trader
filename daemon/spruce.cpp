@@ -338,7 +338,7 @@ void Spruce::normalizeEquity()
     // step 3: calculate weighted equity from lowest to highest weight (multimap is sorted by weight)
     //         for each market and recalculate mean/total equity
     int ct = nodes_start.size();
-    for ( QMap<Coin,QString>::const_iterator i = currency_weight_by_coin.begin(); i != currency_weight_by_coin.end(); i++ )
+    for ( QMultiMap<Coin,QString>::const_iterator i = currency_weight_by_coin.begin(); i != currency_weight_by_coin.end(); i++ )
     {
         const QString &currency = i.value();
         const Coin &weight = i.key();
