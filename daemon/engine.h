@@ -21,7 +21,6 @@ class Engine : public QObject
 
     friend class EngineTest;
     friend class PositionMan;
-    friend class CommandRunner;
 
 public:
     explicit Engine();
