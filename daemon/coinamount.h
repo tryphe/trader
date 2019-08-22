@@ -46,6 +46,7 @@ public:
     bool operator <=( const Coin &c ) const;
     bool operator >=( const Coin &c ) const;
 
+    Coin operator -() const;
     Coin abs() const;
 
     bool isZero() const;
