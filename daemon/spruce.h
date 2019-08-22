@@ -41,7 +41,9 @@ public:
     void setCurrencyWeight( QString currency, Coin weight );
     Coin getMarketWeight( QString market ) const;
 
-    void setLeverage( Coin leverage ) { m_leverage = leverage; }
+    void setLeverage( Coin leverage ) { m_leverage = m_default_leverage = leverage; }
+    void setLeverageCutoff( Coin cutoff, Coin leverage ) { m_leverage_cutoff.insert( cutoff, leverage ); }
+    const Coin &getActiveLeverage() const { return m_leverage; }
     void setHedgeTarget( Coin ratio ) { m_hedge_target = ratio; }
 
     void setOrderGreed( Coin ratio ) { m_order_greed = ratio; }
@@ -69,12 +71,21 @@ public:
     void setOrderSize( Coin ordersize ) { m_order_size = ordersize; }
     Coin getOrderSize( QString market = "" ) const { return market.isEmpty() ? m_order_size : std::max( m_order_size * getMarketWeight( market ), m_order_size_min ); }
 
+    const RelativeCoeffs &startCoeffs() { return m_start_coeffs; }
+    const RelativeCoeffs &relativeCoeffs() { return m_relative_coeffs; }
+    const QMap<QString,Coin> &getAmountToShortLongMap() { return m_amount_to_shortlong_map; }
+    const Coin &getAmountToShortLongTotal() { return m_amount_to_shortlong_total; }
+
 private:
     void equalizeDates();
     void normalizeEquity();
 
     QMap<QString/*currency*/,Coin> getMarketCoeffs();
-    RelativeCoeffs getHiLoCoeffs( QMap<QString,Coin> &coeffs );
+    RelativeCoeffs getRelativeCoeffs();
+
+    RelativeCoeffs m_relative_coeffs, m_start_coeffs;
+    QMap<QString,Coin> m_amount_to_shortlong_map;
+    Coin m_amount_to_shortlong_total;
 
     QString base_currency;
     QMap<QString,Coin> currency_weight; // note: weights are >0 and <=1
@@ -82,7 +93,8 @@ private:
     QMap<QString,Coin> shortlonged_total; // running total of shorted/longed coins
     QMap<QString,Coin> amount_to_shortlong; // amount to shortlong now based on total above
     QMap<QString,Coin> original_quantity; // track original start quantity, since it changes
-    Coin m_leverage, m_hedge_target, m_order_greed, m_long_max, m_short_max, m_market_max, m_order_size, m_order_size_min;
+    QMap<Coin,Coin> m_leverage_cutoff;
+    Coin m_default_leverage, m_leverage, m_hedge_target, m_order_greed, m_long_max, m_short_max, m_market_max, m_order_size, m_order_size_min;
 
     QList<Node*> nodes_start, nodes_now;
 };

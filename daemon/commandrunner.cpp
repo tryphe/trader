@@ -92,6 +92,7 @@ CommandRunner::CommandRunner( Engine *_e, REST_OBJECT *_rest, Stats *_stats, QOb
     command_map.insert( "setsprucestartnode", std::bind( &CommandRunner::command_setsprucestartnode, this, _1 ) );
     command_map.insert( "setspruceshortlongtotal", std::bind( &CommandRunner::command_setspruceshortlongtotal, this, _1 ) );
     command_map.insert( "setspruceleverage", std::bind( &CommandRunner::command_setspruceleverage, this, _1 ) );
+    command_map.insert( "setspruceleveragecutoff", std::bind( &CommandRunner::command_setspruceleveragecutoff, this, _1 ) );
     command_map.insert( "setsprucehedgetarget", std::bind( &CommandRunner::command_setsprucehedgetarget, this, _1 ) );
     command_map.insert( "setspruceordergreed", std::bind( &CommandRunner::command_setspruceordergreed, this, _1 ) );
     command_map.insert( "setsprucelongmax", std::bind( &CommandRunner::command_setsprucelongmax, this, _1 ) );
@@ -746,6 +747,14 @@ void CommandRunner::command_setspruceleverage( QStringList &args )
 {
     engine->spruce.setLeverage( args.value( 1 ) );
     kDebug() << "spruce leverage is" << args.value( 1 );
+}
+
+void CommandRunner::command_setspruceleveragecutoff( QStringList &args )
+{
+    if ( !checkArgs( args, 2 ) ) return;
+
+    engine->spruce.setLeverageCutoff( args.value( 1 ), args.value( 2 ) );
+    kDebug() << "spruce leverage cutoff at" << args.value( 1 ) << "is" << args.value( 2 );
 }
 
 void CommandRunner::command_setsprucehedgetarget( QStringList &args )

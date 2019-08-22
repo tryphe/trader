@@ -1748,18 +1748,18 @@ void Engine::onSpruceUp()
     // count value of spruce positions for each market
     QMap<QString,Coin> spruce_active = positions->getActiveSpruceOrdersTotal();
 
-    QMap<QString,Coin> amount_to_shortlong_map;
+    const QMap<QString,Coin> &amount_to_shortlong_map = spruce.getAmountToShortLongMap();
+    const Coin &shortlong_total = spruce.getAmountToShortLongTotal();
 
-    Coin total;
-    for ( QList<QString>::const_iterator i = currencies.begin(); i != currencies.end(); i++ )
-    {
-        const QString &currency = *i;
-        QString market = spruce.getBaseCurrency() + "-" + currency;
-        amount_to_shortlong_map[ market ] = spruce.getAmountToShortLongNow( market );
-
-        total += amount_to_shortlong_map[ market ];
-    }
-    kDebug() << "[Spruce] shortlong:" << total;
+    Coin coeff_diff_pct = spruce.startCoeffs().hi_coeff / spruce.startCoeffs().lo_coeff;
+    kDebug() << QString( "[Spruce] coeffs[%1 %2 %3 %4] diff[%5%] shortlong[%6] leverage[%7]" )
+                    .arg( spruce.startCoeffs().lo_currency )
+                    .arg( spruce.startCoeffs().lo_coeff )
+                    .arg( spruce.startCoeffs().hi_currency )
+                    .arg( spruce.startCoeffs().hi_coeff )
+                    .arg( coeff_diff_pct )
+                    .arg( shortlong_total )
+                    .arg( spruce.getActiveLeverage() );
 
     const Coin long_max = spruce.getLongMax();
     const Coin short_max = spruce.getShortMax();
@@ -1770,16 +1770,14 @@ void Engine::onSpruceUp()
         const Coin &amount_to_shortlong = i.value();
 
         kDebug() << QString( "[Spruce] %1 rating %2 on-order %3" )
-                       .arg( market, -10 )
-                       .arg( amount_to_shortlong, -13 )
-                       .arg( spruce_active.value( market ), -13 );
+                       .arg( market, 10 )
+                       .arg( amount_to_shortlong, 13 )
+                       .arg( spruce_active.value( market ), 13 );
 
-        // find abs value
-        const Coin amount_to_shortlong_abs = amount_to_shortlong.isZeroOrLess() ? Coin() - amount_to_shortlong :
-                                                                                  amount_to_shortlong;
-
+        const bool is_buy = amount_to_shortlong.isZeroOrLess();
         const Coin order_size = spruce.getOrderSize( market );
         const Coin order_max = spruce.getMarketMax( market );
+        const Coin amount_to_shortlong_abs = amount_to_shortlong.abs();
 
         // skip noisy amount
         if ( amount_to_shortlong_abs < order_size *2 )
@@ -1793,24 +1791,23 @@ void Engine::onSpruceUp()
         if ( spruce_active.value( market ) + order_size *2 >= amount_to_shortlong_abs )
             continue;
 
+        // are we too long/short to place another order on this side?
+        if ( is_buy && shortlong_total > long_max )
+        {
+            kDebug() << "[Spruce] info: too long for now";
+            continue;
+        }
+        else if ( !is_buy && shortlong_total < short_max )
+        {
+            kDebug() << "[Spruce] info: too short for now";
+            continue;
+        }
+
         // get spread price for new spruce order
         const QPair<Coin,Coin> spread = getSpruceSpread( market );
         const Coin &buy_price = spread.first;
         const Coin &sell_price = spread.second;
 
-        const bool is_buy = amount_to_shortlong.isZeroOrLess();
-
-        // are we too long/short to place another order on this side?
-        if ( is_buy && total > long_max )
-        {
-            kDebug() << "[Spruce] info: too long for now";
-            continue;
-        }
-        else if ( !is_buy && total < short_max )
-        {
-            kDebug() << "[Spruce] info: too short for now";
-            continue;
-        }
 
         // cancel conflicting positions
         for ( QSet<Position*>::const_iterator j = positions->all().begin(); j != positions->all().end(); j++ )

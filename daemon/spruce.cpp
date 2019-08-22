@@ -1,10 +1,11 @@
 #include "spruce.h"
 #include "coinamount.h"
+#include <global.h>
 
 Spruce::Spruce()
 {
     /// user settings
-    m_leverage = "0.5";
+    m_leverage = m_default_leverage = "0.5";
     m_hedge_target = "0.95"; // keep our market valuations at most 1-x% apart
     m_order_greed = "0.99"; // keep our spread at least 1-x% apart
 
@@ -87,6 +88,20 @@ void Spruce::calculateAmountToShortLong()
 {
     normalizeEquity();
     equalizeDates();
+
+    // record amount to shortlong in a map and get total
+    m_amount_to_shortlong_map.clear();
+    m_amount_to_shortlong_total = Coin();
+
+    QList<QString> markets = getMarkets();
+    for ( QList<QString>::const_iterator i = markets.begin(); i != markets.end(); i++ )
+    {
+        const QString &market = *i;
+        const Coin &shortlong_market = getAmountToShortLongNow( market );
+
+        m_amount_to_shortlong_map[ market ] = shortlong_market;
+        m_amount_to_shortlong_total += shortlong_market;
+    }
 }
 
 Coin Spruce::getAmountToShortLongNow( QString market )
@@ -111,15 +126,11 @@ QList<QString> Spruce::getCurrencies() const
 
 QList<QString> Spruce::getMarkets() const
 {
-    QList<QString> keys = original_quantity.keys(), ret;
-
+    // TODO: adapt this to each exchange
+    QList<QString> ret;
+    const QList<QString> &keys = original_quantity.keys();
     for ( QList<QString>::const_iterator i = keys.begin(); i != keys.end(); i++ )
-    {
-        QString market = *i; // get currency
-        // TODO: adapt this to each exchange
-        market.prepend( base_currency + "-" );
-        ret += market;
-    }
+        ret += base_currency + "-" + *i;
 
     return ret;
 }
@@ -135,7 +146,15 @@ QString Spruce::getSaveState()
     ret += QString( "setsprucebasecurrency %1\n" ).arg( base_currency );
 
     // save leverage
-    ret += QString( "setspruceleverage %1\n" ).arg( m_leverage );
+    ret += QString( "setspruceleverage %1\n" ).arg( m_default_leverage );
+
+    // save leverage cutoff
+    for ( QMap<Coin,Coin>::const_iterator i = m_leverage_cutoff.begin(); i != m_leverage_cutoff.end(); i++ )
+    {
+        ret += QString( "setspruceleveragecutoff %1 %2\n" )
+                .arg( i.key() )
+                .arg( i.value() );
+    }
 
     // save hedge target
     ret += QString( "setsprucehedgetarget %1\n" ).arg( m_hedge_target );
@@ -207,11 +226,8 @@ void Spruce::equalizeDates()
     // track shorts/longs
     QMap<QString,Coin> shortlongs;
 
-    // get coeffs for time distances of balances
-    QMap<QString/*currency*/,Coin> coeffs = getMarketCoeffs();
-
     // find hi/lo coeffs
-    RelativeCoeffs relative = getHiLoCoeffs( coeffs );
+    m_start_coeffs = m_relative_coeffs = getRelativeCoeffs();
 
     Coin ticksize = CoinAmount::SATOSHI * 50000;
 
@@ -219,8 +235,37 @@ void Spruce::equalizeDates()
     if ( m_hedge_target > Coin( "0.998" ) )
         m_hedge_target = "0.998";
 
+    // check for bad coeff
+    if ( m_start_coeffs.lo_coeff.isZeroOrLess() )
+        return;
+
+    // find leverage to use by reverse iterating from highest cutoff to lowest
+    bool cutoff_tripped = false;
+    const Coin coeff_diff_pct = m_start_coeffs.hi_coeff / m_start_coeffs.lo_coeff;
+    for ( QMap<Coin,Coin>::const_iterator i = m_leverage_cutoff.end() -1; i != m_leverage_cutoff.begin() -1; i-- )
+    {
+        const Coin &cutoff = i.key();
+        const Coin &new_leverage = i.value();
+
+        if ( coeff_diff_pct >= cutoff &&
+             m_leverage > new_leverage )
+        {
+            cutoff_tripped = true;
+            m_leverage = new_leverage;
+            kDebug() << "[Spruce] leverage lowered to" << m_leverage;
+            break;
+        }
+    }
+
+    // if we didn't trip the cutoff, set it to default
+    if ( !cutoff_tripped && m_leverage != m_default_leverage )
+    {
+        m_leverage = m_default_leverage;
+        kDebug() << "[Spruce] leverage reset to" << m_leverage;
+    }
+
     quint64 ct = 1;
-    while ( relative.hi_coeff * m_hedge_target > relative.lo_coeff )
+    while ( m_relative_coeffs.hi_coeff * m_hedge_target > m_relative_coeffs.lo_coeff )
     {
         // if we are dealing with a lot of btc, speed up the ratio convergence
         if ( ct++ % 10000 == 0 )
@@ -231,13 +276,13 @@ void Spruce::equalizeDates()
         {
             Node *n = *i;
 
-            if ( n->currency == relative.hi_currency &&
+            if ( n->currency == m_relative_coeffs.hi_currency &&
                  n->amount > ticksize ) // check if we have enough to short
             {
                 shortlongs[ n->currency ] -= ticksize * m_leverage;
                 n->amount -= ticksize;
             }
-            else if ( n->currency == relative.lo_currency )
+            else if ( n->currency == m_relative_coeffs.lo_currency )
             {
                 shortlongs[ n->currency ] += ticksize * m_leverage;
                 n->amount += ticksize;
@@ -250,8 +295,7 @@ void Spruce::equalizeDates()
             n->recalculateQuantityByPrice();
         }
 
-        coeffs = getMarketCoeffs();
-        relative = getHiLoCoeffs( coeffs );
+        m_relative_coeffs = getRelativeCoeffs();
     }
 
     // flip values, because we want shorts as positive and longs as negative
@@ -349,8 +393,7 @@ void Spruce::normalizeEquity()
 
 QMap<QString, Coin> Spruce::getMarketCoeffs()
 {
-    QMap<QString/*currency*/,Coin> start_scores, date1_scores;
-    QMap<QString/*currency*/,Coin> relative_coeff;
+    QMap<QString/*currency*/,Coin> start_scores, relative_coeff;
 
     for ( QList<Node*>::const_iterator i = nodes_start.begin(); i != nodes_start.end(); i++ )
     {
@@ -364,7 +407,6 @@ QMap<QString, Coin> Spruce::getMarketCoeffs()
     {
         Node *n = *i;
         Coin score = n->quantity * n->price;
-        date1_scores.insert( n->currency, score );
 
         // coeff[n] = date2[n] / date1[n]
         relative_coeff[ n->currency ] = score / start_scores.value( n->currency );
@@ -373,8 +415,11 @@ QMap<QString, Coin> Spruce::getMarketCoeffs()
     return relative_coeff;
 }
 
-RelativeCoeffs Spruce::getHiLoCoeffs( QMap<QString, Coin> &coeffs )
+RelativeCoeffs Spruce::getRelativeCoeffs()
 {
+    // get coeffs for time distances of balances
+    QMap<QString/*currency*/,Coin> coeffs = getMarketCoeffs();
+
     // find the highest and lowest coefficents
     RelativeCoeffs ret;
     for ( QMap<QString,Coin>::const_iterator i = coeffs.begin(); i != coeffs.end(); i++ )
