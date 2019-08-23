@@ -52,6 +52,9 @@ public:
     void setOrderNice( Coin nice ) { m_order_nice = nice; }
     Coin getOrderNice() const { return m_order_nice; }
 
+    void setTrailingPriceLimit( Coin limit ) { m_trailing_price_limit = limit; }
+    Coin getTrailingPriceLimit() const { return m_trailing_price_limit; }
+
     void addStartNode( QString _currency, QString _quantity, QString _price );
     void addLiveNode( QString _currency, QString _price );
     void clearLiveNodes();
@@ -98,7 +101,7 @@ private:
     QMap<QString,Coin> original_quantity; // track original start quantity, since it changes
     QMap<Coin,Coin> m_leverage_cutoff;
     Coin m_default_leverage, m_leverage, m_hedge_target, m_order_greed, m_long_max, m_short_max,
-    m_market_max, m_order_size, m_order_size_min, m_order_nice;
+    m_market_max, m_order_size, m_order_size_min, m_order_nice, m_trailing_price_limit;
 
     QList<Node*> nodes_start, nodes_now;
 };

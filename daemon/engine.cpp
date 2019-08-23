@@ -1581,11 +1581,19 @@ void Engine::onCheckTimeouts()
             const Coin &buy_price = spread.first;
             const Coin &sell_price = spread.second;
 
-            // if the price is suboptimal, we should cancel it
+            // get trailing price limit ratio, ie. bid/ask at 25sat/26sat is 0.961
+            Coin trailing_price_limit = spruce.getTrailingPriceLimit();
+
+            // if the spread gap is wider than our limit, raise the limit to the gap ratio
+            const Coin bid_ask_ratio = buy_price / sell_price;
+            if ( bid_ask_ratio < trailing_price_limit )
+                trailing_price_limit = bid_ask_ratio;
+
+            // if the price is trailing too much, we should cancel it
             if ( pos->order_set_time < current_time - ( 20 * 60000 ) &&
                  buy_price.isGreaterThanZero() && sell_price.isGreaterThanZero() &&
-                 ( ( pos->side == SIDE_BUY  && pos->price < buy_price.ratio( 0.97 ) ) ||
-                   ( pos->side == SIDE_SELL && pos->price > sell_price.ratio( 1.03 ) ) ) )
+                 ( ( pos->side == SIDE_BUY  && pos->price < buy_price * trailing_price_limit ) ||
+                   ( pos->side == SIDE_SELL && pos->price > sell_price * ( ( CoinAmount::COIN *2 ) - trailing_price_limit ) ) ) )
             {
                 positions->cancel( pos, false, CANCELLING_FOR_SPRUCE );
                 return;

@@ -14,6 +14,7 @@ Spruce::Spruce()
     m_market_max = "0.20000000";
     m_order_size = "0.00500000";
     m_order_nice = "2";
+    m_trailing_price_limit = "0.97";
 
     /// per-exchange constants
     m_order_size_min = "0.00070000"; // TODO: scale this minimum to each exchange
@@ -178,6 +179,8 @@ QString Spruce::getSaveState()
     // save order size
     ret += QString( "setspruceordernice %1\n" ).arg( m_order_nice );
 
+    // save order trailing limit
+    ret += QString( "setspruceordertrail %1\n" ).arg( m_trailing_price_limit );
 
     // save market weights
     for ( QMap<QString,Coin>::const_iterator i = currency_weight.begin(); i != currency_weight.end(); i++ )

@@ -100,6 +100,7 @@ CommandRunner::CommandRunner( Engine *_e, REST_OBJECT *_rest, Stats *_stats, QOb
     command_map.insert( "setsprucemarketmax", std::bind( &CommandRunner::command_setsprucemarketmax, this, _1 ) );
     command_map.insert( "setspruceordersize", std::bind( &CommandRunner::command_setspruceordersize, this, _1 ) );
     command_map.insert( "setspruceordernice", std::bind( &CommandRunner::command_setspruceordernice, this, _1 ) );
+    command_map.insert( "setspruceordertrail", std::bind( &CommandRunner::command_setspruceordertrail, this, _1 ) );
     command_map.insert( "getconfig", std::bind( &CommandRunner::command_getconfig, this, _1 ) );
     command_map.insert( "getinternal", std::bind( &CommandRunner::command_getinternal, this, _1 ) );
     command_map.insert( "setmaintenancetime", std::bind( &CommandRunner::command_setmaintenancetime, this, _1 ) );
@@ -798,6 +799,12 @@ void CommandRunner::command_setspruceordernice( QStringList &args )
 {
     engine->spruce.setOrderNice( args.value( 1 ) );
     kDebug() << "spruce order nice is" << engine->spruce.getOrderNice();
+}
+
+void CommandRunner::command_setspruceordertrail( QStringList &args )
+{
+    engine->spruce.setTrailingPriceLimit( args.value( 1 ) );
+    kDebug() << "spruce order trailing price limit is" << engine->spruce.getTrailingPriceLimit();
 }
 
 void CommandRunner::command_spruceup( QStringList & )
