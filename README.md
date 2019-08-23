@@ -4,7 +4,7 @@ Features
  - [x] Supports a large number of build platforms
  - [x] Order engine is adaptable to any exchange
  - [x] Runtime [sanity testing](https://github.com/tryphe/trader/blob/master/daemon/coinamount_test.cpp#L12) and [fairly extensive order execution simulation](https://github.com/tryphe/trader/blob/master/daemon/engine_test.cpp#L17) for consistency
- - [x] No floating point math operations are used for any prices or amounts. They are only used to store ratios which are fed as strings into GMP. [how can floats fail?](https://github.com/tryphe/trader/blob/master/daemon/coinamount_test.cpp#L12)
+ - [x] No floating point instructions are used. [how can floats fail?](https://github.com/tryphe/trader/blob/master/daemon/coinamount_test.cpp#L12)
  - [x] Real-time slippage calculation which prevents local order collision and greatly reduces the frequency of exchange post-only mode collisions.
  - [x] Anti-mistake. Prevents taking a price 10% lower or higher from the current spread(also overridable), [and more](https://github.com/tryphe/trader/blob/master/daemon/engine.cpp#L87)!
  - [x] Because trades aren't made using a browser interface, coin theft by withdrawal through browser hijacking is impossible.
