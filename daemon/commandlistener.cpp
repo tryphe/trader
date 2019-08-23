@@ -56,7 +56,7 @@ void CommandListener::handleDisconnect( LocalClient *sck )
 
 void CommandListener::handleReadyRead( LocalClient *sck )
 {
-    QString data = sck->m_sck->readAll();
+    QString data = sck->getSocketData();
     emit gotDataChunk( data );
     //kDebug() << "[CommandListener] " << data;
 }

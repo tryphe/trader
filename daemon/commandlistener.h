@@ -34,12 +34,12 @@ private:
 //
 class LocalClient : public QObject
 {
-    friend class CommandListener;
-
     Q_OBJECT
 public:
     explicit LocalClient( QLocalSocket *sck, QObject *parent = nullptr );\
     ~LocalClient();
+
+    QByteArray getSocketData() const { return m_sck->readAll(); }
 
 signals:
     void disconnected( LocalClient *sck );
