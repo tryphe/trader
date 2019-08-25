@@ -1592,8 +1592,7 @@ void Engine::onCheckTimeouts()
             const MarketInfo &info = market_info.value( market );
 
             // if the price is trailing too much, we should cancel it
-            if ( pos->order_set_time < current_time - ( 20 * 60000 ) &&
-                 buy_price.isGreaterThanZero() && sell_price.isGreaterThanZero() &&
+            if ( buy_price.isGreaterThanZero() && sell_price.isGreaterThanZero() &&
                  ( ( pos->side == SIDE_BUY  && pos->price < buy_price * trailing_price_limit &&
                      pos->price < buy_price - info.price_ticksize )
                    ||
