@@ -1589,11 +1589,16 @@ void Engine::onCheckTimeouts()
             if ( bid_ask_ratio < trailing_price_limit )
                 trailing_price_limit = bid_ask_ratio;
 
+            const MarketInfo &info = market_info.value( market );
+
             // if the price is trailing too much, we should cancel it
             if ( pos->order_set_time < current_time - ( 20 * 60000 ) &&
                  buy_price.isGreaterThanZero() && sell_price.isGreaterThanZero() &&
-                 ( ( pos->side == SIDE_BUY  && pos->price < buy_price * trailing_price_limit ) ||
-                   ( pos->side == SIDE_SELL && pos->price > sell_price * ( ( CoinAmount::COIN *2 ) - trailing_price_limit ) ) ) )
+                 ( ( pos->side == SIDE_BUY  && pos->price < buy_price * trailing_price_limit &&
+                     pos->price < buy_price - info.price_ticksize )
+                   ||
+                   ( pos->side == SIDE_SELL && pos->price > sell_price * ( ( CoinAmount::COIN *2 ) - trailing_price_limit ) &&
+                     pos->price > sell_price + info.price_ticksize ) ) )
             {
                 positions->cancel( pos, false, CANCELLING_FOR_SPRUCE );
                 return;

@@ -14,7 +14,7 @@ Spruce::Spruce()
     m_market_max = "0.20000000";
     m_order_size = "0.00500000";
     m_order_nice = "2";
-    m_trailing_price_limit = "0.97";
+    m_trailing_price_limit = "0.96";
 
     /// per-exchange constants
     m_order_size_min = "0.00070000"; // TODO: scale this minimum to each exchange
