@@ -1560,8 +1560,7 @@ void Engine::onCheckTimeouts()
         }
 
         // search for stale spruce order
-        if ( pos->is_onetime &&
-             pos->is_spruce &&
+        if ( pos->is_spruce &&
              pos->order_set_time > 0 )
         {
             /// step 1: look for bad/stale prices
