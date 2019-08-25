@@ -1,7 +1,7 @@
 Features
 --------
- - [x] Low resource usage. Runnable anywhere.
- - [x] Supports a large number of build platforms
+ - [x] Low resource usage.
+ - [x] Supports a large number of build targets. Runnable anywhere with Qt support.
  - [x] Order engine is adaptable to any exchange
  - [x] Runtime [sanity testing](https://github.com/tryphe/trader/blob/master/daemon/coinamount_test.cpp#L12) and [fairly extensive order execution simulation](https://github.com/tryphe/trader/blob/master/daemon/engine_test.cpp#L17) for consistency
  - [x] No floating point instructions are used. [how can floats fail?](https://github.com/tryphe/trader/blob/master/daemon/coinamount_test.cpp#L12)
