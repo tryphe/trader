@@ -877,9 +877,6 @@ void PositionMan::cancel( Position *const &pos, bool quiet, quint8 cancel_reason
         return;
     }
 
-    // flag if the order was cancelling already
-    const bool recancelling = pos->order_cancel_time > 0 || pos->is_cancelling;
-
     // set cancel reason (override if neccesary to change reason)
     pos->cancel_reason = cancel_reason;
 
@@ -908,6 +905,9 @@ void PositionMan::cancel( Position *const &pos, bool quiet, quint8 cancel_reason
 
     if ( !quiet )
     {
+        // flag if the order was cancelling already
+        const bool recancelling = pos->order_cancel_time > 0 || pos->is_cancelling;
+
         const QString prefix_str = QString( "%1%2" )
                     .arg( pos->is_onetime ? "cancelling" :
                           pos->is_slippage ? "resetting " :
