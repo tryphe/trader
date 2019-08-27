@@ -16,6 +16,7 @@ Features
  ----
   - [ ] GUI (work in progress)
   - [ ] WSS notifications (work in progress)
+  - [ ] Add more exchanges
   - [ ] Extensible API and querying system (CLI input and log output are the only interface at the moment)
   - [ ] External stats tracker for stats persistence
   - [ ] User settings file
