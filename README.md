@@ -3,24 +3,24 @@ Features
  - [x] Low resource usage. 20-30MB of RAM and 1 CPU are required. (pi works fine!)
  - [x] Runs headless.
  - [x] Supports a large number of build targets. Runnable anywhere with Qt and C support.
- - [x] Order engine is adaptable to any exchange
- - [x] Runtime [sanity testing](https://github.com/tryphe/trader/blob/master/daemon/coinamount_test.cpp#L12) and [fairly extensive order execution simulation](https://github.com/tryphe/trader/blob/master/daemon/engine_test.cpp#L17) for consistency
- - [x] No floating point instructions are used. [how can floats fail?](https://github.com/tryphe/trader/blob/master/daemon/coinamount_test.cpp#L12)
+ - [x] Order engine is adaptable to any exchange.
+ - [x] Runtime [sanity testing](https://github.com/tryphe/trader/blob/master/daemon/coinamount_test.cpp#L12) and [fairly extensive order execution simulation](https://github.com/tryphe/trader/blob/master/daemon/engine_test.cpp#L17) for consistency.
+ - [x] No floating point instructions are used. [How can floats fail?](https://github.com/tryphe/trader/blob/master/daemon/coinamount_test.cpp#L12)
  - [x] Real-time slippage calculation which prevents local order collision and greatly reduces the frequency of exchange post-only mode collisions.
  - [x] Anti-mistake. Prevents taking a price 10% lower or higher from the current spread(also overridable), [and more](https://github.com/tryphe/trader/blob/master/daemon/engine.cpp#L87)!
  - [x] Because trades aren't made using a browser interface, coin theft by withdrawal through browser hijacking is impossible.
- - [x] Poloniex REST and WSS feed support
- - [x] Bittrex REST support
- - [x] Binance REST support
+ - [x] Poloniex REST and WSS feed support.
+ - [x] Bittrex REST support.
+ - [x] Binance REST support.
  
  TODO
  ----
   - [ ] GUI (work in progress)
   - [ ] WSS notifications (work in progress)
-  - [ ] Add more exchanges
-  - [ ] Extensible API and querying system (CLI input and log output are the only interface at the moment)
-  - [ ] External stats tracker for stats persistence
-  - [ ] User settings file
+  - [ ] Add more exchanges.
+  - [ ] Extensible API and querying system. (Note: CLI input and log output are the only interface at the moment)
+  - [ ] External stats tracker for stats persistence.
+  - [ ] User settings file.
 
 Dependencies: Compiling Qt and installing libgmp (unix/linux)
 ---------------------------------
