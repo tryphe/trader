@@ -1,6 +1,6 @@
 #include "spruce.h"
 #include "coinamount.h"
-#include <global.h>
+#include "global.h"
 
 static inline Coin costFunction( Coin target_x, quint64 log_factor = 1 )
 {
