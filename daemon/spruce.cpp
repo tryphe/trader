@@ -16,6 +16,7 @@ Spruce::Spruce()
     m_order_nice = "2";
     m_trailing_price_limit = "0.96";
     m_log_profile = 10;
+    m_log_nice = "10";
 
     /// per-exchange constants
     m_order_size_min = "0.00070000"; // TODO: scale this minimum to each exchange
@@ -29,7 +30,7 @@ Spruce::~Spruce()
     clearLiveNodes();
 }
 
-Coin Spruce::costFunction( Coin target_x, int profile_u )
+Coin Spruce::costFunction( Coin target_x, int profile_u, Coin nice )
 {
     if ( profile_u < 3 )
     {
@@ -40,13 +41,16 @@ Coin Spruce::costFunction( Coin target_x, int profile_u )
     bool is_negative = target_x < Coin();
     if ( is_negative ) target_x = target_x.abs();
 
+    const Coin nice_orig = nice;
     const Coin iter = Coin( "0.01" ); // granularity to find y
     Coin y;
-
     // figure out cost y of target_x by approaching by iter
     // y += ( 1 + ( iter * i ) - y ) / ( profile );
     for ( Coin i = CoinAmount::COIN; i <= target_x; i += iter )
-        y += ( CoinAmount::COIN - y ) / ( profile_u *10 );
+    {
+        y += ( CoinAmount::COIN - y ) / ( nice + Coin( profile_u *10 ) );
+        nice += nice_orig *( CoinAmount::COIN / 10 );
+    }
 
     if ( is_negative ) y = -y;
 
@@ -174,6 +178,9 @@ QString Spruce::getSaveState()
 
     // save log factor
     ret += QString( "setsprucelogprofile %1\n" ).arg( m_log_profile );
+
+    // save log nice
+    ret += QString( "setsprucelognice %1\n" ).arg( m_log_nice );
 
     // save hedge target
     ret += QString( "setsprucehedgetarget %1\n" ).arg( m_hedge_target );
@@ -451,9 +458,9 @@ QMap<QString, Coin> Spruce::getMarketCoeffs()
         Coin &new_coeff = relative_coeff[ n->currency ];
 
         if ( score >= start_score )
-            new_coeff = costFunction( score / start_score, m_log_profile );
+            new_coeff = costFunction( score / start_score, m_log_profile, m_log_nice );
         else
-            new_coeff = costFunction( -( start_score / score ), m_log_profile );
+            new_coeff = costFunction( -( start_score / score ), m_log_profile, m_log_nice );
     }
 
     return relative_coeff;

@@ -92,6 +92,7 @@ CommandRunner::CommandRunner( Engine *_e, REST_OBJECT *_rest, Stats *_stats, QOb
     command_map.insert( "setsprucestartnode", std::bind( &CommandRunner::command_setsprucestartnode, this, _1 ) );
     command_map.insert( "setspruceshortlongtotal", std::bind( &CommandRunner::command_setspruceshortlongtotal, this, _1 ) );
     command_map.insert( "setsprucelogprofile", std::bind( &CommandRunner::command_setsprucelogprofile, this, _1 ) );
+    command_map.insert( "setsprucelognice", std::bind( &CommandRunner::command_setsprucelognice, this, _1 ) );
     command_map.insert( "setsprucehedgetarget", std::bind( &CommandRunner::command_setsprucehedgetarget, this, _1 ) );
     command_map.insert( "setspruceordergreed", std::bind( &CommandRunner::command_setspruceordergreed, this, _1 ) );
     command_map.insert( "setsprucelongmax", std::bind( &CommandRunner::command_setsprucelongmax, this, _1 ) );
@@ -748,6 +749,12 @@ void CommandRunner::command_setsprucelogprofile( QStringList &args )
 {
     engine->spruce.setLogProfile( args.value( 1 ).toULongLong() );
     kDebug() << "spruce log profile is" << args.value( 1 ).toULongLong();
+}
+
+void CommandRunner::command_setsprucelognice( QStringList &args )
+{
+    engine->spruce.setLogNice( args.value( 1 ).toULongLong() );
+    kDebug() << "spruce log nice is" << args.value( 1 ).toULongLong();
 }
 
 void CommandRunner::command_setsprucehedgetarget( QStringList &args )

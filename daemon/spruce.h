@@ -37,7 +37,7 @@ public:
     explicit Spruce();
     ~Spruce();
 
-    static inline Coin costFunction( Coin target_x, int profile_u = 10 );
+    static inline Coin costFunction( Coin target_x, int profile_u = 10, Coin nice = Coin( "5" ) );
 
     void setBaseCurrency( QString currency ) { base_currency = currency; }
     QString getBaseCurrency() const { return base_currency; }
@@ -83,6 +83,7 @@ public:
     const Coin &getAmountToShortLongTotal() { return m_amount_to_shortlong_total; }
 
     void setLogProfile( quint64 u ) { m_log_profile = u; }
+    void setLogNice( Coin n ) { m_log_nice = n; }
 
     Coin getEquityNow( QString currency );
     Coin getLastCoeffForMarket( const QString &market ) const;
@@ -108,6 +109,7 @@ private:
     Coin m_hedge_target, m_order_greed, m_long_max, m_short_max, m_market_max, m_order_size,
     m_order_size_min, m_order_nice, m_trailing_price_limit;
     qint64 m_log_profile;
+    Coin m_log_nice;
 
     QList<Node*> nodes_start, nodes_now;
     QMap<QString/*currency*/,Coin> m_last_coeffs;
