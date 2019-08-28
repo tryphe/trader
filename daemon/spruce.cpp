@@ -170,9 +170,6 @@ QString Spruce::getSaveState()
 {
     QString ret;
 
-    if ( !isActive() )
-        return ret;
-
     // save base
     ret += QString( "setsprucebasecurrency %1\n" ).arg( base_currency );
 

@@ -1051,7 +1051,6 @@ void Engine::saveSettings()
     MarketInfo default_market;
     QTextStream out_savefile( &savefile );
 
-    quint32 items_saved = 0;
     for ( QHash<QString, MarketInfo>::const_iterator i = market_info.begin(); i != market_info.end(); i++ )
     {
         const QString &market = i.key();
@@ -1077,21 +1076,11 @@ void Engine::saveSettings()
                             .arg( info.order_landmark_start )
                             .arg( info.market_sentiment )
                             .arg( info.market_offset );
-
-            items_saved++;
         }
     }
 
     // save spruce state
-    if ( spruce.isActive() )
-    {
-        out_savefile << spruce.getSaveState();
-        items_saved++;
-    }
-
-    // if we didn't save anything, just exit
-    if ( items_saved == 0 )
-        return;
+    out_savefile << spruce.getSaveState();
 
     // save the buffer
     out_savefile.flush();
