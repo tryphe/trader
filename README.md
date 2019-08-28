@@ -85,8 +85,6 @@ Trader is a bot that manages a set of ping pong positions while working within t
 
 The bot doesn't read charts. It also doesn't have persistence yet (coming soon).
 
-Traderd is a rational bot with well defined targets, and is simply a tool of execution. Anything strategy related is intended to be running on top of this bot, in order to maintain the bot's order spread over time, rather than of being part of the bot directly. It pongs the pings and pings the pongs, and runs onetime orders, and should be very efficient in general.
-
 **What about supporting xyz exchange?**
 
 It's fairly easily to integrate the bot with any API, as long as it can read its current orders and get ticker prices. Currently, it would take roughly 1000 lines to add another exchange. If you know of a good exchange, let me know.
