@@ -99,8 +99,7 @@ private:
     void command_setspruceweight( QStringList &args );
     void command_setsprucestartnode( QStringList &args );
     void command_setspruceshortlongtotal( QStringList &args );
-    void command_setspruceleverage( QStringList &args );
-    void command_setspruceleveragecutoff( QStringList &args );
+    void command_setsprucelogfactor( QStringList &args );
     void command_setsprucehedgetarget( QStringList &args );
     void command_setspruceordergreed( QStringList &args );
     void command_setsprucelongmax( QStringList &args );

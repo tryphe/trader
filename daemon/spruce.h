@@ -22,6 +22,7 @@ struct RelativeCoeffs // tracks hi/lo coeffs with their corresponding markets
     explicit RelativeCoeffs()
     {
         lo_coeff = CoinAmount::A_LOT;
+        hi_coeff = -CoinAmount::A_LOT;
     }
 
     QString hi_currency;
@@ -41,9 +42,6 @@ public:
     void setCurrencyWeight( QString currency, Coin weight );
     Coin getMarketWeight( QString market ) const;
 
-    void setLeverage( Coin leverage ) { m_leverage = m_default_leverage = leverage; }
-    void setLeverageCutoff( Coin cutoff, Coin leverage ) { m_leverage_cutoff.insert( cutoff, leverage ); }
-    const Coin &getActiveLeverage() const { return m_leverage; }
     void setHedgeTarget( Coin ratio ) { m_hedge_target = ratio; }
 
     void setOrderGreed( Coin ratio ) { m_order_greed = ratio; }
@@ -82,6 +80,11 @@ public:
     const QMap<QString,Coin> &getAmountToShortLongMap() { return m_amount_to_shortlong_map; }
     const Coin &getAmountToShortLongTotal() { return m_amount_to_shortlong_total; }
 
+    void setLogFactor( qint64 factor ) { m_log_factor = factor; }
+
+    Coin getEquityNow( QString currency );
+    Coin getLastCoeffForMarket( const QString &market ) const;
+
 private:
     void equalizeDates();
     void normalizeEquity();
@@ -100,10 +103,12 @@ private:
     QMap<QString,Coin> amount_to_shortlong; // amount to shortlong now based on total above
     QMap<QString,Coin> original_quantity; // track original start quantity, since it changes
     QMap<Coin,Coin> m_leverage_cutoff;
-    Coin m_default_leverage, m_leverage, m_hedge_target, m_order_greed, m_long_max, m_short_max,
-    m_market_max, m_order_size, m_order_size_min, m_order_nice, m_trailing_price_limit;
+    Coin m_hedge_target, m_order_greed, m_long_max, m_short_max, m_market_max, m_order_size,
+    m_order_size_min, m_order_nice, m_trailing_price_limit;
+    qint64 m_log_factor;
 
     QList<Node*> nodes_start, nodes_now;
+    QMap<QString/*currency*/,Coin> m_last_coeffs;
 };
 
 #endif // SPRUCE_H

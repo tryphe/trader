@@ -91,8 +91,7 @@ CommandRunner::CommandRunner( Engine *_e, REST_OBJECT *_rest, Stats *_stats, QOb
     command_map.insert( "setspruceweight", std::bind( &CommandRunner::command_setspruceweight, this, _1 ) );
     command_map.insert( "setsprucestartnode", std::bind( &CommandRunner::command_setsprucestartnode, this, _1 ) );
     command_map.insert( "setspruceshortlongtotal", std::bind( &CommandRunner::command_setspruceshortlongtotal, this, _1 ) );
-    command_map.insert( "setspruceleverage", std::bind( &CommandRunner::command_setspruceleverage, this, _1 ) );
-    command_map.insert( "setspruceleveragecutoff", std::bind( &CommandRunner::command_setspruceleveragecutoff, this, _1 ) );
+    command_map.insert( "setsprucelogfactor", std::bind( &CommandRunner::command_setsprucelogfactor, this, _1 ) );
     command_map.insert( "setsprucehedgetarget", std::bind( &CommandRunner::command_setsprucehedgetarget, this, _1 ) );
     command_map.insert( "setspruceordergreed", std::bind( &CommandRunner::command_setspruceordergreed, this, _1 ) );
     command_map.insert( "setsprucelongmax", std::bind( &CommandRunner::command_setsprucelongmax, this, _1 ) );
@@ -745,18 +744,10 @@ void CommandRunner::command_setspruceshortlongtotal( QStringList &args )
     kDebug() << "spruce shortlong total for" << args.value( 1 ) << "is" << args.value( 2 );
 }
 
-void CommandRunner::command_setspruceleverage( QStringList &args )
+void CommandRunner::command_setsprucelogfactor( QStringList &args )
 {
-    engine->spruce.setLeverage( args.value( 1 ) );
-    kDebug() << "spruce leverage is" << args.value( 1 );
-}
-
-void CommandRunner::command_setspruceleveragecutoff( QStringList &args )
-{
-    if ( !checkArgs( args, 2 ) ) return;
-
-    engine->spruce.setLeverageCutoff( args.value( 1 ), args.value( 2 ) );
-    kDebug() << "spruce leverage cutoff at" << args.value( 1 ) << "is" << args.value( 2 );
+    engine->spruce.setLogFactor( args.value( 1 ).toLongLong() );
+    kDebug() << "spruce log factor is" << args.value( 1 ).toLongLong();
 }
 
 void CommandRunner::command_setsprucehedgetarget( QStringList &args )

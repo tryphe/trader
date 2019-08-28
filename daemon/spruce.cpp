@@ -2,10 +2,31 @@
 #include "coinamount.h"
 #include <global.h>
 
+static inline Coin costFunction( Coin target_x, qint64 log_factor = 1 )
+{
+    bool is_negative = target_x < Coin();
+    if ( is_negative ) target_x = target_x.abs();
+
+    const Coin iter = Coin( "0.01" ); // granularity to find y
+    Coin y;
+    qint64 cumulative_log_factor = 0;
+
+    // figure out cost y of target_x by approaching by iter and increased log factor
+    // y += ( 1 + ( iter * i ) - y ) / ( ( 1 / iter ) + cumulative_log_factor );
+    for ( Coin i = CoinAmount::COIN; i < target_x; i += iter )
+    {
+        y += ( CoinAmount::COIN - y ) / ( 100 + cumulative_log_factor );
+        cumulative_log_factor += log_factor;
+    }
+
+    if ( is_negative ) y = -y;
+
+    return y;
+}
+
 Spruce::Spruce()
 {
     /// user settings
-    m_leverage = m_default_leverage = "0.5";
     m_hedge_target = "0.95"; // keep our market valuations at most 1-x% apart
     m_order_greed = "0.99"; // keep our spread at least 1-x% apart
 
@@ -15,6 +36,7 @@ Spruce::Spruce()
     m_order_size = "0.00500000";
     m_order_nice = "2";
     m_trailing_price_limit = "0.96";
+    m_log_factor = 1;
 
     /// per-exchange constants
     m_order_size_min = "0.00070000"; // TODO: scale this minimum to each exchange
@@ -147,16 +169,8 @@ QString Spruce::getSaveState()
     // save base
     ret += QString( "setsprucebasecurrency %1\n" ).arg( base_currency );
 
-    // save leverage
-    ret += QString( "setspruceleverage %1\n" ).arg( m_default_leverage );
-
-    // save leverage cutoff
-    for ( QMap<Coin,Coin>::const_iterator i = m_leverage_cutoff.begin(); i != m_leverage_cutoff.end(); i++ )
-    {
-        ret += QString( "setspruceleveragecutoff %1 %2\n" )
-                .arg( i.key() )
-                .arg( i.value() );
-    }
+    // save log factor
+    ret += QString( "setsprucelogfactor %1\n" ).arg( m_log_factor );
 
     // save hedge target
     ret += QString( "setsprucehedgetarget %1\n" ).arg( m_hedge_target );
@@ -212,6 +226,34 @@ QString Spruce::getSaveState()
     return ret;
 }
 
+Coin Spruce::getEquityNow( QString currency )
+{
+    for ( QList<Node*>::const_iterator i = nodes_now.begin(); i != nodes_now.end(); i++ )
+    {
+        Node *n = *i;
+
+        if ( n->currency == currency )
+            return n->quantity * n->price;
+    }
+
+    return Coin();
+}
+
+Coin Spruce::getLastCoeffForMarket( const QString &market ) const
+{
+    int idx = market.indexOf( QChar('-') );
+    if ( idx < 0 )
+        return Coin();
+
+    // TODO: fix this for more exchanges
+    QString currency = market.mid( idx +1, market.size() - idx );
+
+    if ( !m_last_coeffs.contains( currency ) )
+        qDebug() << "local warning: can't find coeff for currency" << currency;
+
+    return m_last_coeffs.value( currency );
+}
+
 void Spruce::equalizeDates()
 {
     /// psuedocode
@@ -237,47 +279,31 @@ void Spruce::equalizeDates()
     // find hi/lo coeffs
     m_start_coeffs = m_relative_coeffs = getRelativeCoeffs();
 
-    Coin ticksize = CoinAmount::SATOSHI * 50000;
-
     // avoid infinite loop
-    if ( m_hedge_target > Coin( "0.998" ) )
-        m_hedge_target = "0.998";
+    if ( m_hedge_target > Coin( "0.995" ) )
+        m_hedge_target = "0.995";
 
-    // check for bad coeff
-    if ( m_start_coeffs.lo_coeff.isZeroOrLess() )
+    const Coin min_adjustment = CoinAmount::SATOSHI * 100000;
+    const Coin hi_equity = getEquityNow( m_relative_coeffs.hi_currency );
+    const Coin ticksize = std::max( min_adjustment, hi_equity / 5000 );
+
+    // if we don't have enough to make the adjustment, abort
+    if ( hi_equity < min_adjustment )
+    {
+        kDebug() << "local warning: not enough equity to equalizeDates" << hi_equity;
         return;
-
-    // find leverage to use by reverse iterating from highest cutoff to lowest
-    bool cutoff_tripped = false;
-    const Coin coeff_diff_pct = m_start_coeffs.hi_coeff / m_start_coeffs.lo_coeff;
-    for ( QMap<Coin,Coin>::const_iterator i = m_leverage_cutoff.end() -1; i != m_leverage_cutoff.begin() -1; i-- )
-    {
-        const Coin &cutoff = i.key();
-        const Coin &new_leverage = i.value();
-
-        if ( coeff_diff_pct >= cutoff &&
-             m_leverage > new_leverage )
-        {
-            cutoff_tripped = true;
-            m_leverage = new_leverage;
-            kDebug() << "[Spruce] leverage lowered to" << m_leverage;
-            break;
-        }
     }
 
-    // if we didn't trip the cutoff, set it to default
-    if ( !cutoff_tripped && m_leverage != m_default_leverage )
-    {
-        m_leverage = m_default_leverage;
-        kDebug() << "[Spruce] leverage reset to" << m_leverage;
-    }
+//    kDebug() << "hi_coeff:" << m_relative_coeffs.hi_coeff << m_relative_coeffs.hi_currency
+//             << "lo_coeff:" << m_relative_coeffs.lo_coeff << m_relative_coeffs.lo_currency;
+//    kDebug() << "ticksize" << ticksize;
+//    kDebug() << "hi_equity" << hi_equity;
 
-    quint64 ct = 1;
+    qint64 i = 0;
     while ( m_relative_coeffs.hi_coeff * m_hedge_target > m_relative_coeffs.lo_coeff )
     {
-        // if we are dealing with a lot of btc, speed up the ratio convergence
-        if ( ct++ % 10000 == 0 )
-            ticksize += CoinAmount::SATOSHI * 50000;
+        if ( ++i == 10000 ) // safety break
+            break;
 
         // find highest/lowest coeff market
         for ( QList<Node*>::const_iterator i = nodes_now.begin(); i != nodes_now.end(); i++ )
@@ -287,13 +313,15 @@ void Spruce::equalizeDates()
             if ( n->currency == m_relative_coeffs.hi_currency &&
                  n->amount > ticksize ) // check if we have enough to short
             {
-                shortlongs[ n->currency ] -= ticksize * m_leverage;
+                shortlongs[ n->currency ] -= ticksize;
                 n->amount -= ticksize;
+                //kDebug() << "shorting" << n->currency;
             }
             else if ( n->currency == m_relative_coeffs.lo_currency )
             {
-                shortlongs[ n->currency ] += ticksize * m_leverage;
+                shortlongs[ n->currency ] += ticksize;
                 n->amount += ticksize;
+                //kDebug() << "longing" << n->currency;
             }
             else
             {
@@ -302,6 +330,8 @@ void Spruce::equalizeDates()
 
             n->recalculateQuantityByPrice();
         }
+//            kDebug() << "hi_coeff:" << m_relative_coeffs.hi_coeff
+//                     << "lo_coeff:" << m_relative_coeffs.lo_coeff;
 
         m_relative_coeffs = getRelativeCoeffs();
     }
@@ -350,18 +380,17 @@ void Spruce::normalizeEquity()
     {
         const QString &currency = i.value();
         const Coin &weight = i.key();
+        const Coin equity_to_use = mean_equity * weight;
 
-        Coin equity_to_use = mean_equity * weight;
         mean_equity_for_market.insert( currency, equity_to_use );
 
         //qDebug() << "equity scaled for" << currency << equity_to_use;
         total_scaled += equity_to_use; // record equity to ensure total_scaled == original total
 
         // avoid div0 on last iteration
-        if ( --ct == 0 )
-            break;
+        if ( --ct == 0 ) break;
 
-        // recalculate mean based on amount used
+        // recalculate mean equity based on amount used
         total -= equity_to_use;
         mean_equity = total / ct;
     }
@@ -403,21 +432,25 @@ QMap<QString, Coin> Spruce::getMarketCoeffs()
 {
     QMap<QString/*currency*/,Coin> start_scores, relative_coeff;
 
+    // calculate start scores
     for ( QList<Node*>::const_iterator i = nodes_start.begin(); i != nodes_start.end(); i++ )
     {
         Node *n = *i;
-        Coin score = n->quantity * n->price;
-
-        start_scores.insert( n->currency, score );
+        start_scores.insert( n->currency,  n->quantity * n->price );
     }
 
+    // calculate new score based on starting score using a loss function
     for ( QList<Node*>::const_iterator i = nodes_now.begin(); i != nodes_now.end(); i++ )
     {
         Node *n = *i;
-        Coin score = n->quantity * n->price;
+        const Coin score = n->quantity * n->price;
+        const Coin &start_score = start_scores.value( n->currency );
+        Coin &new_coeff = relative_coeff[ n->currency ];
 
-        // coeff[n] = date2[n] / date1[n]
-        relative_coeff[ n->currency ] = score / start_scores.value( n->currency );
+        if ( score >= start_score )
+            new_coeff = costFunction( score / start_score, m_log_factor );
+        else
+            new_coeff = costFunction( -( start_score / score ), m_log_factor );
     }
 
     return relative_coeff;
@@ -426,11 +459,11 @@ QMap<QString, Coin> Spruce::getMarketCoeffs()
 RelativeCoeffs Spruce::getRelativeCoeffs()
 {
     // get coeffs for time distances of balances
-    QMap<QString/*currency*/,Coin> coeffs = getMarketCoeffs();
+    m_last_coeffs = getMarketCoeffs();
 
     // find the highest and lowest coefficents
     RelativeCoeffs ret;
-    for ( QMap<QString,Coin>::const_iterator i = coeffs.begin(); i != coeffs.end(); i++ )
+    for ( QMap<QString,Coin>::const_iterator i = m_last_coeffs.begin(); i != m_last_coeffs.end(); i++ )
     {
         const QString &currency = i.key();
         const Coin &coeff = i.value();
