@@ -1,7 +1,7 @@
 #ifndef BUILDCONFIG_H
 #define BUILDCONFIG_H
 
-#define BUILD_VERSION "1.73s"
+#define BUILD_VERSION "1.73t"
 
 /// select your exchange
 //#define EXCHANGE_BITTREX
@@ -26,7 +26,6 @@
 #define WSS_BIND "" // if you want to bind to a specific address, set this and WSS_ADDRESS will be ignored
 #define WSS_ADDRESS LocalHost // options: Any, AnyIPv4, AnyIPv6, LocalHost, LocalHostIPv6
 #define WSS_ADDRESS_FAR "127.0.0.1" // the daemon's public address from the perspective of the gui
-#define WSS_PORT 61313
 
 /// build options
 //#define EXTRA_NICE // be extra nice to the exchange api
