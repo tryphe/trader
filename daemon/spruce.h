@@ -80,7 +80,7 @@ public:
     const QMap<QString,Coin> &getAmountToShortLongMap() { return m_amount_to_shortlong_map; }
     const Coin &getAmountToShortLongTotal() { return m_amount_to_shortlong_total; }
 
-    void setLogFactor( qint64 factor ) { m_log_factor = factor; }
+    void setLogFactor( quint64 factor ) { m_log_factor = factor; }
 
     Coin getEquityNow( QString currency );
     Coin getLastCoeffForMarket( const QString &market ) const;

@@ -746,8 +746,8 @@ void CommandRunner::command_setspruceshortlongtotal( QStringList &args )
 
 void CommandRunner::command_setsprucelogfactor( QStringList &args )
 {
-    engine->spruce.setLogFactor( args.value( 1 ).toLongLong() );
-    kDebug() << "spruce log factor is" << args.value( 1 ).toLongLong();
+    engine->spruce.setLogFactor( args.value( 1 ).toULongLong() );
+    kDebug() << "spruce log factor is" << args.value( 1 ).toULongLong();
 }
 
 void CommandRunner::command_setsprucehedgetarget( QStringList &args )
