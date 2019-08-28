@@ -6,30 +6,8 @@
 #include "trexrest.h"
 #include "polorest.h"
 
-BaseREST::BaseREST(Engine *_engine)
+BaseREST::BaseREST( Engine *_engine )
     : QObject( nullptr ),
-      request_nonce( 0 ),
-      last_request_sent_ms( 0 ),
-      orderbook_update_time( QDateTime::currentMSecsSinceEpoch() ), // last orderbook update time
-      orderbook_update_request_time( 0 ),
-      orderbook_public_update_time( 0 ),
-      orderbook_public_update_request_time( 0 ),
-      limit_commands_queued( 35 ), // stop checks if we are over this many commands queued
-      limit_commands_queued_dc_check( 10 ), // exit dc check if we are over this many commands queued
-      limit_commands_sent( 60 ), // stop checks if we are over this many commands sent
-      limit_timeout_yield( 12 ),
-      market_cancel_thresh( 300 ), // limit for market order total for weighting cancels to be sent first
-      slippage_stale_time( 500 ), // (if post-only is enabled, this is 0) quiet time before we allow an order to be included in slippage price calculations
-      orderbook_stale_tolerance( 10000 ), // only accept orderbooks sent within this time
-      orders_stale_trip_count( 0 ), // state
-      books_stale_trip_count( 0 ), // state
-      send_timer( nullptr ),
-      timeout_timer( nullptr ),
-      orderbook_timer( nullptr ),
-      diverge_converge_timer( nullptr ),
-      ticker_timer( nullptr ),
-      nam( nullptr ),
-      stats( nullptr ), // do not use until after constructor is finished, initialization happens out of class
       engine( _engine )
 {
     kDebug() << "[BaseREST]";

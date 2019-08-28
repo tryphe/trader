@@ -37,34 +37,35 @@ struct BaseREST : public QObject
     QHash<QNetworkReply*,Request*> nam_queue_sent; // request tracking queue
 
     KeyStore keystore;
-
-    qint64 request_nonce;
-    qint64 last_request_sent_ms;
-
-    qint64 orderbook_update_time; // set this to most recent trade
-    qint64 orderbook_update_request_time;
-    qint64 orderbook_public_update_time;
-    qint64 orderbook_public_update_request_time;
-    qint32 limit_commands_queued;
-    qint32 limit_commands_queued_dc_check;
-    qint32 limit_commands_sent;
-    qint32 limit_timeout_yield;
-    qint32 market_cancel_thresh;
-
-    qint64 slippage_stale_time;
-    qint64 orderbook_stale_tolerance, orders_stale_trip_count, books_stale_trip_count;
-
-    QTimer *send_timer;
-    QTimer *timeout_timer;
-    QTimer *orderbook_timer;
-    QTimer *diverge_converge_timer;
-    QTimer *ticker_timer;
-
     AvgResponseTime avg_response_time;
 
-    QNetworkAccessManager *nam;
-    Stats *stats;
-    Engine *engine;
+    qint64 request_nonce{ 0 }; // nonce (except for trex which uses time atm)
+    qint64 last_request_sent_ms{ 0 }; // last nam request time
+
+    qint64 orderbook_update_time{ QDateTime::currentMSecsSinceEpoch() }; // most recent trade time
+    qint64 orderbook_update_request_time{ 0 };
+    qint64 orderbook_public_update_time{ 0 };
+    qint64 orderbook_public_update_request_time{ 0 };
+    qint32 limit_commands_queued{ 35 }; // stop checks if we are over this many commands queued
+    qint32 limit_commands_queued_dc_check{ 10 }; // skip dc check if we are over this many commands queued
+    qint32 limit_commands_sent{ 60 }; // stop checks if we are over this many commands sent
+    qint32 limit_timeout_yield{ 12 };
+    qint32 market_cancel_thresh{ 300 }; // limit for market order total for weighting cancels to be sent first
+
+    qint64 slippage_stale_time{ 500 }; // quiet time before we allow an order to be included in slippage price calculations
+    qint64 orderbook_stale_tolerance{ 10000 }; // only accept orderbooks sent within this time
+    qint64 orders_stale_trip_count{ 0 };
+    qint64 books_stale_trip_count{ 0 };
+
+    QTimer *send_timer{ nullptr };
+    QTimer *timeout_timer{ nullptr };
+    QTimer *orderbook_timer{ nullptr };
+    QTimer *diverge_converge_timer{ nullptr };
+    QTimer *ticker_timer{ nullptr };
+
+    QNetworkAccessManager *nam{ nullptr };
+    Stats *stats{ nullptr }; // note: initialization happens out of class
+    Engine *engine{ nullptr };
 };
 
 
