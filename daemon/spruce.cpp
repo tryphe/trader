@@ -2,27 +2,6 @@
 #include "coinamount.h"
 #include "global.h"
 
-static inline Coin costFunction( Coin target_x, quint64 log_factor = 1 )
-{
-    bool is_negative = target_x < Coin();
-    if ( is_negative ) target_x = target_x.abs();
-
-    const Coin iter = Coin( "0.01" ); // granularity to find y
-    Coin y;
-    quint64 cumulative_log_factor = 0;
-
-    // figure out cost y of target_x by approaching by iter and increased log factor
-    // y += ( 1 + ( iter * i ) - y ) / ( ( 1 / iter ) + cumulative_log_factor );
-    for ( Coin i = CoinAmount::COIN; i < target_x; i += iter )
-    {
-        y += ( CoinAmount::COIN - y ) / ( 100 + cumulative_log_factor );
-        cumulative_log_factor += log_factor;
-    }
-
-    if ( is_negative ) y = -y;
-
-    return y;
-}
 
 Spruce::Spruce()
 {
@@ -48,6 +27,28 @@ Spruce::~Spruce()
         delete nodes_start.takeFirst();
 
     clearLiveNodes();
+}
+
+Coin Spruce::costFunction( Coin target_x, quint64 log_factor )
+{
+    bool is_negative = target_x < Coin();
+    if ( is_negative ) target_x = target_x.abs();
+
+    const Coin iter = Coin( "0.01" ); // granularity to find y
+    Coin y;
+    quint64 cumulative_log_factor = 0;
+
+    // figure out cost y of target_x by approaching by iter and increased log factor
+    // y += ( 1 + ( iter * i ) - y ) / ( ( 1 / iter ) + cumulative_log_factor );
+    for ( Coin i = CoinAmount::COIN; i < target_x; i += iter )
+    {
+        y += ( CoinAmount::COIN - y ) / ( 100 + cumulative_log_factor );
+        cumulative_log_factor += log_factor;
+    }
+
+    if ( is_negative ) y = -y;
+
+    return y;
 }
 
 void Spruce::setCurrencyWeight( QString currency, Coin weight )

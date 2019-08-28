@@ -37,6 +37,8 @@ public:
     explicit Spruce();
     ~Spruce();
 
+    static inline Coin costFunction( Coin target_x, quint64 log_factor = 1 );
+
     void setBaseCurrency( QString currency ) { base_currency = currency; }
     QString getBaseCurrency() const { return base_currency; }
     void setCurrencyWeight( QString currency, Coin weight );
