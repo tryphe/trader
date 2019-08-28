@@ -1239,7 +1239,7 @@ void Engine::findBetterPrice( Position *const &pos )
     if ( pos->price_reset_count > 0 )
         ticksize += ticksize * qFloor( ( qPow( pos->price_reset_count, 1.110 ) ) );
 #elif defined(EXCHANGE_POLONIEX)
-    const qreal slippage_mul = rest->slippage_multiplier.value( market, 0. );
+    const qreal slippage_mul = rest->slippage_multiplier.value( market, 0.005 );
 
     if ( is_buy ) ticksize = pos->buy_price.ratio( slippage_mul ) + CoinAmount::SATOSHI;
     else          ticksize = pos->sell_price.ratio( slippage_mul ) + CoinAmount::SATOSHI;
