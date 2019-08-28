@@ -51,8 +51,8 @@ Compiling
  3. Go there: `cd trader`
  4. Hardcode your API keys into `daemon/keydefs.h` (choose only one):
 	- Run `python generate_keys.py`
-	- or: Copy the example keydefs file: `cp daemon/keydefs.h.example daemon/keydefs.h` then paste your keys in with your favorite editor, or:
-	- or (*non-hardcoded keys*): Create `keydefs.h` using the example file above, but leave the keys blank or as-is during compile, then use the runtime CLI to enter your keys into the bot: `trader-cli Poloniex setkeyandsecret <key> <secret>` (***be careful, this will leak your keys into the bash history***)
+	- or: Copy the example keydefs file: `cp daemon/keydefs.h.example daemon/keydefs.h` then paste your keys in with your favorite editor.
+	- or: (*non-hardcoded keys*): Create `keydefs.h` using the example file above, but leave the keys blank or as-is during compile, then use the runtime CLI to enter your keys into the bot: `trader-cli Poloniex setkeyandsecret <key> <secret>` (***be careful, this will leak your keys into the bash history***)
  5. Run qmake: `/home/username/localqt/Qt-5.13.0-minimal/bin/qmake`
  6. Compile (choose one):
  	- (scripted build) Run `./build-all.sh`. This will build the CLI and all exchange targets using `make -j`.
