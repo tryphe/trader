@@ -155,19 +155,12 @@ void PoloREST::init()
 #endif
 }
 
-bool PoloREST::yieldToFlowControl()
+bool PoloREST::yieldToLag() const
 {
-    return ( nam_queue.size() >= limit_commands_queued ||
-             nam_queue_sent.size() >= limit_commands_sent );
-}
-
-bool PoloREST::yieldToLag()
-{
-    qint64 time = QDateTime::currentMSecsSinceEpoch();
+    const qint64 time = QDateTime::currentMSecsSinceEpoch();
 
     // have we seen the orderbook update recently?
-    return ( orderbook_update_time < time - ( orderbook_timer->interval() *5 ) &&
-             wss_account_feed_update_time < time - 60000 );
+    return ( orderbook_update_time < time - ( orderbook_timer->interval() *5 ) );
 }
 
 void PoloREST::sendNamRequest( Request *const &request )

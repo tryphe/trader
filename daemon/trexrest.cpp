@@ -110,14 +110,12 @@ void TrexREST::init()
     connect( orderbook_timer, &QTimer::timeout, this, &TrexREST::onCheckBotOrders );
     orderbook_timer->setTimerType( Qt::VeryCoarseTimer );
     orderbook_timer->start( 20000 );
-    onCheckBotOrders();
 
     // this timer reads the lo_sell and hi_buy prices for all coins
     ticker_timer = new QTimer( this );
     connect( ticker_timer, &QTimer::timeout, this, &TrexREST::onCheckOrderBooks );
     ticker_timer->setTimerType( Qt::VeryCoarseTimer );
     ticker_timer->start( 10000 );
-    onCheckOrderBooks();
 
     // this timer requests the order book
     QTimer *spruce_timer = new QTimer( this );
@@ -126,12 +124,14 @@ void TrexREST::init()
     spruce_timer->start( 2 * 60000 );
 
 #ifdef EXTRA_NICE
-    order_history_timer->setInterval( 40000 );
-    orderbook_timer->setInterval( 41000 );
-    ticker_timer->setInterval( 42000 );
+    order_history_timer->setInterval( 50000 );
+    orderbook_timer->setInterval( 51000 );
+    ticker_timer->setInterval( 52000 );
+    timeout_timer->start( 15000 );
 #endif
 
-    //sendRequest( "account/getdepositaddress", "NXT" );
+    onCheckBotOrders();
+    onCheckOrderBooks();
 }
 
 void TrexREST::sendNamQueue()
@@ -273,7 +273,6 @@ void TrexREST::sendNamRequest( Request *const &request )
 
     nam_queue_sent.insert( reply, request );
     nam_queue.removeOne( request );
-
     last_request_sent_ms = current_time;
 }
 
@@ -306,13 +305,7 @@ void TrexREST::sendCancel( const QString &order_id, Position * const &pos )
     }
 }
 
-bool TrexREST::yieldToFlowControl()
-{
-    return ( nam_queue.size() >= limit_commands_queued ||
-             nam_queue_sent.size() >= limit_commands_sent );
-}
-
-bool TrexREST::yieldToLag()
+bool TrexREST::yieldToLag() const
 {
     // have we seen the orderbook update recently?
     return ( order_history_update_time < QDateTime::currentMSecsSinceEpoch() - ( order_history_timer->interval() *10 ) /* ~50s */ );

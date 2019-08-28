@@ -61,6 +61,12 @@ BaseREST::~BaseREST()
     kDebug() << "[BaseREST] done.";
 }
 
+bool BaseREST::yieldToFlowControl() const
+{
+    return ( nam_queue.size() >= limit_commands_queued ||
+             nam_queue_sent.size() >= limit_commands_sent );
+}
+
 void BaseREST::sendRequest( QString api_command, QString body, Position *pos, quint16 weight )
 {
     Request *delayed_request = new Request();

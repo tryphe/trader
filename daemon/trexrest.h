@@ -30,8 +30,7 @@ public:
 
     void init();
 
-    bool yieldToFlowControl();
-    bool yieldToLag();
+    bool yieldToLag() const;
 
 public Q_SLOTS:
     void sendNamQueue();

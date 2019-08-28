@@ -25,6 +25,8 @@ struct BaseREST : public QObject
     explicit BaseREST( Engine *_engine );
     ~BaseREST();
 
+    bool yieldToFlowControl() const;
+
     void sendRequest( QString api_command, QString body = QLatin1String(), Position *pos = nullptr, quint16 weight = 0 );
 
     bool isKeyOrSecretUnset() const;

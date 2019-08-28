@@ -30,8 +30,7 @@ public:
 
     void init();
 
-    bool yieldToFlowControl();
-    bool yieldToLag();
+    bool yieldToLag() const;
 
     void sendNamRequest( Request *const &request );
     void sendBuySell( Position *const &pos, bool quiet = true );
