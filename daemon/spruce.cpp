@@ -15,7 +15,7 @@ Spruce::Spruce()
     m_order_size = "0.00500000";
     m_order_nice = "2";
     m_trailing_price_limit = "0.96";
-    m_log_factor = 1;
+    m_log_profile = 10;
 
     /// per-exchange constants
     m_order_size_min = "0.00070000"; // TODO: scale this minimum to each exchange
@@ -29,22 +29,24 @@ Spruce::~Spruce()
     clearLiveNodes();
 }
 
-Coin Spruce::costFunction( Coin target_x, quint64 log_factor )
+Coin Spruce::costFunction( Coin target_x, int profile_u )
 {
+    if ( profile_u < 3 )
+    {
+        kDebug() << "local warning: clamping profile_u to 3";
+        profile_u = 3;
+    }
+
     bool is_negative = target_x < Coin();
     if ( is_negative ) target_x = target_x.abs();
 
     const Coin iter = Coin( "0.01" ); // granularity to find y
     Coin y;
-    quint64 cumulative_log_factor = 0;
 
-    // figure out cost y of target_x by approaching by iter and increased log factor
-    // y += ( 1 + ( iter * i ) - y ) / ( ( 1 / iter ) + cumulative_log_factor );
-    for ( Coin i = CoinAmount::COIN; i < target_x; i += iter )
-    {
-        y += ( CoinAmount::COIN - y ) / ( 100 + cumulative_log_factor );
-        cumulative_log_factor += log_factor;
-    }
+    // figure out cost y of target_x by approaching by iter
+    // y += ( 1 + ( iter * i ) - y ) / ( profile );
+    for ( Coin i = CoinAmount::COIN; i <= target_x; i += iter )
+        y += ( CoinAmount::COIN - y ) / ( profile_u *10 );
 
     if ( is_negative ) y = -y;
 
@@ -171,7 +173,7 @@ QString Spruce::getSaveState()
     ret += QString( "setsprucebasecurrency %1\n" ).arg( base_currency );
 
     // save log factor
-    ret += QString( "setsprucelogfactor %1\n" ).arg( m_log_factor );
+    ret += QString( "setsprucelogprofile %1\n" ).arg( m_log_profile );
 
     // save hedge target
     ret += QString( "setsprucehedgetarget %1\n" ).arg( m_hedge_target );
@@ -449,9 +451,9 @@ QMap<QString, Coin> Spruce::getMarketCoeffs()
         Coin &new_coeff = relative_coeff[ n->currency ];
 
         if ( score >= start_score )
-            new_coeff = costFunction( score / start_score, m_log_factor );
+            new_coeff = costFunction( score / start_score, m_log_profile );
         else
-            new_coeff = costFunction( -( start_score / score ), m_log_factor );
+            new_coeff = costFunction( -( start_score / score ), m_log_profile );
     }
 
     return relative_coeff;
