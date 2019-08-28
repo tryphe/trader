@@ -64,15 +64,6 @@ void BncREST::init()
     BaseREST::limit_timeout_yield = 12;
     BaseREST::market_cancel_thresh = 300; // limit for market order total for weighting cancels to be sent first
 
-#if defined(TRYPHE_BUILD)
-    engine->setMarketSettings( "NAVBTC",  11, 75, 6, 16, 15, 25, false, 0.0020 );
-    engine->setMarketSettings( "MANABTC", 11, 75, 6, 16, 15, 25, false, 0.0020 );
-    engine->setMarketSettings( "VIABTC",  11, 75, 6, 16, 15, 25, false, 0.0020 );
-    engine->setMarketSettings( "XEMBTC",  11, 75, 6, 16, 15, 25, false, 0.0020 );
-    engine->setMarketSettings( "XMRBTC",  11, 75, 6, 16, 15, 25, false, 0.0020 );
-    engine->setMarketSettings( "XVGBTC",  11, 75, 6, 16, 15, 25, false, 0.0020 );
-#endif
-
     keystore.setKeys( BINANCE_KEY, BINANCE_SECRET );
 
     connect( nam, &QNetworkAccessManager::finished, this, &BncREST::onNamReply );

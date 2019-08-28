@@ -70,28 +70,6 @@ void PoloREST::init()
     BaseREST::limit_timeout_yield = 5;
     BaseREST::market_cancel_thresh = 99; // limit for market order total for weighting cancels to be sent first
 
-#if defined(TRYPHE_BUILD)
-    engine->setMarketSettings( "BTC_BCN",  10, 30, 1,  0,  0,  0, false, 0.0017 );
-    engine->setMarketSettings( "BTC_BTS",  11, 44, 6, 10,  9, 10, false, 0.0017 );
-    engine->setMarketSettings( "BTC_CLAM", 11, 44, 6, 10,  9, 10, false, 0.0017 );
-    engine->setMarketSettings( "BTC_DGB" , 11, 44, 6, 10,  9, 10, false, 0.0017 );
-    engine->setMarketSettings( "BTC_DOGE", 25, 65, 1,  0,  0,  0, false, 0.0017 );
-    engine->setMarketSettings( "BTC_NAV" , 11, 44, 6, 10,  9, 10, false, 0.0017 );
-    engine->setMarketSettings( "BTC_NXT" , 11, 44, 6, 10,  9, 10, false, 0.0017 );
-    engine->setMarketSettings( "BTC_VTC" , 11, 44, 6, 10,  9, 10, false, 0.0017 );
-    engine->setMarketSettings( "BTC_XEM" , 11, 44, 6, 10,  9, 10, false, 0.0017 );
-
-    slippage_multiplier[ "BTC_BCN"  ] = 0.;
-    slippage_multiplier[ "BTC_DOGE" ] = 0.;
-    slippage_multiplier[ "BTC_BTS"  ] = 0.005; // 2+1 sat movement @ 1500
-    slippage_multiplier[ "BTC_CLAM" ] = 0.004; // 160+1 sat movement @ 40k
-    slippage_multiplier[ "BTC_DGB"  ] = 0.;
-    slippage_multiplier[ "BTC_NAV"  ] = 0.005;
-    slippage_multiplier[ "BTC_NXT"  ] = 0.005;
-    slippage_multiplier[ "BTC_VTC"  ] = 0.005;
-    slippage_multiplier[ "BTC_XEM"  ] = 0.005;
-#endif
-
     keystore.setKeys( POLONIEX_KEY, POLONIEX_SECRET );
 
     // setup currency ids

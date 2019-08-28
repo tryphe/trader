@@ -58,19 +58,6 @@ void TrexREST::init()
     BaseREST::limit_timeout_yield = 6;
     BaseREST::market_cancel_thresh = 300; // limit for market order total for weighting cancels to be sent first
 
-#if defined(TRYPHE_BUILD) // set trex options (probably logically a bad place but whatever)
-    engine->setMarketSettings( "BTC-DASH", 11, 64, 6, 15, 14, 18, false, 0.0051 );
-    engine->setMarketSettings( "BTC-DGB",  11, 64, 6, 15, 14, 18, false, 0.0051 );
-    engine->setMarketSettings( "BTC-DOGE", 25, 65, 1,  0,  0,  0, false, 0.0051 );
-    engine->setMarketSettings( "BTC-MANA", 11, 64, 6, 15, 14, 18, false, 0.0051 );
-    engine->setMarketSettings( "BTC-NXT",  11, 64, 6, 15, 14, 18, false, 0.0051 );
-    engine->setMarketSettings( "BTC-POLY", 11, 64, 6, 15, 14, 18, false, 0.0051 );
-    engine->setMarketSettings( "BTC-VTC",  11, 90, 7, 16, 16, 20, false, 0.0051 );
-    engine->setMarketSettings( "BTC-XEM",  11, 64, 6, 15, 14, 18, false, 0.0051 );
-    engine->setMarketSettings( "BTC-XMR",  11, 64, 6, 15, 14, 18, false, 0.0051 );
-    engine->setMarketSettings( "BTC-XVG",  11, 64, 6, 15, 14, 18, false, 0.0051 );
-#endif
-
     keystore.setKeys( BITTREX_KEY, BITTREX_SECRET );
 
     connect( nam, &QNetworkAccessManager::finished, this, &TrexREST::onNamReply );
