@@ -20,6 +20,9 @@ Spruce::Spruce()
 
     /// per-exchange constants
     m_order_size_min = "0.00070000"; // TODO: scale this minimum to each exchange
+
+    /// internal settings
+    m_tick_size = "0.0001";
 }
 
 Spruce::~Spruce()
@@ -30,31 +33,36 @@ Spruce::~Spruce()
     clearLiveNodes();
 }
 
-Coin Spruce::costFunction( Coin target_x, int profile_u, Coin nice )
+void Spruce::mapCostFunctionImage()
 {
-    if ( profile_u < 3 )
+    m_cost_function_image.clear();
+
+    if ( m_log_profile < 3 )
     {
         kDebug() << "local warning: clamping profile_u to 3";
-        profile_u = 3;
+        m_log_profile = 3;
     }
+    kDebug() << "[Spruce] generating cost function image...";
+    qint64 t0 = QDateTime::currentMSecsSinceEpoch();
 
-    bool is_negative = target_x < Coin();
-    if ( is_negative ) target_x = target_x.abs();
-
-    const Coin nice_orig = nice;
-    const Coin iter = Coin( "0.01" ); // granularity to find y
+    Coin nice = m_log_nice;
     Coin y;
     // figure out cost y of target_x by approaching by iter
     // y += ( 1 + ( iter * i ) - y ) / ( profile );
-    for ( Coin i = CoinAmount::COIN; i <= target_x; i += iter )
+    const Coin profile = Coin( m_log_profile *1000 );
+    const Coin nice_iter = m_log_nice * ( CoinAmount::COIN / 10 );
+    const Coin end = Coin( "100" );
+    for ( Coin x = Coin(); x < end; x += m_tick_size /*granularity to find y*/ )
     {
-        y += ( CoinAmount::COIN - y ) / ( nice + Coin( profile_u *10 ) );
-        nice += nice_orig *( CoinAmount::COIN / 10 );
+        y += ( CoinAmount::COIN - y ) / ( nice + profile );
+        nice += nice_iter;
+
+        m_cost_function_image.insert(  x,  y );
+        m_cost_function_image.insert( -x, -y );
     }
 
-    if ( is_negative ) y = -y;
-
-    return y;
+    kDebug() << "[Spruce] done generating cost function image with" << m_cost_function_image.size() <<
+                "points. took" << QDateTime::currentMSecsSinceEpoch() - t0 << "ms.";
 }
 
 void Spruce::setCurrencyWeight( QString currency, Coin weight )
@@ -233,6 +241,18 @@ QString Spruce::getSaveState()
     return ret;
 }
 
+void Spruce::setLogProfile( int u )
+{
+    m_log_profile = u;
+    m_cost_function_image.clear();
+}
+
+void Spruce::setLogNice( Coin n )
+{
+    m_log_nice = n;
+    m_cost_function_image.clear();
+}
+
 Coin Spruce::getEquityNow( QString currency )
 {
     for ( QList<Node*>::const_iterator i = nodes_now.begin(); i != nodes_now.end(); i++ )
@@ -263,6 +283,17 @@ Coin Spruce::getLastCoeffForMarket( const QString &market ) const
 
 void Spruce::equalizeDates()
 {
+    // if the function image map is empty, initialize it
+    if ( m_cost_function_image.isEmpty() )
+        mapCostFunctionImage();
+
+    // if it's still empty, complain
+    if ( m_cost_function_image.isEmpty()  )
+    {
+        kDebug() << "local error: couldn't map function image";
+        return;
+    }
+
     /// psuedocode
     //
     // get initial coeffs
@@ -455,9 +486,15 @@ QMap<QString, Coin> Spruce::getMarketCoeffs()
         Coin &new_coeff = relative_coeff[ n->currency ];
 
         if ( score >= start_score )
-            new_coeff = costFunction( score / start_score, m_log_profile, m_log_nice );
+        {
+            Coin transformed_score = ( score / start_score ).truncatedByTicksize( m_tick_size );
+            new_coeff = m_cost_function_image.value( transformed_score );
+        }
         else
-            new_coeff = costFunction( -( start_score / score ), m_log_profile, m_log_nice );
+        {
+            Coin transformed_score = -( start_score / score ).truncatedByTicksize( m_tick_size );
+            new_coeff = m_cost_function_image.value( transformed_score );
+        }
     }
 
     return relative_coeff;

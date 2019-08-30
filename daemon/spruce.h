@@ -37,7 +37,7 @@ public:
     explicit Spruce();
     ~Spruce();
 
-    static inline Coin costFunction( Coin target_x, int profile_u = 10, Coin nice = Coin( "5" ) );
+    void mapCostFunctionImage();
 
     void setBaseCurrency( QString currency ) { base_currency = currency; }
     QString getBaseCurrency() const { return base_currency; }
@@ -82,8 +82,10 @@ public:
     const QMap<QString,Coin> &getAmountToShortLongMap() { return m_amount_to_shortlong_map; }
     const Coin &getAmountToShortLongTotal() { return m_amount_to_shortlong_total; }
 
-    void setLogProfile( quint64 u ) { m_log_profile = u; }
-    void setLogNice( Coin n ) { m_log_nice = n; }
+    void setLogProfile( int u );
+    int getLogProfile() const { return m_log_profile; }
+    void setLogNice( Coin n );
+    Coin getLogNice() const { return m_log_nice; }
 
     Coin getEquityNow( QString currency );
     Coin getLastCoeffForMarket( const QString &market ) const;
@@ -107,9 +109,10 @@ private:
     QMap<QString,Coin> original_quantity; // track original start quantity, since it changes
     QMap<Coin,Coin> m_leverage_cutoff;
     Coin m_hedge_target, m_order_greed, m_long_max, m_short_max, m_market_max, m_order_size,
-    m_order_size_min, m_order_nice, m_trailing_price_limit;
-    qint64 m_log_profile;
-    Coin m_log_nice;
+    m_order_size_min, m_order_nice, m_trailing_price_limit, m_log_nice, m_tick_size;
+    int m_log_profile;
+
+    QMap<Coin,Coin> m_cost_function_image;
 
     QList<Node*> nodes_start, nodes_now;
     QMap<QString/*currency*/,Coin> m_last_coeffs;

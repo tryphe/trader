@@ -747,14 +747,14 @@ void CommandRunner::command_setspruceshortlongtotal( QStringList &args )
 
 void CommandRunner::command_setsprucelogprofile( QStringList &args )
 {
-    engine->spruce.setLogProfile( args.value( 1 ).toULongLong() );
-    kDebug() << "spruce log profile is" << args.value( 1 ).toULongLong();
+    engine->spruce.setLogProfile( args.value( 1 ).toInt() );
+    kDebug() << "spruce log profile is" << engine->spruce.getLogProfile();
 }
 
 void CommandRunner::command_setsprucelognice( QStringList &args )
 {
-    engine->spruce.setLogNice( args.value( 1 ).toULongLong() );
-    kDebug() << "spruce log nice is" << args.value( 1 ).toULongLong();
+    engine->spruce.setLogNice( args.value( 1 ) );
+    kDebug() << "spruce log nice is" << engine->spruce.getLogNice();
 }
 
 void CommandRunner::command_setsprucehedgetarget( QStringList &args )
