@@ -8,12 +8,12 @@
 
 static inline QString qrealToSubsatoshis( qreal r )
 {
-    return CoinAmount::toSubsatoshiFormatExpr( r ).remove( CoinAmount::decimal );
+    return CoinAmount::toSubsatoshiFormatExpr( r ).remove( CoinAmount::decimal_exp );
 }
 
 static inline QString qstringToSubsatoshis( QString s )
 {
-    return CoinAmount::toSatoshiFormatStr( s, CoinAmount::subsatoshi_decimals ).remove( CoinAmount::decimal );
+    return CoinAmount::toSatoshiFormatStr( s, CoinAmount::subsatoshi_decimals ).remove( CoinAmount::decimal_exp );
 }
 
 Coin::Coin()
@@ -274,25 +274,25 @@ QString Coin::toSubSatoshiString() const
     //qDebug() << "str:" << ret;
 
     // temporarily remove the negative sign so we can properly prepend zeroes
-    bool is_negative = ret.at( 0 ) == CoinAmount::minus;
+    bool is_negative = ret.at( 0 ) == CoinAmount::minus_exp;
     if ( is_negative ) ret.remove( 0, 1 );
 
     int sz1 = ret.size();
     while ( sz1 < CoinAmount::subsatoshi_decimals )
     {
         sz1++; // add only if statement passes
-        ret.prepend( CoinAmount::zero );
+        ret.prepend( CoinAmount::zero_exp );
     }
 
     // reuse sz1 to calculate a new decimal index and insert decimal
     sz1 -= CoinAmount::subsatoshi_decimals;
-    ret.insert( sz1, CoinAmount::decimal );
+    ret.insert( sz1, CoinAmount::decimal_exp );
 
     // decimal is the first character, return with prepended zero
     if ( sz1 == 0 )
-        ret.prepend( CoinAmount::zero );
+        ret.prepend( CoinAmount::zero_exp );
 
-    if ( is_negative ) ret.prepend( CoinAmount::minus );
+    if ( is_negative ) ret.prepend( CoinAmount::minus_exp );
 
     return ret;
 }
@@ -300,7 +300,7 @@ QString Coin::toSubSatoshiString() const
 QString Coin::toAmountString() const
 {
     QString ret = toSubSatoshiString();
-    int trunc_idx = ret.indexOf( CoinAmount::decimal ) +9;
+    int trunc_idx = ret.indexOf( CoinAmount::decimal_exp ) +9;
 
     if ( ret.size() > trunc_idx )
         ret.truncate( trunc_idx );
@@ -334,8 +334,8 @@ void Coin::truncateByTicksize( QString ticksize )
         ticksize = CoinAmount::SATOSHI_STR;
 
     QString s = toAmountString();
-    int dec_idx = s.indexOf( CoinAmount::decimal );
-    int ticksize_idx_one = ticksize.indexOf( CoinAmount::one );
+    int dec_idx = s.indexOf( CoinAmount::decimal_exp );
+    int ticksize_idx_one = ticksize.indexOf( CoinAmount::one_exp );
 
     // sanity check: make sure there's a '1' and a decimal
     if ( dec_idx < 0 || ticksize_idx_one < 0 )

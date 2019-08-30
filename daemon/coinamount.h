@@ -74,6 +74,7 @@ namespace CoinAmount
 // note: there MUST NOT be any Coin::operators used here as we might recursively reference another
 // uninitialized static variable, which is undefined and will break things
 static const Coin COIN = QString( "1.0" );
+static const Coin ZERO = QString( "0" );
 static const Coin COIN_PARTS = QString( "10000000000000000" );
 static const Coin COIN_PARTS_DIV = QString( "100000000000000000000000000000000" ); // =COIN_PARTS^2
 static const Coin SATOSHI_PARTS = QString( "100000000" );
@@ -84,11 +85,11 @@ static const QString SATOSHI_STR = QString( "0.00000001" );
 static const qreal SATOSHI_REAL = 0.00000001;
 static const Coin ORDER_SHIM = QString( "0.000000005" );
 
-static const QChar decimal = QChar( '.' );
-static const QChar zero = QChar( '0' );
-static const QChar one = QChar( '1' );
-static const QChar minus = QChar( '-' );
-static const QChar plus = QChar( '+' );
+static const QChar decimal_exp = QChar( '.' );
+static const QChar zero_exp = QChar( '0' );
+static const QChar one_exp = QChar( '1' );
+static const QChar minus_exp = QChar( '-' );
+static const QChar plus_exp = QChar( '+' );
 static const int str_base = 10;
 static const int subsatoshi_decimals = 16;
 
@@ -111,7 +112,7 @@ static inline void toSatoshiFormat( QString &s, int decimals = 8 )
     for ( QString::const_iterator i = s.begin(); i != s.end(); i++ )
     {
         // trap multiple decimals
-        if ( *i == CoinAmount::decimal )
+        if ( *i == CoinAmount::decimal_exp )
         {
             if ( dec_count > 0 )
             {
@@ -129,7 +130,7 @@ static inline void toSatoshiFormat( QString &s, int decimals = 8 )
             // if we have a decimal, remove it and iterate backwards
             if ( dec_count > 0 )
             {
-                int dec_idx = s.indexOf( CoinAmount::decimal );
+                int dec_idx = s.indexOf( CoinAmount::decimal_exp );
                 s.remove( dec_idx, 1 );
                 dec_count--;
                 ct--;
@@ -138,8 +139,8 @@ static inline void toSatoshiFormat( QString &s, int decimals = 8 )
             int sz = s.size();
             int e = s.mid( ct +2, sz - ct +2 ).toInt(); // read exponent
             QChar sign = s.at( ct +1 ); // read sign
-            int sign_int = sign == CoinAmount::plus ? 1 :
-                           sign == CoinAmount::minus ? -1 : 0;
+            int sign_int = sign == CoinAmount::plus_exp ? 1 :
+                           sign == CoinAmount::minus_exp ? -1 : 0;
 
             if ( sign_int == -1 ) e--; // one less if we're negative
 
@@ -152,19 +153,19 @@ static inline void toSatoshiFormat( QString &s, int decimals = 8 )
                 while ( e-- > 0 )
                 {
                     if ( sign_int == -1 )
-                        s.insert( 1, CoinAmount::zero );
+                        s.insert( 1, CoinAmount::zero_exp );
                     else
-                        s.append( CoinAmount::zero );
+                        s.append( CoinAmount::zero_exp );
                 }
 
                 // insert decimal
                 if ( sign_int == -1 )
                 {
-                    s.insert( 1, CoinAmount::decimal );
-                    s.insert( 1, CoinAmount::zero );
+                    s.insert( 1, CoinAmount::decimal_exp );
+                    s.insert( 1, CoinAmount::zero_exp );
                 }
                 else
-                    s.append( CoinAmount::decimal );
+                    s.append( CoinAmount::decimal_exp );
 
                 // restart loop and check again
                 dec_count = ct = 0;
@@ -179,8 +180,8 @@ static inline void toSatoshiFormat( QString &s, int decimals = 8 )
             }
         }
         // trap other junk
-        else if ( !i->isNumber() && *i != CoinAmount::decimal &&
-             !( *i == CoinAmount::minus && ct == 0 ) ) // allow '-' if first character
+        else if ( !i->isNumber() && *i != CoinAmount::decimal_exp &&
+             !( *i == CoinAmount::minus_exp && ct == 0 ) ) // allow '-' if first character
         {
             //qDebug() << "local warning: toSatoshiFormatStr caught bad character" << *i << "in" << s;
             dec_count = 0;
@@ -193,29 +194,29 @@ static inline void toSatoshiFormat( QString &s, int decimals = 8 )
     // if there is no decimal, append ".0"
     if ( dec_count == 0 )
     {
-        s.append( CoinAmount::decimal );
-        s.append( CoinAmount::zero );
+        s.append( CoinAmount::decimal_exp );
+        s.append( CoinAmount::zero_exp );
     }
 
     // prepend zero if decimal is the first character
-    if ( s.at( 0 ) == CoinAmount::decimal )
-        s.prepend( CoinAmount::zero );
-    else if ( s.at( 0 ) == CoinAmount::minus &&
-              s.at( 1 ) == CoinAmount::decimal )
-        s.insert( 1, CoinAmount::zero );
+    if ( s.at( 0 ) == CoinAmount::decimal_exp )
+        s.prepend( CoinAmount::zero_exp );
+    else if ( s.at( 0 ) == CoinAmount::minus_exp &&
+              s.at( 1 ) == CoinAmount::decimal_exp )
+        s.insert( 1, CoinAmount::zero_exp );
 
     // remove front padded zeroes
-    while ( s.at( 0 ) == CoinAmount::zero &&
-            s.at( 1 ) == CoinAmount::zero )
+    while ( s.at( 0 ) == CoinAmount::zero_exp &&
+            s.at( 1 ) == CoinAmount::zero_exp )
         s.remove( 0, 1 );
 
-    int dec_idx = s.indexOf( CoinAmount::decimal );
+    int dec_idx = s.indexOf( CoinAmount::decimal_exp );
 
     // add zeroes on end
     decimals++;
     int sz1 = s.size();
     while ( sz1++ - dec_idx < decimals )
-        s.append( CoinAmount::zero );
+        s.append( CoinAmount::zero_exp );
 
     s.truncate( dec_idx + decimals );
 }
@@ -241,7 +242,7 @@ static inline QString toSatoshiFormat( qreal &r )
     static QString ret;
     ret = QString::number( r, 'f', CoinAmount::str_base );
 
-    int dec_idx = ret.indexOf( CoinAmount::decimal );
+    int dec_idx = ret.indexOf( CoinAmount::decimal_exp );
     ret.truncate( dec_idx +9 ); // truncate to 8 decimals
     return ret;
 }
@@ -260,7 +261,7 @@ static inline QString toSubsatoshiFormat( qreal &r )
     ret = QString::number( r, 'f', CoinAmount::subsatoshi_decimals );
 
     int dec_idx;
-    dec_idx = ret.indexOf( CoinAmount::decimal );
+    dec_idx = ret.indexOf( CoinAmount::decimal_exp );
     ret.truncate( dec_idx + CoinAmount::subsatoshi_decimals + 1 ); // truncate to 8 decimals
     return ret;
 }
