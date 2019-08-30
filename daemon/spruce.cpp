@@ -49,9 +49,9 @@ void Spruce::mapCostFunctionImage()
     Coin y;
     // figure out cost y of target_x by approaching by iter
     // y += ( 1 + ( iter * i ) - y ) / ( profile );
-    const Coin profile = Coin( m_log_profile *1000 );
+    const Coin profile = Coin( m_log_profile * 1000 );
     const Coin nice_iter = m_log_nice * ( CoinAmount::COIN / 10 );
-    const Coin end = Coin( "100" );
+    const Coin end = Coin( CoinAmount::COIN * 100 );
     for ( Coin x = Coin(); x < end; x += m_tick_size /*granularity to find y*/ )
     {
         y += ( CoinAmount::COIN - y ) / ( nice + profile );
