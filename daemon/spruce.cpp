@@ -21,10 +21,13 @@ Spruce::Spruce()
     /// cache cost function image.
     /// false = eco mode accuracy, 25MB cache. should be ~99% as performant as below.
     /// true = insane accuracy, 250MB cache, +10x more accuracy than eco mode. default.
-    setLogAccuracy( true );
+    m_tick_size = "0.0001";
 
     /// per-exchange constants
     m_order_size_min = "0.00070000"; // TODO: scale this minimum to each exchange
+
+    /// internal
+    m_log_map_end = Coin( CoinAmount::COIN * 100 );
 }
 
 Spruce::~Spruce()
@@ -51,15 +54,16 @@ void Spruce::mapCostFunctionImage()
     Coin y;
     // figure out cost y of target_x by approaching by iter
     // y += ( 1 + ( iter * i ) - y ) / ( profile );
-    const Coin profile = Coin( m_log_profile * ( !m_accuracy ? 100 : 1000 ) );
+    const Coin profile = Coin( m_log_profile * 1000 );
     const Coin nice_iter = m_log_nice * ( CoinAmount::COIN / 10 );
-    const Coin end = Coin( CoinAmount::COIN * 100 );
-    for ( Coin x = Coin(); x < end; x += m_tick_size /*granularity to find y*/ )
+    for ( Coin x = Coin(); x <= m_log_map_end; x += m_tick_size /*granularity to find y*/ )
     {
-        y += ( CoinAmount::COIN - y ) / ( nice + profile );
+        if ( !x.isZero() ) // don't skip zero, just set zero to zero
+            y += ( CoinAmount::COIN - y ) / ( nice + profile );
+
         nice += nice_iter;
 
-        m_cost_function_image.insert(  x,  y );
+        m_cost_function_image.insert( x, y );
     }
 
     kDebug() << "[Spruce] done generating cost function image with" << m_cost_function_image.size() <<
@@ -188,9 +192,6 @@ QString Spruce::getSaveState()
     // save log nice
     ret += QString( "setsprucelognice %1\n" ).arg( m_log_nice );
 
-    // save log accuracy
-    ret += QString( "setsprucelogaccuracy %1\n" ).arg( QVariant( m_accuracy ).toString() );
-
     // save hedge target
     ret += QString( "setsprucehedgetarget %1\n" ).arg( m_hedge_target );
 
@@ -254,13 +255,6 @@ void Spruce::setLogProfile( int u )
 void Spruce::setLogNice( Coin n )
 {
     m_log_nice = n;
-    m_cost_function_image.clear();
-}
-
-void Spruce::setLogAccuracy( bool a )
-{
-    m_accuracy = a;
-    m_tick_size = ( !m_accuracy ? "0.001" : "0.0001" );
     m_cost_function_image.clear();
 }
 
@@ -496,16 +490,18 @@ QMap<QString, Coin> Spruce::getMarketCoeffs()
         const Coin &start_score = start_scores.value( n->currency );
         Coin &new_coeff = relative_coeff[ n->currency ];
 
-        if ( score >= start_score )
-        {
-            Coin transformed_score = ( score / start_score ).truncatedByTicksize( m_tick_size );
-            new_coeff = m_cost_function_image.value( transformed_score );
-        }
-        else
-        {
-            Coin transformed_score = ( start_score / score ).truncatedByTicksize( m_tick_size );
-            new_coeff = -m_cost_function_image.value( transformed_score );
-        }
+        bool is_negative = score < start_score;
+
+        Coin transformed_score = is_negative ? ( start_score / score ).truncatedByTicksize( m_tick_size )
+                                             : ( score / start_score ).truncatedByTicksize( m_tick_size );
+
+        // clamp score above maximum
+        if ( transformed_score >= m_log_map_end )
+            transformed_score = m_log_map_end;
+
+
+        new_coeff = is_negative ? -m_cost_function_image.value( transformed_score )
+                                :  m_cost_function_image.value( transformed_score );
     }
 
     return relative_coeff;

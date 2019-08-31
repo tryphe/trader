@@ -101,7 +101,6 @@ private:
     void command_setspruceshortlongtotal( QStringList &args );
     void command_setsprucelogprofile( QStringList &args );
     void command_setsprucelognice( QStringList &args );
-    void command_setsprucelogaccuracy( QStringList &args );
     void command_setsprucehedgetarget( QStringList &args );
     void command_setspruceordergreed( QStringList &args );
     void command_setsprucelongmax( QStringList &args );

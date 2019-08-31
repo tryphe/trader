@@ -86,8 +86,6 @@ public:
     int getLogProfile() const { return m_log_profile; }
     void setLogNice( Coin n );
     Coin getLogNice() const { return m_log_nice; }
-    void setLogAccuracy( bool a );
-    bool getLogAccuracy() const { return m_accuracy; }
 
     Coin getEquityNow( QString currency );
     Coin getLastCoeffForMarket( const QString &market ) const;
@@ -118,8 +116,8 @@ private:
     QList<Node*> nodes_start, nodes_now;
     QMap<QString/*currency*/,Coin> m_last_coeffs;
 
+    Coin m_log_map_end;
     int m_log_profile;
-    bool m_accuracy;
 };
 
 #endif // SPRUCE_H
