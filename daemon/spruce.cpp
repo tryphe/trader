@@ -46,11 +46,11 @@ void Spruce::mapCostFunctionImage()
 
     Coin y;
     // subtract 0.1 for every 10% increase
-    // y += ( 1 - y );
+    // y += ( 1 - y ) * scale;
     for ( Coin x = Coin(); x <= m_log_map_end; x += m_tick_size /*granularity to find y*/ )
     {
         if ( !x.isZero() ) // don't skip zero, just set zero to zero
-            y += ( CoinAmount::COIN - y ) / 10000;
+            y += ( CoinAmount::COIN - y ) * m_tick_size;
 
         m_cost_function_image.insert( x, y );
     }
