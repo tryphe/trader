@@ -93,6 +93,7 @@ CommandRunner::CommandRunner( Engine *_e, REST_OBJECT *_rest, Stats *_stats, QOb
     command_map.insert( "setspruceshortlongtotal", std::bind( &CommandRunner::command_setspruceshortlongtotal, this, _1 ) );
     command_map.insert( "setsprucelogprofile", std::bind( &CommandRunner::command_setsprucelogprofile, this, _1 ) );
     command_map.insert( "setsprucelognice", std::bind( &CommandRunner::command_setsprucelognice, this, _1 ) );
+    command_map.insert( "setsprucelogaccuracy", std::bind( &CommandRunner::command_setsprucelogaccuracy, this, _1 ) );
     command_map.insert( "setsprucehedgetarget", std::bind( &CommandRunner::command_setsprucehedgetarget, this, _1 ) );
     command_map.insert( "setspruceordergreed", std::bind( &CommandRunner::command_setspruceordergreed, this, _1 ) );
     command_map.insert( "setsprucelongmax", std::bind( &CommandRunner::command_setsprucelongmax, this, _1 ) );
@@ -755,6 +756,12 @@ void CommandRunner::command_setsprucelognice( QStringList &args )
 {
     engine->spruce.setLogNice( args.value( 1 ) );
     kDebug() << "spruce log nice is" << engine->spruce.getLogNice();
+}
+
+void CommandRunner::command_setsprucelogaccuracy( QStringList &args )
+{
+    engine->spruce.setLogAccuracy( QVariant( args.value( 1 ) ).toBool() );
+    kDebug() << "spruce log accuracy is" << engine->spruce.getLogAccuracy();
 }
 
 void CommandRunner::command_setsprucehedgetarget( QStringList &args )

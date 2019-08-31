@@ -86,6 +86,8 @@ public:
     int getLogProfile() const { return m_log_profile; }
     void setLogNice( Coin n );
     Coin getLogNice() const { return m_log_nice; }
+    void setLogAccuracy( bool a );
+    bool getLogAccuracy() const { return m_accuracy; }
 
     Coin getEquityNow( QString currency );
     Coin getLastCoeffForMarket( const QString &market ) const;
@@ -110,12 +112,14 @@ private:
     QMap<Coin,Coin> m_leverage_cutoff;
     Coin m_hedge_target, m_order_greed, m_long_max, m_short_max, m_market_max, m_order_size,
     m_order_size_min, m_order_nice, m_trailing_price_limit, m_log_nice, m_tick_size;
-    int m_log_profile;
 
     QMap<Coin,Coin> m_cost_function_image;
 
     QList<Node*> nodes_start, nodes_now;
     QMap<QString/*currency*/,Coin> m_last_coeffs;
+
+    int m_log_profile;
+    bool m_accuracy;
 };
 
 #endif // SPRUCE_H
