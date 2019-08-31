@@ -400,10 +400,10 @@ void Spruce::normalizeEquity()
         //qDebug() << "equity scaled for" << currency << equity_to_use;
         total_scaled += equity_to_use; // record equity to ensure total_scaled == original total
 
-        // avoid div0 on last iteration
+        // if there isn't a last item, exit ehre
         if ( --ct == 0 ) break;
 
-        // recalculate mean equity based on amount used
+        // do some things to help next iteration, recalculate mean equity based on amount used
         total -= equity_to_use;
         mean_equity = total / ct;
     }
