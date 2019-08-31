@@ -15,19 +15,18 @@ Spruce::Spruce()
     m_order_size = "0.00500000";
     m_order_nice = "2";
     m_trailing_price_limit = "0.96";
-    m_log_profile = 10;
-    m_log_nice = "10";
-
-    /// cache cost function image.
-    /// false = eco mode accuracy, 25MB cache. should be ~99% as performant as below.
-    /// true = insane accuracy, 250MB cache, +10x more accuracy than eco mode. default.
-    m_tick_size = "0.0001";
 
     /// per-exchange constants
     m_order_size_min = "0.00070000"; // TODO: scale this minimum to each exchange
 
     /// internal
     m_log_map_end = Coin( CoinAmount::COIN * 100 );
+    m_leverage = CoinAmount::COIN;
+
+    /// cache cost function image.
+    /// false = eco mode accuracy, 25MB cache. should be ~99% as performant as below.
+    /// true = insane accuracy, 250MB cache, +10x more accuracy than eco mode. default.
+    m_tick_size = "0.0001";
 }
 
 Spruce::~Spruce()
@@ -42,26 +41,16 @@ void Spruce::mapCostFunctionImage()
 {
     m_cost_function_image.clear();
 
-    if ( m_log_profile < 3 )
-    {
-        kDebug() << "local warning: clamping profile_u to 3";
-        m_log_profile = 3;
-    }
     kDebug() << "[Spruce] generating cost function image...";
     qint64 t0 = QDateTime::currentMSecsSinceEpoch();
 
-    Coin nice = m_log_nice;
     Coin y;
-    // figure out cost y of target_x by approaching by iter
-    // y += ( 1 + ( iter * i ) - y ) / ( profile );
-    const Coin profile = Coin( m_log_profile * 1000 );
-    const Coin nice_iter = m_log_nice * ( CoinAmount::COIN / 10 );
+    // subtract 0.1 for every 10% increase
+    // y += ( 1 - y );
     for ( Coin x = Coin(); x <= m_log_map_end; x += m_tick_size /*granularity to find y*/ )
     {
         if ( !x.isZero() ) // don't skip zero, just set zero to zero
-            y += ( CoinAmount::COIN - y ) / ( nice + profile );
-
-        nice += nice_iter;
+            y += ( CoinAmount::COIN - y ) / 10000;
 
         m_cost_function_image.insert( x, y );
     }
@@ -187,10 +176,7 @@ QString Spruce::getSaveState()
     ret += QString( "setsprucebasecurrency %1\n" ).arg( base_currency );
 
     // save log factor
-    ret += QString( "setsprucelogprofile %1\n" ).arg( m_log_profile );
-
-    // save log nice
-    ret += QString( "setsprucelognice %1\n" ).arg( m_log_nice );
+    ret += QString( "setspruceleverage %1\n" ).arg( m_leverage );
 
     // save hedge target
     ret += QString( "setsprucehedgetarget %1\n" ).arg( m_hedge_target );
@@ -244,18 +230,6 @@ QString Spruce::getSaveState()
     }
 
     return ret;
-}
-
-void Spruce::setLogProfile( int u )
-{
-    m_log_profile = u;
-    m_cost_function_image.clear();
-}
-
-void Spruce::setLogNice( Coin n )
-{
-    m_log_nice = n;
-    m_cost_function_image.clear();
 }
 
 Coin Spruce::getEquityNow( QString currency )
@@ -356,15 +330,13 @@ void Spruce::equalizeDates()
             if ( n->currency == m_relative_coeffs.hi_currency &&
                  n->amount > ticksize ) // check if we have enough to short
             {
-                shortlongs[ n->currency ] -= ticksize;
+                shortlongs[ n->currency ] -= ticksize * m_leverage;
                 n->amount -= ticksize;
-                //kDebug() << "shorting" << n->currency;
             }
             else if ( n->currency == m_relative_coeffs.lo_currency )
             {
-                shortlongs[ n->currency ] += ticksize;
+                shortlongs[ n->currency ] += ticksize * m_leverage;
                 n->amount += ticksize;
-                //kDebug() << "longing" << n->currency;
             }
             else
             {
@@ -373,8 +345,6 @@ void Spruce::equalizeDates()
 
             n->recalculateQuantityByPrice();
         }
-//            kDebug() << "hi_coeff:" << m_relative_coeffs.hi_coeff
-//                     << "lo_coeff:" << m_relative_coeffs.lo_coeff;
 
         m_relative_coeffs = getRelativeCoeffs();
     }
@@ -495,10 +465,11 @@ QMap<QString, Coin> Spruce::getMarketCoeffs()
         Coin transformed_score = is_negative ? ( start_score / score ).truncatedByTicksize( m_tick_size )
                                              : ( score / start_score ).truncatedByTicksize( m_tick_size );
 
+        transformed_score -= CoinAmount::COIN;
+
         // clamp score above maximum
         if ( transformed_score >= m_log_map_end )
             transformed_score = m_log_map_end;
-
 
         new_coeff = is_negative ? -m_cost_function_image.value( transformed_score )
                                 :  m_cost_function_image.value( transformed_score );

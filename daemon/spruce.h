@@ -82,10 +82,8 @@ public:
     const QMap<QString,Coin> &getAmountToShortLongMap() { return m_amount_to_shortlong_map; }
     const Coin &getAmountToShortLongTotal() { return m_amount_to_shortlong_total; }
 
-    void setLogProfile( int u );
-    int getLogProfile() const { return m_log_profile; }
-    void setLogNice( Coin n );
-    Coin getLogNice() const { return m_log_nice; }
+    void setLeverage( Coin l ) { m_leverage = l; }
+    Coin getLeverage() const { return m_leverage; }
 
     Coin getEquityNow( QString currency );
     Coin getLastCoeffForMarket( const QString &market ) const;
@@ -109,7 +107,7 @@ private:
     QMap<QString,Coin> original_quantity; // track original start quantity, since it changes
     QMap<Coin,Coin> m_leverage_cutoff;
     Coin m_hedge_target, m_order_greed, m_long_max, m_short_max, m_market_max, m_order_size,
-    m_order_size_min, m_order_nice, m_trailing_price_limit, m_log_nice, m_tick_size;
+    m_order_size_min, m_order_nice, m_trailing_price_limit, m_tick_size;
 
     QMap<Coin,Coin> m_cost_function_image;
 
@@ -117,7 +115,7 @@ private:
     QMap<QString/*currency*/,Coin> m_last_coeffs;
 
     Coin m_log_map_end;
-    int m_log_profile;
+    Coin m_leverage;
 };
 
 #endif // SPRUCE_H
