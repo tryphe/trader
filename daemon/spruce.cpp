@@ -297,12 +297,12 @@ void Spruce::equalizeDates()
     m_start_coeffs = m_relative_coeffs = getRelativeCoeffs();
 
     // avoid infinite loop
-    if ( m_hedge_target > Coin( "0.995" ) )
-        m_hedge_target = "0.995";
+    if ( m_hedge_target > Coin( "0.997" ) )
+        m_hedge_target = "0.997";
 
-    const Coin min_adjustment = CoinAmount::SATOSHI * 100000;
+    const Coin min_adjustment = CoinAmount::SATOSHI * 50000;
     const Coin hi_equity = getEquityNow( m_relative_coeffs.hi_currency );
-    const Coin ticksize = std::max( min_adjustment, hi_equity / 5000 );
+    const Coin ticksize = std::max( min_adjustment, hi_equity / 10000 );
 
     // if we don't have enough to make the adjustment, abort
     if ( hi_equity < min_adjustment )
@@ -319,7 +319,7 @@ void Spruce::equalizeDates()
     qint64 i = 0;
     while ( m_relative_coeffs.hi_coeff * m_hedge_target > m_relative_coeffs.lo_coeff )
     {
-        if ( ++i == 10000 ) // safety break
+        if ( i++ == 10001 ) // safety break
             break;
 
         // find highest/lowest coeff market
@@ -347,6 +347,9 @@ void Spruce::equalizeDates()
         }
 
         m_relative_coeffs = getRelativeCoeffs();
+
+//        kDebug() << "hi_coeff" << m_relative_coeffs.hi_coeff
+//                 << "lo_coeff" << m_relative_coeffs.lo_coeff;
     }
 
     // flip values, because we want shorts as positive and longs as negative
