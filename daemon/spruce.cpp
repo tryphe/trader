@@ -182,6 +182,9 @@ QString Spruce::getSaveState()
     // save log factor
     ret += QString( "setspruceleverage %1\n" ).arg( m_leverage );
 
+    // save profile u
+    ret += QString( "setspruceprofile %1\n" ).arg( m_profile_u );
+
     // save hedge target
     ret += QString( "setsprucehedgetarget %1\n" ).arg( m_hedge_target );
 
