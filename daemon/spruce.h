@@ -85,6 +85,9 @@ public:
     void setLeverage( Coin l ) { m_leverage = l; }
     Coin getLeverage() const { return m_leverage; }
 
+    void setProfileU( Coin u );
+    Coin getProfileU() const { return m_profile_u; }
+
     Coin getEquityNow( QString currency );
     Coin getLastCoeffForMarket( const QString &market ) const;
 
@@ -114,8 +117,7 @@ private:
     QList<Node*> nodes_start, nodes_now;
     QMap<QString/*currency*/,Coin> m_last_coeffs;
 
-    Coin m_log_map_end;
-    Coin m_leverage;
+    Coin m_log_map_end, m_leverage, m_profile_u;
 };
 
 #endif // SPRUCE_H

@@ -23,10 +23,13 @@ Spruce::Spruce()
     m_log_map_end = Coin( CoinAmount::COIN * 100 );
     m_leverage = CoinAmount::COIN;
 
-    /// cache cost function image.
-    /// false = eco mode accuracy, 25MB cache. should be ~99% as performant as below.
-    /// true = insane accuracy, 250MB cache, +10x more accuracy than eco mode. default.
+    /// cost function image accuracy
+    /// 0.001 = good accuracy, 13MB cache
+    /// 0.0001 = great accuracy, 130MB cache
     m_tick_size = "0.0001";
+
+    /// change profile u of cost function
+    m_profile_u = "10";
 }
 
 Spruce::~Spruce()
@@ -44,13 +47,14 @@ void Spruce::mapCostFunctionImage()
     kDebug() << "[Spruce] generating cost function image...";
     qint64 t0 = QDateTime::currentMSecsSinceEpoch();
 
+    // for 0 to m_log_map_end, subtract (1-y)/u from y for every u% increase
+    // y += ( 1 - y ) * profile_u;
     Coin y;
-    // subtract 0.1 for every 10% increase
-    // y += ( 1 - y ) * scale;
-    for ( Coin x = Coin(); x <= m_log_map_end; x += m_tick_size /*granularity to find y*/ )
+    const Coin profile = m_tick_size * 10 / m_profile_u;
+    for ( Coin x; x <= m_log_map_end; x += m_tick_size /*granularity to find y*/ )
     {
         if ( !x.isZero() ) // don't skip zero, just set zero to zero
-            y += ( CoinAmount::COIN - y ) * m_tick_size;
+            y += ( CoinAmount::COIN - y ) * profile;
 
         m_cost_function_image.insert( x, y );
     }
@@ -230,6 +234,12 @@ QString Spruce::getSaveState()
     }
 
     return ret;
+}
+
+void Spruce::setProfileU( Coin u )
+{
+    m_profile_u = u;
+    m_cost_function_image.clear(); // clear image
 }
 
 Coin Spruce::getEquityNow( QString currency )
