@@ -88,6 +88,9 @@ public:
     void setProfileU( Coin u );
     Coin getProfileU() const { return m_profile_u; }
 
+    void setReserve( Coin r );
+    Coin getReserve() const { return m_reserve_pct; }
+
     Coin getEquityNow( QString currency );
     Coin getLastCoeffForMarket( const QString &market ) const;
 
@@ -117,7 +120,7 @@ private:
     QList<Node*> nodes_start, nodes_now;
     QMap<QString/*currency*/,Coin> m_last_coeffs;
 
-    Coin m_log_map_end, m_leverage, m_profile_u;
+    Coin m_log_map_end, m_leverage, m_profile_u, m_reserve_pct;
 };
 
 #endif // SPRUCE_H

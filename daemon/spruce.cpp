@@ -20,7 +20,7 @@ Spruce::Spruce()
     m_order_size_min = "0.00070000"; // TODO: scale this minimum to each exchange
 
     /// internal
-    m_log_map_end = Coin( CoinAmount::COIN * 100 );
+    m_log_map_end = Coin( CoinAmount::COIN * 50 );
     m_leverage = CoinAmount::COIN;
 
     /// cost function image accuracy
@@ -30,6 +30,9 @@ Spruce::Spruce()
 
     /// change profile u of cost function
     m_profile_u = "10";
+
+    /// reserve this ratio of each currency
+    m_reserve_pct = "0.06";
 }
 
 Spruce::~Spruce()
@@ -54,7 +57,7 @@ void Spruce::mapCostFunctionImage()
     for ( Coin x; x <= m_log_map_end; x += m_tick_size /*granularity to find y*/ )
     {
         if ( !x.isZero() ) // don't skip zero, just set zero to zero
-            y += ( CoinAmount::COIN - y ) * profile;
+            y += ( CoinAmount::COIN - m_reserve_pct - y ) * profile;
 
         m_cost_function_image.insert( x, y );
     }
@@ -185,6 +188,9 @@ QString Spruce::getSaveState()
     // save profile u
     ret += QString( "setspruceprofile %1\n" ).arg( m_profile_u );
 
+    // save reserve ratio
+    ret += QString( "setsprucereserve %1\n" ).arg( m_reserve_pct );
+
     // save hedge target
     ret += QString( "setsprucehedgetarget %1\n" ).arg( m_hedge_target );
 
@@ -242,6 +248,12 @@ QString Spruce::getSaveState()
 void Spruce::setProfileU( Coin u )
 {
     m_profile_u = u;
+    m_cost_function_image.clear(); // clear image
+}
+
+void Spruce::setReserve( Coin r )
+{
+    m_reserve_pct = r;
     m_cost_function_image.clear(); // clear image
 }
 

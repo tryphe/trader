@@ -93,6 +93,7 @@ CommandRunner::CommandRunner( Engine *_e, REST_OBJECT *_rest, Stats *_stats, QOb
     command_map.insert( "setspruceshortlongtotal", std::bind( &CommandRunner::command_setspruceshortlongtotal, this, _1 ) );
     command_map.insert( "setspruceleverage", std::bind( &CommandRunner::command_setspruceleverage, this, _1 ) );
     command_map.insert( "setspruceprofile", std::bind( &CommandRunner::command_setspruceprofile, this, _1 ) );
+    command_map.insert( "setsprucereserve", std::bind( &CommandRunner::command_setsprucereserve, this, _1 ) );
     command_map.insert( "setsprucehedgetarget", std::bind( &CommandRunner::command_setsprucehedgetarget, this, _1 ) );
     command_map.insert( "setspruceordergreed", std::bind( &CommandRunner::command_setspruceordergreed, this, _1 ) );
     command_map.insert( "setsprucelongmax", std::bind( &CommandRunner::command_setsprucelongmax, this, _1 ) );
@@ -755,6 +756,12 @@ void CommandRunner::command_setspruceprofile( QStringList &args )
 {
     engine->spruce.setProfileU( args.value( 1 ) );
     kDebug() << "spruce profile u is" << engine->spruce.getProfileU();
+}
+
+void CommandRunner::command_setsprucereserve( QStringList &args )
+{
+    engine->spruce.setReserve( args.value( 1 ) );
+    kDebug() << "spruce reserve is" << engine->spruce.getReserve();
 }
 
 void CommandRunner::command_setsprucehedgetarget( QStringList &args )
