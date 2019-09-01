@@ -478,9 +478,10 @@ QMap<QString, Coin> Spruce::getMarketCoeffs()
 
         bool is_negative = score < start_score;
 
-        Coin transformed_score = is_negative ? ( start_score / score ).truncatedByTicksize( m_tick_size )
-                                             : ( score / start_score ).truncatedByTicksize( m_tick_size );
+        Coin transformed_score = is_negative ? start_score / score
+                                             : score / start_score;
 
+        transformed_score.truncateByTicksize( m_tick_size );
         transformed_score -= CoinAmount::COIN;
 
         // clamp score above maximum
