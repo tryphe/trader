@@ -476,20 +476,29 @@ QMap<QString, Coin> Spruce::getMarketCoeffs()
         const Coin &start_score = start_scores.value( n->currency );
         Coin &new_coeff = relative_coeff[ n->currency ];
 
+        // obtain a ratio between 0 and m_log_map_end
         bool is_negative = score < start_score;
+        Coin normalized_score = is_negative ? start_score / score
+                                            : score / start_score;
 
-        Coin transformed_score = is_negative ? start_score / score
-                                             : score / start_score;
-
-        transformed_score.truncateByTicksize( m_tick_size );
-        transformed_score -= CoinAmount::COIN;
+        // find a granular point so we can map our ratio to a point in the image
+        normalized_score.truncateByTicksize( m_tick_size );
+        normalized_score -= CoinAmount::COIN; // subtract 1, the origin
 
         // clamp score above maximum
-        if ( transformed_score >= m_log_map_end )
-            transformed_score = m_log_map_end;
+        if ( normalized_score >= m_log_map_end )
+            normalized_score = m_log_map_end;
 
-        new_coeff = is_negative ? -m_cost_function_image.value( transformed_score )
-                                :  m_cost_function_image.value( transformed_score );
+        // translate the normalized score with the cost function
+        normalized_score = m_cost_function_image.value( normalized_score );
+
+        // if we are negative, since f(x) == f(-x), we don't store negative values.
+        // apply reflection -f(x) instead of running f(-x)
+        if ( is_negative )
+            normalized_score = -normalized_score;
+
+        // set new coeff
+        new_coeff = normalized_score;
     }
 
     return relative_coeff;
