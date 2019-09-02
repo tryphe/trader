@@ -1622,11 +1622,13 @@ void Engine::onCheckTimeouts()
                 return;
             }
 
-            const Coin active_amount = spruce_active.value( market );
+            const Coin &active_amount = spruce_active.value( market );
 
             /// step 4: look for active amount > amount_to_shortlong + order_size_limit
-            if ( ( pos->side == SIDE_BUY  && -active_amount < amount_to_shortlong - order_size_limit ) ||
-                 ( pos->side == SIDE_SELL &&  active_amount > amount_to_shortlong + order_size_limit ) )
+            if ( ( pos->side == SIDE_BUY  && amount_to_shortlong.isZeroOrLess() &&
+                   -active_amount < amount_to_shortlong - order_size_limit ) ||
+                 ( pos->side == SIDE_SELL && amount_to_shortlong.isGreaterThanZero() &&
+                    active_amount > amount_to_shortlong + order_size_limit ) )
             {
                 positions->cancel( pos, false, CANCELLING_FOR_SPRUCE_4 );
                 return;
