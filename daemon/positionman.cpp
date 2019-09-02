@@ -919,6 +919,7 @@ void PositionMan::cancel( Position *const &pos, bool quiet, quint8 cancel_reason
                           cancel_reason == CANCELLING_FOR_SPRUCE         ? " sp1 " :
                           cancel_reason == CANCELLING_FOR_SPRUCE_2       ? " sp2 " :
                           cancel_reason == CANCELLING_FOR_SPRUCE_3       ? " sp3 " :
+                          cancel_reason == CANCELLING_FOR_SPRUCE_4       ? " sp4 " :
                                                                            "" ); // CANCELLING_FOR_SLIPPAGE_RESET
 
         kDebug() << QString( "%1 %2" )

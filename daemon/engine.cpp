@@ -1474,11 +1474,14 @@ void Engine::onCheckTimeouts()
     const qint64 current_time = QDateTime::currentMSecsSinceEpoch();
 
     static QMap<QString, Coin> spruce_offset; // store active spruce positions,
+    static QMap<QString,Coin> spruce_active; // spruce active equity on orders
     static QMap<QString, QPair<Coin,Coin>> spruce_spread; // store spruce spread for each market
     static QMap<QString, Coin> spruce_amount_to_shortlong;
+
     if ( spruce.isActive() )
     {
         spruce_offset = positions->getActiveSpruceOrdersOffset();
+        spruce_active = positions->getActiveSpruceOrdersTotal();
         if ( !spruce_spread.isEmpty() ) spruce_spread.clear();
         if ( !spruce_amount_to_shortlong.isEmpty() ) spruce_amount_to_shortlong.clear();
     }
@@ -1552,7 +1555,6 @@ void Engine::onCheckTimeouts()
         if ( pos->is_spruce &&
              pos->order_set_time > 0 )
         {
-            /// step 1: look for bad/stale prices
             // get spread price for new spruce order
             const QString &market = pos->market;
 
@@ -1579,7 +1581,7 @@ void Engine::onCheckTimeouts()
 
             const MarketInfo &info = market_info.value( market );
 
-            // if the price is trailing too much, we should cancel it
+            /// step 1: look for prices that are trailing the spread too far
             if ( buy_price.isGreaterThanZero() && sell_price.isGreaterThanZero() &&
                  ( ( pos->side == SIDE_BUY  && pos->price < buy_price * trailing_price_limit &&
                      pos->price < buy_price - info.price_ticksize )
@@ -1594,7 +1596,7 @@ void Engine::onCheckTimeouts()
             const Coin &amount_to_shortlong = spruce_amount_to_shortlong.value( market );
             const Coin order_size_limit = spruce.getOrderSize( market ) * spruce.getOrderNice();
 
-            // if the order is active but our rating is the opposite polarity, cancel it
+            /// step 2: if the order is active but our rating is the opposite polarity, cancel it
             if ( ( amount_to_shortlong >  order_size_limit && pos->side == SIDE_BUY ) ||
                  ( amount_to_shortlong < -order_size_limit && pos->side == SIDE_SELL ) )
             {
@@ -1602,7 +1604,7 @@ void Engine::onCheckTimeouts()
                 return;
             }
 
-            /// step 2: look for spruce active <> what we should short/long
+            /// step 3: look for spruce active <> what we should short/long
             if ( ( pos->side == SIDE_BUY  && amount_to_shortlong.isZeroOrLess() &&
                    amount_to_shortlong + spruce_offset.value( market ) >  order_size_limit ) ||
                  ( pos->side == SIDE_SELL && amount_to_shortlong.isGreaterThanZero() &&
@@ -1617,6 +1619,16 @@ void Engine::onCheckTimeouts()
                     continue;
 
                 positions->cancel( pos_to_cancel, false, CANCELLING_FOR_SPRUCE_3 );
+                return;
+            }
+
+            const Coin active_amount = spruce_active.value( market );
+
+            /// step 4: look for active amount > amount_to_shortlong + order_size_limit
+            if ( ( pos->side == SIDE_BUY  && -active_amount < amount_to_shortlong - order_size_limit ) ||
+                 ( pos->side == SIDE_SELL &&  active_amount > amount_to_shortlong + order_size_limit ) )
+            {
+                positions->cancel( pos, false, CANCELLING_FOR_SPRUCE_4 );
                 return;
             }
         }
