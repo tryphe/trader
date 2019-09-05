@@ -1201,7 +1201,8 @@ QPair<Coin, Coin> Engine::getSpruceSpread( const QString &market )
 
     // ensure the spread is more profitable than fee*2
     int j = 0;
-    while ( buy_price > sell_price * spruce.getOrderGreed() )
+    const Coin greed = spruce.getOrderGreed();
+    while ( buy_price > sell_price * greed )
     {
         if ( j++ % 2 == 0 )
             buy_price -= ticksize;
