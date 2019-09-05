@@ -47,7 +47,8 @@ public:
     void setHedgeTarget( Coin ratio ) { m_hedge_target = ratio; }
 
     void setOrderGreed( Coin ratio ) { m_order_greed = ratio; }
-    Coin getOrderGreed() { return m_order_greed; }
+    void setOrderRandom( Coin r ) { m_order_greed_randomness = r; }
+    Coin getOrderGreed();
 
     void setOrderNice( Coin nice ) { m_order_nice = nice; }
     Coin getOrderNice() const { return m_order_nice; }
@@ -112,8 +113,8 @@ private:
     QMap<QString,Coin> amount_to_shortlong; // amount to shortlong now based on total above
     QMap<QString,Coin> original_quantity; // track original start quantity, since it changes
     QMap<Coin,Coin> m_leverage_cutoff;
-    Coin m_hedge_target, m_order_greed, m_long_max, m_short_max, m_market_max, m_order_size,
-    m_order_size_min, m_order_nice, m_trailing_price_limit, m_tick_size;
+    Coin m_hedge_target, m_order_greed, m_order_greed_randomness, m_long_max, m_short_max, m_market_max,
+    m_order_size, m_order_size_min, m_order_nice, m_trailing_price_limit, m_tick_size;
 
     QMap<Coin,Coin> m_cost_function_image;
 

@@ -773,7 +773,8 @@ void CommandRunner::command_setsprucehedgetarget( QStringList &args )
 void CommandRunner::command_setspruceordergreed( QStringList &args )
 {
     engine->spruce.setOrderGreed( args.value( 1 ) );
-    kDebug() << "spruce order greed is" << engine->spruce.getOrderGreed();
+    engine->spruce.setOrderRandom( args.value( 2 ) );
+    kDebug() << "spruce order greed is" << args.value( 1 ) << args.value( 2 );
 }
 
 void CommandRunner::command_setsprucelongmax( QStringList &args )

@@ -2,12 +2,15 @@
 #include "coinamount.h"
 #include "global.h"
 
+#include <QRandomGenerator>
+
 
 Spruce::Spruce()
 {
     /// user settings
     m_hedge_target = "0.95"; // keep our market valuations at most 1-x% apart
     m_order_greed = "0.99"; // keep our spread at least 1-x% apart
+    m_order_greed_randomness = "0.005"; // randomly subtract tenths of a pct from greed up to this amount
 
     m_long_max = "0.3000000"; // max long total
     m_short_max = "-0.50000000"; // max short total
@@ -94,6 +97,33 @@ Coin Spruce::getMarketWeight( QString market ) const
     }
 
     return Coin();
+}
+
+Coin Spruce::getOrderGreed()
+{
+    if ( m_order_greed.isGreaterThanZero() )
+    {
+        const Coin iter = CoinAmount::COIN / 1000;
+        QString range_str = ( m_order_greed_randomness / iter ).toAmountString();
+        range_str.truncate( range_str.indexOf( CoinAmount::decimal_exp ) );
+
+        // try to generate rate
+        bool ok = false;
+        const quint32 range = range_str.toULong( &ok ) +1; // 1 more to include 0 to n in rand range
+
+        if ( ok )
+        {
+            const quint32 rand = QRandomGenerator::global()->generate() % range;
+            const Coin ret = m_order_greed - ( iter * rand );
+
+            //kDebug() << "range:" << range << "rand:" << rand << "ret:" << ret;
+
+            return ret;
+        }
+    }
+
+    // if we failed to generate, just return m_order_greed
+    return m_order_greed;
 }
 
 void Spruce::addStartNode( QString _currency, QString _quantity, QString _price )
@@ -195,7 +225,9 @@ QString Spruce::getSaveState()
     ret += QString( "setsprucehedgetarget %1\n" ).arg( m_hedge_target );
 
     // save order greed
-    ret += QString( "setspruceordergreed %1\n" ).arg( m_order_greed );
+    ret += QString( "setspruceordergreed %1 %2\n" )
+            .arg( m_order_greed )
+            .arg( m_order_greed_randomness );
 
     // save long max
     ret += QString( "setsprucelongmax %1\n" ).arg( m_long_max );
