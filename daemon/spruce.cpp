@@ -20,7 +20,7 @@ Spruce::Spruce()
     m_order_size_min = "0.00070000"; // TODO: scale this minimum to each exchange
 
     /// internal
-    m_log_map_end = Coin( CoinAmount::COIN * 50 );
+    m_log_map_end = CoinAmount::COIN * 50;
     m_leverage = CoinAmount::COIN;
 
     /// cost function image accuracy
