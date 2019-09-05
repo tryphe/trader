@@ -231,7 +231,7 @@ QString Spruce::getSaveState()
         ret += QString( "setsprucestartnode %1 %2 %3\n" )
                 .arg( n->currency )
                 .arg( original_quantity.value( n->currency ) )
-                .arg( n->price );
+                .arg( n->price.toSubSatoshiString() );
     }
 
     // save shortlonged_total
