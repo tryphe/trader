@@ -312,7 +312,7 @@ Coin Spruce::getLastCoeffForMarket( const QString &market ) const
     QString currency = market.mid( idx +1, market.size() - idx );
 
     if ( !m_last_coeffs.contains( currency ) )
-        qDebug() << "local warning: can't find coeff for currency" << currency;
+        qDebug() << "[Spruce] local warning: can't find coeff for currency" << currency;
 
     return m_last_coeffs.value( currency );
 }
@@ -326,7 +326,7 @@ void Spruce::equalizeDates()
     // if it's still empty, complain
     if ( m_cost_function_image.isEmpty()  )
     {
-        kDebug() << "local error: couldn't map function image";
+        kDebug() << "[Spruce] local error: couldn't map function image";
         return;
     }
 
@@ -343,7 +343,7 @@ void Spruce::equalizeDates()
     // ensure dates exist
     if ( nodes_start.size() != nodes_now.size() )
     {
-        qDebug() << "error: couldn't find one of the dates";
+        qDebug() << "[Spruce] local error: couldn't find one of the dates in equalizeDates";
         return;
     }
 
@@ -364,7 +364,7 @@ void Spruce::equalizeDates()
     // if we don't have enough to make the adjustment, abort
     if ( hi_equity < min_adjustment )
     {
-        kDebug() << "local warning: not enough equity to equalizeDates" << hi_equity;
+        kDebug() << "[Spruce] local warning: not enough equity to equalizeDates" << hi_equity;
         return;
     }
 
@@ -425,7 +425,7 @@ void Spruce::normalizeEquity()
 {
     if ( nodes_start.size() != nodes_now.size() )
     {
-        qDebug() << "local error: spruce: start node count not equal date1 node count";
+        qDebug() << "[Spruce] local error: spruce: start node count not equal date1 node count";
         return;
     }
 
@@ -471,7 +471,7 @@ void Spruce::normalizeEquity()
 
     if ( total_scaled != original_total )
     {
-        qDebug() << "local error: spruce: total_scaled != original total (check number of spruce markets)";
+        qDebug() << "[Spruce] local error: spruce: total_scaled != original total (check number of spruce markets)";
         return;
     }
 

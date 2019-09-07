@@ -1770,7 +1770,7 @@ void Engine::onSpruceUp()
         // if the ticker isn't updated, just skip this whole function
         if ( price.isZeroOrLess() )
         {
-            kDebug() << "no ticker for currency" << spruce.getBaseCurrency() << currency;
+            kDebug() << "[Spruce] local error: no ticker for currency" << spruce.getBaseCurrency() << currency;
             return;
         }
 
@@ -1803,10 +1803,10 @@ void Engine::onSpruceUp()
         const Coin amount_to_shortlong_abs = amount_to_shortlong.abs();
 
         kDebug() << QString( "[Spruce] %1 coeff %2 to-shortlong %3 on-order %4" )
-                       .arg( market, 10 )
+                       .arg( market, 11 )
                        .arg( spruce.getLastCoeffForMarket( market ) )
-                       .arg( amount_to_shortlong, 13 )
-                       .arg( spruce_active.value( market ), 13 );
+                       .arg( amount_to_shortlong, 12 )
+                       .arg( spruce_active.value( market ), 12 );
 
         const bool is_buy = amount_to_shortlong.isZeroOrLess();
         const Coin order_size = spruce.getOrderSize( market );
@@ -1828,12 +1828,12 @@ void Engine::onSpruceUp()
         // are we too long/short to place another order on this side?
         if ( is_buy && shortlong_total > long_max )
         {
-            kDebug() << "[Spruce] info: too long for now";
+            kDebug() << "[Spruce] info:" << market << "too long for now";
             continue;
         }
         else if ( !is_buy && shortlong_total < short_max )
         {
-            kDebug() << "[Spruce] info: too short for now";
+            kDebug() << "[Spruce] info:" << market << "too short for now";
             continue;
         }
 
