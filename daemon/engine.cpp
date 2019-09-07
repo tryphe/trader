@@ -1482,7 +1482,7 @@ void Engine::onCheckTimeouts()
     if ( spruce.isActive() )
     {
         spruce_offset = positions->getActiveSpruceOrdersOffset();
-        spruce_active = positions->getActiveSpruceOrdersTotal();
+        spruce_active = positions->getActiveSpruceEquityTotal();
         if ( !spruce_spread.isEmpty() ) spruce_spread.clear();
         if ( !spruce_amount_to_shortlong.isEmpty() ) spruce_amount_to_shortlong.clear();
     }
@@ -1781,7 +1781,7 @@ void Engine::onSpruceUp()
     spruce.calculateAmountToShortLong();
 
     // count value of spruce positions for each market
-    QMap<QString,Coin> spruce_active = positions->getActiveSpruceOrdersTotal();
+    QMap<QString,Coin> spruce_active = positions->getActiveSpruceEquityTotal();
 
     const QMap<QString,Coin> &amount_to_shortlong_map = spruce.getAmountToShortLongMap();
     const Coin &shortlong_total = spruce.getAmountToShortLongTotal();

@@ -81,7 +81,7 @@ Coin PositionMan::getLoSellFlipPrice( const QString &market ) const
     return pos->buy_price;
 }
 
-QMap<QString, Coin> PositionMan::getActiveSpruceOrdersTotal()
+QMap<QString, Coin> PositionMan::getActiveSpruceEquityTotal()
 {
     QMap<QString,Coin> spruce_total;
     for( QSet<Position*>::const_iterator i = positions_all.begin(); i != positions_all.end(); i++ )
