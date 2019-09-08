@@ -1,3 +1,7 @@
+What is Trader?
+---------------
+Trader is a bot that manages a set of ping pong positions while working within the confines of exchange limits. These limits can include a maximum number of orders, minimum price, maximum price, etc. Trader can also make one-time, fill-or-kill, and maker/taker orders, and simulates these modes on exchanges without direct support.
+
 Features
 --------
  - [x] Low resource usage. 20-30MB of RAM and 1 CPU are required. (pi works fine!)
@@ -77,10 +81,6 @@ Running the daemons and relying terminal output is suboptimal if the terminal cl
 
 FAQS
 ----
-**What is this madness?**
-
-Trader is a bot that manages a set of ping pong positions while working within the confines of exchange limits. These limits can include a maximum number of orders, minimum price, maximum price, etc. Trader can also make one-time, maker or taker orders, with an optional timeout.
-
 **What the bot is NOT**
 
 The bot doesn't read charts. It also doesn't have persistence yet (coming soon).
