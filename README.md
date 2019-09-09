@@ -2,6 +2,10 @@ What is Trader?
 ---------------
 Trader is a bot that manages a set of ping pong positions while working within the confines of exchange limits. These limits can include a maximum number of orders, minimum price, maximum price, etc. Trader can also make one-time, fill-or-kill, and maker/taker orders, and simulates these modes on exchanges without direct support.
 
+License
+---------------
+Trader is released under the terms of the MIT license.
+
 Features
 --------
  - [x] Low resource usage. 20-30MB of RAM and 1 CPU are required. (pi works fine!)
