@@ -10,7 +10,7 @@ Features
 --------
  - [x] Low resource usage. 20-30MB of RAM and 1 CPU are required. (pi works fine!)
  - [x] Runs headless.
- - [x] Supports a large number of build targets. Runnable anywhere with Qt and C support.
+ - [x] Supports a large number of build targets. See [Qt platform requirements](https://doc-snapshots.qt.io/qt5-5.9/gettingstarted.html#platform-requirements) for more details.
  - [x] Order engine is adaptable to any exchange.
  - [x] Runtime [sanity testing](https://github.com/tryphe/trader/blob/master/daemon/coinamount_test.cpp#L12) and [fairly extensive order execution simulation](https://github.com/tryphe/trader/blob/master/daemon/engine_test.cpp#L17) for consistency.
  - [x] No floating point instructions are used. [How can floats fail?](https://github.com/tryphe/trader/blob/master/daemon/coinamount_test.cpp#L12)
