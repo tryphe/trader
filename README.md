@@ -184,9 +184,9 @@ Because we are giving the bot an initial state rather than setting one-time orde
 
 `setorderdcnice <market> <n>` adjusts the noise of converging/diverging orders. higher = nicer, lower = more API spam.
 
-`setordermin <market> <n>` is the number of minimum orders to maintain on each side (bid/ask) of the market spread. If `orderdc >1`, `min = max-min`.
+`setordermin <market> <n>` is the number of minimum orders to maintain on *each side* of the market spread (bid/ask). If `orderdc >1`, `min = max-min`.
 
-`setordermax <market> <n>` is the max stated above. This attempts to maintain the count of active orders at `min+(max-min)`.
+`setordermax <market> <n>` is the maximum number of orders on each side of the spread. This effectively maintains the *total* active orders at `min+(max-min)`.
 
 `setmarketsentiment <market> <bool>` false = short quote currency. true = long quote currency. In this case, the quote currency is OMG, and since it's false, we will short it by the amount below.
 
