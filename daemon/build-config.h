@@ -1,7 +1,7 @@
 #ifndef BUILDCONFIG_H
 #define BUILDCONFIG_H
 
-#define BUILD_VERSION "1.73t"
+#define BUILD_VERSION "1.74a"
 
 /// select your exchange
 //#define EXCHANGE_BITTREX
@@ -29,7 +29,5 @@
 
 /// build options
 //#define EXTRA_NICE // be extra nice to the exchange api
-//#define TRYPHE_BUILD
-
 
 #endif // BUILDCONFIG_H
