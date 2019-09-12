@@ -15,7 +15,7 @@ CostFunctionCache::CostFunctionCache()
     m_max_x = CoinAmount::COIN * 50;
 }
 
-Coin CostFunctionCache::getY( Coin profile_u, Coin reserve, Coin x )
+Coin CostFunctionCache::getY( const Coin &profile_u, const Coin &reserve, const Coin &x )
 {
     static const int FIELD_SIZE = 10;
     static const QString pre_path = Global::getCostFunctionCachePath() + QDir::separator() + "cf-";
