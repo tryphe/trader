@@ -68,23 +68,19 @@ Coin Spruce::getOrderGreed()
 {
     if ( m_order_greed.isGreaterThanZero() )
     {
+        // try to generate rand range
         const Coin iter = CoinAmount::COIN / 1000;
-        QString range_str = ( m_order_greed_randomness / iter ).toAmountString();
-        range_str.truncate( range_str.indexOf( CoinAmount::decimal_exp ) );
+        const quint32 range = ( m_order_greed_randomness / iter ).toUInt32();
 
-        // try to generate rate
-        bool ok = false;
-        const quint32 range = range_str.toULong( &ok ) +1; // 1 more to include 0 to n in rand range
+        // if the range is 0, return here to prevent a range of 0-1
+        if ( range == 0 )
+            return 0;
 
-        if ( ok )
-        {
-            const quint32 rand = QRandomGenerator::global()->generate() % range;
-            const Coin ret = m_order_greed - ( iter * rand );
+        const quint32 rand = QRandomGenerator::global()->generate() % ( range +1 );
+        const Coin ret = m_order_greed - ( iter * rand );
 
-            //kDebug() << "range:" << range << "rand:" << rand << "ret:" << ret;
-
-            return ret;
-        }
+        // don't return negative greed value
+        return ret.isLessThanZero() ? Coin() : ret;
     }
 
     // if we failed to generate, just return m_order_greed
