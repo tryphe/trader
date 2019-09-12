@@ -352,6 +352,8 @@ quint32 Coin::toUInt32() const
         return 0;
     }
 
+    // TODO: (optimization) make a version of toAmountString() without zeroes,
+    //       then we don't need this truncation. also for toInt().
     // truncate decimal
     str.truncate( dec_idx );
 
