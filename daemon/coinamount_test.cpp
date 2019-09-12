@@ -357,6 +357,7 @@ void CoinAmountTest::test()
 
     // Coin::isGreaterThanZero()
     assert( !Coin().isGreaterThanZero() );
+    assert( !Coin("-1").isGreaterThanZero() );
     assert( Coin( "0.000000001" ).isGreaterThanZero() );
     assert( Coin( "1.0" ).isGreaterThanZero() );
     assert( Coin( "999999999999999999999999999999999999999999999999999999999.0" ).isGreaterThanZero() );
