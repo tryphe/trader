@@ -59,6 +59,7 @@ public:
     QString toAmountString() const;
 
     int toInt() const;
+    quint32 toUInt32() const;
 
     void applyRatio( qreal r );
     Coin ratio( qreal r ) const;

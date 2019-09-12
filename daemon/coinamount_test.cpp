@@ -385,12 +385,17 @@ void CoinAmountTest::test()
     assert( trunc == "0.09000000" );
 
     // Coin::toInt()
-    assert( Coin("-65535").toInt() == -65535 );
-    assert( Coin("-17").toInt() == -17 );
-    assert( Coin("-1").toInt() == -1 );
-    assert( Coin("1").toInt() == 1 );
-    assert( Coin("17").toInt() == 17 );
-    assert( Coin("65535").toInt() == 65535 );
+    assert( Coin("-65535").toInt() == int(-65535) );
+    assert( Coin("-17").toInt() == int(-17) );
+    assert( Coin("-1").toInt() == int(-1) );
+    assert( Coin("1").toInt() == int(1) );
+    assert( Coin("17").toInt() == int(17) );
+    assert( Coin("65535").toInt() == int(65535) );
+
+    // Coin::toUInt32()
+    assert( Coin("1").toUInt32() == quint32(1) );
+    assert( Coin("17").toUInt32() == quint32(17) );
+    assert( Coin("4294967296").toUInt32() == quint32(4294967296) );
 
     ///
     /// stuff we support but aren't even using

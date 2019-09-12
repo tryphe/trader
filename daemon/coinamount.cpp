@@ -339,6 +339,36 @@ int Coin::toInt() const
     return ret;
 }
 
+quint32 Coin::toUInt32() const
+{
+    // index of y = x / m_tick_size;
+    QString str = toAmountString();
+    int dec_idx = str.indexOf( QChar('.') );
+
+    // check for valid decimal, we should never get here
+    if ( dec_idx < 0 )
+    {
+        kDebug() << "[Coin] local error: couldn't read decimal out of" << str;
+        return 0;
+    }
+
+    // truncate decimal
+    str.truncate( dec_idx );
+
+    // convert to int
+    bool ok = false;
+    quint32 ret = str.toInt( &ok );
+
+    // check for valid int
+    if ( !ok )
+    {
+        kDebug() << "[Spruce] local error: couldn't read decimal out of" << str;
+        return 0;
+    }
+
+    return ret;
+}
+
 void Coin::applyRatio( qreal r )
 {
     // trap infinity as 0
