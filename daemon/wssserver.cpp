@@ -90,6 +90,10 @@ void WSSServer::handleNewConnection()
     quint32 dos_rating = m_rating[ peer_str ]++;
     if ( dos_rating > 100 )
     {
+        if ( dos_rating == 101 )
+            kDebug() << QString( "[WSS %1] banned" )
+                        .arg( peer_str );
+
         remove( sck );
         return;
     }
