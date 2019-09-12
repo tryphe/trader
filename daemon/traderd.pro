@@ -21,6 +21,7 @@ QMAKE_CFLAGS_RELEASE   = -ansi -pedantic-errors -fstack-protector-strong -fstack
 SOURCES += main.cpp \
     commandlistener.cpp \
     commandrunner.cpp \
+    costfunctioncache.cpp \
     enginesettings.cpp \
     fallbacklistener.cpp \
     position.cpp \
@@ -41,6 +42,7 @@ SOURCES += main.cpp \
 HEADERS += build-config.h \
     commandlistener.h \
     commandrunner.h \
+    costfunctioncache.h \
     enginesettings.h \
     fallbacklistener.h \
     global.h \
