@@ -12,7 +12,7 @@
 CostFunctionCache::CostFunctionCache()
 {
     m_ticksize = Coin( "0.0001" );
-    m_max_x = CoinAmount::COIN * 50;
+    m_max_x = CoinAmount::COIN * 100;
 }
 
 Coin CostFunctionCache::getY( const Coin &profile_u, const Coin &reserve, const Coin &x )
