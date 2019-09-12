@@ -58,6 +58,8 @@ public:
     QString toSubSatoshiString() const;
     QString toAmountString() const;
 
+    int toInt() const;
+
     void applyRatio( qreal r );
     Coin ratio( qreal r ) const;
 

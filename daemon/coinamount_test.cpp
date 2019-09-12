@@ -384,6 +384,14 @@ void CoinAmountTest::test()
     trunc.truncateByTicksize( "0.01" ); // tolerate unpadded zeroes
     assert( trunc == "0.09000000" );
 
+    // Coin::toInt()
+    assert( Coin("-65535").toInt() == -65535 );
+    assert( Coin("-17").toInt() == -17 );
+    assert( Coin("-1").toInt() == -1 );
+    assert( Coin("1").toInt() == 1 );
+    assert( Coin("17").toInt() == 17 );
+    assert( Coin("65535").toInt() == 65535 );
+
     ///
     /// stuff we support but aren't even using
     ///

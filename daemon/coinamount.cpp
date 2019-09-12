@@ -1,4 +1,5 @@
 #include "coinamount.h"
+#include "global.h"
 
 #include <vector>
 #include <gmp.h>
@@ -77,7 +78,7 @@ Coin &Coin::operator /=( const Coin &c )
         mpz_div( b, b, c.b );
     else
     {
-        qDebug() << "trapped div0 in" << __FUNCTION__ << toSubSatoshiString() << "/" << c.toSubSatoshiString();
+        kDebug() << "[Coin] trapped div0 in" << __FUNCTION__ << toSubSatoshiString() << "/" << c.toSubSatoshiString();
         mpz_set_ui( b, 0 );
     }
     return *this;
@@ -97,7 +98,7 @@ Coin &Coin::operator /=( const uint64_t &i )
         mpz_div_ui( b, b, i ); // b /= i;
     else
     {
-        qDebug() << "trapped div0 in" << __FUNCTION__ << toSubSatoshiString() << "/" << i;
+        kDebug() << "[Coin] trapped div0 in" << __FUNCTION__ << toSubSatoshiString() << "/" << i;
         mpz_set_ui( b, 0 );
     }
     return *this;
@@ -304,6 +305,36 @@ QString Coin::toAmountString() const
 
     if ( ret.size() > trunc_idx )
         ret.truncate( trunc_idx );
+
+    return ret;
+}
+
+int Coin::toInt() const
+{
+    // index of y = x / m_tick_size;
+    QString str = toAmountString();
+    int dec_idx = str.indexOf( QChar('.') );
+
+    // check for valid decimal, we should never get here
+    if ( dec_idx < 0 )
+    {
+        kDebug() << "[Coin] local error: couldn't read decimal out of" << str;
+        return 0;
+    }
+
+    // truncate decimal
+    str.truncate( dec_idx );
+
+    // convert to int
+    bool ok = false;
+    int ret = str.toInt( &ok );
+
+    // check for valid int
+    if ( !ok )
+    {
+        kDebug() << "[Spruce] local error: couldn't read decimal out of" << str;
+        return 0;
+    }
 
     return ret;
 }
