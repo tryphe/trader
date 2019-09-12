@@ -24,7 +24,7 @@ Coin CostFunctionCache::getY( const Coin &profile_u, const Coin &reserve, const 
 
     static_assert( MAX_RAM_CACHE > 1000 );
 
-    /// step 1 check if it's in the cache
+    /// step 1: check if it's in the cache
     QString tag = profile_u + reserve;
     QString tag_with_x = tag + x;
     if ( m_cache.contains( tag_with_x ) )
