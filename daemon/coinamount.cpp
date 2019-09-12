@@ -359,7 +359,7 @@ quint32 Coin::toUInt32() const
 
     // convert to int
     bool ok = false;
-    quint32 ret = str.toInt( &ok );
+    quint32 ret = str.toULong( &ok );
 
     // check for valid int
     if ( !ok )
