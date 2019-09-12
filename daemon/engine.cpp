@@ -434,10 +434,11 @@ void Engine::processOpenOrders( QVector<QString> &order_numbers, QMultiHash<QStr
     for ( QMultiHash<QString, OrderInfo>::const_iterator i = orders.begin(); i != orders.end(); i++ )
     {
         const QString &market = i.key();
-        const quint8 &side = i->side;
-        const QString &price = i->price;
-        const QString &btc_amount = i->btc_amount;
-        const QString &order_number = i->order_number;
+        const OrderInfo &info = i.value();
+        const quint8 &side = info.side;
+        const QString &price = info.price;
+        const QString &btc_amount = info.btc_amount;
+        const QString &order_number = info.order_number;
 
         //kDebug() << "processing order" << order_number << market << side << btc_amount << "@" << price;
 
