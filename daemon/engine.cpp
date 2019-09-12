@@ -553,7 +553,7 @@ void Engine::processOpenOrders( QVector<QString> &order_numbers, QMultiHash<QStr
     // mitigate blank orderbook flash
     if ( settings->should_mitigate_blank_orderbook_flash &&
          !order_numbers.size() && // the orderbook is blank
-         positions->active().size() > 50 ) // we have some orders, don't make it too low (if it's 2 or 3, we might fill all those orders at once, and the mitigation leads to the orders never getting filled)
+         positions->active().size() >= 20 ) // we have some orders, don't make it too low (if it's 2 or 3, we might fill all those orders at once, and the mitigation leads to the orders never getting filled)
     {
         kDebug() << "local warning: blank orderbook flash has been mitigated!";
         return;
