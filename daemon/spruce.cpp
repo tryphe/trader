@@ -23,19 +23,7 @@ Spruce::Spruce()
     m_order_size_min = "0.00070000"; // TODO: scale this minimum to each exchange
 
     /// internal
-    m_log_map_end = CoinAmount::COIN * 50;
     m_leverage = CoinAmount::COIN;
-
-    /// cost function image accuracy
-    /// 0.001 = good accuracy, 13MB cache
-    /// 0.0001 = great accuracy, 130MB cache
-    m_tick_size = "0.0001";
-
-    /// change profile u of cost function
-    m_profile_u = "10";
-
-    /// reserve this ratio of each currency
-    m_reserve_pct = "0.06";
 }
 
 Spruce::~Spruce()
@@ -44,29 +32,6 @@ Spruce::~Spruce()
         delete nodes_start.takeFirst();
 
     clearLiveNodes();
-}
-
-void Spruce::mapCostFunctionImage()
-{
-    m_cost_function_image.clear();
-
-    kDebug() << "[Spruce] generating cost function image...";
-    qint64 t0 = QDateTime::currentMSecsSinceEpoch();
-
-    // for 0 to m_log_map_end, subtract (1-y)/u from y for every u% increase
-    // y += ( 1 - y ) * profile_u;
-    Coin y;
-    const Coin profile = m_tick_size * 10 / m_profile_u;
-    for ( Coin x; x <= m_log_map_end; x += m_tick_size /*granularity to find y*/ )
-    {
-        if ( !x.isZero() ) // don't skip zero, just set zero to zero
-            y += ( CoinAmount::COIN - m_reserve_pct - y ) * profile;
-
-        m_cost_function_image.insert( x, y );
-    }
-
-    kDebug() << "[Spruce] done generating cost function image with" << m_cost_function_image.size() <<
-                "points. took" << QDateTime::currentMSecsSinceEpoch() - t0 << "ms.";
 }
 
 void Spruce::setCurrencyWeight( QString currency, Coin weight )
@@ -215,12 +180,6 @@ QString Spruce::getSaveState()
     // save log factor
     ret += QString( "setspruceleverage %1\n" ).arg( m_leverage );
 
-    // save profile u
-    ret += QString( "setspruceprofile %1\n" ).arg( m_profile_u );
-
-    // save reserve ratio
-    ret += QString( "setsprucereserve %1\n" ).arg( m_reserve_pct );
-
     // save hedge target
     ret += QString( "setsprucehedgetarget %1\n" ).arg( m_hedge_target );
 
@@ -246,6 +205,36 @@ QString Spruce::getSaveState()
 
     // save order trailing limit
     ret += QString( "setspruceordertrail %1\n" ).arg( m_trailing_price_limit );
+
+    // save profile u
+    for ( QMap<QString,Coin>::const_iterator i = m_currency_profile_u.begin(); i != m_currency_profile_u.end(); i++ )
+    {
+        const QString &currency = i.key();
+        const QString &profile_u = i.value();
+
+        // don't save default value
+        if ( profile_u == DEFAULT_PROFILE_U )
+            continue;
+
+        ret += QString( "setspruceprofile %1 %2\n" )
+                .arg( currency )
+                .arg( profile_u );
+    }
+
+    // save reserve ratio
+    for ( QMap<QString,Coin>::const_iterator i = m_currency_reserve.begin(); i != m_currency_reserve.end(); i++ )
+    {
+        const QString &currency = i.key();
+        const QString &reserve = i.value();
+
+        // don't save default value
+        if ( reserve == DEFAULT_RESERVE )
+            continue;
+
+        ret += QString( "setsprucereserve %1 %2\n" )
+                .arg( currency )
+                .arg( reserve );
+    }
 
     // save market weights
     for ( QMap<QString,Coin>::const_iterator i = currency_weight.begin(); i != currency_weight.end(); i++ )
@@ -277,16 +266,14 @@ QString Spruce::getSaveState()
     return ret;
 }
 
-void Spruce::setProfileU( Coin u )
+void Spruce::setProfileU( QString currency, Coin u )
 {
-    m_profile_u = u;
-    m_cost_function_image.clear(); // clear image
+    m_currency_profile_u.insert( currency, u );
 }
 
-void Spruce::setReserve( Coin r )
+void Spruce::setReserve( QString currency, Coin r )
 {
-    m_reserve_pct = r;
-    m_cost_function_image.clear(); // clear image
+    m_currency_reserve.insert( currency, r );
 }
 
 Coin Spruce::getEquityNow( QString currency )
@@ -319,17 +306,6 @@ Coin Spruce::getLastCoeffForMarket( const QString &market ) const
 
 void Spruce::equalizeDates()
 {
-    // if the function image map is empty, initialize it
-    if ( m_cost_function_image.isEmpty() )
-        mapCostFunctionImage();
-
-    // if it's still empty, complain
-    if ( m_cost_function_image.isEmpty()  )
-    {
-        kDebug() << "[Spruce] local error: couldn't map function image";
-        return;
-    }
-
     /// psuedocode
     //
     // get initial coeffs
@@ -526,15 +502,18 @@ QMap<QString, Coin> Spruce::getMarketCoeffs()
                                             : score / start_score;
 
         // find a granular point so we can map our ratio to a point in the image
-        normalized_score.truncateByTicksize( m_tick_size );
+        normalized_score.truncateByTicksize( m_cost_cache.getTicksize() );
         normalized_score -= CoinAmount::COIN; // subtract 1, the origin
 
         // clamp score above maximum
-        if ( normalized_score >= m_log_map_end )
-            normalized_score = m_log_map_end;
+        const Coin max_x = m_cost_cache.getMaxX();
+        if ( normalized_score >= max_x )
+            normalized_score = max_x;
 
         // translate the normalized score with the cost function
-        normalized_score = m_cost_function_image.value( normalized_score );
+        normalized_score = m_cost_cache.getY( m_currency_profile_u.value( n->currency, DEFAULT_PROFILE_U ),
+                                              m_currency_reserve.value( n->currency, DEFAULT_RESERVE ),
+                                              normalized_score );
 
         // if we are negative, since f(x) == f(-x), we don't store negative values.
         // apply reflection -f(x) instead of running f(-x)

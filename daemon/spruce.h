@@ -2,9 +2,13 @@
 #define SPRUCE_H
 
 #include "coinamount.h"
+#include "costfunctioncache.h"
 
 #include <QString>
 #include <QMap>
+
+static const Coin DEFAULT_PROFILE_U = Coin("10");
+static const Coin DEFAULT_RESERVE = Coin("0.05");
 
 struct Node
 {
@@ -36,8 +40,6 @@ class Spruce
 public:
     explicit Spruce();
     ~Spruce();
-
-    void mapCostFunctionImage();
 
     void setBaseCurrency( QString currency ) { base_currency = currency; }
     QString getBaseCurrency() const { return base_currency; }
@@ -86,11 +88,11 @@ public:
     void setLeverage( Coin l ) { m_leverage = l; }
     Coin getLeverage() const { return m_leverage; }
 
-    void setProfileU( Coin u );
-    Coin getProfileU() const { return m_profile_u; }
+    void setProfileU( QString currency, Coin u );
+    Coin getProfileU( QString currency ) const { return m_currency_profile_u.value( currency, DEFAULT_PROFILE_U ); }
 
-    void setReserve( Coin r );
-    Coin getReserve() const { return m_reserve_pct; }
+    void setReserve( QString currency, Coin r );
+    Coin getReserve( QString currency ) const { return m_currency_reserve.value( currency, DEFAULT_RESERVE ); }
 
     Coin getEquityNow( QString currency );
     Coin getLastCoeffForMarket( const QString &market ) const;
@@ -98,6 +100,9 @@ public:
 private:
     void equalizeDates();
     void normalizeEquity();
+
+    CostFunctionCache m_cost_cache;
+    QMap<QString,Coin> m_currency_profile_u, m_currency_reserve;
 
     QMap<QString/*currency*/,Coin> getMarketCoeffs();
     RelativeCoeffs getRelativeCoeffs();
@@ -114,14 +119,12 @@ private:
     QMap<QString,Coin> original_quantity; // track original start quantity, since it changes
     QMap<Coin,Coin> m_leverage_cutoff;
     Coin m_hedge_target, m_order_greed, m_order_greed_randomness, m_long_max, m_short_max, m_market_max,
-    m_order_size, m_order_size_min, m_order_nice, m_trailing_price_limit, m_tick_size;
-
-    QMap<Coin,Coin> m_cost_function_image;
+    m_order_size, m_order_size_min, m_order_nice, m_trailing_price_limit;
 
     QList<Node*> nodes_start, nodes_now;
     QMap<QString/*currency*/,Coin> m_last_coeffs;
 
-    Coin m_log_map_end, m_leverage, m_profile_u, m_reserve_pct;
+    Coin m_leverage;
 };
 
 #endif // SPRUCE_H
