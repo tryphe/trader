@@ -361,6 +361,13 @@ void CoinAmountTest::test()
     assert( Coin( "1.0" ).isGreaterThanZero() );
     assert( Coin( "999999999999999999999999999999999999999999999999999999999.0" ).isGreaterThanZero() );
 
+    // Coin::isLessThanZero()
+    assert( !Coin().isLessThanZero() );
+    assert( !CoinAmount::COIN.isLessThanZero() );
+    assert( Coin( "-0.000000001" ).isLessThanZero() );
+    assert( Coin( "-1.0" ).isLessThanZero() );
+    assert( Coin( "-999999999999999999999999999999999999999999999999999999999.0" ).isLessThanZero() );
+
     // Coin::abs()
     assert( Coin( "-7.7777777" ).abs() == Coin( "7.7777777" ) );
     assert( Coin( "-1.0" ).abs() == Coin( "1.0" ) );

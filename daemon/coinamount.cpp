@@ -241,6 +241,11 @@ bool Coin::isZeroOrLess() const
     return mpz_cmp_ui( b, 0 ) <= 0;
 }
 
+bool Coin::isLessThanZero() const
+{
+    return mpz_cmp_ui( b, 0 ) < 0;
+}
+
 bool Coin::isGreaterThanZero() const
 {
     return mpz_cmp_ui( b, 0 ) > 0;

@@ -51,6 +51,7 @@ public:
 
     bool isZero() const;
     bool isZeroOrLess() const;
+    bool isLessThanZero() const;
     bool isGreaterThanZero() const;
 
     operator QString() const;
