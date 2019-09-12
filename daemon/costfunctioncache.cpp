@@ -72,7 +72,7 @@ Coin CostFunctionCache::getY( const Coin &profile_u, const Coin &reserve, const 
             if ( !x.isZero() ) // don't skip zero, just set zero to zero
                 y += ( CoinAmount::COIN - reserve - y ) * profile;
 
-             data = QString( "%1" )
+            data = QString( "%1" )
                     .arg( y.toAmountString(), -FIELD_SIZE );
 
             f_out << data;
