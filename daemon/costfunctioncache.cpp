@@ -98,7 +98,5 @@ Coin CostFunctionCache::getY( Coin profile_u, Coin reserve, Coin x )
         return Coin();
     }
 
-    //m_cache.insert( cache_key, new Coin( y ) );
-
     return y;
 }
