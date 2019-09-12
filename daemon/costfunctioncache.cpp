@@ -25,7 +25,7 @@ Coin CostFunctionCache::getY( const Coin &profile_u, const Coin &reserve, const 
     static_assert( MAX_RAM_CACHE > 1000 );
 
     /// step 1: check if it's in the cache
-    QString tag = profile_u + reserve;
+    QString tag = profile_u.toAmountString() + reserve.toAmountString();
     QString tag_with_x = tag + x;
     if ( m_cache.contains( tag_with_x ) )
         return m_cache.value( tag_with_x );
@@ -33,6 +33,7 @@ Coin CostFunctionCache::getY( const Coin &profile_u, const Coin &reserve, const 
     /// step 2: create cache file if it doesn't exist
     // check for existing file with wrong size
     QString file_path = pre_path + tag;
+
     QFile f( file_path );
     if ( f.exists() && f.size() != projected_file_size )
     {
