@@ -26,7 +26,7 @@ Coin CostFunctionCache::getY( Coin profile_u, Coin reserve, Coin x )
     QFile f( pre_path + profile_u );
     if ( f.exists() && f.size() != projected_file_size )
     {
-        kDebug() << "deleted file for wrong size" << f.size();
+        kDebug() << "[Spruce] deleted file for wrong size" << f.size();
 
         // delete the file
         bool was_deleted = f.remove();
