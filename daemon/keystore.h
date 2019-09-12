@@ -17,6 +17,10 @@ public:
     static const int sane_minimum_size = 32*2;
     static const int pad_size_final = std::max( sane_minimum_size, std::min( pad_size * ( junk_factor ), std::numeric_limits<qint16>::max() - ( pad_size * junk_factor ) ) );
 
+    static_assert( pad_size % 4 == 0 );
+    static_assert( pad_size > 0 );
+    static_assert( junk_factor > 1 );
+
     explicit KeyStore() { test(); }
     void setKeys( const QByteArray &key, const QByteArray &secret )
     {
@@ -48,10 +52,6 @@ public:
 
     void test()
     {
-        assert( pad_size % 4 == 0 );
-        assert( pad_size > 0 );
-        assert( junk_factor > 1 );
-
         const QByteArray test_key = QByteArray::fromHex("07D1");
         const QByteArray test_secret = QByteArray::fromHex("F877");
 
