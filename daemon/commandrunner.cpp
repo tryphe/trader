@@ -754,14 +754,14 @@ void CommandRunner::command_setspruceleverage( QStringList &args )
 
 void CommandRunner::command_setspruceprofile( QStringList &args )
 {
-    engine->spruce.setProfileU( args.value( 1 ) );
-    kDebug() << "spruce profile u is" << engine->spruce.getProfileU();
+    engine->spruce.setProfileU( args.value( 1 ), args.value( 2 ) );
+    kDebug() << "spruce profile u for" << args.value( 1 ) << "is" << engine->spruce.getProfileU( args.value( 1 ) );
 }
 
 void CommandRunner::command_setsprucereserve( QStringList &args )
 {
-    engine->spruce.setReserve( args.value( 1 ) );
-    kDebug() << "spruce reserve is" << engine->spruce.getReserve();
+    engine->spruce.setReserve( args.value( 1 ), args.value( 2 ) );
+    kDebug() << "spruce reserve for" << args.value( 1 ) << "is" << engine->spruce.getReserve( args.value( 1 ) );
 }
 
 void CommandRunner::command_setsprucehedgetarget( QStringList &args )
