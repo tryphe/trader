@@ -219,7 +219,7 @@ Now that you've tried ping-pong orders, you should realize that you can shift th
 
 **Rules of Thumb**
 
-When botting long-term, you MUST keep at least 20 orders active, per exchange. This gives us important mitigation from erroneous "blank but valid" exchange API responses where the exchange tells us we have no orders, but actually do. Does this happen? Yes it does, *on every exchange*, although very rarely.
+When botting long-term, you MUST keep at least 20 orders active, per exchange. Peferrably with at least one order that won't get bulk-filled at the same time as the orders. This gives us important mitigation from erroneous "blank but valid" exchange API responses where the exchange tells us we have no orders, but actually do. Does this happen? Yes it does, *on every exchange*, although very rarely.
 
 
 [todo] explain ghost positions, other stuff
