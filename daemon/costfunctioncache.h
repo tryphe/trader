@@ -17,6 +17,7 @@ public:
 
 private:
     Coin m_ticksize, m_max_x;
+    QHash<QString,Coin> m_cache;
 };
 
 #endif // COSTFUNCTIONCACHE_H
