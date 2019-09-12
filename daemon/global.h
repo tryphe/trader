@@ -181,6 +181,16 @@ static inline QByteArray getBncSignature( const QByteArray &body, const QByteArr
     return QMessageAuthenticationCode::hash( body, secret, QCryptographicHash::Sha256 ).toHex();
 }
 
+static inline const QString getUniversalPath()
+{
+    return QStandardPaths::writableLocation( QStandardPaths::ConfigLocation ) + QDir::separator() + "trader";
+}
+
+static inline const QString getCostFunctionCachePath()
+{
+    return getUniversalPath() + QDir::separator() + "cache";
+}
+
 static inline const QString getConfigPath()
 {
     return QStandardPaths::writableLocation( QStandardPaths::ConfigLocation );
@@ -212,15 +222,19 @@ static inline void ensurePath()
     QString trader_path = getTraderPath();
     QString config_path = getConfigPath();
     QString oldlogs_path = getOldLogsPath();
+    QString universal_path = getUniversalPath();
+    QString function_cache_path = getCostFunctionCachePath();
 
     // make sure ~/.config and trader_path exists (trader_path is a subdirectory of config_path)
     QDir dir;
     bool ret0 = dir.exists( config_path ) || dir.mkdir( config_path );
     bool ret1 = dir.exists( trader_path ) || dir.mkdir( trader_path );
     bool ret2 = dir.exists( oldlogs_path ) || dir.mkdir( oldlogs_path );
+    bool ret3 = dir.exists( universal_path ) || dir.mkdir( universal_path );
+    bool ret4 = dir.exists( function_cache_path ) || dir.mkdir( function_cache_path );
 
     // if we failed, we have the wrong file permissions to continue
-    if ( !ret0 || !ret1 || !ret2 )
+    if ( !ret0 || !ret1 || !ret2 || !ret3 || !ret4 )
         qCritical() << "local error: could not open config path" << trader_path << "(check file permissions)";
 }
 
