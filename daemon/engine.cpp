@@ -348,9 +348,11 @@ if ( !is_testing )
     positions->remove( pos );
 }
 
-Coin Engine::getSpreadPriceForCurrency( QString currency, QString base )
+Coin Engine::getSpreadPriceForCurrency( const QString &currency, const QString &base )
 {
-    QString market = base + "-" + currency;
+    const QString market = QString( "%1-%2" )
+                           .arg( base )
+                           .arg( currency );
 
     if ( !market_info.contains( market ) )
         return Coin();
