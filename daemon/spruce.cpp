@@ -66,25 +66,23 @@ Coin Spruce::getMarketWeight( QString market ) const
 
 Coin Spruce::getOrderGreed()
 {
-    if ( m_order_greed.isGreaterThanZero() )
-    {
-        // try to generate rand range
-        const Coin iter = CoinAmount::COIN / 1000;
-        const quint32 range = ( m_order_greed_randomness / iter ).toUInt32();
+    // if greed is unset, just return m_order_greed
+    if ( !m_order_greed.isGreaterThanZero() )
+        return m_order_greed;
 
-        // if the range is 0, return here to prevent a range of 0-1
-        if ( range == 0 )
-            return 0;
+    // try to generate rand range
+    const Coin iter = CoinAmount::COIN / 1000;
+    const quint32 range = ( m_order_greed_randomness / iter ).toUInt32();
 
-        const quint32 rand = QRandomGenerator::global()->generate() % ( range +1 );
-        const Coin ret = m_order_greed - ( iter * rand );
+    // if the range is 0, return here to prevent a range of 0-1
+    if ( range == 0 )
+        return 0;
 
-        // don't return negative greed value
-        return ret.isLessThanZero() ? Coin() : ret;
-    }
+    const quint32 rand = QRandomGenerator::global()->generate() % ( range +1 );
+    const Coin ret = m_order_greed - ( iter * rand );
 
-    // if we failed to generate, just return m_order_greed
-    return m_order_greed;
+    // don't return negative greed value
+    return ret.isLessThanZero() ? Coin() : ret;
 }
 
 void Spruce::addStartNode( QString _currency, QString _quantity, QString _price )
