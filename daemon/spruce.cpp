@@ -161,7 +161,9 @@ QList<QString> Spruce::getMarkets() const
     QList<QString> ret;
     const QList<QString> &keys = original_quantity.keys();
     for ( QList<QString>::const_iterator i = keys.begin(); i != keys.end(); i++ )
-        ret += base_currency + "-" + *i;
+        ret += QString( "%1-%2" )
+               .arg( base_currency )
+               .arg( *i );
 
     return ret;
 }
