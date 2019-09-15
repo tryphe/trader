@@ -168,6 +168,11 @@ QList<QString> Spruce::getMarkets() const
     return ret;
 }
 
+bool Spruce::isActive()
+{
+    return !( base_currency.isEmpty() || nodes_start.isEmpty() || currency_weight.isEmpty() );
+}
+
 QString Spruce::getSaveState()
 {
     QString ret;

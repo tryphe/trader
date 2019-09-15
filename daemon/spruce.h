@@ -68,7 +68,7 @@ public:
 
     QList<QString> getCurrencies() const;
     QList<QString> getMarkets() const;
-    bool isActive() { return !( base_currency.isEmpty() || nodes_start.isEmpty() || currency_weight.isEmpty() ); }
+    bool isActive();
     QString getSaveState();
 
     void setLongMax( Coin longmax ) { m_long_max = longmax; }
