@@ -264,6 +264,16 @@ QString Spruce::getSaveState()
     return ret;
 }
 
+Coin Spruce::getMarketMax( QString market ) const
+{
+    return market.isEmpty() ? m_market_max : std::max( m_market_max * getMarketWeight( market ), m_market_max * Coin( "0.1" ) );
+}
+
+Coin Spruce::getOrderSize(QString market) const
+{
+    return market.isEmpty() ? m_order_size : std::max( m_order_size * getMarketWeight( market ), m_order_size_min );
+}
+
 void Spruce::setProfileU( QString currency, Coin u )
 {
     m_currency_profile_u.insert( currency, u );
