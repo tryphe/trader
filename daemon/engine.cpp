@@ -1789,7 +1789,7 @@ void Engine::onSpruceUp()
     const QMap<QString,Coin> &amount_to_shortlong_map = spruce.getAmountToShortLongMap();
     const Coin &shortlong_total = spruce.getAmountToShortLongTotal();
 
-    kDebug() << QString( "[Spruce] hi-lo coeffs[%1 %2 %3 %4] shortlong total[%5]" )
+    kDebug() << QString( "[Spruce] hi-lo coeffs[%1 %2 %3 %4] current shortlong [%5]" )
                     .arg( spruce.startCoeffs().lo_currency )
                     .arg( spruce.startCoeffs().lo_coeff )
                     .arg( spruce.startCoeffs().hi_currency )
@@ -1805,9 +1805,9 @@ void Engine::onSpruceUp()
         const Coin &amount_to_shortlong = i.value();
         const Coin amount_to_shortlong_abs = amount_to_shortlong.abs();
 
-        kDebug() << QString( "[Spruce] %1 coeff %2 to-shortlong %3 on-order %4" )
+        kDebug() << QString( "[Spruce] %1 | coeff %2 | to-shortlong %3 | on-order %4" )
                        .arg( market, 11 )
-                       .arg( spruce.getLastCoeffForMarket( market ) )
+                       .arg( spruce.getLastCoeffForMarket( market ), 12 )
                        .arg( amount_to_shortlong, 12 )
                        .arg( spruce_active.value( market ), 12 );
 
