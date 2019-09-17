@@ -104,7 +104,7 @@ Coin CostFunctionCache::getY( const Coin &profile_u, const Coin &reserve, const 
     Coin y = QString::fromLocal8Bit( y_data );
 
     // if it's a bad value, return 0
-    if ( y >= CoinAmount::COIN )
+    if ( y.isLessThanZero() || y >= CoinAmount::COIN )
     {
         kDebug() << "[Spruce] local error: read bad y value" << y << "at index" << y_idx << "in cache file" << file_path;
         return Coin();
