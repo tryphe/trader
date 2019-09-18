@@ -54,6 +54,7 @@ static const QByteArray    CONTENT_TYPE_ARGS                ( "application/x-www
 static const QLatin1String BITTREX_SUBPATH                  ( "tt" );
 static const QLatin1String POLONIEX_SUBPATH                 ( "pt" );
 static const QLatin1String BINANCE_SUBPATH                  ( "bt" );
+static const int MARKET_STRING_WIDTH                        ( 10 );
 
 /// urls/symbols
 #if defined(EXCHANGE_BITTREX)
