@@ -1795,9 +1795,10 @@ void Engine::onSpruceUp()
             Position *const &pos = *j;
 
             // search for stale spruce order for the side we are setting
-            if ( pos->is_spruce &&
-                 pos->order_set_time > 0 &&
-                 side == pos->side )
+            if (  pos->is_spruce &&
+                  pos->order_set_time > 0 &&
+                  side == pos->side &&
+                 !pos->is_cancelling )
             {
                 // get spread price for new spruce order
                 const QString &market = pos->market;
