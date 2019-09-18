@@ -348,26 +348,6 @@ if ( !is_testing )
     positions->remove( pos );
 }
 
-Coin Engine::getSpreadPriceForCurrency( const QString &currency, const QString &base )
-{
-    const QString market = QString( "%1-%2" )
-                           .arg( base )
-                           .arg( currency );
-
-    if ( !market_info.contains( market ) )
-        return Coin();
-
-    const MarketInfo &info = market_info[ market ];
-
-    if ( info.highest_buy.isZeroOrLess() || info.lowest_sell.isZeroOrLess() )
-        return Coin();
-
-    Coin midprice = ( info.highest_buy + info.lowest_sell ) / 2;
-    midprice.truncateByTicksize( CoinAmount::SATOSHI );
-
-    return midprice;
-}
-
 Coin Engine::getPriceForCurrency( quint8 side, const QString &currency, const QString &base )
 {
     const QString market = QString( "%1-%2" )
@@ -1698,7 +1678,6 @@ void Engine::onSpruceUp()
         for ( QList<QString>::const_iterator i = currencies.begin(); i != currencies.end(); i++ )
         {
             const QString &currency = *i;
-            // Coin price = getSpreadPriceForCurrency( currency, spruce.getBaseCurrency() );
             Coin price = getPriceForCurrency( side, currency, spruce.getBaseCurrency() );
 
             // if the ticker isn't updated, just skip this whole function
