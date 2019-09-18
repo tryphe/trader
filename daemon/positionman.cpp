@@ -81,38 +81,38 @@ Coin PositionMan::getLoSellFlipPrice( const QString &market ) const
     return pos->buy_price;
 }
 
-QMap<QString, Coin> PositionMan::getActiveSpruceEquityTotal()
+QMap<QString, Coin> PositionMan::getActiveSpruceEquityTotal( quint8 side )
 {
     QMap<QString,Coin> spruce_total;
     for( QSet<Position*>::const_iterator i = positions_all.begin(); i != positions_all.end(); i++ )
     {
         Position *const &pos = *i;
 
-        if ( pos->is_cancelling )
+        if (  pos->is_cancelling ||
+             !pos->is_spruce ||
+              pos->side != side )
             continue;
 
-        if ( pos->is_spruce )
-            spruce_total[ pos->market ] += pos->btc_amount;
+        spruce_total[ pos->market ] += pos->btc_amount;
     }
 
     return spruce_total;
 }
 
-QMap<QString, Coin> PositionMan::getActiveSpruceOrdersOffset()
+QMap<QString, Coin> PositionMan::getActiveSpruceOrdersOffset( quint8 side )
 {
     QMap<QString,Coin> spruce_offset;
     for( QSet<Position*>::const_iterator i = positions_all.begin(); i != positions_all.end(); i++ )
     {
         Position *const &pos = *i;
 
-        if ( pos->is_cancelling )
+        if (  pos->is_cancelling ||
+             !pos->is_spruce ||
+              pos->side != side )
             continue;
 
-        if ( pos->is_spruce )
-        {
-            if      ( pos->side == SIDE_BUY  ) spruce_offset[ pos->market ] += pos->btc_amount;
-            else if ( pos->side == SIDE_SELL ) spruce_offset[ pos->market ] -= pos->btc_amount;
-        }
+        if      ( pos->side == SIDE_BUY  ) spruce_offset[ pos->market ] += pos->btc_amount;
+        else if ( pos->side == SIDE_SELL ) spruce_offset[ pos->market ] -= pos->btc_amount;
     }
 
     return spruce_offset;
