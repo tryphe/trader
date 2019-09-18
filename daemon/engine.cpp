@@ -368,6 +368,23 @@ Coin Engine::getSpreadPriceForCurrency( const QString &currency, const QString &
     return midprice;
 }
 
+Coin Engine::getPriceForCurrency( quint8 side, const QString &currency, const QString &base )
+{
+    const QString market = QString( "%1-%2" )
+                           .arg( base )
+                           .arg( currency );
+
+    if ( !market_info.contains( market ) )
+        return Coin();
+
+    const MarketInfo &info = market_info[ market ];
+
+    if ( info.highest_buy.isZeroOrLess() || info.lowest_sell.isZeroOrLess() )
+        return Coin();
+
+    return side == SIDE_BUY ? info.highest_buy : info.lowest_sell;
+}
+
 void Engine::processFilledOrders( QVector<Position*> &to_be_filled, qint8 fill_type )
 {
     static QJsonArray ext_updates;
@@ -1762,108 +1779,121 @@ void Engine::onSpruceUp()
     if ( !spruce.isActive() )
         return;
 
-    spruce.clearLiveNodes();
     QMap<QString/*currency*/,Coin> spread_price;
     const QList<QString> &currencies = spruce.getCurrencies();
-    for ( QList<QString>::const_iterator i = currencies.begin(); i != currencies.end(); i++ )
-    {
-        const QString &currency = *i;
-        Coin price = getSpreadPriceForCurrency( currency, spruce.getBaseCurrency() );
-
-        // if the ticker isn't updated, just skip this whole function
-        if ( price.isZeroOrLess() )
-        {
-            kDebug() << "[Spruce] local error: no ticker for currency" << spruce.getBaseCurrency() << currency;
-            return;
-        }
-
-        spread_price.insert( currency, price );
-        spruce.addLiveNode( currency, price );
-    }
-
-    spruce.calculateAmountToShortLong();
-
-    // count value of spruce positions for each market
-    QMap<QString,Coin> spruce_active = positions->getActiveSpruceEquityTotal();
-
-    const QMap<QString,Coin> &amount_to_shortlong_map = spruce.getAmountToShortLongMap();
-    const Coin &shortlong_total = spruce.getAmountToShortLongTotal();
-
-    kDebug() << QString( "[Spruce] hi-lo coeffs[%1 %2 %3 %4] current shortlong [%5]" )
-                    .arg( spruce.startCoeffs().lo_currency )
-                    .arg( spruce.startCoeffs().lo_coeff )
-                    .arg( spruce.startCoeffs().hi_currency )
-                    .arg( spruce.startCoeffs().hi_coeff )
-                    .arg( shortlong_total );
 
     const Coin long_max = spruce.getLongMax();
     const Coin short_max = spruce.getShortMax();
 
-    for ( QMap<QString,Coin>::const_iterator i = amount_to_shortlong_map.begin(); i != amount_to_shortlong_map.end(); i++ )
+    // one pass each for buys and sells
+    for ( quint8 side = SIDE_BUY; side < SIDE_SELL +1; side++ )
     {
-        const QString &market = i.key();
-        const Coin &amount_to_shortlong = i.value();
-        const Coin amount_to_shortlong_abs = amount_to_shortlong.abs();
-
-        kDebug() << QString( "[Spruce] %1 | coeff %2 | to-shortlong %3 | on-order %4" )
-                       .arg( market, 11 )
-                       .arg( spruce.getLastCoeffForMarket( market ), 12 )
-                       .arg( amount_to_shortlong, 12 )
-                       .arg( spruce_active.value( market ), 12 );
-
-        const bool is_buy = amount_to_shortlong.isZeroOrLess();
-        const Coin order_size = spruce.getOrderSize( market );
-        const Coin order_max = spruce.getMarketMax( market );
-        const Coin order_size_limit = order_size * spruce.getOrderNice();
-
-        // skip noisy amount
-        if ( amount_to_shortlong_abs < order_size_limit )
-            continue;
-
-        // don't go over our per-market max
-        if ( spruce_active.value( market ) + order_size >= order_max )
-            continue;
-
-        // don't go over the abs value of our new projected position
-        if ( spruce_active.value( market ) + order_size_limit >= amount_to_shortlong_abs )
-            continue;
-
-        // are we too long/short to place another order on this side?
-        if ( is_buy && shortlong_total > long_max )
+        spruce.clearLiveNodes();
+        for ( QList<QString>::const_iterator i = currencies.begin(); i != currencies.end(); i++ )
         {
-            kDebug() << "[Spruce] info:" << market << "too long for now";
-            continue;
-        }
-        else if ( !is_buy && shortlong_total < short_max )
-        {
-            kDebug() << "[Spruce] info:" << market << "too short for now";
-            continue;
+            const QString &currency = *i;
+            // Coin price = getSpreadPriceForCurrency( currency, spruce.getBaseCurrency() );
+            Coin price = getPriceForCurrency( side, currency, spruce.getBaseCurrency() );
+
+            // if the ticker isn't updated, just skip this whole function
+            if ( price.isZeroOrLess() )
+            {
+                kDebug() << "[Spruce] local error: no ticker for currency" << spruce.getBaseCurrency() << currency;
+                return;
+            }
+
+            spread_price.insert( currency, price );
+            spruce.addLiveNode( currency, price );
         }
 
-        // get spread price for new spruce order
-        const QPair<Coin,Coin> spread = getSpruceSpread( market );
-        const Coin &buy_price = spread.first;
-        const Coin &sell_price = spread.second;
+        spruce.calculateAmountToShortLong();
 
-        // cancel conflicting positions
-        for ( QSet<Position*>::const_iterator j = positions->all().begin(); j != positions->all().end(); j++ )
+        // count value of spruce positions for each market
+        QMap<QString,Coin> spruce_active = positions->getActiveSpruceEquityTotal();
+
+        const QMap<QString,Coin> &amount_to_shortlong_map = spruce.getAmountToShortLongMap();
+        const Coin &shortlong_total = spruce.getAmountToShortLongTotal();
+
+        kDebug() << QString( "[Spruce %1] hi-lo coeffs[%2 %3 %4 %5] current shortlong [%6]" )
+                        .arg( side == SIDE_BUY ? "buys " : "sells" )
+                        .arg( spruce.startCoeffs().lo_currency )
+                        .arg( spruce.startCoeffs().lo_coeff )
+                        .arg( spruce.startCoeffs().hi_currency )
+                        .arg( spruce.startCoeffs().hi_coeff )
+                        .arg( shortlong_total );
+
+        for ( QMap<QString,Coin>::const_iterator i = amount_to_shortlong_map.begin(); i != amount_to_shortlong_map.end(); i++ )
         {
-            Position *const &pos = *j;
+            const QString &market = i.key();
+            const Coin &amount_to_shortlong = i.value();
+            const Coin amount_to_shortlong_abs = amount_to_shortlong.abs();
 
-            if ( pos->market != market )
+            const bool is_buy = amount_to_shortlong.isZeroOrLess();
+            const Coin order_size = spruce.getOrderSize( market );
+            const Coin order_max = spruce.getMarketMax( market );
+            const Coin order_size_limit = order_size * spruce.getOrderNice();
+
+            // don't place buys during the ask price loop, or sells during the bid price loop
+            if ( (  is_buy && side == SIDE_SELL ) ||
+                 ( !is_buy && side == SIDE_BUY ) )
                 continue;
 
-            if ( (  is_buy && pos->side == SIDE_SELL && buy_price  >= pos->sell_price.ratio( 0.9945 ) ) ||
-                 ( !is_buy && pos->side == SIDE_BUY  && sell_price <= pos->buy_price.ratio( 1.0055 ) ) )
-            {
-                kDebug() << "[Spruce] cancelling conflicting order" << pos->order_number;
-                positions->cancel( pos );
-            }
-        }
+            // skip noisy amount
+            if ( amount_to_shortlong_abs < order_size_limit )
+                continue;
 
-        // queue the order quietly
-        addPosition( market, is_buy ? SIDE_BUY : SIDE_SELL, buy_price, sell_price, order_size,
-                     "onetime-spruce", "spruce", QVector<qint32>(), false, true );
+            // don't go over our per-market max
+            if ( spruce_active.value( market ) + order_size >= order_max )
+                continue;
+
+            // don't go over the abs value of our new projected position
+            if ( spruce_active.value( market ) + order_size_limit >= amount_to_shortlong_abs )
+                continue;
+
+            // are we too long/short to place another order on this side?
+            if ( is_buy && shortlong_total > long_max )
+            {
+                kDebug() << "[Spruce] info:" << market << "too long for now";
+                continue;
+            }
+            else if ( !is_buy && shortlong_total < short_max )
+            {
+                kDebug() << "[Spruce] info:" << market << "too short for now";
+                continue;
+            }
+
+            kDebug() << QString( "[Spruce %1] %2 | coeff %3 | to-shortlong %4 | on-order %5" )
+                           .arg( side == SIDE_BUY ? "buys " : "sells" )
+                           .arg( market, 11 )
+                           .arg( spruce.getLastCoeffForMarket( market ), 12 )
+                           .arg( amount_to_shortlong, 12 )
+                           .arg( spruce_active.value( market ), 12 );
+
+            // get spread price for new spruce order
+            const QPair<Coin,Coin> spread = getSpruceSpread( market );
+            const Coin &buy_price = spread.first;
+            const Coin &sell_price = spread.second;
+
+            // cancel conflicting positions
+            for ( QSet<Position*>::const_iterator j = positions->all().begin(); j != positions->all().end(); j++ )
+            {
+                Position *const &pos = *j;
+
+                if ( pos->market != market )
+                    continue;
+
+                if ( (  is_buy && pos->side == SIDE_SELL && buy_price  >= pos->sell_price.ratio( 0.9945 ) ) ||
+                     ( !is_buy && pos->side == SIDE_BUY  && sell_price <= pos->buy_price.ratio( 1.0055 ) ) )
+                {
+                    kDebug() << "[Spruce] cancelling conflicting order" << pos->order_number;
+                    positions->cancel( pos );
+                }
+            }
+
+            // queue the order quietly
+            addPosition( market, is_buy ? SIDE_BUY : SIDE_SELL, buy_price, sell_price, order_size,
+                         "onetime-spruce", "spruce", QVector<qint32>(), false, true );
+        }
     }
 }
 
