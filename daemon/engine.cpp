@@ -1790,7 +1790,6 @@ void Engine::onSpruceUp()
         QMap<QString, Coin> spruce_amount_to_shortlong;
 
         // look for spruce positions we should cancel on this side
-        QMap<Position*,quint8> cancelling;
         const QSet<Position*>::const_iterator begin = positions->active().begin(),
                                               end = positions->active().end();
         for ( QSet<Position*>::const_iterator j = begin; j != end; j++ )
@@ -1827,7 +1826,7 @@ void Engine::onSpruceUp()
                        ( pos->side == SIDE_SELL && pos->price > sell_price * ( ( CoinAmount::COIN *2 ) - trailing_price_limit ) &&
                          pos->price > sell_price + info.price_ticksize ) ) )
                 {
-                    cancelling.insert( pos, CANCELLING_FOR_SPRUCE );
+                    positions->cancel( pos, false, CANCELLING_FOR_SPRUCE );
                     continue;
                 }
 
@@ -1842,7 +1841,7 @@ void Engine::onSpruceUp()
                 if ( ( amount_to_shortlong >  order_size_limit && pos->side == SIDE_BUY ) ||
                      ( amount_to_shortlong < -order_size_limit && pos->side == SIDE_SELL ) )
                 {
-                    cancelling.insert( pos, CANCELLING_FOR_SPRUCE_2 );
+                    positions->cancel( pos, false, CANCELLING_FOR_SPRUCE_2 );
                     continue;
                 }
 
@@ -1859,7 +1858,7 @@ void Engine::onSpruceUp()
                     // check badptr just incase, but should be impossible to get here
                     if ( pos_to_cancel )
                     {
-                        cancelling.insert( pos_to_cancel, CANCELLING_FOR_SPRUCE_3 );
+                        positions->cancel( pos_to_cancel, false, CANCELLING_FOR_SPRUCE_3 );
                         continue;
                     }
                 }
@@ -1872,15 +1871,11 @@ void Engine::onSpruceUp()
                      ( pos->side == SIDE_SELL && amount_to_shortlong.isGreaterThanZero() &&
                         active_amount > amount_to_shortlong + order_size_limit ) )
                 {
-                    cancelling.insert( pos, CANCELLING_FOR_SPRUCE_4 );
+                    positions->cancel( pos, false, CANCELLING_FOR_SPRUCE_4 );
                     continue;
                 }
             }
         }
-
-        // cancel selected positions
-        for ( QMap<Position*,quint8>::const_iterator i = cancelling.begin(); i != cancelling.end(); i++ )
-            positions->cancel( i.key(), false, i.value() );
     }
 }
 

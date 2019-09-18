@@ -4,9 +4,6 @@
 
 #include <QRandomGenerator>
 
-static const Coin DEFAULT_PROFILE_U = Coin("10");
-static const Coin DEFAULT_RESERVE = Coin("0.05");
-
 Spruce::Spruce()
 {
     /// user settings

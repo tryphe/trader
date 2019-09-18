@@ -7,6 +7,9 @@
 #include <QString>
 #include <QMap>
 
+static const Coin DEFAULT_PROFILE_U = Coin("10");
+static const Coin DEFAULT_RESERVE = Coin("0.05");
+
 struct Node
 {
     QString currency;
