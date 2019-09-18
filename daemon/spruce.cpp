@@ -8,7 +8,7 @@
 Spruce::Spruce()
 {
     /// user settings
-    m_hedge_target = "0.95"; // keep our market valuations at most 1-x% apart
+    m_target = "0.95"; // keep our market valuations at most 1-x% apart
     m_order_greed = "0.99"; // keep our spread at least 1-x% apart
     m_order_greed_randomness = "0.005"; // randomly subtract tenths of a pct from greed up to this amount
 
@@ -183,8 +183,8 @@ QString Spruce::getSaveState()
     // save log factor
     ret += QString( "setspruceleverage %1\n" ).arg( m_leverage );
 
-    // save hedge target
-    ret += QString( "setsprucehedgetarget %1\n" ).arg( m_hedge_target );
+    // save target
+    ret += QString( "setsprucetarget %1\n" ).arg( m_target );
 
     // save order greed
     ret += QString( "setspruceordergreed %1 %2\n" )
@@ -343,8 +343,8 @@ void Spruce::equalizeDates()
     m_start_coeffs = m_relative_coeffs = getRelativeCoeffs();
 
     // avoid infinite loop
-    if ( m_hedge_target > Coin( "0.997" ) )
-        m_hedge_target = "0.997";
+    if ( m_target > Coin( "0.997" ) )
+        m_target = "0.997";
 
     const Coin min_adjustment = CoinAmount::SATOSHI * 50000;
     const Coin hi_equity = getEquityNow( m_relative_coeffs.hi_currency );
@@ -363,7 +363,7 @@ void Spruce::equalizeDates()
 //    kDebug() << "hi_equity" << hi_equity;
 
     qint64 i = 0;
-    while ( m_relative_coeffs.hi_coeff * m_hedge_target > m_relative_coeffs.lo_coeff )
+    while ( m_relative_coeffs.hi_coeff * m_target > m_relative_coeffs.lo_coeff )
     {
         if ( i++ == 10001 ) // safety break
             break;

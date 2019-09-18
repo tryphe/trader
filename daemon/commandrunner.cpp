@@ -94,7 +94,7 @@ CommandRunner::CommandRunner( Engine *_e, REST_OBJECT *_rest, Stats *_stats, QOb
     command_map.insert( "setspruceleverage", std::bind( &CommandRunner::command_setspruceleverage, this, _1 ) );
     command_map.insert( "setspruceprofile", std::bind( &CommandRunner::command_setspruceprofile, this, _1 ) );
     command_map.insert( "setsprucereserve", std::bind( &CommandRunner::command_setsprucereserve, this, _1 ) );
-    command_map.insert( "setsprucehedgetarget", std::bind( &CommandRunner::command_setsprucehedgetarget, this, _1 ) );
+    command_map.insert( "setsprucetarget", std::bind( &CommandRunner::command_setsprucetarget, this, _1 ) );
     command_map.insert( "setspruceordergreed", std::bind( &CommandRunner::command_setspruceordergreed, this, _1 ) );
     command_map.insert( "setsprucelongmax", std::bind( &CommandRunner::command_setsprucelongmax, this, _1 ) );
     command_map.insert( "setspruceshortmax", std::bind( &CommandRunner::command_setspruceshortmax, this, _1 ) );
@@ -764,10 +764,10 @@ void CommandRunner::command_setsprucereserve( QStringList &args )
     kDebug() << "spruce reserve for" << args.value( 1 ) << "is" << engine->spruce.getReserve( args.value( 1 ) );
 }
 
-void CommandRunner::command_setsprucehedgetarget( QStringList &args )
+void CommandRunner::command_setsprucetarget( QStringList &args )
 {
-    engine->spruce.setHedgeTarget( args.value( 1 ) );
-    kDebug() << "spruce hedge target is" << args.value( 1 );
+    engine->spruce.setTarget( args.value( 1 ) );
+    kDebug() << "spruce target is" << args.value( 1 );
 }
 
 void CommandRunner::command_setspruceordergreed( QStringList &args )
