@@ -1664,8 +1664,8 @@ void Engine::onSpruceUp()
     if ( !spruce.isActive() )
         return;
 
-    QMap<QString/*currency*/,Coin> spread_price;
-    QMap<QString, QPair<Coin,Coin>> spruce_spread; // store spruce spread for each market
+    QMap<QString/*market*/,Coin> spread_price;
+    QMap<QString/*market*/,QPair<Coin,Coin>> spruce_spread;
     const QList<QString> &currencies = spruce.getCurrencies();
 
     const Coin long_max = spruce.getLongMax();
@@ -1783,7 +1783,10 @@ void Engine::onSpruceUp()
                          "onetime-spruce", "spruce", QVector<qint32>(), false, true );
         }
 
-        QMap<QString, Coin> spruce_offset = positions->getActiveSpruceOrdersOffset( side ); // store active spruce positions,
+        // store active spruce positions for this side
+        QMap<QString, Coin> spruce_offset = positions->getActiveSpruceOrdersOffset( side );
+
+        // auto populated map to store how much we should short/long
         QMap<QString, Coin> spruce_amount_to_shortlong;
 
         // look for spruce positions we should cancel on this side
@@ -1806,9 +1809,6 @@ void Engine::onSpruceUp()
                 const Coin &buy_price = spread.first;
                 const Coin &sell_price = spread.second;
 
-                if ( !spruce_amount_to_shortlong.contains( market ) )
-                    spruce_amount_to_shortlong.insert( market, spruce.getAmountToShortLongNow( market ) );
-
                 // get trailing price limit ratio, ie. bid/ask at 25sat/26sat is 0.961
                 Coin trailing_price_limit = spruce.getTrailingPriceLimit();
 
@@ -1830,6 +1830,10 @@ void Engine::onSpruceUp()
                     cancelling.insert( pos, CANCELLING_FOR_SPRUCE );
                     continue;
                 }
+
+                // make sure map is populated
+                if ( !spruce_amount_to_shortlong.contains( market ) )
+                    spruce_amount_to_shortlong.insert( market, spruce.getAmountToShortLongNow( market ) );
 
                 const Coin &amount_to_shortlong = spruce_amount_to_shortlong.value( market );
                 const Coin order_size_limit = spruce.getOrderSize( market ) * spruce.getOrderNice();
