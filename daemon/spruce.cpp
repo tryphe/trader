@@ -52,7 +52,8 @@ void Spruce::setCurrencyWeight( QString currency, Coin weight )
 
 Coin Spruce::getMarketWeight( QString market ) const
 {
-    for ( QList<QString>::const_iterator i = getCurrencies().begin(); i != getCurrencies().end(); i++ )
+    const QList<QString> &currencies = getCurrencies();
+    for ( QList<QString>::const_iterator i = currencies.begin(); i != currencies.end(); i++ )
     {
         const QString &currency = *i;
         const QString market_recreated = QString( "%1-%2" )
