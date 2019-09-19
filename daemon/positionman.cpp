@@ -111,8 +111,8 @@ QMap<QString, Coin> PositionMan::getActiveSpruceOrdersOffset( quint8 side )
               pos->side != side )
             continue;
 
-        if      ( pos->side == SIDE_BUY  ) spruce_offset[ pos->market ] += pos->btc_amount;
-        else if ( pos->side == SIDE_SELL ) spruce_offset[ pos->market ] -= pos->btc_amount;
+        if ( pos->side == SIDE_BUY ) spruce_offset[ pos->market ] += pos->btc_amount;
+        else                         spruce_offset[ pos->market ] -= pos->btc_amount;
     }
 
     return spruce_offset;
