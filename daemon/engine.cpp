@@ -1858,6 +1858,12 @@ void Engine::onSpruceUp()
                     // check badptr just incase, but should be impossible to get here
                     if ( pos_to_cancel )
                     {
+                        // negate spruce offset by order size
+                        if ( pos_to_cancel->side == SIDE_BUY  )
+                            spruce_offset[ market ] -= pos_to_cancel->btc_amount;
+                        else
+                            spruce_offset[ market ] += pos_to_cancel->btc_amount;
+
                         positions->cancel( pos_to_cancel, false, CANCELLING_FOR_SPRUCE_3 );
                         continue;
                     }
