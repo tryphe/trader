@@ -1878,6 +1878,9 @@ void Engine::onSpruceUp()
                      ( pos->side == SIDE_SELL && amount_to_shortlong.isGreaterThanZero() &&
                         active_amount > amount_to_shortlong + order_size_limit ) )
                 {
+                    // negate spruce_active
+                    spruce_active[ market ] -= pos->btc_amount;
+
                     positions->cancel( pos, false, CANCELLING_FOR_SPRUCE_4 );
                     continue;
                 }
