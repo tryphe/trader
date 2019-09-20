@@ -348,8 +348,9 @@ bool Spruce::equalizeDates()
     m_start_coeffs = m_relative_coeffs = getRelativeCoeffs();
 
     // avoid infinite loop
-    if ( m_target > Coin( "0.997" ) )
-        m_target = "0.997";
+    static const Coin target_limit = Coin( "0.997" );
+    if ( m_target > target_limit )
+        m_target = target_limit;
 
     const Coin min_adjustment = CoinAmount::SATOSHI * 50000;
     const Coin hi_equity = getEquityNow( m_relative_coeffs.hi_currency );
@@ -362,12 +363,7 @@ bool Spruce::equalizeDates()
         return false;
     }
 
-//    kDebug() << "hi_coeff:" << m_relative_coeffs.hi_coeff << m_relative_coeffs.hi_currency
-//             << "lo_coeff:" << m_relative_coeffs.lo_coeff << m_relative_coeffs.lo_currency;
-//    kDebug() << "ticksize" << ticksize;
-//    kDebug() << "hi_equity" << hi_equity;
-
-    qint64 i = 0;
+    quint16 i = 0;
     while ( m_relative_coeffs.hi_coeff * m_target > m_relative_coeffs.lo_coeff )
     {
         if ( i++ == 10001 ) // safety break
@@ -398,9 +394,6 @@ bool Spruce::equalizeDates()
         }
 
         m_relative_coeffs = getRelativeCoeffs();
-
-//        kDebug() << "hi_coeff" << m_relative_coeffs.hi_coeff
-//                 << "lo_coeff" << m_relative_coeffs.lo_coeff;
     }
 
     // flip values, because we want shorts as positive and longs as negative
@@ -499,7 +492,7 @@ QMap<QString, Coin> Spruce::getMarketCoeffs()
     for ( QList<Node*>::const_iterator i = nodes_start.begin(); i != nodes_start.end(); i++ )
     {
         Node *n = *i;
-        start_scores.insert( n->currency,  n->quantity * n->price );
+        start_scores.insert( n->currency, n->quantity * n->price );
     }
 
     // calculate new score based on starting score using a loss function
