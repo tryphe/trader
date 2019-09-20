@@ -433,9 +433,8 @@ void Spruce::normalizeEquity()
 
     Coin mean_equity = total / nodes_start.size();
     mean_equity.truncateByTicksize( "0.00000001" ); // toss subsatoshi digits
-    //qDebug() << "starting equity:" << total << "mean:" << mean_equity;
 
-    // step 3: calculate weighted equity from lowest to highest weight (multimap is sorted by weight)
+    // step 3: calculate weighted equity from lowest to highest weight (map is sorted by weight)
     //         for each market and recalculate mean/total equity
     int ct = nodes_start.size();
     for ( QMultiMap<Coin,QString>::const_iterator i = currency_weight_by_coin.begin(); i != currency_weight_by_coin.end(); i++ )
@@ -446,26 +445,21 @@ void Spruce::normalizeEquity()
 
         mean_equity_for_market.insert( currency, equity_to_use );
 
-        //qDebug() << "equity scaled for" << currency << equity_to_use;
         total_scaled += equity_to_use; // record equity to ensure total_scaled == original total
 
-        // if there isn't a last item, exit ehre
+        // if this is the last item, exit here
         if ( --ct == 0 ) break;
 
         // do some things to help next iteration, recalculate mean equity based on amount used
         total -= equity_to_use;
         mean_equity = total / ct;
     }
-    //assert( total_scaled == original_total );
 
     if ( total_scaled != original_total )
     {
         qDebug() << "[Spruce] local error: spruce: total_scaled != original total (check number of spruce markets)";
         return;
     }
-
-//    qDebug() << "equity used:" << total_scaled;
-//    qDebug() << "equity available:" << original_total;
 
     // step 4: apply mean equity for each market
     QMap<QString,Coin> start_quantities; // cache date1 quantity to store in date2
@@ -477,7 +471,6 @@ void Spruce::normalizeEquity()
         n->amount = mean_equity_for_market.value( n->currency, CoinAmount::COIN );
         n->recalculateQuantityByPrice();
         start_quantities.insert( n->currency, n->quantity );
-        //qDebug() << n->currency << "quantity is now" << n->quantity;
     }
 
     // step 5: put the mean adjusted date1 quantites into date2. after this step, we can figure out the new "normalized" valuations
@@ -486,7 +479,6 @@ void Spruce::normalizeEquity()
         Node *n = *i;
         n->quantity = start_quantities.value( n->currency );
         n->recalculateAmountByQuantity();
-        //qDebug() << n->currency << "quantity is now" << n->quantity;
     }
 }
 
