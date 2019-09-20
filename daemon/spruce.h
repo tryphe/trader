@@ -62,7 +62,7 @@ public:
     void addLiveNode( QString _currency, QString _price );
     void clearLiveNodes();
 
-    void calculateAmountToShortLong();
+    bool calculateAmountToShortLong();
     Coin getAmountToShortLongNow( QString market );
     void addToShortLonged( QString market, Coin amount );
 
@@ -98,8 +98,8 @@ public:
     Coin getLastCoeffForMarket( const QString &market ) const;
 
 private:
-    void equalizeDates();
-    void normalizeEquity();
+    bool equalizeDates();
+    bool normalizeEquity();
 
     CostFunctionCache m_cost_cache;
     QMap<QString,Coin> m_currency_profile_u, m_currency_reserve;

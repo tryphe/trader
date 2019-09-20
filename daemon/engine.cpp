@@ -1691,7 +1691,9 @@ void Engine::onSpruceUp()
             spruce.addLiveNode( currency, price );
         }
 
-        spruce.calculateAmountToShortLong();
+        // calculate amount to short/long, and fail if necessary
+        if ( !spruce.calculateAmountToShortLong() )
+            return;
 
         // count value of spruce positions for each market
         QMap<QString,Coin> spruce_active = positions->getActiveSpruceEquityTotal( side );

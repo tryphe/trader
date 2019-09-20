@@ -115,10 +115,13 @@ void Spruce::clearLiveNodes()
         delete nodes_now.takeFirst();
 }
 
-void Spruce::calculateAmountToShortLong()
+bool Spruce::calculateAmountToShortLong()
 {
-    normalizeEquity();
-    equalizeDates();
+    if ( !normalizeEquity() )
+        return false;
+
+    if ( !equalizeDates() )
+        return false;
 
     // record amount to shortlong in a map and get total
     m_amount_to_shortlong_map.clear();
@@ -133,6 +136,8 @@ void Spruce::calculateAmountToShortLong()
         m_amount_to_shortlong_map[ market ] = shortlong_market;
         m_amount_to_shortlong_total += shortlong_market;
     }
+
+    return true;
 }
 
 Coin Spruce::getAmountToShortLongNow( QString market )
@@ -317,7 +322,7 @@ Coin Spruce::getLastCoeffForMarket( const QString &market ) const
     return m_last_coeffs.value( currency );
 }
 
-void Spruce::equalizeDates()
+bool Spruce::equalizeDates()
 {
     /// psuedocode
     //
@@ -333,7 +338,7 @@ void Spruce::equalizeDates()
     if ( nodes_start.size() != nodes_now.size() )
     {
         qDebug() << "[Spruce] local error: couldn't find one of the dates in equalizeDates";
-        return;
+        return false;
     }
 
     // track shorts/longs
@@ -354,7 +359,7 @@ void Spruce::equalizeDates()
     if ( hi_equity < min_adjustment )
     {
         kDebug() << "[Spruce] local warning: not enough equity to equalizeDates" << hi_equity;
-        return;
+        return false;
     }
 
 //    kDebug() << "hi_coeff:" << m_relative_coeffs.hi_coeff << m_relative_coeffs.hi_currency
@@ -408,14 +413,16 @@ void Spruce::equalizeDates()
 
         amount_to_shortlong[ market ] = i.value();
     }
+
+    return true;
 }
 
-void Spruce::normalizeEquity()
+bool Spruce::normalizeEquity()
 {
     if ( nodes_start.size() != nodes_now.size() )
     {
         qDebug() << "[Spruce] local error: spruce: start node count not equal date1 node count";
-        return;
+        return false;
     }
 
     Coin total, original_total, total_scaled;
@@ -458,7 +465,7 @@ void Spruce::normalizeEquity()
     if ( total_scaled != original_total )
     {
         qDebug() << "[Spruce] local error: spruce: total_scaled != original total (check number of spruce markets)";
-        return;
+        return false;
     }
 
     // step 4: apply mean equity for each market
@@ -480,6 +487,8 @@ void Spruce::normalizeEquity()
         n->quantity = start_quantities.value( n->currency );
         n->recalculateAmountByQuantity();
     }
+
+    return true;
 }
 
 QMap<QString, Coin> Spruce::getMarketCoeffs()
