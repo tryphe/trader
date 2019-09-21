@@ -83,7 +83,7 @@ Config directory
 ----------------
 BiTTrex: `~/.config/tt`\
 Binance: `~/.config/bt`\
-Poloniex: `~/.config/pt`\
+Poloniex: `~/.config/pt`
 
 Tailing the logs (note: CLI output goes to the logs)
 ----------------------------------------------------
