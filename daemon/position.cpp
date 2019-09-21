@@ -6,6 +6,7 @@
 #include "polorest.h"
 #include "trexrest.h"
 #include "global.h"
+#include "market.h"
 
 #include <algorithm>
 #include <QDebug>
@@ -17,7 +18,7 @@ Position::Position( QString _market, quint8 _side, QString _buy_price, QString _
 {
     // local info
     engine = _engine;
-    market = _market;
+    market = Market( _market );
     side = _side;
     cancel_reason = 0;
     order_set_time = 0;
@@ -308,7 +309,7 @@ void Position::jsonifyPositionSet( QJsonArray &arr )
 {
     arr += "s";
     arr += order_number;
-    arr += market;
+    arr += market.toOutputString();
     arr += is_onetime;
     arr += is_landmark;
     arr += is_slippage;
@@ -348,7 +349,7 @@ QString Position::stringifyOrder()
                 .arg( is_landmark ? "L" : is_onetime ? "O" : " " )
                 .arg( is_slippage ? "S" : " " )
                 .arg( sideStr(), -4 )
-                .arg( market, MARKET_STRING_WIDTH )
+                .arg( market.toOutputString(), MARKET_STRING_WIDTH )
                 .arg( btc_amount, 11 )
                 .arg( price, 10 )
                 .arg( order_number_str, ORDER_STRING_SIZE )
@@ -363,7 +364,7 @@ QString Position::stringifyOrderWithoutOrderID()
                 .arg( is_landmark ? "L" : is_onetime ? "O" : " " )
                 .arg( is_slippage ? "S" : " " )
                 .arg( sideStr(), -4 )
-                .arg( market, MARKET_STRING_WIDTH )
+                .arg( market.toOutputString(), MARKET_STRING_WIDTH )
                 .arg( btc_amount, 11 )
                 .arg( price, 10 )
                 .arg( indices_str );
@@ -377,7 +378,7 @@ QString Position::stringifyNewPosition()
                     .arg( is_landmark ? "L" : " " )
                     .arg( is_slippage ? "S" : " " )
                     .arg( sideStr(), -4 )
-                    .arg( market, MARKET_STRING_WIDTH )
+                    .arg( market.toOutputString(), MARKET_STRING_WIDTH )
                     .arg( btc_amount, 11 )
                     .arg( buy_price, 10 )
                     .arg( sell_price, -16 - ORDER_STRING_SIZE )
@@ -409,7 +410,7 @@ QString Position::stringifyPositionChange()
             .arg( is_slippage ? "S" : " " )
             .arg( is_buy ? ">>>grn<<<" : ">>>red<<<" )
             .arg( sideStr(), -4 )
-            .arg( market, MARKET_STRING_WIDTH )
+            .arg( market.toOutputString(), MARKET_STRING_WIDTH )
             .arg( btc_amount, 11 )
             .arg( price_str, -24 )
             .arg( order_number_str, ORDER_STRING_SIZE )
