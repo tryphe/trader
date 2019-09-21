@@ -10,19 +10,20 @@ struct EngineSettings
 
     Coin fee;
 
-    bool is_chatty;
-    bool should_clear_stray_orders;
-    bool should_clear_stray_orders_all;
-    bool should_slippage_be_calculated; // calculated/additive preference of slippage
-    bool should_adjust_hibuy_losell;
-    bool should_adjust_hibuy_losell_debugmsgs_ticker;
-    bool should_mitigate_blank_orderbook_flash;
-    bool should_dc_slippage_orders;
-    qint64 request_timeout;
-    qint64 cancel_timeout;
-    qint64 stray_grace_time_limit;
-    qint64 safety_delay_time;
-    qint64 ticker_safety_delay_time;
+    // global settings (probably shouldn't be modified
+    bool is_chatty{ false };
+    bool should_clear_stray_orders{ false }; // auto cancels orders that aren't ours - set false when multiple bots are running the same api key
+    bool should_clear_stray_orders_all{ false }; // cancel orders not in our price index
+    bool should_slippage_be_calculated{ true }; // calculated/additive preference of slippage
+    bool should_adjust_hibuy_losell{ true }; // adjust hi_buy/lo_sell maps based on post-only price errors
+    bool should_adjust_hibuy_losell_debugmsgs_ticker{ false }; // enable chatty messages for hi/lo bounds adjust for wss-ticker
+    bool should_mitigate_blank_orderbook_flash{ true };
+    bool should_dc_slippage_orders{ false };
+    qint64 request_timeout{ 3 * 60000 }; // how long before we resend most requests
+    qint64 cancel_timeout{ 5 * 60000 }; // how long before we resend a cancel request
+    qint64 stray_grace_time_limit{ 10 * 60000 }; // how long before we cancel stray orders, if enabled
+    qint64 safety_delay_time{ 2000 }; // safety delay, should be more than your ping by a second or two
+    qint64 ticker_safety_delay_time{ 2000 }; // ^
 };
 
 #endif // ENGINESETTINGS_H
