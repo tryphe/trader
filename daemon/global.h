@@ -60,6 +60,7 @@ static const int MARKET_STRING_WIDTH                        ( 10 );
 #if defined(EXCHANGE_BITTREX)
     #define REST_OBJECT                                     TrexREST
     #define EXCHANGE_SUBPATH                                BITTREX_SUBPATH
+    static const QLatin1String MARKET_STRING_TEMPLATE       ( "%1-%2" );
     static const QLatin1String EXCHANGE_STR                 ( "Bittrex" );
     static const int INTERFACE_PORT                         ( 62000 );
     static const int ORDER_STRING_SIZE                      ( 22 );
@@ -79,6 +80,7 @@ static const int MARKET_STRING_WIDTH                        ( 10 );
 #elif defined(EXCHANGE_BINANCE)
     #define REST_OBJECT                                     BncREST
     #define EXCHANGE_SUBPATH                                BINANCE_SUBPATH
+    static const QLatin1String MARKET_STRING_TEMPLATE       ( "%2%1" );
     static const QLatin1String EXCHANGE_STR                 ( "Binance" );
     static const int INTERFACE_PORT                         ( 62001 );
     static const int ORDER_STRING_SIZE                      ( 15 );
@@ -99,6 +101,7 @@ static const int MARKET_STRING_WIDTH                        ( 10 );
 #elif defined(EXCHANGE_POLONIEX)
     #define REST_OBJECT                                     PoloREST
     #define EXCHANGE_SUBPATH                                POLONIEX_SUBPATH
+    static const QLatin1String MARKET_STRING_TEMPLATE       ( "%1_%2" );
     static const QLatin1String EXCHANGE_STR                 ( "Poloniex" );
     static const int INTERFACE_PORT                         ( 62002 );
     static const int ORDER_STRING_SIZE                      ( 11 );

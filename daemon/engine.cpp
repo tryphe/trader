@@ -350,7 +350,7 @@ if ( !is_testing )
 
 Coin Engine::getPriceForCurrency( quint8 side, const QString &currency, const QString &base )
 {
-    const QString market = QString( "%1-%2" )
+    const QString market = QString( MARKET_STRING_TEMPLATE )
                            .arg( base )
                            .arg( currency );
 

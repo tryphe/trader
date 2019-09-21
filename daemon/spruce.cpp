@@ -55,7 +55,7 @@ Coin Spruce::getMarketWeight( QString market ) const
     for ( QList<QString>::const_iterator i = currencies.begin(); i != currencies.end(); i++ )
     {
         const QString &currency = *i;
-        const QString market_recreated = QString( "%1-%2" )
+        const QString market_recreated = QString( MARKET_STRING_TEMPLATE )
                                             .arg( base_currency )
                                             .arg( currency );
 
@@ -166,7 +166,7 @@ QList<QString> Spruce::getMarkets() const
     QList<QString> ret;
     const QList<QString> &keys = original_quantity.keys();
     for ( QList<QString>::const_iterator i = keys.begin(); i != keys.end(); i++ )
-        ret += QString( "%1-%2" )
+        ret += QString( MARKET_STRING_TEMPLATE )
                .arg( base_currency )
                .arg( *i );
 
@@ -399,10 +399,10 @@ bool Spruce::equalizeDates()
     // flip values, because we want shorts as positive and longs as negative
     for ( QMap<QString,Coin>::const_iterator i = shortlongs.begin(); i != shortlongs.end(); i++ )
     {
-        QString market = i.key();
-
-        // TODO: adapt this to each exchange
-        market.prepend( base_currency + "-" );
+        const QString &currency = i.key();
+        QString market = QString( MARKET_STRING_TEMPLATE )
+                            .arg( base_currency )
+                            .arg( currency );
 
         amount_to_shortlong[ market ] = i.value();
     }
