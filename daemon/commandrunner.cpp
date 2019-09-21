@@ -7,6 +7,7 @@
 #include "bncrest.h"
 #include "stats.h"
 #include "positionman.h"
+#include "market.h"
 
 #include <functional>
 
@@ -296,7 +297,7 @@ void CommandRunner::command_setorder( QStringList &args )
 {
     if ( !checkArgs( args, 6, 7 ) ) return;
 
-    const QString &market = args.value( 1 );
+    QString market = Market( args.value( 1 ) );
     quint8 side = args.value( 2 ) == BUY ? SIDE_BUY :
                   args.value( 2 ) == SELL ? SIDE_SELL : 0;
     const QString &lo = args.value( 3 );
@@ -312,7 +313,7 @@ void CommandRunner::command_setordermin( QStringList &args )
 {
     if ( !checkArgs( args, 2 ) ) return;
 
-    const QString &market = args.value( 1 );
+    QString market = Market( args.value( 1 ) );
     const qint32 &count = args.value( 2 ).toInt();
 
     engine->getMarketInfo( market ).order_min = count;
@@ -323,7 +324,7 @@ void CommandRunner::command_setordermax( QStringList &args )
 {
     if ( !checkArgs( args, 2 ) ) return;
 
-    const QString &market = args.value( 1 );
+    QString market = Market( args.value( 1 ) );
     const qint32 &count = args.value( 2 ).toInt();
 
     engine->getMarketInfo( market ).order_max = count;
@@ -334,7 +335,7 @@ void CommandRunner::command_setorderdc( QStringList &args )
 {
     if ( !checkArgs( args, 2 ) ) return;
 
-    const QString &market = args.value( 1 );
+    QString market = Market( args.value( 1 ) );
     const qint32 &count = args.value( 2 ).toInt();
 
     engine->getMarketInfo( market ).order_dc = count;
@@ -345,7 +346,7 @@ void CommandRunner::command_setorderdcnice( QStringList &args )
 {
     if ( !checkArgs( args, 2 ) ) return;
 
-    const QString &market = args.value( 1 );
+    QString market = Market( args.value( 1 ) );
     const qint32 &nice = args.value( 2 ).toInt();
 
     engine->getMarketInfo( market ).order_dc_nice = nice;
@@ -356,7 +357,7 @@ void CommandRunner::command_setorderlandmarkthresh( QStringList &args )
 {
     if ( !checkArgs( args, 2 ) ) return;
 
-    const QString &market = args.value( 1 );
+    QString market = Market( args.value( 1 ) );
     const qint32 &val = args.value( 2 ).toInt();
 
     engine->getMarketInfo( market ).order_landmark_thresh = val;
@@ -367,7 +368,7 @@ void CommandRunner::command_setorderlandmarkstart( QStringList &args )
 {
     if ( !checkArgs( args, 2 ) ) return;
 
-    const QString &market = args.value( 1 );
+    QString market = Market( args.value( 1 ) );
     const qint32 &val = args.value( 2 ).toInt();
 
     engine->getMarketInfo( market ).order_landmark_start = val;
@@ -376,22 +377,26 @@ void CommandRunner::command_setorderlandmarkstart( QStringList &args )
 
 void CommandRunner::command_long( QStringList &args )
 {
-    engine->positions->flipLoSellPrice( args.value( 1 ), args.value( 2 ) );
+    QString market = Market( args.value( 1 ) );
+    engine->positions->flipLoSellPrice( market, args.value( 2 ) );
 }
 
 void CommandRunner::command_longindex( QStringList &args )
 {
-    engine->positions->flipLoSellIndex( args.value( 1 ), args.value( 2 ) );
+    QString market = Market( args.value( 1 ) );
+    engine->positions->flipLoSellIndex( market, args.value( 2 ) );
 }
 
 void CommandRunner::command_short( QStringList &args )
 {
-    engine->positions->flipHiBuyPrice( args.value( 1 ), args.value( 2 ) );
+    QString market = Market( args.value( 1 ) );
+    engine->positions->flipHiBuyPrice( market, args.value( 2 ) );
 }
 
 void CommandRunner::command_shortindex( QStringList &args )
 {
-    engine->positions->flipHiBuyIndex( args.value( 1 ), args.value( 2 ) );
+    QString market = Market( args.value( 1 ) );
+    engine->positions->flipHiBuyIndex( market, args.value( 2 ) );
 }
 
 void CommandRunner::command_setcancelthresh( QStringList &args )
