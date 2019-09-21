@@ -90,6 +90,10 @@ Tailing the logs (note: CLI output goes to the logs)
 Running the daemons and relying terminal output is suboptimal if the terminal closes. It's enabled by default, but can be disabled in `daemon/build-config.h`. All output is also routed to the logfiles. There's a color log, and a noncolor log. To tail, run:
 `tail -f --lines=200 /<config-directory>/log.<timestamp>_color.txt`.
 
+Rules of Thumb
+--------------
+When botting long-term, you MUST keep at least 20 orders active, per exchange. Peferrably with at least one order that won't get bulk-filled at the same time as the other 19 orders. This gives us important mitigation from erroneous "blank but valid" exchange API responses where the exchange tells us we have no orders, but actually do. Does this happen? Yes it does, *on every exchange*, although very rarely.
+
 Commands
 --------
 Check out the [list of commands.](https://github.com/tryphe/trader/blob/master/doc/commands.md#formatting)
@@ -227,10 +231,6 @@ Now that you've tried ping-pong orders, you should realize that you can shift th
 `long <market> [tag=""]` \
 (Note: or `shortindex`/`longindex` to associate by index and not by price)\
 (Note: you can also tag certain shorts/longs with a string and get back the total later with `getshortlong <tag>`)
-
-**Rules of Thumb**
-
-When botting long-term, you MUST keep at least 20 orders active, per exchange. Peferrably with at least one order that won't get bulk-filled at the same time as the other 19 orders. This gives us important mitigation from erroneous "blank but valid" exchange API responses where the exchange tells us we have no orders, but actually do. Does this happen? Yes it does, *on every exchange*, although very rarely.
 
 
 [todo] explain ghost positions, other stuff
