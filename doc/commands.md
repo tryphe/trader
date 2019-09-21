@@ -1,7 +1,7 @@
 Formatting
 ----------
+Command format: `<required> [optional=default_value]`\
 Commands are text arguments with spaces in between. If you setup the bash aliases in README.md, you can call them with `<exchange> <command>`. If not, you can use `trader-cli <exchange> <command>`. If you want to give the bot bulk commands, put them in `<config_dir>/in.txt` and save the file, one command per line.
-`<required> [optional=default_value]`
 
 A note about markets
 --------------------
@@ -13,7 +13,6 @@ Main bot commands
 setorder <market> <buy|sell> <lo> <hi> <amount> <ghost|active>  - add a new ping-pong index
 cancelall [market=all]                          - cancels orders, clears position index, for one or all markets
 cancellocal [market=all]                        - cancels orders, clears position index, deletes positions, for one or all markets
-cancelorder <market> <price>                    - cancel an active position. price must be in full padded format: 0.00001000
 savemarket [market=all] [orders_per_side=1]     - save dat market yo
 savesettings					- save config to ~/tt/settings.txt
 exit/quit/stop
