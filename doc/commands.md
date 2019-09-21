@@ -1,4 +1,4 @@
-<required> [optional]
+`<required> [optional]`
 
 A note about markets
 --------------------
@@ -6,6 +6,7 @@ There is two accepted formats for markets. They are 'BASE-QUOTE' and 'BASE_QUOTE
 
 Main bot commands
 -----------------
+```
 setorder <market> <buy|sell> <lo> <hi> <amount> <ghost|active>  - add a new ping-pong index
 cancelall [market=all]                          - cancels orders, clears position index, for one or all markets
 cancellocal [market=all]                        - cancels orders, clears position index, deletes positions, for one or all markets
@@ -23,10 +24,11 @@ getfills                                        - print # of fills for each mark
 getdailymarketvolume                            - print market volume for each [day, market]
 getbuyselltotal                                 - print local order count
 gethibuylosell                                  - print market spreads
-
+```
 
 Ping-pong options
 -----------------
+```
 setordermax <market> <max count>                - set automated max order count for market. 0 will disable automation of market
 setordermin <market> <min count>                - set automated min order count for market. 0 will disable automation of market
 setorderdc <market> <count>                     - set diverge/converge count for each landmark order
@@ -35,10 +37,11 @@ setorderlandmarkstart <market> <n>              - offset from hi_buy to start di
 setorderlandmarkthresh <market> <n>             - offset from order_max to start landmark sets
 setmarketsentiment <market> <bool>              - true = bullish, false = bearish
 setmarketoffset <market> <offset>               - set offset for market. 0.003 = 0.3% = 0.15% compensation per fill
-
+```
 
 Local options
 -------------
+```
 setkeyandsecret <key_plain> <secret_plain>      - manually set key
 setkeyandsecrethex <hex blob> <hex blob>        - manually set key by hex value
 setfee <double>                                 - manually set fee (changes automatically on polo)
@@ -50,10 +53,11 @@ setcheckinterval <ms>                           - set timer interval for timeout
 setdcinterval <ms>
 setsentcommandsmax <n>                          - limit the number of in-flight commands
 setcancelthresh <n>                             - upper limit for cancel loop
-
+```
 
 Misc and testing - be careful!
 ------------------------------
+```
 getbuildversion                                 - print build version
 setclearstrayorders <bool>                      - detect stray orders and cancel invalid duplicates(also required for scan-set)
 setgracetimelimit <ms>                          - threshhold to clear stray orders after detection, in seconds
@@ -78,3 +82,4 @@ short <market>                                  - short by price
 shortindex <market>                             - short by index
 long <market>                                   - long by price
 longindex <market>                              - long by index
+```
