@@ -6,6 +6,7 @@
 #include "stats.h"
 #include "positionman.h"
 #include "enginesettings.h"
+#include "market.h"
 
 #include <algorithm>
 #include <QtMath>
@@ -48,16 +49,19 @@ Engine::~Engine()
     kDebug() << "[Engine] done.";
 }
 
-Position *Engine::addPosition( QString market, quint8 side, QString buy_price, QString sell_price,
+Position *Engine::addPosition( QString market_input, quint8 side, QString buy_price, QString sell_price,
                                QString order_size, QString type, QString strategy_tag, QVector<qint32> indices,
                                bool landmark, bool quiet )
 {
-    // convert accidental underscore to dash, and vice versa
-#if defined(EXCHANGE_BITTREX)
-    market.replace( QChar('_'), QChar('-') );
-#elif defined(EXCHANGE_POLONIEX)
-    market.replace( QChar('-'), QChar('_') );
-#endif
+    // convert to universal market format <base>_<quote>
+    Market market = Market( market_input );
+    if ( !market.isValid() )
+    {
+        kDebug() << "local error: incorrect market format. you used '" << market_input
+                 << "'. please use universal market format 'base_quote' or 'base-quote'. for example 'BTC_DOGE' or 'BTC-DOGE'";
+        return nullptr;
+    }
+
 
     MarketInfo &info = market_info[ market ];
     // check if bid/ask price exists
@@ -92,7 +96,7 @@ Position *Engine::addPosition( QString market, quint8 side, QString buy_price, Q
     }
 
     // check for blank argument
-    if ( market.isEmpty() || buy_price.isEmpty() || sell_price.isEmpty() || order_size.isEmpty() )
+    if ( buy_price.isEmpty() || sell_price.isEmpty() || order_size.isEmpty() )
     {
         kDebug() << "local error: an argument was empty. mkt:" << market << "lo:" << buy_price << "hi:"
                  << sell_price << "sz:" << order_size;
@@ -178,7 +182,7 @@ Position *Engine::addPosition( QString market, quint8 side, QString buy_price, Q
     Position *const &pos = new Position( market, side, buy_price, sell_price, order_size, strategy_tag, indices, landmark, this );
 
     // check for correctly loaded position data
-    if ( !pos || pos->market.isEmpty() || pos->price.isZeroOrLess() || pos->btc_amount.isZeroOrLess() || pos->quantity.isZeroOrLess() )
+    if ( !pos || !pos->market.isValid() || pos->price.isZeroOrLess() || pos->btc_amount.isZeroOrLess() || pos->quantity.isZeroOrLess() )
     {
         kDebug() << "local warning: new position failed to initialize" << market << side << buy_price << sell_price << order_size << indices << landmark;
         if ( pos ) delete pos;

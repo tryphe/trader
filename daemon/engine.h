@@ -26,7 +26,7 @@ public:
     explicit Engine();
     ~Engine();
 
-    Position *addPosition( QString market, quint8 side, QString buy_price , QString sell_price,
+    Position *addPosition( QString market_input, quint8 side, QString buy_price , QString sell_price,
                            QString order_size, QString type = ACTIVE, QString strategy_tag = QLatin1String(),
                            QVector<qint32> indices = QVector<qint32>(), bool landmark = false, bool quiet = false );
 
