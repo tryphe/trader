@@ -85,7 +85,7 @@ Running the daemons and relying terminal output is suboptimal if the terminal cl
 
 Commands
 --------
-Check out the [list of commands.](https://github.com/tryphe/trader/blob/master/doc/commands.md)
+Check out the [list of commands.](https://github.com/tryphe/trader/blob/master/doc/commands.md#formatting)
 
 FAQS
 ----
