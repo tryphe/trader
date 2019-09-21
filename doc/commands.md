@@ -5,7 +5,7 @@ Commands are text arguments with spaces in between. If you setup the bash aliase
 
 A note about markets
 --------------------
-There is two accepted formats for markets. They are `BASE-QUOTE` and `BASE_QUOTE` where BASE is the base currency, BTC, and QUOTE is the quote currency, LTC. For example, this means that if you have the market `BTC-LTC`, this means that `1 LTC = x BTC`, where `x` is the market price of `BTC-LTC`.
+There is two accepted market formats for any exchange. They are `BASE-QUOTE` and `BASE_QUOTE` where BASE is the base currency, BTC, and QUOTE is the quote currency, LTC. For example, this means that if you have the market `BTC-LTC`, this means that `1 LTC = x BTC`, where `x` is the market price of `BTC-LTC`. You can also enter `BTC_LTC` and get the same result. 
 
 Main bot commands
 -----------------
