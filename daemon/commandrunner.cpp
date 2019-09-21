@@ -255,12 +255,12 @@ void CommandRunner::command_getbuyselltotal( QStringList & )
 
 void CommandRunner::command_cancelall( QStringList &args )
 {
-    engine->positions->cancelAll( args.value( 1 ) );
+    engine->positions->cancelAll( Market( args.value( 1 ) ) );
 }
 
 void CommandRunner::command_cancellocal( QStringList &args )
 {
-    engine->positions->cancelLocal( args.value( 1 ) );
+    engine->positions->cancelLocal( Market( args.value( 1 ) ) );
 }
 
 //void CommandRunner::command_cancelorder( QStringList &args )
@@ -270,27 +270,27 @@ void CommandRunner::command_cancellocal( QStringList &args )
 
 void CommandRunner::command_cancelhighest( QStringList &args )
 {
-    engine->positions->cancelHighest( args.value( 1 ) );
+    engine->positions->cancelHighest( Market( args.value( 1 ) ) );
 }
 
 void CommandRunner::command_cancellowest( QStringList &args )
 {
-    engine->positions->cancelLowest( args.value( 1 ) );
+    engine->positions->cancelLowest( Market( args.value( 1 ) ) );
 }
 
 void CommandRunner::command_getorders( QStringList &args )
 {
-    stats->printOrders( args.value( 1 ) );
+    stats->printOrders( Market( args.value( 1 ) ) );
 }
 
 void CommandRunner::command_getpositions( QStringList &args )
 {
-    stats->printPositions( args.value( 1 ) );
+    stats->printPositions( Market( args.value( 1 ) ) );
 }
 
 void CommandRunner::command_getordersbyindex( QStringList &args )
 {
-    stats->printOrdersByIndex( args.value( 1 ) );
+    stats->printOrdersByIndex( Market( args.value( 1 ) ) );
 }
 
 void CommandRunner::command_setorder( QStringList &args )
@@ -503,7 +503,7 @@ void CommandRunner::command_getfills( QStringList &args )
 
 void CommandRunner::command_getshortlong( QStringList &args )
 {
-    stats->printStrategyShortLong( args.value( 1 ) );
+    stats->printStrategyShortLong( Market( args.value( 1 ) ) );
 }
 
 void CommandRunner::command_gethibuylosell( QStringList &args )
@@ -561,7 +561,7 @@ void CommandRunner::command_setmarketoffset( QStringList &args )
 {
     if ( !checkArgs( args, 2 ) ) return;
 
-    const QString &market = args.value( 1 );
+    QString market = Market( args.value( 1 ) );
     qreal offset = args.value( 2 ).toDouble();
 
     engine->getMarketInfo( market ).market_offset = offset;
@@ -572,7 +572,7 @@ void CommandRunner::command_setmarketsentiment( QStringList &args )
 {
     if ( !checkArgs( args, 2 ) ) return;
 
-    const QString &market = args.value( 1 );
+    QString market = Market( args.value( 1 ) );
     bool sentiment = args.value( 2 ) == "true" ? true : false;
 
     engine->getMarketInfo( market ).market_sentiment = sentiment;
@@ -709,7 +709,7 @@ void CommandRunner::command_setslippagetimeout( QStringList &args )
 {
     if ( !checkArgs( args, 2 ) ) return;
 
-    const QString &market = args.value( 1 );
+    QString market = Market( args.value( 1 ) );
 
     engine->getMarketInfo( market ).slippage_timeout = args.value( 2 ).toInt();
     kDebug() << "slippage timeout for" << market << "is" << engine->getMarketInfo( market ).slippage_timeout;
@@ -825,7 +825,7 @@ void CommandRunner::command_spruceup( QStringList & )
 
 void CommandRunner::command_getconfig( QStringList &args )
 {
-    const QString &market = args.value( 1 );
+    QString market = Market( args.value( 1 ) );
 
     // print all market options
     if ( market.isEmpty() || market == ALL )
@@ -928,7 +928,7 @@ void CommandRunner::command_setmaintenancetime( QStringList &args )
 
 void CommandRunner::command_clearstratstats( QStringList &args )
 {
-    stats->clearSome( args.value( 1 ) );
+    stats->clearSome( Market( args.value( 1 ) ) );
 }
 
 void CommandRunner::command_clearallstats( QStringList &args )
@@ -939,7 +939,7 @@ void CommandRunner::command_clearallstats( QStringList &args )
 
 void CommandRunner::command_savemarket( QStringList &args )
 {
-    engine->saveMarket( args.value( 1 ), args.value( 2 ).toInt() );
+    engine->saveMarket( Market( args.value( 1 ) ), args.value( 2 ).toInt() );
 }
 
 void CommandRunner::command_savesettings( QStringList &args )
