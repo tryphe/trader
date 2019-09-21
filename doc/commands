@@ -19,6 +19,18 @@ getdailymarketvolume                            - print market volume for each [
 getbuyselltotal                                 - print local order count
 gethibuylosell                                  - print market spreads
 
+
+----(ping-pong options)----
+setordermax <market> <max count>                - set automated max order count for market. 0 will disable automation of market
+setordermin <market> <min count>                - set automated min order count for market. 0 will disable automation of market
+setorderdc <market> <count>                     - set diverge/converge count for each landmark order
+setorderdcnice <market> <nice>
+setorderlandmarkstart <market> <n>              - offset from hi_buy to start diverge/converge
+setorderlandmarkthresh <market> <n>             - offset from order_max to start landmark sets
+setmarketsentiment <market> <bool>              - true = bullish, false = bearish
+setmarketoffset <market> <offset>               - set offset for market. 0.003 = 0.3% = 0.15% compensation per fill
+
+
 ----(local options)----
 setkeyandsecret <key_plain> <secret_plain>      - manually set key
 setkeyandsecrethex <hex blob> <hex blob>        - manually set key by hex value
@@ -32,15 +44,6 @@ setdcinterval <ms>
 setsentcommandsmax <n>                          - limit the number of in-flight commands
 setcancelthresh <n>                             - upper limit for cancel loop
 
-----(ping-pong options)----
-setordermax <market> <max count>                - set automated max order count for market. 0 will disable automation of market
-setordermin <market> <min count>                - set automated min order count for market. 0 will disable automation of market
-setorderdc <market> <count>                     - set diverge/converge count for each landmark order
-setorderdcnice <market> <nice>
-setorderlandmarkstart <market> <n>              - offset from hi_buy to start diverge/converge
-setorderlandmarkthresh <market> <n>             - offset from order_max to start landmark sets
-setmarketsentiment <market> <bool>              - true = bullish, false = bearish
-setmarketoffset <market> <offset>               - set offset for market. 0.003 = 0.3% = 0.15% compensation per fill
 
 ----(misc and testing - be careful)----
 getbuildversion                                 - print build version
