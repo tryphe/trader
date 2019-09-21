@@ -64,6 +64,7 @@ struct BaseREST : public QObject
     QTimer *orderbook_timer{ nullptr };
     QTimer *diverge_converge_timer{ nullptr };
     QTimer *ticker_timer{ nullptr };
+    QTimer *spruce_timer{ nullptr };
 
     QNetworkAccessManager *nam{ nullptr };
     Stats *stats{ nullptr }; // note: initialization happens out of class

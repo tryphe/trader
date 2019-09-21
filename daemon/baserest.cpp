@@ -12,6 +12,11 @@ BaseREST::BaseREST( Engine *_engine )
 {
     kDebug() << "[BaseREST]";
     nam = new QNetworkAccessManager();
+
+    spruce_timer = new QTimer( this );
+    connect( spruce_timer, &QTimer::timeout, engine, &Engine::onSpruceUp );
+    spruce_timer->setTimerType( Qt::VeryCoarseTimer );
+    spruce_timer->start( 2 * 60000 );
 }
 
 BaseREST::~BaseREST()
@@ -26,6 +31,7 @@ BaseREST::~BaseREST()
     orderbook_timer->stop();
     diverge_converge_timer->stop();
     ticker_timer->stop();
+    spruce_timer->stop();
 
     // clear network replies
     for ( QHash<QNetworkReply*,Request*>::const_iterator i = nam_queue_sent.begin(); i != nam_queue_sent.end(); i++ )
@@ -49,11 +55,13 @@ BaseREST::~BaseREST()
     delete orderbook_timer;
     delete diverge_converge_timer;
     delete ticker_timer;
+    delete spruce_timer;
     send_timer = nullptr;
     timeout_timer = nullptr;
     orderbook_timer = nullptr;
     diverge_converge_timer = nullptr;
     ticker_timer = nullptr;
+    spruce_timer = nullptr;
 
     stats = nullptr;
     engine = nullptr;

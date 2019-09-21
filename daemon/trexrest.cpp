@@ -104,12 +104,6 @@ void TrexREST::init()
     ticker_timer->setTimerType( Qt::VeryCoarseTimer );
     ticker_timer->start( 10000 );
 
-    // this timer requests the order book
-    QTimer *spruce_timer = new QTimer( this );
-    connect( spruce_timer, &QTimer::timeout, engine, &Engine::onSpruceUp );
-    spruce_timer->setTimerType( Qt::VeryCoarseTimer );
-    spruce_timer->start( 2 * 60000 );
-
 #ifdef EXTRA_NICE
     order_history_timer->setInterval( 50000 );
     orderbook_timer->setInterval( 51000 );
