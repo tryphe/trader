@@ -3,6 +3,7 @@
 
 #include "global.h"
 #include "coinamount.h"
+#include "market.h"
 
 #include <QVector>
 
@@ -36,8 +37,8 @@ public:
     qint32 getHighestMarketIndex() const;
 
     // exchange data
-    QString market, // BTC_CLAM...
-            order_number;
+    Market market; // BTC_CLAM...
+    QString order_number;
 
     Coin quantity;
 
@@ -71,32 +72,6 @@ public:
 
 private:
     Engine *engine;
-};
-
-struct PositionData
-{
-    explicit PositionData() {}
-    explicit PositionData( QString _buy_price, QString _sell_price, QString _order_size, QString _alternate_size )
-    {
-        buy_price = _buy_price;
-        sell_price = _sell_price;
-        order_size = _order_size;
-        alternate_size = _alternate_size;
-        fill_count = 0;
-    }
-
-    void iterateFillCount()
-    {
-        fill_count++;
-        if ( alternate_size.size() > 0 )
-        {
-            order_size = alternate_size;
-            alternate_size.clear();
-        }
-    }
-
-    QString buy_price, sell_price, order_size, alternate_size;
-    quint32 fill_count;
 };
 
 
