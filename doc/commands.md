@@ -1,8 +1,11 @@
-`<required> [optional]`
+Formatting
+----------
+Commands are text arguments with spaces in between. If you setup the bash aliases in README.md, You can call them with `<exchange> <command>`. If not, you can put them in `<config_dir>/in.txt` and save the file, one command per line.
+`<required> [optional=default_value]`
 
 A note about markets
 --------------------
-There is two accepted formats for markets. They are 'BASE-QUOTE' and 'BASE_QUOTE' where BASE is the base currency, ie. 'BTC', and QUOTE is the quote currency, ie. 'LTC'. This means that 1 LTC = x BTC, where X is the market price of BTC-LTC.
+There is two accepted formats for markets. They are `BASE-QUOTE` and `BASE_QUOTE` where BASE is the base currency, BTC, and QUOTE is the quote currency, LTC. For example, this means that if you have the market `BTC-LTC`, this means that `1 LTC = x BTC`, where `x` is the market price of `BTC-LTC`.
 
 Main bot commands
 -----------------
