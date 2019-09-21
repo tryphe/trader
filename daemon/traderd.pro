@@ -24,6 +24,7 @@ SOURCES += main.cpp \
     costfunctioncache.cpp \
     enginesettings.cpp \
     fallbacklistener.cpp \
+    market.cpp \
     position.cpp \
     engine.cpp \
     positionman.cpp \
@@ -48,8 +49,10 @@ HEADERS += build-config.h \
     global.h \
     coinamount.h \
     keydefs.h \
+    market.h \
     position.h \
     engine.h \
+    positiondata.h \
     positionman.h \
     spruce.h \
     trader.h \
