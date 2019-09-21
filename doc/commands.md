@@ -65,7 +65,7 @@ setclearstrayorders <bool>                      - detect stray orders and cancel
 setgracetimelimit <ms>                          - threshhold to clear stray orders after detection, in seconds
 setslippagecalculated <bool>                    - try calculated slippage before additive. if disabled, additive+additive2 only
 setadjustbuysell <bool>                         - allow post-only error price to correct hi_buy/lo_sell price for slippage calculations
-setpostonly <bool>                              - use maker orders only
+setpostonly <bool>                              - use maker orders only for automatic orders
 setdcslippage <bool>                            - include slippage orders in diverge/converge function
 setsafetydelaytime <ms>                         - tolerance for order_set_time and orderbook_receive_time
 setrequesttimeout <ms>
