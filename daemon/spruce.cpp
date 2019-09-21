@@ -175,7 +175,7 @@ QList<QString> Spruce::getMarkets() const
 
 bool Spruce::isActive()
 {
-    return !( base_currency.isEmpty() || nodes_start.isEmpty() || currency_weight.isEmpty() );
+    return !( base_currency.isEmpty() || nodes_start.isEmpty() || currency_weight.isEmpty() || base_currency == "disabled" );
 }
 
 QString Spruce::getSaveState()
