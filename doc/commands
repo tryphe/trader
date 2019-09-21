@@ -1,6 +1,11 @@
 <required> [optional]
 
-----(main bot commands)----
+A note about markets
+--------------------
+There is two accepted formats for markets. They are 'BASE-QUOTE' and 'BASE_QUOTE' where BASE is the base currency, ie. 'BTC', and QUOTE is the quote currency, ie. 'LTC'. This means that 1 LTC = x BTC, where X is the market price of BTC-LTC.
+
+Main bot commands
+-----------------
 setorder <market> <buy|sell> <lo> <hi> <amount> <ghost|active>  - add a new ping-pong index
 cancelall [market=all]                          - cancels orders, clears position index, for one or all markets
 cancellocal [market=all]                        - cancels orders, clears position index, deletes positions, for one or all markets
@@ -20,7 +25,8 @@ getbuyselltotal                                 - print local order count
 gethibuylosell                                  - print market spreads
 
 
-----(ping-pong options)----
+Ping-pong options
+-----------------
 setordermax <market> <max count>                - set automated max order count for market. 0 will disable automation of market
 setordermin <market> <min count>                - set automated min order count for market. 0 will disable automation of market
 setorderdc <market> <count>                     - set diverge/converge count for each landmark order
@@ -31,7 +37,8 @@ setmarketsentiment <market> <bool>              - true = bullish, false = bearis
 setmarketoffset <market> <offset>               - set offset for market. 0.003 = 0.3% = 0.15% compensation per fill
 
 
-----(local options)----
+Local options
+-------------
 setkeyandsecret <key_plain> <secret_plain>      - manually set key
 setkeyandsecrethex <hex blob> <hex blob>        - manually set key by hex value
 setfee <double>                                 - manually set fee (changes automatically on polo)
@@ -45,7 +52,8 @@ setsentcommandsmax <n>                          - limit the number of in-flight 
 setcancelthresh <n>                             - upper limit for cancel loop
 
 
-----(misc and testing - be careful)----
+Misc and testing - be careful!
+------------------------------
 getbuildversion                                 - print build version
 setclearstrayorders <bool>                      - detect stray orders and cancel invalid duplicates(also required for scan-set)
 setgracetimelimit <ms>                          - threshhold to clear stray orders after detection, in seconds
