@@ -1,0 +1,4 @@
+#ifndef POSITIONDATA_H
+#define POSITIONDATA_H
+
+#endif // POSITIONDATA_H
