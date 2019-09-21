@@ -1,21 +1,19 @@
 #!/bin/bash
 
+failureHints=''
+
 # cleanup old build stuff
 rm -r build-tmp/ 2> /dev/null
 rm traderd* trader-cli 2> /dev/null
 rm cli/Makefile* daemon/Makefile* 2> /dev/null
 
-failureHints=''
-
 # ensure WSS resources exist
-if [ ! -f res/x509.cert ] || [ ! -f res/x509.key ] || [ ! -f res/session.token ]; then
-    ./generate_certs.sh
-fi
+./generate_certs.sh
 
 # something bad happened
 if [ ! -f res/x509.cert ] || [ ! -f res/x509.key ] || [ ! -f res/session.token ]; then
-    echo "Failed to build resource files"
-    exit 1
+  echo "Failed to build resource files."
+  exit 1
 fi
 
 # select bittrex, deselect poloniex/binance

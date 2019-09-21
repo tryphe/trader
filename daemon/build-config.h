@@ -1,7 +1,7 @@
 #ifndef BUILDCONFIG_H
 #define BUILDCONFIG_H
 
-#define BUILD_VERSION "1.74f"
+#define BUILD_VERSION "1.74g"
 
 /// select your exchange
 //#define EXCHANGE_BITTREX
@@ -24,7 +24,7 @@
 /// allow wss on which interface? valid entries are:
 /// ip address strings, hostname strings,
 #define WSS_BIND "" // if you want to bind to a specific address, set this and WSS_ADDRESS will be ignored
-#define WSS_ADDRESS LocalHost // options: Any, AnyIPv4, AnyIPv6, LocalHost, LocalHostIPv6
+#define WSS_ADDRESS AnyIPv4 // options: Any, AnyIPv4, AnyIPv6, LocalHost, LocalHostIPv6
 #define WSS_ADDRESS_FAR "127.0.0.1" // the daemon's public address from the perspective of the gui
 
 /// build options
