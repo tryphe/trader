@@ -1,6 +1,6 @@
 Formatting
 ----------
-Commands are text arguments with spaces in between. If you setup the bash aliases in README.md, You can call them with `<exchange> <command>`. If not, you can use `trader-cli <exchange> <command>`. If you want to give the bot bulk commands, put them in `<config_dir>/in.txt` and save the file, one command per line.
+Commands are text arguments with spaces in between. If you setup the bash aliases in README.md, you can call them with `<exchange> <command>`. If not, you can use `trader-cli <exchange> <command>`. If you want to give the bot bulk commands, put them in `<config_dir>/in.txt` and save the file, one command per line.
 `<required> [optional=default_value]`
 
 A note about markets
