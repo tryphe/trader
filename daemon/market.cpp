@@ -9,7 +9,7 @@ Market::Market( const QString &market )
     // find separator index
     int sep_idx = market.indexOf( QChar( '_' ) );
     if ( sep_idx < 0 )
-        market.indexOf( QChar( '-' ) );
+        sep_idx = market.indexOf( QChar( '-' ) );
 
     // check for separator
     if ( sep_idx < 0 )
