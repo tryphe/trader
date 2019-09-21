@@ -117,7 +117,7 @@ A ping-pong position is simple. It's defined as a price variation with an order 
 - State - buy or sell
 	
 Suppose you want to ping-pong between buying 0.1 BTC worth of DOGE at 10 satoshi, and selling it at 30 satoshis. You'd run this command:\
-`poloniex setorder BTC_DOGE buy 0.00000010 0.00000030 0.1 active` (or `BTC-DOGE` on Bittrex and `DOGEBTC` on Binance)
+`poloniex setorder BTC_DOGE buy 0.00000010 0.00000030 0.1 active`
 - `buy` is the initial state
 - `0.00000010` is the buy price
 - `0.00000030` is the sell price
@@ -145,7 +145,7 @@ Same as above, but when the ping-pong order is filled once, set size to 0.001 (e
 Note: For exchange commands, the formatting is literally `command <required-arg> [optional-arg=default-value]`\
 Note: This is purely for example and so the buy and sell prices are so far apart, they'd probably never fill.\
 First, buy a tiny amount of both pairs you'd like to trade. We'll use `BTC` and `OMG`.\
-Then, paste this into `~/.config/pt/in.txt`: (note: `/tt` for Bittrex, `/bt` for Binance).
+Then, paste this into `<config-directory>/in.txt`:
 ```
 setorderdc BTC_OMG 5
 setorderdcnice BTC_OMG 8
