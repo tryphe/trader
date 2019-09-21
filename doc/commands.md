@@ -5,7 +5,7 @@ Commands are text arguments with spaces in between. If you setup the bash aliase
 
 A note about markets
 --------------------
-There is two accepted market formats for any exchange. They are `BASE-QUOTE` and `BASE_QUOTE` where BASE is the base currency, and QUOTE is the quote currency. For example, this means that if you are buying and selling LTC and BTC, and the market is priced in BTC, you are trading in the `BTCLTC` market. This means `1 LTC = x BTC`, where `x` is the market price of `BTC-LTC`. You can also enter `BTC_LTC` and get the same result. Sidenote: if you want to modify the formatting, change the value of `DEFAULT_MARKET_STRING_TEMPLATE` in `daemon/global.h`
+There is two accepted market formats for any exchange. They are `BASE-QUOTE` and `BASE_QUOTE` where BASE is the base currency, and QUOTE is the quote currency. For example, this means that if you are buying and selling LTC and BTC, and the market is priced in BTC, you are trading in the `BTC-LTC` market. This means `1 LTC = x BTC`, where `x` is the market price of `BTC-LTC`. You can also enter `BTC_LTC` and get the same result. Sidenote: if you want to modify the formatting, change the value of `DEFAULT_MARKET_STRING_TEMPLATE` in `daemon/global.h`
 
 Main bot commands
 -----------------
