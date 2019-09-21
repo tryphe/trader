@@ -179,7 +179,7 @@ Position *Engine::addPosition( QString market_input, quint8 side, QString buy_pr
         return nullptr;
 
     // make position object
-    Position *const &pos = new Position( market, side, buy_price, sell_price, order_size, strategy_tag, indices, landmark, this );
+    Position *const &pos = new Position( market.toOutputString(), side, buy_price, sell_price, order_size, strategy_tag, indices, landmark, this );
 
     // check for correctly loaded position data
     if ( !pos || !pos->market.isValid() || pos->price.isZeroOrLess() || pos->btc_amount.isZeroOrLess() || pos->quantity.isZeroOrLess() )
@@ -268,7 +268,7 @@ Position *Engine::addPosition( QString market_input, quint8 side, QString buy_pr
 void Engine::addLandmarkPositionFor( Position *const &pos )
 {
     // add position with dummy elements
-    addPosition( pos->market, pos->side, "0.00000001", "0.00000002", "0.00000000", ACTIVE, "",
+    addPosition( pos->market.toOutputString(), pos->side, "0.00000001", "0.00000002", "0.00000000", ACTIVE, "",
                  pos->market_indices, true, true );
 }
 
@@ -795,7 +795,7 @@ void Engine::processCancelledOrder( Position * const &pos )
         {
             const PositionData &new_pos = market_info[ pos->market ].position_index.value( pos->market_indices.value( 0 ) );
 
-            addPosition( pos->market, pos->side, new_pos.buy_price, new_pos.sell_price, new_pos.order_size, ACTIVE, "",
+            addPosition( pos->market.toOutputString(), pos->side, new_pos.buy_price, new_pos.sell_price, new_pos.order_size, ACTIVE, "",
                          pos->market_indices, false, true );
 
             positions->remove( pos );
@@ -910,7 +910,7 @@ void Engine::cancelOrderMeatDCOrder( Position * const &pos )
                 QVector<qint32> new_index_single;
                 new_index_single.append( new_indices.value( i ) );
 
-                addPosition( pos->market, pos->side, data.buy_price, data.sell_price, data.order_size, ACTIVE, "",
+                addPosition( pos->market.toOutputString(), pos->side, data.buy_price, data.sell_price, data.order_size, ACTIVE, "",
                              new_index_single, false, true );
             }
         }
@@ -1138,7 +1138,7 @@ void Engine::flipPosition( Position *const &pos )
         // we could use the same prices, but instead we reset the data incase there was slippage
         const PositionData &new_data = market_info[ pos->market ].position_index.value( pos->market_indices.value( 0 ) );
 
-        addPosition( pos->market, pos->side, new_data.buy_price, new_data.sell_price, new_data.order_size, ACTIVE, "",
+        addPosition( pos->market.toOutputString(), pos->side, new_data.buy_price, new_data.sell_price, new_data.order_size, ACTIVE, "",
                      pos->market_indices, false, true );
     }
 }
@@ -1785,7 +1785,7 @@ void Engine::onSpruceUp()
             }
 
             // queue the order quietly
-            addPosition( market, is_buy ? SIDE_BUY : SIDE_SELL, buy_price, sell_price, order_size,
+            addPosition( Market( market ).toOutputString(), is_buy ? SIDE_BUY : SIDE_SELL, buy_price, sell_price, order_size,
                          "onetime-spruce", "spruce", QVector<qint32>(), false, true );
         }
 

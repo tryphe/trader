@@ -1149,7 +1149,7 @@ void PositionMan::setNextLowest( const QString &market, quint8 side, bool landma
 //    kDebug() << "adding idx" << indices.value( 0 ) << "from indices" << indices;
 //    kDebug() << "adding next lo pos" << market << side << data.buy_price << data.sell_price << data.order_size;
 
-    Position *pos = engine->addPosition( market, side, data.buy_price, data.sell_price, data.order_size, "active", "",
+    Position *pos = engine->addPosition( Market( market ).toOutputString(), side, data.buy_price, data.sell_price, data.order_size, "active", "",
                                  indices, landmark, true );
 
     // check for valid ptr
@@ -1238,7 +1238,7 @@ void PositionMan::setNextHighest( const QString &market, quint8 side, bool landm
 
 //    kDebug() << "adding next hi pos" << market << side << data.buy_price << data.sell_price << data.order_size;
 
-    Position *pos = engine->addPosition( market, side, data.buy_price, data.sell_price, data.order_size, "active", "",
+    Position *pos = engine->addPosition( Market( market ).toOutputString(), side, data.buy_price, data.sell_price, data.order_size, "active", "",
                                      indices, landmark, true );
 
     // check for valid ptr
