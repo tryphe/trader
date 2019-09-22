@@ -405,6 +405,22 @@ void CoinAmountTest::test()
     assert( Coin("17").toUInt32() == quint32(17) );
     assert( Coin("4294967296").toUInt32() == quint32(4294967296) );
 
+    // run a test that confirms different magnitudes of strings and coin are the same value
+    QString test_str = "1";
+    Coin test_coin = CoinAmount::COIN;
+    for ( int i = 0; i < 100; i++ )
+    {
+        // compare by-value
+        assert( Coin( test_str ) == test_coin );
+
+        // compare by-string
+        assert( Coin( test_str ).toAmountString() == test_coin );
+
+        // multiply times 10
+        test_coin *= 10;
+        test_str += "0";
+    }
+
     ///
     /// stuff we support but aren't even using
     ///
