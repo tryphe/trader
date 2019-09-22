@@ -60,10 +60,10 @@ public:
     qint32 getBuyTotal( const QString &market ) const;
     qint32 getSellTotal( const QString &market ) const;
 
-    void flipHiBuyPrice( const QString &market, QString tag = QLatin1String() );
-    void flipHiBuyIndex( const QString &market, QString tag = QLatin1String() );
-    void flipLoSellPrice( const QString &market, QString tag = QLatin1String() );
-    void flipLoSellIndex( const QString &market, QString tag = QLatin1String() );
+    void flipHiBuyPrice( const QString &market, QString tag );
+    void flipHiBuyIndex( const QString &market, QString tag );
+    void flipLoSellPrice( const QString &market, QString tag );
+    void flipLoSellIndex( const QString &market, QString tag );
 
     Coin getLoSell( const QString &market ) const;
     Coin getHiBuy( const QString &market ) const;
