@@ -26,14 +26,14 @@ public slots:
     void handleExitSignal();
 
 private:
-    CommandRunner *runner;
-    CommandListener *listener;
-    FallbackListener *listener_fallback;
-    WSSServer *wss_server;
+    CommandRunner *runner{ nullptr };
+    CommandListener *listener{ nullptr };
+    FallbackListener *listener_fallback{ nullptr };
+    WSSServer *wss_server{ nullptr };
 
-    Stats *stats;
-    Engine *engine;
-    REST_OBJECT *rest;
+    Stats *stats{ nullptr };
+    Engine *engine{ nullptr };
+    REST_OBJECT *rest{ nullptr };
 };
 
 #endif // TREXTRADER_H

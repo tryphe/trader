@@ -21,9 +21,7 @@
 
 
 Trader::Trader( QObject *parent )
-  : QObject( parent ),
-  engine( nullptr ),
-  rest( nullptr )
+  : QObject( parent )
 {
     // ssl hacks
     GlobalSsl::enableSecureSsl();
@@ -96,5 +94,3 @@ void Trader::handleExitSignal()
     kDebug() << "[Trader] Got exit signal, shutting down...";
     this->~Trader();
 }
-
-
