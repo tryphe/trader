@@ -43,8 +43,11 @@ Engine::~Engine()
     delete positions;
     delete settings;
 
-    // these are deleted in trader
     maintenance_timer = nullptr;
+    positions = nullptr;
+    settings = nullptr;
+
+    // these are deleted in trader
     rest = nullptr;
     stats = nullptr;
 
