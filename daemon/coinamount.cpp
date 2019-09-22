@@ -260,13 +260,13 @@ Coin::operator QString() const
 QString Coin::toString( const int decimals = CoinAmount::subsatoshi_decimals ) const
 {
     // note: if multithread, then remove these static declarations
-    static size_t sz;
+    static size_t buffer_size;
     static std::vector<char> buffer = std::vector<char>( 10 );
 
     // resize the buffer to how many base10 bytes we'll need
-    sz = mpz_sizeinbase( b, CoinAmount::str_base ) +2; // "two extra bytes for a possible minus sign, and null-terminator."
-    if ( sz != buffer.size() )
-        buffer.resize( sz );
+    buffer_size = mpz_sizeinbase( b, CoinAmount::str_base ) +2; // "two extra bytes for a possible minus sign, and null-terminator."
+    if ( buffer_size != buffer.size() )
+        buffer.resize( buffer_size );
 
     // fill buffer and make a QString out of it
     mpz_get_str( buffer.data(), CoinAmount::str_base, b );
@@ -281,7 +281,7 @@ QString Coin::toString( const int decimals = CoinAmount::subsatoshi_decimals ) c
     bool is_negative = ret.at( 0 ) == CoinAmount::minus_exp;
     if ( is_negative ) ret.remove( 0, 1 );
 
-    int sz1 = ret.size();
+    int sz = ret.size();
     // truncate at proper digit if we have less than 16 digits
     if ( decimals < CoinAmount::subsatoshi_decimals )
     {
@@ -289,24 +289,24 @@ QString Coin::toString( const int decimals = CoinAmount::subsatoshi_decimals ) c
         ret.chop( diff );
 
         // update sz1
-        if ( sz1 <= CoinAmount::satoshi_decimals )
-            sz1 = 0;
+        if ( sz <= CoinAmount::satoshi_decimals )
+            sz = 0;
         else
-            sz1 -= diff;
+            sz -= diff;
     }
 
-    while ( sz1 < decimals )
+    while ( sz < decimals )
     {
-        sz1++; // add only if statement passes
+        sz++; // add only if statement passes
         ret.prepend( CoinAmount::zero_exp );
     }
 
     // reuse sz1 to calculate a new decimal index and insert decimal
-    sz1 -= decimals;
-    ret.insert( sz1, CoinAmount::decimal_exp );
+    sz -= decimals;
+    ret.insert( sz, CoinAmount::decimal_exp );
 
     // decimal is the first character, return with prepended zero
-    if ( sz1 == 0 )
+    if ( sz == 0 )
         ret.prepend( CoinAmount::zero_exp );
 
     if ( is_negative ) ret.prepend( CoinAmount::minus_exp );
