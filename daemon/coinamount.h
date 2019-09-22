@@ -56,6 +56,7 @@ public:
 
     operator QString() const;
 
+    QString toString( const int decimals ) const;
     QString toSubSatoshiString() const;
     QString toAmountString() const;
 
@@ -95,6 +96,7 @@ static const QChar minus_exp = QChar( '-' );
 static const QChar plus_exp = QChar( '+' );
 static const int str_base = 10;
 static const int subsatoshi_decimals = 16;
+static const int satoshi_decimals = 8;
 
 static inline void toSatoshiFormat( QString &s, int decimals = 8 )
 {

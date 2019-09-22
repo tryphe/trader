@@ -257,7 +257,7 @@ Coin::operator QString() const
 }
 
 // note: these next few functions are optimized with 'static' but it'll only work with 1 thread using Coin
-QString Coin::toSubSatoshiString() const
+QString Coin::toString( const int decimals = CoinAmount::subsatoshi_decimals ) const
 {
     // note: if multithread, then remove these static declarations
     static size_t sz;
@@ -277,21 +277,32 @@ QString Coin::toSubSatoshiString() const
 //    ret.insert( 0, c );
 //    free( c );
 
-    //qDebug() << "str:" << ret;
-
     // temporarily remove the negative sign so we can properly prepend zeroes
     bool is_negative = ret.at( 0 ) == CoinAmount::minus_exp;
     if ( is_negative ) ret.remove( 0, 1 );
 
     int sz1 = ret.size();
-    while ( sz1 < CoinAmount::subsatoshi_decimals )
+    // truncate at proper digit if we have less than 16 digits
+    if ( decimals < CoinAmount::subsatoshi_decimals )
+    {
+        int diff = CoinAmount::subsatoshi_decimals - decimals;
+        ret.chop( diff );
+
+        // update sz1
+        if ( sz1 <= CoinAmount::satoshi_decimals )
+            sz1 = 0;
+        else
+            sz1 -= diff;
+    }
+
+    while ( sz1 < decimals )
     {
         sz1++; // add only if statement passes
         ret.prepend( CoinAmount::zero_exp );
     }
 
     // reuse sz1 to calculate a new decimal index and insert decimal
-    sz1 -= CoinAmount::subsatoshi_decimals;
+    sz1 -= decimals;
     ret.insert( sz1, CoinAmount::decimal_exp );
 
     // decimal is the first character, return with prepended zero
@@ -303,15 +314,14 @@ QString Coin::toSubSatoshiString() const
     return ret;
 }
 
+QString Coin::toSubSatoshiString() const
+{
+    return toString( CoinAmount::subsatoshi_decimals );
+}
+
 QString Coin::toAmountString() const
 {
-    QString ret = toSubSatoshiString();
-    int trunc_idx = ret.indexOf( CoinAmount::decimal_exp ) +9;
-
-    if ( ret.size() > trunc_idx )
-        ret.truncate( trunc_idx );
-
-    return ret;
+    return toString( CoinAmount::satoshi_decimals );
 }
 
 int Coin::toInt() const
