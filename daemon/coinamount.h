@@ -98,7 +98,7 @@ static const int str_base = 10;
 static const int subsatoshi_decimals = 16;
 static const int satoshi_decimals = 8;
 
-static inline void toSatoshiFormat( QString &s, int decimals = 8 )
+static inline void toSatoshiFormat( QString &s, int decimals = satoshi_decimals )
 {
     // trimmed() alternative
     int sz0 = s.size();
@@ -280,6 +280,5 @@ static inline QString toSubsatoshiFormat( const qreal &r )
 }
 
 } // CoinAmount
-
 
 #endif // COINAMOUNT_H
