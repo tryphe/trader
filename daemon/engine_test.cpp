@@ -346,9 +346,9 @@ void EngineTest::test( Engine *e )
     pp += e->addPosition( TEST_MARKET, SIDE_SELL, "0.00000041", "0.00000050", "0.1", ACTIVE );
     pp += e->addPosition( TEST_MARKET, SIDE_SELL, "0.00000042", "0.00000051", "0.1", ACTIVE );
 
-    e->onCheckDivergeConverge();
-    e->onCheckDivergeConverge();
-    e->onCheckDivergeConverge();
+    e->positions->divergeConverge();
+    e->positions->divergeConverge();
+    e->positions->divergeConverge();
 
     quint16 buy_count = 0, sell_count = 0;
     for ( QSet<Position*>::const_iterator i = e->positions->all().begin(); i != e->positions->all().end(); i++ )
@@ -374,7 +374,7 @@ void EngineTest::test( Engine *e )
     assert( buy_count == 10 );
     assert( sell_count == 3 );
 
-    e->onCheckDivergeConverge(); // diverge landmark sell
+    e->positions->divergeConverge(); // diverge landmark sell
 
     buy_count = 0, sell_count = 0;
     for ( QSet<Position*>::const_iterator i = e->positions->all().begin(); i != e->positions->all().end(); i++ )

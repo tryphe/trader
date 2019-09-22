@@ -87,6 +87,7 @@ public:
     void cancelHighest( const QString &market );
     void cancelLowest( const QString &market );
 
+    void divergeConverge();
     bool isDivergingConverging( const QString &market, const qint32 index ) const;
     int getDCCount() { return diverge_converge.size(); }
 
@@ -94,6 +95,9 @@ private:
     void setNextLowest( const QString &market, quint8 side = SIDE_BUY, bool landmark = false );
     void setNextHighest( const QString &market, quint8 side = SIDE_SELL, bool landmark = false );
     void removeFromDC( Position *const &pos );
+
+    void converge( QMap<QString/*market*/,QVector<qint32>> &market_map, quint8 side );
+    void diverge( QMap<QString/*market*/,QVector<qint32>> &market_map );
 
     // maintain a map of queued positions and set positions
     QHash<QString /* orderNumber */, Position*> positions_by_number;

@@ -78,7 +78,6 @@ signals:
 
 public Q_SLOTS:
     void onCheckTimeouts();
-    void onCheckDivergeConverge();
     void onSpruceUp();
     void handleUserMessage( const QString &str );
 
@@ -86,9 +85,6 @@ private:
     // timer routines
     void cleanGraceTimes();
     void checkMaintenance();
-
-    void converge( QMap<QString/*market*/,QVector<qint32>> &market_map, quint8 side );
-    void diverge( QMap<QString/*market*/,QVector<qint32>> &market_map );
 
     void addLandmarkPositionFor( Position *const &pos );
     void flipPosition( Position *const &pos );
