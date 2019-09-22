@@ -216,7 +216,7 @@ void PoloREST::sendBuySell( Position *const &pos, bool quiet )
 
     // serialize some request options into url format
     QUrlQuery query;
-    query.addQueryItem( "currencyPair", pos->market );
+    query.addQueryItem( "currencyPair", pos->market.toExchangeString() );
     query.addQueryItem( "rate", pos->price );
     query.addQueryItem( "amount", pos->quantity );
 

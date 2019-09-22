@@ -262,7 +262,7 @@ QString Spruce::getSaveState()
     for ( QMap<QString,Coin>::const_iterator i = shortlonged_total.begin(); i != shortlonged_total.end(); i++ )
     {
         ret += QString( "setspruceshortlongtotal %1 %2\n" )
-                .arg( i.key() )
+                .arg( Market( i.key() ) )
                 .arg( i.value() );
     }
 
@@ -386,16 +386,9 @@ bool Spruce::equalizeDates()
         m_relative_coeffs = getRelativeCoeffs();
     }
 
-    // flip values, because we want shorts as positive and longs as negative
+    // put shortlongs into amount_to_shortlong with market name as key
     for ( QMap<QString,Coin>::const_iterator i = shortlongs.begin(); i != shortlongs.end(); i++ )
-    {
-        const QString &currency = i.key();
-        QString market = QString( MARKET_STRING_TEMPLATE )
-                            .arg( base_currency )
-                            .arg( currency );
-
-        amount_to_shortlong[ market ] = i.value();
-    }
+        amount_to_shortlong[ Market( base_currency, i.key() ) ] = i.value();
 
     return true;
 }

@@ -364,7 +364,7 @@ void BncREST::sendBuySell( Position * const &pos, bool quiet )
                     .arg( pos->stringifyOrderWithoutOrderID() );
 
     QUrlQuery query;
-    query.addQueryItem( "symbol", pos->market );
+    query.addQueryItem( "symbol", pos->market.toExchangeString() );
     query.addQueryItem( "side", pos->sideStr() );
 
     // set taker/maker order

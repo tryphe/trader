@@ -15,13 +15,12 @@
 void EngineTest::test( Engine *e )
 {
     const QString TEST_MARKET = "TEST_1";
-    const QString TEST_MARKET_INTERNAL = Market( TEST_MARKET ).toExchangeString();
 
     // ensure "TEST_1" is converted to the appropriate per-exchange format eg. TEST_1, TEST-1, 1TEST
     // Market::operator QString()
-    assert( TEST_MARKET_INTERNAL == QString( MARKET_STRING_TEMPLATE )
-                                    .arg( "TEST" )
-                                    .arg( "1" ) );
+    assert( TEST_MARKET == QString( DEFAULT_MARKET_STRING_TEMPLATE )
+                            .arg( "TEST" )
+                            .arg( "1" ) );
 
     // make sure we are ready to start
     assert( e->getRest() != nullptr );
@@ -41,7 +40,7 @@ void EngineTest::test( Engine *e )
     assert( indices == QVector<qint32>() << 6 << 5 << 4 << 3 << 2 << 1 );
 
     Position p = Position( TEST_MARKET, SIDE_BUY, "0.00001000", "0.00009000", "0.1" );
-    assert( p.market.toOutputString() == TEST_MARKET );
+    assert( p.market == TEST_MARKET );
     assert( p.side == SIDE_BUY );
     assert( p.sideStr() == BUY );
     assert( p.is_landmark == false );
@@ -71,7 +70,7 @@ void EngineTest::test( Engine *e )
     assert( p.quantity == "1100.00000000" );
 
     Position p2 = Position( TEST_MARKET, SIDE_BUY, "0.00001777", "0.00009999", "0.07777777" );
-    assert( p2.market.toOutputString() == TEST_MARKET );
+    assert( p2.market == TEST_MARKET );
     assert( p2.side == SIDE_BUY );
     assert( p2.sideStr() == BUY );
     assert( p2.is_landmark == false );
@@ -89,7 +88,7 @@ void EngineTest::test( Engine *e )
     assert( p2.profit_margin == "2.31344963" );
 
     // test landmark position using the engine
-    QVector<PositionData> &test_index = e->getMarketInfo( TEST_MARKET_INTERNAL ).position_index;
+    QVector<PositionData> &test_index = e->getMarketInfo( TEST_MARKET ).position_index;
     test_index += PositionData( "0.00000005", "0.00000050", "0.01", QLatin1String() ); // idx 0
     test_index += PositionData( "0.00000005", "0.00000060", "0.02", QLatin1String() ); // idx 1
     test_index += PositionData( "0.00000005", "0.00000070", "0.03", QLatin1String() ); // idx 2
@@ -100,7 +99,7 @@ void EngineTest::test( Engine *e )
     // size total =   0.01 + 0.02 + 0.03 = 0.06
     //
     // hi price = weight total / size total = 3.8 / 0.06 = 63 + shim
-    assert( p3.market.toOutputString() == TEST_MARKET );
+    assert( p3.market == TEST_MARKET );
     assert( p3.side == SIDE_SELL );
     assert( p3.sideStr() == SELL );
     assert( p3.is_landmark == true );
@@ -112,8 +111,8 @@ void EngineTest::test( Engine *e )
     assert( p3.sell_price == "0.00000063" );
 
     // insert ticker price to pass sanity check
-    e->market_info[ TEST_MARKET_INTERNAL ].highest_buy = "0.00000001";
-    e->market_info[ TEST_MARKET_INTERNAL ].lowest_sell = "0.00000100";
+    e->market_info[ TEST_MARKET ].highest_buy = "0.00000001";
+    e->market_info[ TEST_MARKET ].lowest_sell = "0.00000100";
 
     // test addPosition()
     assert( e->positions->all().size() == 0 );
@@ -127,7 +126,7 @@ void EngineTest::test( Engine *e )
     assert( e->positions->all().size() == 0 );
 
     // test non-zero landmark buy price because of shim
-    QVector<PositionData> &test_index_1 = e->getMarketInfo( TEST_MARKET_INTERNAL ).position_index;
+    QVector<PositionData> &test_index_1 = e->getMarketInfo( TEST_MARKET ).position_index;
     test_index_1 += PositionData( "0.00000001", "0.00000050", "0.01", QLatin1String() ); // idx 0
     test_index_1 += PositionData( "0.00000001", "0.00000060", "0.02", QLatin1String() ); // idx 1
     test_index_1 += PositionData( "0.00000001", "0.00000070", "0.03", QLatin1String() ); // idx 2
@@ -141,8 +140,8 @@ void EngineTest::test( Engine *e )
     assert( p5->strategy_tag == "test-strat" );
 
     // test getBuyTotal/getSellTotal
-    assert( e->positions->getBuyTotal( TEST_MARKET_INTERNAL ) == 1 );
-    assert( e->positions->getSellTotal( TEST_MARKET_INTERNAL ) == 0 );
+    assert( e->positions->getBuyTotal( TEST_MARKET ) == 1 );
+    assert( e->positions->getSellTotal( TEST_MARKET ) == 0 );
 
     // cancel positions and clear mappings
     e->positions->cancelLocal();
@@ -152,8 +151,8 @@ void EngineTest::test( Engine *e )
     ///
     /// if bid|asks are at 83|84, our buy fill at 83 goes to 84
     QVector<Position*> pp;
-    e->market_info[ TEST_MARKET_INTERNAL ].highest_buy = "0.00000083";
-    e->market_info[ TEST_MARKET_INTERNAL ].lowest_sell = "0.00000084";
+    e->market_info[ TEST_MARKET ].highest_buy = "0.00000083";
+    e->market_info[ TEST_MARKET ].lowest_sell = "0.00000084";
 
     pp += e->addPosition( TEST_MARKET, SIDE_BUY,  "0.00000083", "0.00000084", "0.1", ACTIVE ); // 0
 
@@ -173,8 +172,8 @@ void EngineTest::test( Engine *e )
     ///
     /// if asks are at 100, our bid at 105 goes to 99
     pp.clear();
-    e->market_info[ TEST_MARKET_INTERNAL ].highest_buy = "0.00000095";
-    e->market_info[ TEST_MARKET_INTERNAL ].lowest_sell = "0.00000100";
+    e->market_info[ TEST_MARKET ].highest_buy = "0.00000095";
+    e->market_info[ TEST_MARKET ].lowest_sell = "0.00000100";
 
     pp += e->addPosition( TEST_MARKET, SIDE_BUY,  "0.00000105", "0.00000200", "0.1", ACTIVE ); // 0
 
@@ -188,8 +187,8 @@ void EngineTest::test( Engine *e )
     ///
     /// if bids are at 50, our ask at 45 goes to 51
     pp.clear();
-    e->market_info[ TEST_MARKET_INTERNAL ].highest_buy = "0.00000050";
-    e->market_info[ TEST_MARKET_INTERNAL ].lowest_sell = "0.00000055";
+    e->market_info[ TEST_MARKET ].highest_buy = "0.00000050";
+    e->market_info[ TEST_MARKET ].lowest_sell = "0.00000055";
 
     pp += e->addPosition( TEST_MARKET, SIDE_SELL,  "0.00000030", "0.00000045", "0.1", ACTIVE ); // 0
 
@@ -207,8 +206,8 @@ void EngineTest::test( Engine *e )
     ///
     /// 4 4 4 4 | 5 5 5
     ///
-    e->market_info[ TEST_MARKET_INTERNAL ].highest_buy = "0.00000004";
-    e->market_info[ TEST_MARKET_INTERNAL ].lowest_sell = "0.00000005";
+    e->market_info[ TEST_MARKET ].highest_buy = "0.00000004";
+    e->market_info[ TEST_MARKET ].lowest_sell = "0.00000005";
     pp.clear();
     pp += e->addPosition( TEST_MARKET, SIDE_BUY,  "0.00000001", "0.00000002", "0.1", ACTIVE ); // 0
     pp += e->addPosition( TEST_MARKET, SIDE_BUY,  "0.00000002", "0.00000003", "0.1", ACTIVE ); // 1
@@ -237,8 +236,8 @@ void EngineTest::test( Engine *e )
     /// suppose our spread simultaneously fills at 55|60 and we set 55->57 and 60->58, ->58 slips to 56(57-1)
     /// we should get 56|57 and not fill our own orders
     ///
-    e->market_info[ TEST_MARKET_INTERNAL ].highest_buy = "0.00000055";
-    e->market_info[ TEST_MARKET_INTERNAL ].lowest_sell = "0.00000060";
+    e->market_info[ TEST_MARKET ].highest_buy = "0.00000055";
+    e->market_info[ TEST_MARKET ].lowest_sell = "0.00000060";
     pp.clear();
     pp += e->addPosition( TEST_MARKET, SIDE_BUY,  "0.00000055", "0.00000057", "0.1", ACTIVE ); // 0
     pp += e->addPosition( TEST_MARKET, SIDE_SELL, "0.00000058", "0.00000060", "0.1", ACTIVE ); // 2
@@ -269,8 +268,8 @@ void EngineTest::test( Engine *e )
     ///
     /// hi/lo sort method would converge at 6|7 which would be suboptimal, 8|9 is much better
     ///
-    e->market_info[ TEST_MARKET_INTERNAL ].highest_buy = "0.00000004";
-    e->market_info[ TEST_MARKET_INTERNAL ].lowest_sell = "0.00000010";
+    e->market_info[ TEST_MARKET ].highest_buy = "0.00000004";
+    e->market_info[ TEST_MARKET ].lowest_sell = "0.00000010";
     pp.clear();
     pp += e->addPosition( TEST_MARKET, SIDE_BUY,  "0.00000001", "0.00000007", "0.1", ACTIVE ); // 0
     pp += e->addPosition( TEST_MARKET, SIDE_BUY,  "0.00000002", "0.00000008", "0.1", ACTIVE ); // 1
@@ -298,14 +297,14 @@ void EngineTest::test( Engine *e )
 
     /// test diverge/converge
     ///
-    e->market_info[ TEST_MARKET_INTERNAL ].order_dc = 5;
-    e->market_info[ TEST_MARKET_INTERNAL ].order_dc_nice = 0;
-    e->market_info[ TEST_MARKET_INTERNAL ].order_landmark_start = 2;
-    e->market_info[ TEST_MARKET_INTERNAL ].order_landmark_thresh = 2;
-    e->market_info[ TEST_MARKET_INTERNAL ].order_max = 40;
-    e->market_info[ TEST_MARKET_INTERNAL ].order_min = 15;
-    e->market_info[ TEST_MARKET_INTERNAL ].highest_buy = "0.00000023";
-    e->market_info[ TEST_MARKET_INTERNAL ].lowest_sell = "0.00000033";
+    e->market_info[ TEST_MARKET ].order_dc = 5;
+    e->market_info[ TEST_MARKET ].order_dc_nice = 0;
+    e->market_info[ TEST_MARKET ].order_landmark_start = 2;
+    e->market_info[ TEST_MARKET ].order_landmark_thresh = 2;
+    e->market_info[ TEST_MARKET ].order_max = 40;
+    e->market_info[ TEST_MARKET ].order_min = 15;
+    e->market_info[ TEST_MARKET ].highest_buy = "0.00000023";
+    e->market_info[ TEST_MARKET ].lowest_sell = "0.00000033";
     pp.clear();
     pp += e->addPosition( TEST_MARKET, SIDE_BUY,  "0.00000006", "0.00000015", "0.1", ACTIVE ); // 0
     pp += e->addPosition( TEST_MARKET, SIDE_BUY,  "0.00000007", "0.00000016", "0.1", ACTIVE );
@@ -359,10 +358,10 @@ void EngineTest::test( Engine *e )
     assert( sell_count == 7 );
 
     QVector<Position*> filled = QVector<Position*>();
-    filled += e->positions->getByIndex( TEST_MARKET_INTERNAL, 18 );
-    filled += e->positions->getByIndex( TEST_MARKET_INTERNAL, 19 );
-    filled += e->positions->getByIndex( TEST_MARKET_INTERNAL, 20 );
-    filled += e->positions->getByIndex( TEST_MARKET_INTERNAL, 21 );
+    filled += e->positions->getByIndex( TEST_MARKET, 18 );
+    filled += e->positions->getByIndex( TEST_MARKET, 19 );
+    filled += e->positions->getByIndex( TEST_MARKET, 20 );
+    filled += e->positions->getByIndex( TEST_MARKET, 21 );
 
     e->processFilledOrders( filled, FILL_WSS ); // fill 4 sells
 

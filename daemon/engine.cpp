@@ -184,7 +184,7 @@ Position *Engine::addPosition( QString market_input, quint8 side, QString buy_pr
         return nullptr;
 
     // make position object
-    Position *const &pos = new Position( market.toOutputString(), side, buy_price, sell_price, order_size, strategy_tag, indices, landmark, this );
+    Position *const &pos = new Position( market, side, buy_price, sell_price, order_size, strategy_tag, indices, landmark, this );
 
     // check for correctly loaded position data
     if ( !pos || !pos->market.isValid() || pos->price.isZeroOrLess() || pos->btc_amount.isZeroOrLess() || pos->quantity.isZeroOrLess() )
@@ -273,7 +273,7 @@ Position *Engine::addPosition( QString market_input, quint8 side, QString buy_pr
 void Engine::addLandmarkPositionFor( Position *const &pos )
 {
     // add position with dummy elements
-    addPosition( pos->market.toOutputString(), pos->side, "0.00000001", "0.00000002", "0.00000000", ACTIVE, "",
+    addPosition( pos->market, pos->side, "0.00000001", "0.00000002", "0.00000000", ACTIVE, "",
                  pos->market_indices, true, true );
 }
 
@@ -357,11 +357,9 @@ if ( !is_testing )
     positions->remove( pos );
 }
 
-Coin Engine::getPriceForCurrency( quint8 side, const QString &currency, const QString &base )
+Coin Engine::getPriceForMarket( quint8 side, const QString &currency, const QString &base )
 {
-    const QString market = QString( MARKET_STRING_TEMPLATE )
-                           .arg( base )
-                           .arg( currency );
+    const QString market = Market( base, currency );
 
     if ( !market_info.contains( market ) )
         return Coin();
@@ -635,7 +633,7 @@ void Engine::processTicker( const QMap<QString, TickerInfo> &ticker_data, qint64
 
     for ( QMap<QString, TickerInfo>::const_iterator i = ticker_data.begin(); i != ticker_data.end(); i++ )
     {
-        const QString &market = i.key();
+        const QString market = Market( i.key() );
         const TickerInfo &ticker = i.value();
         const Coin &ask = ticker.ask_price;
         const Coin &bid = ticker.bid_price;
@@ -800,7 +798,7 @@ void Engine::processCancelledOrder( Position * const &pos )
         {
             const PositionData &new_pos = market_info[ pos->market ].position_index.value( pos->market_indices.value( 0 ) );
 
-            addPosition( pos->market.toOutputString(), pos->side, new_pos.buy_price, new_pos.sell_price, new_pos.order_size, ACTIVE, "",
+            addPosition( pos->market, pos->side, new_pos.buy_price, new_pos.sell_price, new_pos.order_size, ACTIVE, "",
                          pos->market_indices, false, true );
 
             positions->remove( pos );
@@ -915,7 +913,7 @@ void Engine::cancelOrderMeatDCOrder( Position * const &pos )
                 QVector<qint32> new_index_single;
                 new_index_single.append( new_indices.value( i ) );
 
-                addPosition( pos->market.toOutputString(), pos->side, data.buy_price, data.sell_price, data.order_size, ACTIVE, "",
+                addPosition( pos->market, pos->side, data.buy_price, data.sell_price, data.order_size, ACTIVE, "",
                              new_index_single, false, true );
             }
         }
@@ -1143,7 +1141,7 @@ void Engine::flipPosition( Position *const &pos )
         // we could use the same prices, but instead we reset the data incase there was slippage
         const PositionData &new_data = market_info[ pos->market ].position_index.value( pos->market_indices.value( 0 ) );
 
-        addPosition( pos->market.toOutputString(), pos->side, new_data.buy_price, new_data.sell_price, new_data.order_size, ACTIVE, "",
+        addPosition( pos->market, pos->side, new_data.buy_price, new_data.sell_price, new_data.order_size, ACTIVE, "",
                      pos->market_indices, false, true );
     }
 }
@@ -1577,7 +1575,7 @@ void Engine::onSpruceUp()
         for ( QList<QString>::const_iterator i = currencies.begin(); i != currencies.end(); i++ )
         {
             const QString &currency = *i;
-            Coin price = getPriceForCurrency( side, currency, spruce.getBaseCurrency() );
+            Coin price = getPriceForMarket( side, currency, spruce.getBaseCurrency() );
 
             // if the ticker isn't updated, just skip this whole function
             if ( price.isZeroOrLess() )
@@ -1611,7 +1609,6 @@ void Engine::onSpruceUp()
         for ( QMap<QString,Coin>::const_iterator i = amount_to_shortlong_map.begin(); i != amount_to_shortlong_map.end(); i++ )
         {
             const QString &market = i.key();
-            const QString market_output_string = Market( market ).toOutputString();
             const Coin &amount_to_shortlong = i.value();
             const Coin amount_to_shortlong_abs = amount_to_shortlong.abs();
 
@@ -1659,7 +1656,7 @@ void Engine::onSpruceUp()
 
             kDebug() << QString( "[Spruce %1] %2 | coeff %3 | to-shortlong %4 | on-order %5" )
                            .arg( side == SIDE_BUY ? "buys " : "sells" )
-                           .arg( market_output_string, MARKET_STRING_WIDTH )
+                           .arg( market, MARKET_STRING_WIDTH )
                            .arg( spruce.getLastCoeffForMarket( market ), 12 )
                            .arg( amount_to_shortlong, 12 )
                            .arg( spruce_active.value( market ), 12 );
@@ -1681,7 +1678,7 @@ void Engine::onSpruceUp()
             }
 
             // queue the order quietly
-            addPosition( market_output_string, is_buy ? SIDE_BUY : SIDE_SELL, buy_price, sell_price, order_size,
+            addPosition( market, is_buy ? SIDE_BUY : SIDE_SELL, buy_price, sell_price, order_size,
                          "onetime-spruce", "spruce", QVector<qint32>(), false, true );
         }
 

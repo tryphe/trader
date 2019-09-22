@@ -259,7 +259,7 @@ void TrexREST::sendBuySell( Position *const &pos, bool quiet )
 
     // serialize some request options into url format
     QUrlQuery query;
-    query.addQueryItem( "market", pos->market );
+    query.addQueryItem( "market", pos->market.toExchangeString() );
     query.addQueryItem( "rate", pos->price );
     query.addQueryItem( "quantity", pos->quantity );
 

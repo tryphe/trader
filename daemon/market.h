@@ -19,7 +19,6 @@ public:
 
     operator QString() const;
     QString toExchangeString() const;
-    QString toOutputString() const;
 
     const QString &getBase() const { return base; }
     const QString &getQuote() const { return quote; }

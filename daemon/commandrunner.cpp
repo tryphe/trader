@@ -542,7 +542,7 @@ void CommandRunner::command_setmarketsettings( QStringList &args )
 {
     if ( !checkArgs( args, 9 ) ) return;
 
-    const QString &market = args.value( 1 );
+    QString market = Market( args.value( 1 ) );
 
     engine->setMarketSettings( market,
                                args.value( 2 ).toInt(),
@@ -746,7 +746,7 @@ void CommandRunner::command_setspruceshortlongtotal( QStringList &args )
 {
     if ( !checkArgs( args, 2 ) ) return;
 
-    engine->spruce.addToShortLonged( args.value( 1 ),
+    engine->spruce.addToShortLonged( Market( args.value( 1 ) ),
                                      args.value( 2 ) );
     kDebug() << "spruce shortlong total for" << args.value( 1 ) << "is" << args.value( 2 );
 }

@@ -33,19 +33,14 @@ bool Market::isValid() const
 
 Market::operator QString() const
 {
-    return QString( MARKET_STRING_TEMPLATE )
+    return QString( DEFAULT_MARKET_STRING_TEMPLATE )
             .arg( base )
             .arg( quote );
 }
 
 QString Market::toExchangeString() const
 {
-    return operator QString();
-}
-
-QString Market::toOutputString() const
-{
-    return QString( DEFAULT_MARKET_STRING_TEMPLATE )
+    return QString( MARKET_STRING_TEMPLATE )
             .arg( base )
             .arg( quote );
 }

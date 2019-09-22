@@ -95,7 +95,7 @@ private:
     bool tryMoveOrder( Position *const &pos );
     void fillNQ( const QString &order_id, qint8 fill_type, quint8 extra_data = 0 );
 
-    Coin getPriceForCurrency( quint8 side, const QString &currency, const QString &base );
+    Coin getPriceForMarket( quint8 side, const QString &currency, const QString &base );
 
     QHash<QString, MarketInfo> market_info;
 
