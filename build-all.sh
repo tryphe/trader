@@ -4,7 +4,7 @@ failureHints=''
 
 # cleanup old build stuff
 rm -r build-tmp/ 2> /dev/null
-rm traderd* trader-cli 2> /dev/null
+rm traderd traderd-binance traderd-bittrex traderd-poloniex trader-cli 2> /dev/null
 rm cli/Makefile* daemon/Makefile* 2> /dev/null
 
 # ensure WSS resources exist
