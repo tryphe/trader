@@ -5,6 +5,7 @@
 #include "bncrest.h"
 #include "trexrest.h"
 #include "polorest.h"
+#include "positionman.h"
 
 BaseREST::BaseREST( Engine *_engine )
     : QObject( nullptr ),
@@ -13,6 +14,13 @@ BaseREST::BaseREST( Engine *_engine )
     kDebug() << "[BaseREST]";
     nam = new QNetworkAccessManager();
 
+    // this timer diverges/converges ping-pong orders
+    diverge_converge_timer = new QTimer( this );
+    connect( diverge_converge_timer, &QTimer::timeout, engine->positions, &PositionMan::divergeConverge );
+    diverge_converge_timer->setTimerType( Qt::VeryCoarseTimer );
+    diverge_converge_timer->start( 100000 );
+
+    // this timer does tit-for-tat
     spruce_timer = new QTimer( this );
     connect( spruce_timer, &QTimer::timeout, engine, &Engine::onSpruceUp );
     spruce_timer->setTimerType( Qt::VeryCoarseTimer );

@@ -92,12 +92,6 @@ void BncREST::init()
     orderbook_timer->setTimerType( Qt::VeryCoarseTimer );
     orderbook_timer->start( 12000 );
 
-    // this timer requests the order book
-    diverge_converge_timer = new QTimer( this );
-    connect( diverge_converge_timer, &QTimer::timeout, engine->positions, &PositionMan::divergeConverge );
-    diverge_converge_timer->setTimerType( Qt::VeryCoarseTimer );
-    diverge_converge_timer->start( 60000 );
-
     // this timer syncs the maker fee so we can estimate profit
     exchangeinfo_timer = new QTimer( this );
     connect( exchangeinfo_timer, &QTimer::timeout, this, &BncREST::onCheckExchangeInfo );

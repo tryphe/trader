@@ -101,12 +101,6 @@ void PoloREST::init()
     orderbook_timer->setTimerType( Qt::VeryCoarseTimer );
     orderbook_timer->start( 5000 );
 
-    // this timer requests the order book
-    diverge_converge_timer = new QTimer( this );
-    connect( diverge_converge_timer, &QTimer::timeout, engine->positions, &PositionMan::divergeConverge );
-    diverge_converge_timer->setTimerType( Qt::VeryCoarseTimer );
-    diverge_converge_timer->start( 30000 );
-
     // this timer syncs the maker fee so we can estimate profit
     fee_timer = new QTimer( this );
     connect( fee_timer, &QTimer::timeout, this, &PoloREST::onCheckFee );

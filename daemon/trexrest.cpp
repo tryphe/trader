@@ -87,12 +87,6 @@ void TrexREST::init()
     order_history_timer->start( 3000 );
 
     // this timer requests the order book
-    diverge_converge_timer = new QTimer( this );
-    connect( diverge_converge_timer, &QTimer::timeout, engine->positions, &PositionMan::divergeConverge );
-    diverge_converge_timer->setTimerType( Qt::VeryCoarseTimer );
-    diverge_converge_timer->start( 100000 );
-
-    // this timer requests the order book
     orderbook_timer = new QTimer( this );
     connect( orderbook_timer, &QTimer::timeout, this, &TrexREST::onCheckBotOrders );
     orderbook_timer->setTimerType( Qt::VeryCoarseTimer );
