@@ -178,7 +178,7 @@ QString Spruce::getSaveState()
     QString ret;
 
     // save base
-    ret += QString( "setsprucebasecurrency %1\n" ).arg( base_currency );
+    ret += QString( "setsprucebasecurrency %1\n" ).arg( base_currency.isEmpty() ? "disabled" : base_currency );
 
     // save log factor
     ret += QString( "setspruceleverage %1\n" ).arg( m_leverage );
