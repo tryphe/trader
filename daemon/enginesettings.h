@@ -10,9 +10,9 @@ struct EngineSettings
 
     Coin fee;
 
-    // global settings (probably shouldn't be modified
+    // global settings (probably shouldn't be modified)
     bool is_chatty{ false };
-    bool should_clear_stray_orders{ false }; // auto cancels orders that aren't ours - set false when multiple bots are running the same api key
+    bool should_clear_stray_orders{ false }; // auto cancels orders that aren't ours
     bool should_clear_stray_orders_all{ false }; // cancel orders not in our price index
     bool should_slippage_be_calculated{ true }; // calculated/additive preference of slippage
     bool should_adjust_hibuy_losell{ true }; // adjust hi_buy/lo_sell maps based on post-only price errors
