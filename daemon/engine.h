@@ -20,7 +20,12 @@ class Engine : public QObject
     Q_OBJECT
 
     friend class EngineTest;
+    friend class Position;
     friend class PositionMan;
+    friend class CommandRunner;
+    friend class Stats;
+    friend class BaseREST;
+    friend class REST_OBJECT;
 
 public:
     explicit Engine();
@@ -41,9 +46,6 @@ public:
     void saveMarket( QString market, qint32 num_orders = 15 );
     void saveSettings();
     void loadSettings();
-
-    PositionMan *positions;
-    EngineSettings *settings;
 
     // utility functions
     void setStats( Stats *_stats ) { stats = _stats; }
@@ -100,23 +102,21 @@ private:
     // other
     QHash<QString/*order_id*/, qint64/*seen_time*/> order_grace_times; // record "seen" time to allow for grace period before we remove stray orders
 
-    // state for cancel commands
-    bool is_running_cancelall;
+    // state
+    qint64 maintenance_time{ 0 };
+    bool maintenance_triggered{ false };
     QString cancel_market_filter;
+    bool is_running_cancelall{ false };
+    bool is_testing{ false };
+    int verbosity{ 1 }; // 0 = none, 1 = normal, 2 = extra
+    bool wss_interface{ false };
 
-    // state for maintenance
-    qint64 maintenance_time;
-    bool maintenance_triggered;
+    PositionMan *positions{ nullptr };
+    EngineSettings *settings{ nullptr };
+    QTimer *maintenance_timer{ nullptr };
 
-    // state for initial runtime tests
-    bool is_testing;
-    int verbosity; // 0 = none, 1 = normal, 2 = extra
-
-    bool wss_interface;
-    QTimer *maintenance_timer;
-
-    REST_OBJECT *rest;
-    Stats *stats;
+    REST_OBJECT *rest{ nullptr };
+    Stats *stats{ nullptr };
 };
 
 #endif // ENGINE_H

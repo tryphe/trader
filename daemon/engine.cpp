@@ -24,16 +24,7 @@
 Engine::Engine()
     : QObject( nullptr ),
       positions( new PositionMan( this ) ),
-      settings( new EngineSettings() ),
-      is_running_cancelall( false ), // state
-      maintenance_time( 0 ),
-      maintenance_triggered( false ),
-      is_testing( false ),
-      verbosity( 1 ),
-      wss_interface( false ),
-      maintenance_timer( nullptr ),
-      rest( nullptr ),
-      stats( nullptr )
+      settings( new EngineSettings() )
 {
     kDebug() << "[Engine]";
 
