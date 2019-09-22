@@ -16,11 +16,8 @@ void EngineTest::test( Engine *e )
 {
     const QString TEST_MARKET = "TEST_1";
 
-    // ensure "TEST_1" is converted to the appropriate per-exchange format eg. TEST_1, TEST-1, 1TEST
-    // Market::operator QString()
-    assert( TEST_MARKET == QString( DEFAULT_MARKET_STRING_TEMPLATE )
-                            .arg( "TEST" )
-                            .arg( "1" ) );
+    // Market::operator QString() returns the universal format
+    assert( TEST_MARKET == Market( TEST_MARKET ) );
 
     // make sure we are ready to start
     assert( e->getRest() != nullptr );
