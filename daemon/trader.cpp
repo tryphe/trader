@@ -40,8 +40,8 @@ Trader::Trader( QObject *parent )
     // runtime tests
     qint64 t0 = QDateTime::currentMSecsSinceEpoch();
 
-    CoinAmountTest coin_test = CoinAmountTest(); coin_test.test();
-    EngineTest engine_test = EngineTest(); engine_test.test( engine );
+    CoinAmountTest coin_test; coin_test.test();
+    EngineTest engine_test; engine_test.test( engine );
 
     qint64 t1 = QDateTime::currentMSecsSinceEpoch();
     kDebug() << "[Trader] Tests passed in" << t1 - t0 << "ms.";
