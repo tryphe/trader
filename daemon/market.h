@@ -20,6 +20,9 @@ public:
     QString toExchangeString() const;
     QString toOutputString() const;
 
+    const QString &getBase() const { return base; }
+    const QString &getQuote() const { return quote; }
+
 private:
     QString base, quote;
 };
