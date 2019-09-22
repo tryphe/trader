@@ -31,18 +31,29 @@ Engine::Engine()
       is_testing( false ),
       verbosity( 1 ),
       wss_interface( false ),
+      maintenance_timer( nullptr ),
       rest( nullptr ),
       stats( nullptr )
 {
     kDebug() << "[Engine]";
+
+    // engine maintenance timer
+    maintenance_timer = new QTimer( this );
+    connect( maintenance_timer, &QTimer::timeout, this, &Engine::onEngineMaintenance );
+    maintenance_timer->setTimerType( Qt::VeryCoarseTimer );
+    maintenance_timer->start( 60000 );
 }
 
 Engine::~Engine()
 {
+    maintenance_timer->stop();
+
+    delete maintenance_timer;
     delete positions;
     delete settings;
 
     // these are deleted in trader
+    maintenance_timer = nullptr;
     rest = nullptr;
     stats = nullptr;
 
@@ -1364,6 +1375,12 @@ void Engine::findBetterPrice( Position *const &pos )
     // add new price from prices index for detecting stray orders
     info.order_prices.append( pos->price );
 #endif
+}
+
+void Engine::onEngineMaintenance()
+{
+    checkMaintenance(); // do maintenance routine
+    cleanGraceTimes(); // cleanup stray order ids
 }
 
 bool Engine::tryMoveOrder( Position* const &pos )

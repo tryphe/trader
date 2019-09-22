@@ -1081,9 +1081,6 @@ void PositionMan::cancelLowest( const QString &market )
 
 void PositionMan::divergeConverge()
 {
-    engine->checkMaintenance(); // this should probably be somewhere else, but we'll piggyback this timer
-    engine->cleanGraceTimes(); // this should happen every once in a while, might as well put it here
-
     // flow control
     if ( engine->rest->yieldToFlowControl() || engine->rest->nam_queue.size() >= engine->rest->limit_commands_queued_dc_check )
         return;

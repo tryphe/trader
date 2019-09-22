@@ -77,6 +77,7 @@ signals:
     void gotUserCommandChunk( QString &s ); // loaded settings file
 
 public Q_SLOTS:
+    void onEngineMaintenance();
     void onCheckTimeouts();
     void onSpruceUp();
     void handleUserMessage( const QString &str );
@@ -112,6 +113,7 @@ private:
     int verbosity; // 0 = none, 1 = normal, 2 = extra
 
     bool wss_interface;
+    QTimer *maintenance_timer;
 
     REST_OBJECT *rest;
     Stats *stats;
