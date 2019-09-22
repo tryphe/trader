@@ -1,6 +1,7 @@
 #include "spruce.h"
 #include "coinamount.h"
 #include "global.h"
+#include "market.h"
 
 #include <QRandomGenerator>
 
@@ -55,11 +56,8 @@ Coin Spruce::getMarketWeight( QString market ) const
     for ( QList<QString>::const_iterator i = currencies.begin(); i != currencies.end(); i++ )
     {
         const QString &currency = *i;
-        const QString market_recreated = QString( MARKET_STRING_TEMPLATE )
-                                            .arg( base_currency )
-                                            .arg( currency );
 
-        if ( market == market_recreated )
+        if ( market == Market( base_currency, currency ) )
             return currency_weight.value( currency );
     }
 
@@ -162,13 +160,10 @@ QList<QString> Spruce::getCurrencies() const
 
 QList<QString> Spruce::getMarkets() const
 {
-    // TODO: adapt this to each exchange
     QList<QString> ret;
     const QList<QString> &keys = original_quantity.keys();
     for ( QList<QString>::const_iterator i = keys.begin(); i != keys.end(); i++ )
-        ret += QString( MARKET_STRING_TEMPLATE )
-               .arg( base_currency )
-               .arg( *i );
+        ret += Market( base_currency, *i );
 
     return ret;
 }
@@ -309,12 +304,7 @@ Coin Spruce::getEquityNow( QString currency )
 
 Coin Spruce::getLastCoeffForMarket( const QString &market ) const
 {
-    int idx = market.indexOf( QChar('-') );
-    if ( idx < 0 )
-        return Coin();
-
-    // TODO: fix this for more exchanges
-    QString currency = market.mid( idx +1, market.size() - idx );
+    QString currency = Market( market ).getQuote();
 
     if ( !m_last_coeffs.contains( currency ) )
         qDebug() << "[Spruce] local warning: can't find coeff for currency" << currency;

@@ -19,6 +19,12 @@ Market::Market( const QString &market )
     quote = market.mid( sep_idx +1, market.size() - sep_idx -1 );
 }
 
+Market::Market( const QString &_base, const QString &_quote )
+  : base( _base ),
+    quote( _quote )
+{
+}
+
 bool Market::isValid() const
 {
     return !base.isEmpty() &&

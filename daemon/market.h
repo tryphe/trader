@@ -14,6 +14,7 @@ class Market
 public:
     Market();
     Market( const QString &market );
+    Market( const QString &_base, const QString &_quote );
     bool isValid() const;
 
     operator QString() const;

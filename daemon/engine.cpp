@@ -1608,6 +1608,7 @@ void Engine::onSpruceUp()
         for ( QMap<QString,Coin>::const_iterator i = amount_to_shortlong_map.begin(); i != amount_to_shortlong_map.end(); i++ )
         {
             const QString &market = i.key();
+            const QString market_output_string = Market( market ).toOutputString();
             const Coin &amount_to_shortlong = i.value();
             const Coin amount_to_shortlong_abs = amount_to_shortlong.abs();
 
@@ -1655,7 +1656,7 @@ void Engine::onSpruceUp()
 
             kDebug() << QString( "[Spruce %1] %2 | coeff %3 | to-shortlong %4 | on-order %5" )
                            .arg( side == SIDE_BUY ? "buys " : "sells" )
-                           .arg( market, 11 )
+                           .arg( market_output_string, MARKET_STRING_WIDTH )
                            .arg( spruce.getLastCoeffForMarket( market ), 12 )
                            .arg( amount_to_shortlong, 12 )
                            .arg( spruce_active.value( market ), 12 );
@@ -1677,7 +1678,7 @@ void Engine::onSpruceUp()
             }
 
             // queue the order quietly
-            addPosition( Market( market ).toOutputString(), is_buy ? SIDE_BUY : SIDE_SELL, buy_price, sell_price, order_size,
+            addPosition( market_output_string, is_buy ? SIDE_BUY : SIDE_SELL, buy_price, sell_price, order_size,
                          "onetime-spruce", "spruce", QVector<qint32>(), false, true );
         }
 
