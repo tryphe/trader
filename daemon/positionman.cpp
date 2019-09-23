@@ -6,6 +6,12 @@
 #include "engine.h"
 #include "enginesettings.h"
 
+#include <QVector>
+#include <QSet>
+#include <QMap>
+#include <QQueue>
+#include <QPair>
+
 PositionMan::PositionMan( Engine *_engine, QObject *parent )
     : QObject( parent ),
       engine( _engine )
