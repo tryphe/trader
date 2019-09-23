@@ -33,7 +33,7 @@ Features
 
 Dependencies: Compiling Qt and installing libgmp (unix/linux)
 ---------------------------------
-Trader requires a Qt >= 5.10 build with the *core*, *network*, and *websockets* modules. To build:
+Trader requires Qt 5.10 or later, built with the *core*, *network*, and *websockets* modules. To build:
  1. Install dependencies: 
  	- `sudo apt build-dep qt5-default`
 	- `sudo apt install libgmp-dev`
