@@ -48,7 +48,6 @@ Trader requires a Qt >= 5.10 build with the *core*, *network*, and *websockets* 
  8. If there are no errors, run `make install`
  9. Now, run `qmake -v` from your install path (type the whole thing):\
 	 `~/localqt/Qt-5.13.1-minimal/bin/qmake -v`
-	 
 	~~~
 	QMake version 3.1
 	Using Qt version 5.13.1 in /home/username/localqt/Qt-5.13.1-minimal/lib
