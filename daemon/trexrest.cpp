@@ -96,7 +96,6 @@ void TrexREST::init()
     order_history_timer->setInterval( 50000 );
     orderbook_timer->setInterval( 51000 );
     ticker_timer->setInterval( 52000 );
-    timeout_timer->start( 15000 );
 #endif
 
     onCheckBotOrders();
