@@ -41,9 +41,10 @@ Trader requires a Qt >= 5.10 build with the *core*, *network*, and *websockets* 
  3. Pull any currently maintained Qt source: `wget https://download.qt.io/archive/qt/5.13/5.13.1/single/qt-everywhere-src-5.13.1.tar.xz`
  4. Extract: `tar xf qt-everywhere-src-5.13.1.tar.xz`
  5. Go there: `cd qt-everywhere-src-5.13.1`
- 6. Configure Qt and skip some things to improve compile time. Replace `username` with your user. Note: If you want to build for another machine, [click here to configure a static build](https://gist.githubusercontent.com/tryphe/e3d17209ff6d53d2ca3c5d192471e12e/raw/3e85caf5c2e0fc63f36b7e7772771dff58bc174e/configure.static):\
-`./configure -prefix /home/username/localqt/Qt-5.13.1-minimal/ -opensource -confirm-license -shared -release -nomake examples -nomake tests -skip qt3d -skip qtactiveqt -skip qtandroidextras -skip qtcanvas3d -skip qtcharts -skip qtdatavis3d -skip qtgamepad -skip qtgraphicaleffects -skip qtlocation -skip qtmultimedia -skip qtpurchasing -skip qtquickcontrols -skip qtquickcontrols2 -skip qtscript -skip qtscxml -skip qtsensors -skip qtserialbus -skip qtserialport -skip qtwebengine -skip qtwebview -skip qttools`
- 7. If there are no errors, now you can run make: `make -j` (if low on RAM or single CPU, you can skip the `-j`)
+ 6. Configure Qt. **Replace `username` with your username**. (Choose only one)
+	- [Click here to configure a dynamic build, to run Trader on your machine](https://gist.githubusercontent.com/tryphe/acfa2aab0967ee5c99a3d9cee45637cd/raw/28d44f022e2f0236f4776bd40a1acaf0c7500901)
+ 	- [Click here to configure a static build, to copy Trader to another machine with the same OS](https://gist.githubusercontent.com/tryphe/28c3c8407775a5da8936d6afaa97ba7f/raw/f14d7ae9a8abca4c54e689930c4ce2b2fdb43f97)
+ 7. If there are no errors, run make: `make -j` (if low on RAM or single CPU, you can skip the `-j`)
  8. If there are no errors, run `make install`
  9. Now try and run `qmake -v` from your installation path: 
 	 `/home/username/localqt/Qt-5.13.1-minimal/bin/qmake -v`
