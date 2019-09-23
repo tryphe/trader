@@ -7,12 +7,21 @@
 #include "polorest.h"
 #include "positionman.h"
 
+#include <QTimer>
+#include <QThread>
+
 BaseREST::BaseREST( Engine *_engine )
     : QObject( nullptr ),
       engine( _engine )
 {
     kDebug() << "[BaseREST]";
     nam = new QNetworkAccessManager();
+
+    // this timer checks for nam requests that have been queued too long
+    timeout_timer = new QTimer( this );
+    connect( timeout_timer, &QTimer::timeout, engine, &Engine::onCheckTimeouts );
+    timeout_timer->setTimerType( Qt::VeryCoarseTimer );
+    timeout_timer->start( 30000 );
 
     // this timer diverges/converges ping-pong orders
     diverge_converge_timer = new QTimer( this );

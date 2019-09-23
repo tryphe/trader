@@ -20,6 +20,7 @@
 #include <QJsonObject>
 #include <QJsonArray>
 #include <QJsonDocument>
+#include <QTimer>
 
 Engine::Engine()
     : QObject( nullptr ),
@@ -1477,21 +1478,15 @@ void Engine::onCheckTimeouts()
 {
     positions->checkBuySellCount();
 
-    // flow control
-    if ( rest->yieldToFlowControl() )
-        return;
-
-    // avoid calculating timeouts if the number of queued requests is over limit_timeout_yield
-    if ( rest->nam_queue.size() > rest->limit_timeout_yield )
-        return;
-
     const qint64 current_time = QDateTime::currentMSecsSinceEpoch();
-
-
 
     // look for timed out requests
     for ( QSet<Position*>::const_iterator i = positions->queued().begin(); i != positions->queued().end(); i++ )
     {
+        // flow control
+        if ( rest->yieldToFlowControl() || ( rest->nam_queue.size() >= rest->limit_timeout_yield ) )
+            return;
+
         Position *const &pos = *i;
 
         // make sure the order hasn't been set and the request is stale
@@ -1502,7 +1497,6 @@ void Engine::onCheckTimeouts()
             kDebug() << "order timeout detected, resending" << pos->stringifyOrder();
 
             rest->sendBuySell( pos );
-            return;
         }
     }
 
@@ -1511,6 +1505,10 @@ void Engine::onCheckTimeouts()
                                           end = positions->active().end();
     for ( QSet<Position*>::const_iterator j = begin; j != end; j++ )
     {
+        // flow control
+        if ( rest->yieldToFlowControl() || ( rest->nam_queue.size() >= rest->limit_timeout_yield ) )
+            return;
+
         Position *const &pos = *j;
 
         // search for cancel order we should recancel
@@ -1534,7 +1532,6 @@ void Engine::onCheckTimeouts()
             {
                 // we found a better price, mark resetting and cancel
                 positions->cancel( pos, false, CANCELLING_FOR_SLIPPAGE_RESET );
-                return;
             }
             else
             {
@@ -1551,7 +1548,6 @@ void Engine::onCheckTimeouts()
         {
             // the order has reached max age
             positions->cancel( pos, false, CANCELLING_FOR_MAX_AGE );
-            return;
         }
     }
 }

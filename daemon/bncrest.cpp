@@ -80,12 +80,6 @@ void BncREST::init()
     send_timer->setTimerType( Qt::CoarseTimer );
     send_timer->start( 111 );
 
-    // this timer checks for nam requests that have been queued too long
-    timeout_timer = new QTimer( this );
-    connect( timeout_timer, &QTimer::timeout, engine, &Engine::onCheckTimeouts );
-    timeout_timer->setTimerType( Qt::VeryCoarseTimer );
-    timeout_timer->start( 2000 );
-
     // this timer requests the order book
     orderbook_timer = new QTimer( this );
     connect( orderbook_timer, &QTimer::timeout, this, &BncREST::onCheckBotOrders );

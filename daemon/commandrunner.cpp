@@ -10,10 +10,10 @@
 #include "market.h"
 
 #include <functional>
-
 #include <QString>
 #include <QMap>
 #include <QQueue>
+#include <QTimer>
 
 CommandRunner::CommandRunner( Engine *_e, REST_OBJECT *_rest, Stats *_stats, QObject *parent )
     : QObject( parent ),

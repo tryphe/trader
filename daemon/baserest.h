@@ -7,10 +7,9 @@
 
 #include <QObject>
 #include <QQueue>
+#include <QHash>
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
-#include <QTimer>
-#include <QThread>
 
 class QNetworkAccessManager;
 class QNetworkReply;
