@@ -38,19 +38,19 @@ Trader requires a Qt >= 5.10 build with the *core*, *network*, and *websockets* 
  	- `sudo apt build-dep qt5-default`
 	- `sudo apt install libgmp-dev`
  2. Open your source directory, ie. `cd ~/src`. If it doesn't exist, run `mkdir ~/src` first.
- 3. Pull any currently maintained Qt source: `wget https://download.qt.io/archive/qt/5.13/5.13.0/single/qt-everywhere-src-5.13.0.tar.xz`
- 4. Extract: `tar xf qt-everywhere-src-5.13.0.tar.xz`
- 5. Go there: `cd qt-everywhere-src-5.13.0`
+ 3. Pull any currently maintained Qt source: `wget https://download.qt.io/archive/qt/5.13/5.13.1/single/qt-everywhere-src-5.13.1.tar.xz`
+ 4. Extract: `tar xf qt-everywhere-src-5.13.1.tar.xz`
+ 5. Go there: `cd qt-everywhere-src-5.13.1`
  6. Configure Qt and skip some things to improve compile time. Replace `username` with your user. Note: If you want to build for another machine, [click here to configure a static build](https://gist.githubusercontent.com/tryphe/e3d17209ff6d53d2ca3c5d192471e12e/raw/3e85caf5c2e0fc63f36b7e7772771dff58bc174e/configure.static):\
-`./configure -prefix /home/username/localqt/Qt-5.13.0-minimal/ -opensource -confirm-license -shared -release -nomake examples -nomake tests -skip qt3d -skip qtactiveqt -skip qtandroidextras -skip qtcanvas3d -skip qtcharts -skip qtdatavis3d -skip qtgamepad -skip qtgraphicaleffects -skip qtlocation -skip qtmultimedia -skip qtpurchasing -skip qtquickcontrols -skip qtquickcontrols2 -skip qtscript -skip qtscxml -skip qtsensors -skip qtserialbus -skip qtserialport -skip qtwebengine -skip qtwebview -skip qttools`
+`./configure -prefix /home/username/localqt/Qt-5.13.1-minimal/ -opensource -confirm-license -shared -release -nomake examples -nomake tests -skip qt3d -skip qtactiveqt -skip qtandroidextras -skip qtcanvas3d -skip qtcharts -skip qtdatavis3d -skip qtgamepad -skip qtgraphicaleffects -skip qtlocation -skip qtmultimedia -skip qtpurchasing -skip qtquickcontrols -skip qtquickcontrols2 -skip qtscript -skip qtscxml -skip qtsensors -skip qtserialbus -skip qtserialport -skip qtwebengine -skip qtwebview -skip qttools`
  7. If there are no errors, now you can run make: `make -j` (if low on RAM or single CPU, you can skip the `-j`)
  8. If there are no errors, run `make install`
  9. Now try and run `qmake -v` from your installation path: 
-	 `/home/username/localqt/Qt-5.13.0-minimal/bin/qmake -v`
+	 `/home/username/localqt/Qt-5.13.1-minimal/bin/qmake -v`
 	You should get:
 ~~~
 QMake version 3.1
-Using Qt version 5.13.0 in /home/username/localqt/Qt-5.13.0-minimal/lib
+Using Qt version 5.13.1 in /home/username/localqt/Qt-5.13.1-minimal/lib
 ~~~
 
 Compiling
@@ -62,7 +62,7 @@ Compiling
 	- Run `python generate_keys.py`
 	- or: Copy the example keydefs file: `cp daemon/keydefs.h.example daemon/keydefs.h` then paste your keys in with your favorite editor.
 	- or: (*non-hardcoded keys*): Create `keydefs.h` using the example file above, but leave the keys blank or as-is during compile, then use the runtime CLI to enter your keys into the bot: `trader-cli Poloniex setkeyandsecret <key> <secret>` (***be careful, this will leak your keys into the bash history***)
- 5. Run qmake: `/home/username/localqt/Qt-5.13.0-minimal/bin/qmake`
+ 5. Run qmake: `/home/username/localqt/Qt-5.13.1-minimal/bin/qmake`
  6. Compile (choose one):
  	- (scripted build) Run `./build-all.sh`. This will build the CLI and all exchange targets using `make -j`.
 	- (manual build) First, run `./generate_certs.sh` to generate x509 certs and an auth token (for websockets). Then run `make -j` or similar to build the exchange selected in `daemon/build-config.h` and the CLI.
