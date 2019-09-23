@@ -71,11 +71,11 @@ Running the daemon
 ------------------
 1. Sessionize traderd so it stays running(one for each exchange): `setsid ./traderd-poloniex`
 2. Edit `~/.bashrc` using your favorite text editor, adding these lines:
-~~~
-alias poloniex='~/src/trader/trader-cli Poloniex'
-alias bittrex='~/src/trader/trader-cli Bittrex'
-alias binance='~/src/trader/trader-cli Binance'
- ~~~
+	~~~
+	alias poloniex='~/src/trader/trader-cli Poloniex'
+	alias bittrex='~/src/trader/trader-cli Bittrex'
+	alias binance='~/src/trader/trader-cli Binance'
+	 ~~~
  3. Then run `source ~/.bashrc`
 
 Now you can access each daemon with a simple command, eg. Poloniex: `poloniex getbalances`
