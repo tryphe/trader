@@ -531,7 +531,7 @@ void PoloREST::sendNamQueue()
     if ( current_time < poloniex_throttle_time )
         return;
 
-    QMultiMap<qreal/*weight*/,Request*> sorted_nam_queue;
+    QMultiMap<Coin/*weight*/,Request*> sorted_nam_queue;
 
     // insert into auto sorted map sorted by weight
     for ( QQueue<Request*>::const_iterator i = nam_queue.begin(); i != nam_queue.end(); i++ )
@@ -542,7 +542,7 @@ void PoloREST::sendNamQueue()
         // check for valid pos
         if ( !pos || !engine->positions->isValid( pos ) )
         {
-            sorted_nam_queue.insert( 0., request );
+            sorted_nam_queue.insert( Coin(), request );
             continue;
         }
 
@@ -551,21 +551,21 @@ void PoloREST::sendNamQueue()
              engine->positions->getMarketOrderTotal( pos->market ) >= market_cancel_thresh )
         {
             // expedite the cancel
-            sorted_nam_queue.insert( 100., request );
+            sorted_nam_queue.insert( CoinAmount::COIN, request );
             continue;
         }
 
         if ( request->api_command == POLO_COMMAND_GETBOOKS ||
              request->api_command == POLO_COMMAND_GETORDERS )
         {
-            sorted_nam_queue.insert( 0., request );
+            sorted_nam_queue.insert( Coin(), request );
             continue;
         }
 
         // new hi/lo buy or sell, we should value this at 0 because it's not a reactive order
         if ( pos->is_new_hilo_order )
         {
-            sorted_nam_queue.insert( 0., request );
+            sorted_nam_queue.insert( Coin(), request );
             continue;
         }
 
@@ -573,15 +573,15 @@ void PoloREST::sendNamQueue()
         if ( request->api_command != BUY &&
              request->api_command != SELL )
         {
-            sorted_nam_queue.insert( 0., request );
+            sorted_nam_queue.insert( Coin(), request );
             continue;
         }
 
-        sorted_nam_queue.insert( pos->per_trade_profit.toAmountString().toDouble(), request );
+        sorted_nam_queue.insert( pos->per_trade_profit, request );
     }
 
     // go through orders, ranked from highest weight to lowest
-    for ( QMultiMap<qreal,Request*>::const_iterator i = sorted_nam_queue.end() -1; i != sorted_nam_queue.begin() -1; i-- )
+    for ( QMultiMap<Coin,Request*>::const_iterator i = sorted_nam_queue.end() -1; i != sorted_nam_queue.begin() -1; i-- )
     {
         Request *const &request = i.value();
 

@@ -124,7 +124,7 @@ void TrexREST::sendNamQueue()
         return;
     }
 
-    QMultiMap<qreal/*weight*/,Request*> sorted_nam_queue;
+    QMultiMap<Coin/*weight*/,Request*> sorted_nam_queue;
 
     // insert into auto sorted map sorted by weight
     for ( QQueue<Request*>::const_iterator i = nam_queue.begin(); i != nam_queue.end(); i++ )
@@ -135,7 +135,7 @@ void TrexREST::sendNamQueue()
         // check for valid pos
         if ( !pos || !engine->positions->isValid( pos ) )
         {
-            sorted_nam_queue.insert( 0., request );
+            sorted_nam_queue.insert( Coin(), request );
             continue;
         }
 
@@ -144,20 +144,20 @@ void TrexREST::sendNamQueue()
              engine->positions->getMarketOrderTotal( pos->market ) >= market_cancel_thresh )
         {
             // expedite the cancel
-            sorted_nam_queue.insert( 100., request );
+            sorted_nam_queue.insert( CoinAmount::COIN, request );
             continue;
         }
 
         if ( request->api_command == TREX_COMMAND_GET_ORDER_HIST )
         {
-            sorted_nam_queue.insert( 0.00000100, request );
+            sorted_nam_queue.insert( CoinAmount::SATOSHI, request );
             continue;
         }
 
         // new hi/lo buy or sell, we should value this at 0 because it's not a reactive order
         if ( pos->is_new_hilo_order )
         {
-            sorted_nam_queue.insert( 0., request );
+            sorted_nam_queue.insert( Coin(), request );
             continue;
         }
 
@@ -165,15 +165,15 @@ void TrexREST::sendNamQueue()
         if ( request->api_command != TREX_COMMAND_BUY &&
              request->api_command != TREX_COMMAND_SELL )
         {
-            sorted_nam_queue.insert( 0., request );
+            sorted_nam_queue.insert( Coin(), request );
             continue;
         }
 
-        sorted_nam_queue.insert( pos->per_trade_profit.toAmountString().toDouble(), request );
+        sorted_nam_queue.insert( pos->per_trade_profit, request );
     }
 
     // go through orders, ranked from highest weight to lowest
-    for ( QMultiMap<qreal,Request*>::const_iterator i = sorted_nam_queue.end() -1; i != sorted_nam_queue.begin() -1; i-- )
+    for ( QMultiMap<Coin,Request*>::const_iterator i = sorted_nam_queue.end() -1; i != sorted_nam_queue.begin() -1; i-- )
     {
         Request *const &request = i.value();
 
