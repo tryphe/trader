@@ -41,7 +41,7 @@ Trader requires a Qt >= 5.10 build with the *core*, *network*, and *websockets* 
  3. Pull any currently maintained Qt source: `wget https://download.qt.io/archive/qt/5.13/5.13.1/single/qt-everywhere-src-5.13.1.tar.xz`
  4. Extract: `tar xf qt-everywhere-src-5.13.1.tar.xz`
  5. Go there: `cd qt-everywhere-src-5.13.1`
- 6. Configure Qt. **Replace `username` with your username**. (Choose only one)
+ 6. Configure Qt. *Important: replace `username` with your username*. (Choose only one)
 	- [Click here to configure a dynamic build, to run Trader on your machine](https://gist.githubusercontent.com/tryphe/acfa2aab0967ee5c99a3d9cee45637cd/raw/28d44f022e2f0236f4776bd40a1acaf0c7500901)
  	- [Click here to configure a static build, to copy Trader to another machine with the same OS](https://gist.githubusercontent.com/tryphe/28c3c8407775a5da8936d6afaa97ba7f/raw/f14d7ae9a8abca4c54e689930c4ce2b2fdb43f97)
  7. If there are no errors, run make: `make -j` (if low on RAM or single CPU, you can skip the `-j`)
