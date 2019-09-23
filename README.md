@@ -67,6 +67,10 @@ Compiling
  	- (scripted build) Run `./build-all.sh`. This will build the CLI and all exchange targets using `make -j`.
 	- (manual build) First, run `./generate_certs.sh` to generate x509 certs and an auth token (for websockets). Then run `make -j` or similar to build the exchange selected in `daemon/build-config.h` and the CLI.
 
+Updating
+--------
+Run `git pull` to pull the latest code. You should do this frequently - minor bugfixes are common.
+
 Running the daemon
 ------------------
 1. Sessionize traderd so it stays running(one for each exchange): `setsid ./traderd-poloniex`
