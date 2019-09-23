@@ -1,6 +1,6 @@
 What is Trader?
 ---------------
-Trader is a bot that manages a set of ping pong positions while working within the confines of exchange limits. These limits can include a maximum number of orders, minimum price, maximum price, etc. Trader can also make one-time, fill-or-kill, and maker/taker orders, and simulates these modes on exchanges without direct support.
+Trader is a bot that either makes manual orders for the users, and/or manages a set of ping-pong positions. Trader can make one-time, fill-or-kill, and maker/taker orders, and simulates these modes on exchanges without direct support. Trader also respects exchange limits like maximum number of orders, minimum price, maximum price, minimum lot size, price ticksize, etc.
 
 License
 ---------------
