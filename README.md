@@ -69,7 +69,7 @@ Compiling
 
 Updating
 --------
-Run `git pull` to pull the latest code. You should do this frequently - minor bugfixes are common.
+Run `git pull` to pull the latest code, then repeat step 6 from the Compiling section. You should do this frequently - minor bugfixes are common.
 
 Running the daemon
 ------------------
