@@ -23,8 +23,10 @@ void EngineTest::test( Engine *e )
     assert( e->getRest() != nullptr );
     assert( e->getStats() != nullptr );
 
-    e->setTesting( true );
+    // disable verbosity during testing
+    const int preserved_verbosity = e->verbosity;
     e->setVerbosity( 0 );
+    e->setTesting( true );
 
     // test sorting for diverge/converge
     QVector<qint32> indices = QVector<qint32>() << 3 << 1 << 5 << 2 << 4;
@@ -388,8 +390,6 @@ void EngineTest::test( Engine *e )
     e->getMarketInfoStructure().clear(); // clear TEST_MARKET market from market settings
     e->positions->diverge_converge.clear(); // clear TEST_MARKET from dc market index
     e->positions->diverging_converging.clear(); // clear TEST_MARKET from dc market index
-    e->setTesting( false );
-    e->setVerbosity( 1 );
 
     // clear TEST_MARKET market stats
     e->stats->clearAll();
@@ -399,6 +399,10 @@ void EngineTest::test( Engine *e )
     assert( e->getMarketInfoStructure().size() == 0 );
     assert( e->positions->getDCCount() == 0 );
     assert( e->positions->diverging_converging.size() == 0 );
+
+    // disable test mode
+    e->setVerbosity( preserved_verbosity );
+    e->setTesting( false );
 
     // enable wss interface flag here, since we need it disabled during tests anyways
 #ifdef WSS_INTERFACE
