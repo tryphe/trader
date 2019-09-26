@@ -20,6 +20,8 @@ public:
     AlphaTracker();
     Coin getAlpha( const QString &market );
     Coin getVolume( const QString &market );
+    Coin getVolumePerTrade( const QString &market );
+    Coin getAvgPrice( const QString &market, quint8 side );
     quint64 getTrades( const QString &market );
     void addAlpha( const QString &market, Position *pos );
     void reset();

@@ -19,18 +19,34 @@ Coin AlphaTracker::getAlpha( const QString &market )
 
 Coin AlphaTracker::getVolume( const QString &market )
 {
-    AlphaData &sell_data = sells[ market ];
-    AlphaData &buy_data = buys[ market ];
+    return buys[ market ].v + sells[ market ].v;
+}
 
-    return buy_data.v + sell_data.v;
+Coin AlphaTracker::getVolumePerTrade( const QString &market )
+{
+    const quint64 t = getTrades( market );
+
+    if ( t == 0 )
+        return Coin();
+
+    return getVolume( market ) / t;
+}
+
+Coin AlphaTracker::getAvgPrice( const QString &market, quint8 side )
+{
+    if ( side == SIDE_BUY )
+    {
+        AlphaData &buy_data = buys[ market ];
+        return buy_data.vp / buy_data.v;
+    }
+
+    AlphaData &sell_data = sells[ market ];
+    return sell_data.vp / sell_data.v;
 }
 
 quint64 AlphaTracker::getTrades( const QString &market )
 {
-    AlphaData &sell_data = sells[ market ];
-    AlphaData &buy_data = buys[ market ];
-
-    return buy_data.trades + sell_data.trades;
+    return buys[ market ].trades + sells[ market ].trades;
 }
 
 void AlphaTracker::addAlpha( const QString &market, Position *pos )
@@ -56,11 +72,15 @@ void AlphaTracker::printAlpha()
     for ( QList<QString>::const_iterator i = keys.begin(); i != keys.end(); i++ )
     {
         const QString &market = *i;
-        kDebug() << QString( "%1 | alpha %2 | volume %3 | trades %4" )
+        kDebug() << QString( "%1 | alpha %2 | avg_buy %3 | avg_sell %4 | volume %5 | vol-per-trade %6 | trades %7" )
                     .arg( market, -MARKET_STRING_WIDTH )
-                    .arg( getAlpha( market ) )
-                    .arg( getVolume( market ) )
-                    .arg( getTrades( market ) );
+                    .arg( getAlpha( market ), -10 )
+                    .arg( getAvgPrice( market, SIDE_BUY ), -12 )
+                    .arg( getAvgPrice( market, SIDE_SELL ), -12 )
+                    .arg( getVolume( market ), -12 )
+                    .arg( getVolumePerTrade( market ), -12 )
+                    .arg( getTrades( market ), -7 );
+
     }
 }
 
