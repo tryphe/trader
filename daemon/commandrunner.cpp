@@ -52,6 +52,7 @@ CommandRunner::CommandRunner( Engine *_e, REST_OBJECT *_rest, Stats *_stats, QOb
     command_map.insert( "getdailyprofit", std::bind( &CommandRunner::command_getdailyprofit, this, _1 ) );
     command_map.insert( "getdailyfills", std::bind( &CommandRunner::command_getdailyfills, this, _1 ) );
     command_map.insert( "getprofit", std::bind( &CommandRunner::command_getprofit, this, _1 ) );
+    command_map.insert( "getalpha", std::bind( &CommandRunner::command_getalpha, this, _1 ) );
     command_map.insert( "getmarketprofit", std::bind( &CommandRunner::command_getmarketprofit, this, _1 ) );
     command_map.insert( "getdailymarketprofit", std::bind( &CommandRunner::command_getdailymarketprofit, this, _1 ) );
     command_map.insert( "getdailymarketvolume", std::bind( &CommandRunner::command_getdailymarketvolume, this, _1 ) );
@@ -110,6 +111,7 @@ CommandRunner::CommandRunner( Engine *_e, REST_OBJECT *_rest, Stats *_stats, QOb
     command_map.insert( "clearallstats", std::bind( &CommandRunner::command_clearallstats, this, _1 ) );
     command_map.insert( "savemarket", std::bind( &CommandRunner::command_savemarket, this, _1 ) );
     command_map.insert( "savesettings", std::bind( &CommandRunner::command_savesettings, this, _1 ) );
+    command_map.insert( "savestats", std::bind( &CommandRunner::command_savestats, this, _1 ) );
     command_map.insert( "sendcommand", std::bind( &CommandRunner::command_sendcommand, this, _1 ) );
     command_map.insert( "setchatty", std::bind( &CommandRunner::command_setchatty, this, _1 ) );
     command_map.insert( "spruceup", std::bind( &CommandRunner::command_spruceup, this, _1 ) );
@@ -445,6 +447,11 @@ void CommandRunner::command_getprofit( QStringList &args )
 {
     Q_UNUSED( args )
     stats->printProfit();
+}
+
+void CommandRunner::command_getalpha( QStringList &args )
+{
+    stats->alpha.getAlpha( Market( args.value( 1 ) ) );
 }
 
 void CommandRunner::command_getmarketprofit( QStringList &args )
@@ -946,6 +953,12 @@ void CommandRunner::command_savesettings( QStringList &args )
 {
     Q_UNUSED( args )
     engine->saveSettings();
+}
+
+void CommandRunner::command_savestats( QStringList &args )
+{
+    Q_UNUSED( args )
+    engine->saveStats();
 }
 
 void CommandRunner::command_sendcommand( QStringList &args )

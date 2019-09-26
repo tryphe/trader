@@ -46,6 +46,8 @@ public:
     void saveMarket( QString market, qint32 num_orders = 15 );
     void saveSettings();
     void loadSettings();
+    void saveStats();
+    void loadStats();
 
     // utility functions
     void setStats( Stats *_stats ) { stats = _stats; }

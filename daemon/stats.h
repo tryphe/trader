@@ -7,6 +7,7 @@
 
 #include "global.h"
 #include "coinamount.h"
+#include "alphatracker.h"
 
 class QObject;
 class TrexREST;
@@ -73,6 +74,9 @@ public:
     void printMarketProfitRW();
 
     QMap<QString /*strat*/, QMap<QString/*currency*/,Coin/*short-long*/>> shortlong;
+
+    // new way to track trade profit
+    AlphaTracker alpha;
 
 private:
     //QMap<QString, MarketStats> market_stats;

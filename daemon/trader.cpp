@@ -57,6 +57,7 @@ Trader::Trader( QObject *parent )
     connect( engine, &Engine::gotUserCommandChunk, runner, &CommandRunner::runCommandChunk );
 
     engine->loadSettings();
+    engine->loadStats();
 
     // open fallback listener that uses a plain file, useful for copying a 'setorder' dump into a file
     listener_fallback = new FallbackListener();

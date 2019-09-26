@@ -19,6 +19,7 @@ QMAKE_CXXFLAGS_RELEASE = -ansi -pedantic-errors -fstack-protector-strong -fstack
 QMAKE_CFLAGS_RELEASE   = -ansi -pedantic-errors -fstack-protector-strong -fstack-reuse=none -D_FORTIFY_SOURCE=2 -pie -fPIE -O3
 
 SOURCES += main.cpp \
+    alphatracker.cpp \
     commandlistener.cpp \
     commandrunner.cpp \
     costfunctioncache.cpp \
@@ -41,6 +42,7 @@ SOURCES += main.cpp \
     wssserver.cpp
 
 HEADERS += build-config.h \
+    alphatracker.h \
     commandlistener.h \
     commandrunner.h \
     costfunctioncache.h \

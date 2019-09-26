@@ -7,6 +7,7 @@
 #include "positionman.h"
 #include "enginesettings.h"
 #include "market.h"
+#include "alphatracker.h"
 
 #include <algorithm>
 #include <QtMath>
@@ -1116,7 +1117,47 @@ void Engine::loadSettings()
     kDebug() << "[Engine] loaded settings," << data.size() << "bytes.";
 
     emit gotUserCommandChunk( data );
-    return;
+}
+
+void Engine::saveStats()
+{
+    // open stats file
+    QString path = Global::getMarketStatsPath();
+    QFile savefile( path );
+
+    if ( !savefile.open( QIODevice::WriteOnly | QIODevice::Text ) )
+    {
+        kDebug() << "local error: couldn't open savemarket file" << path;
+        return;
+    }
+
+    QTextStream out_savefile( &savefile );
+    out_savefile << stats->alpha.getSaveState();
+
+    // save the buffer
+    out_savefile.flush();
+    savefile.close();
+}
+
+void Engine::loadStats()
+{
+    QString path = Global::getMarketStatsPath();
+    QFile loadfile( path );
+
+    if ( !loadfile.open( QIODevice::ReadWrite | QIODevice::Text ) )
+    {
+        kDebug() << "local error: couldn't load stats file" << path;
+        return;
+    }
+
+    if ( loadfile.bytesAvailable() == 0 )
+        return;
+
+    QString data = loadfile.readAll();
+    kDebug() << "[Engine] loaded stats," << data.size() << "bytes.";
+
+    stats->alpha.reset();
+    stats->alpha.readSaveState( data );
 }
 
 void Engine::flipPosition( Position *const &pos )

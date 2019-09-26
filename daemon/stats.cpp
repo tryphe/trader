@@ -24,12 +24,15 @@ Stats::~Stats()
 
 void Stats::updateStats( Position *const &pos )
 {
+    const QString &market = pos->market;
+    alpha.addAlpha( market, pos );
+
     // stringify date + market
     Coin volume_amt = pos->btc_amount.toAmountString(); // cache double
     QString date_str = Global::getDateStringMDY(); // cache mdy
     QString date_market_str = QString( "%1 %2" )
                                 .arg( date_str )
-                                .arg( pos->market, 8 );
+                                .arg( market, 8 );
 
     // stringify and truncate profit margin
     QString profit_margin_trunc = pos->profit_margin.toAmountString();
@@ -40,7 +43,7 @@ void Stats::updateStats( Position *const &pos )
 
     // stringify market + profit margin
     QString market_profit_str = QString( "%1 o:%2 pm:%3 %4" )
-                                .arg( pos->market, 8 )
+                                .arg( market, 8 )
                                 .arg( btc_amount_trunc )
                                 .arg( profit_margin_trunc )
                                 .arg( pos->is_landmark ? "L" : " " );
@@ -48,13 +51,13 @@ void Stats::updateStats( Position *const &pos )
     // stringify date + market + profit margin
     QString date_market_profit_str = QString( "%1 %2 o:%3 pm:%4" )
                                 .arg( date_str )
-                                .arg( pos->market, 8 )
+                                .arg( market, 8 )
                                 .arg( btc_amount_trunc )
                                 .arg( profit_margin_trunc );
 
     // update some stats
-    market_volumes[ pos->market ] += volume_amt;
-    market_profit[ pos->market ] += pos->per_trade_profit.toAmountString().toDouble();
+    market_volumes[ market ] += volume_amt;
+    market_profit[ market ] += pos->per_trade_profit.toAmountString().toDouble();
     market_profit_volume[ market_profit_str ] += volume_amt;
     market_profit_fills[ market_profit_str ]++;
     daily_market_profit_volume[ date_market_profit_str ] += volume_amt;
@@ -63,8 +66,8 @@ void Stats::updateStats( Position *const &pos )
     daily_volumes[ date_str ] += volume_amt;
     daily_profit[ date_str ] += pos->per_trade_profit.toAmountString().toDouble();
     daily_fills[ date_str ]++;
-    last_price[ pos->market ] = pos->price;
-    market_fills[ pos->market ]++;
+    last_price[ market ] = pos->price;
+    market_fills[ market ]++;
 
     // avoid div0 just incase
     Coin risk_reward_val;
@@ -170,6 +173,8 @@ void Stats::clearSome( const QString &market )
 
 void Stats::clearAll()
 {
+    alpha.reset();
+
     market_volumes.clear();
     market_profit.clear();
     market_profit_fills.clear();

@@ -221,6 +221,11 @@ static inline const QString getMarketSettingsPath()
     return getTraderPath() + QDir::separator() + "settings.txt";
 }
 
+static inline const QString getMarketStatsPath()
+{
+    return getTraderPath() + QDir::separator() + "stats";
+}
+
 static inline void ensurePath()
 {
     // get dir ~/.config/<trader_dir>

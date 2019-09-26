@@ -59,6 +59,7 @@ private:
     void command_getdailyprofit( QStringList &args );
     void command_getdailyfills( QStringList &args );
     void command_getprofit( QStringList &args );
+    void command_getalpha( QStringList &args );
     void command_getmarketprofit( QStringList &args );
     void command_getdailymarketprofit( QStringList &args );
     void command_getdailymarketvolume( QStringList &args );
@@ -119,6 +120,7 @@ private:
     void command_clearallstats( QStringList &args );
     void command_savemarket( QStringList &args );
     void command_savesettings( QStringList &args );
+    void command_savestats( QStringList &args );
     void command_sendcommand( QStringList &args );
     void command_setchatty( QStringList &args );
     void command_exit( QStringList &args );
