@@ -451,12 +451,12 @@ void CommandRunner::command_getprofit( QStringList &args )
 
 void CommandRunner::command_getalpha( QStringList &args )
 {
+    Q_UNUSED( args )
     stats->alpha.printAlpha();
 }
 
 void CommandRunner::command_getmarketalpha( QStringList &args )
 {
-    Q_UNUSED( args )
     stats->alpha.getAlpha( Market( args.value( 1 ) ) );
 }
 
@@ -510,7 +510,7 @@ void CommandRunner::command_getfills( QStringList &args )
 
 void CommandRunner::command_getshortlong( QStringList &args )
 {
-    stats->printStrategyShortLong( Market( args.value( 1 ) ) );
+    stats->printStrategyShortLong( args.value( 1 ) );
 }
 
 void CommandRunner::command_gethibuylosell( QStringList &args )

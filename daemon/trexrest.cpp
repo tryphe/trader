@@ -647,7 +647,7 @@ void TrexREST::parseReturnBalances( const QJsonArray &balances )
         }
         else // for alts, we format DOGE -> BTC-DOGE style string
         {
-            value_d *= engine->positions->getHiBuy( QString( "BTC-%1" ).arg( currency ) );
+            value_d *= engine->positions->getHiBuy( Market( "BTC", currency ) );
             total_d += value_d;
         }
 

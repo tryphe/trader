@@ -767,7 +767,7 @@ void BncREST::parseReturnBalances( const QJsonObject &obj )
 
         Coin btcValue = total;
         if ( currency != "BTC" )
-            btcValue *= engine->positions->getHiBuy( currency + "BTC" );
+            btcValue *= engine->positions->getHiBuy( Market( "BTC", currency ) );
 
         //kDebug() << currency << available << total << btcValue;
 
