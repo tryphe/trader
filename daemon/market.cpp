@@ -33,7 +33,8 @@ bool Market::isValid() const
 
 Market::operator QString() const
 {
-    return QString( DEFAULT_MARKET_STRING_TEMPLATE )
+    return ( base.isEmpty() && quote.isEmpty() ) ? QString() :
+            QString( DEFAULT_MARKET_STRING_TEMPLATE )
             .arg( base )
             .arg( quote );
 }

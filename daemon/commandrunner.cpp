@@ -53,7 +53,7 @@ CommandRunner::CommandRunner( Engine *_e, REST_OBJECT *_rest, Stats *_stats, QOb
     command_map.insert( "getdailyfills", std::bind( &CommandRunner::command_getdailyfills, this, _1 ) );
     command_map.insert( "getprofit", std::bind( &CommandRunner::command_getprofit, this, _1 ) );
     command_map.insert( "getalpha", std::bind( &CommandRunner::command_getalpha, this, _1 ) );
-    command_map.insert( "getmarketprofit", std::bind( &CommandRunner::command_getmarketprofit, this, _1 ) );
+    command_map.insert( "getmarketalpha", std::bind( &CommandRunner::command_getmarketalpha, this, _1 ) );
     command_map.insert( "getdailymarketprofit", std::bind( &CommandRunner::command_getdailymarketprofit, this, _1 ) );
     command_map.insert( "getdailymarketvolume", std::bind( &CommandRunner::command_getdailymarketvolume, this, _1 ) );
     command_map.insert( "getdailymarketprofitvolume", std::bind( &CommandRunner::command_getdailymarketprofitvolume, this, _1 ) );
@@ -451,13 +451,13 @@ void CommandRunner::command_getprofit( QStringList &args )
 
 void CommandRunner::command_getalpha( QStringList &args )
 {
-    stats->alpha.getAlpha( Market( args.value( 1 ) ) );
+    stats->alpha.printAlpha();
 }
 
-void CommandRunner::command_getmarketprofit( QStringList &args )
+void CommandRunner::command_getmarketalpha( QStringList &args )
 {
     Q_UNUSED( args )
-    stats->printMarketProfit();
+    stats->alpha.getAlpha( Market( args.value( 1 ) ) );
 }
 
 void CommandRunner::command_getdailymarketprofit( QStringList &args )

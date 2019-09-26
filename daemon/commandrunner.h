@@ -60,7 +60,7 @@ private:
     void command_getdailyfills( QStringList &args );
     void command_getprofit( QStringList &args );
     void command_getalpha( QStringList &args );
-    void command_getmarketprofit( QStringList &args );
+    void command_getmarketalpha( QStringList &args );
     void command_getdailymarketprofit( QStringList &args );
     void command_getdailymarketvolume( QStringList &args );
     void command_getdailymarketprofitvolume( QStringList &args );
