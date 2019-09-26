@@ -18,16 +18,18 @@ class AlphaTracker
 {
 public:
     AlphaTracker();
-    Coin getAlpha( const QString &market );
-    Coin getVolume( const QString &market );
-    Coin getVolumePerTrade( const QString &market );
-    Coin getAvgPrice( const QString &market, quint8 side );
-    quint64 getTrades( const QString &market );
+
     void addAlpha( const QString &market, Position *pos );
     void reset();
 
-    void printAlpha();
-    QString getSaveState();
+    Coin getAlpha( const QString &market ) const;
+    Coin getVolume( const QString &market ) const;
+    Coin getVolumePerTrade( const QString &market ) const;
+    Coin getAvgPrice( const QString &market, quint8 side ) const;
+    quint64 getTrades( const QString &market ) const;
+
+    void printAlpha() const;
+    QString getSaveState() const;
     void readSaveState( const QString &state );
 
 private:

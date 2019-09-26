@@ -6,49 +6,6 @@ AlphaTracker::AlphaTracker()
 {
 }
 
-Coin AlphaTracker::getAlpha( const QString &market )
-{
-    AlphaData &sell_data = sells[ market ];
-    AlphaData &buy_data = buys[ market ];
-
-    if ( buy_data.trades == 0 )
-        return Coin();
-
-    return ( sell_data.getAvgPrice() / buy_data.getAvgPrice() );
-}
-
-Coin AlphaTracker::getVolume( const QString &market )
-{
-    return buys[ market ].v + sells[ market ].v;
-}
-
-Coin AlphaTracker::getVolumePerTrade( const QString &market )
-{
-    const quint64 t = getTrades( market );
-
-    if ( t == 0 )
-        return Coin();
-
-    return getVolume( market ) / t;
-}
-
-Coin AlphaTracker::getAvgPrice( const QString &market, quint8 side )
-{
-    if ( side == SIDE_BUY )
-    {
-        AlphaData &buy_data = buys[ market ];
-        return buy_data.vp / buy_data.v;
-    }
-
-    AlphaData &sell_data = sells[ market ];
-    return sell_data.vp / sell_data.v;
-}
-
-quint64 AlphaTracker::getTrades( const QString &market )
-{
-    return buys[ market ].trades + sells[ market ].trades;
-}
-
 void AlphaTracker::addAlpha( const QString &market, Position *pos )
 {
     QMap<QString,AlphaData> &map = pos->side == SIDE_BUY ? buys : sells;
@@ -66,7 +23,50 @@ void AlphaTracker::reset()
     sells.clear();
 }
 
-void AlphaTracker::printAlpha()
+Coin AlphaTracker::getAlpha( const QString &market ) const
+{
+    const AlphaData &sell_data = sells.value( market );
+    const AlphaData &buy_data = buys.value( market );
+
+    if ( buy_data.trades == 0 )
+        return Coin();
+
+    return ( sell_data.getAvgPrice() / buy_data.getAvgPrice() );
+}
+
+Coin AlphaTracker::getVolume( const QString &market ) const
+{
+    return buys.value( market ).v + sells.value( market ).v;
+}
+
+Coin AlphaTracker::getVolumePerTrade( const QString &market ) const
+{
+    const quint64 t = getTrades( market );
+
+    if ( t == 0 )
+        return Coin();
+
+    return getVolume( market ) / t;
+}
+
+Coin AlphaTracker::getAvgPrice( const QString &market, quint8 side ) const
+{
+    if ( side == SIDE_BUY )
+    {
+        const AlphaData &buy_data = buys.value( market );
+        return buy_data.vp / buy_data.v;
+    }
+
+    const AlphaData &sell_data = sells.value( market );
+    return sell_data.vp / sell_data.v;
+}
+
+quint64 AlphaTracker::getTrades( const QString &market ) const
+{
+    return buys.value( market ).trades + sells.value( market ).trades;
+}
+
+void AlphaTracker::printAlpha() const
 {
     const QList<QString> &keys = buys.keys();
     for ( QList<QString>::const_iterator i = keys.begin(); i != keys.end(); i++ )
@@ -84,7 +84,7 @@ void AlphaTracker::printAlpha()
     }
 }
 
-QString AlphaTracker::getSaveState()
+QString AlphaTracker::getSaveState() const
 {
     QString ret;
     const QList<QString> &keys = buys.keys();
@@ -94,7 +94,7 @@ QString AlphaTracker::getSaveState()
 
         for( quint8 side = SIDE_BUY; side < SIDE_SELL +1; side++ )
         {
-            QMap<QString,AlphaData> &map = ( side == SIDE_BUY ) ? buys : sells;
+            const QMap<QString,AlphaData> &map = ( side == SIDE_BUY ) ? buys : sells;
             const AlphaData &d = map.value( market );
 
             // don't save alpha without some trades
