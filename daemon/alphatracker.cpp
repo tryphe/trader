@@ -28,7 +28,7 @@ Coin AlphaTracker::getAlpha( const QString &market ) const
     const AlphaData &sell_data = sells.value( market );
     const AlphaData &buy_data = buys.value( market );
 
-    if ( buy_data.trades == 0 )
+    if ( sell_data.trades == 0 )
         return Coin();
 
     return ( sell_data.getAvgPrice() / buy_data.getAvgPrice() );
