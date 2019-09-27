@@ -16,10 +16,11 @@ void EngineTest::test( Engine *e )
 {
     const QString TEST_MARKET = "TEST_1";
 
-    // Market::operator QString() returns the universal format
-    assert( TEST_MARKET == Market( TEST_MARKET ) );
-    assert( Market( "test_" ).operator QString().isEmpty() );
-    assert( Market( "_test" ).operator QString().isEmpty() );
+    // Market::operator QString()
+    assert( TEST_MARKET == Market( TEST_MARKET ) ); // test default format
+    assert( TEST_MARKET == Market( "TEST-1" ) ); // test alternate format
+    assert( Market( "test_" ).operator QString().isEmpty() ); // test empty quote currency
+    assert( Market( "_test" ).operator QString().isEmpty() ); // test empty base currency
 
     // make sure we are ready to start
     assert( e->getRest() != nullptr );
