@@ -27,13 +27,12 @@ Market::Market( const QString &_base, const QString &_quote )
 
 bool Market::isValid() const
 {
-    return !base.isEmpty() &&
-           !quote.isEmpty();
+    return !( base.isEmpty() || quote.isEmpty() );
 }
 
 Market::operator QString() const
 {
-    return ( base.isEmpty() && quote.isEmpty() ) ? QString() :
+    return !isValid() ? QString() :
             QString( DEFAULT_MARKET_STRING_TEMPLATE )
             .arg( base )
             .arg( quote );

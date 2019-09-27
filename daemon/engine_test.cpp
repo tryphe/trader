@@ -18,6 +18,8 @@ void EngineTest::test( Engine *e )
 
     // Market::operator QString() returns the universal format
     assert( TEST_MARKET == Market( TEST_MARKET ) );
+    assert( Market( "test_" ).operator QString().isEmpty() );
+    assert( Market( "_test" ).operator QString().isEmpty() );
 
     // make sure we are ready to start
     assert( e->getRest() != nullptr );
