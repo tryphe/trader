@@ -314,16 +314,6 @@ Coin Spruce::getLastCoeffForMarket( const QString &market ) const
 
 bool Spruce::equalizeDates()
 {
-    /// psuedocode
-    //
-    // get initial coeffs
-    // find hi/lo
-    // while hi.ratio(0.99) > lo
-    //     shortlongs[ highest coeff market ] -= 100k sat
-    //     shortlongs[ lowest coeff market ] += 100k sat
-    //     get new coeff, set new hi/lo
-    ///
-
     // ensure dates exist
     if ( nodes_start.size() != nodes_now.size() )
     {
@@ -353,6 +343,20 @@ bool Spruce::equalizeDates()
         return false;
     }
 
+    // run divide-and-conquer algorithm which approaches an optimal portfolio according to
+    // a per-market cost function. we might have a bunch of wasted iterations, because the noise
+    // causes the markets to never be in the same state as the last iteration, but at least
+    // we know we're fulfilling the full amount of equity possible to trade. (hi_equity)
+
+    /// psuedocode
+    //
+    // get initial coeffs
+    // find hi/lo
+    // while hi.ratio(0.99) > lo
+    //     short highest coeff market
+    //     long lowest coeff market
+    //     get new market coeffs, set new hi/lo
+    ///
     quint16 i = 0;
     while ( m_relative_coeffs.hi_coeff * m_target > m_relative_coeffs.lo_coeff )
     {
