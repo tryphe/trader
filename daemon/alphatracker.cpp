@@ -54,11 +54,11 @@ Coin AlphaTracker::getAvgPrice( const QString &market, quint8 side ) const
     if ( side == SIDE_BUY )
     {
         const AlphaData &buy_data = buys.value( market );
-        return buy_data.vp / buy_data.v;
+        return buy_data.trades == 0 ? Coin() : buy_data.vp / buy_data.v;
     }
 
     const AlphaData &sell_data = sells.value( market );
-    return sell_data.vp / sell_data.v;
+    return sell_data.trades == 0 ? Coin() : sell_data.vp / sell_data.v;
 }
 
 quint64 AlphaTracker::getTrades( const QString &market ) const
