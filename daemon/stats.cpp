@@ -28,59 +28,22 @@ void Stats::updateStats( Position *const &pos )
     alpha.addAlpha( market, pos );
 
     // stringify date + market
-    Coin volume_amt = pos->btc_amount.toAmountString(); // cache double
     QString date_str = Global::getDateStringMDY(); // cache mdy
     QString date_market_str = QString( "%1 %2" )
                                 .arg( date_str )
                                 .arg( market, 8 );
 
-    // stringify and truncate profit margin
-    QString profit_margin_trunc = pos->profit_margin.toAmountString();
-    profit_margin_trunc.truncate( 6 );
-
-    QString btc_amount_trunc = pos->btc_amount;
-    btc_amount_trunc.truncate( 6 );
-
-    // stringify market + profit margin
-    QString market_profit_str = QString( "%1 o:%2 pm:%3 %4" )
-                                .arg( market, 8 )
-                                .arg( btc_amount_trunc )
-                                .arg( profit_margin_trunc )
-                                .arg( pos->is_landmark ? "L" : " " );
-
-    // stringify date + market + profit margin
-    QString date_market_profit_str = QString( "%1 %2 o:%3 pm:%4" )
-                                .arg( date_str )
-                                .arg( market, 8 )
-                                .arg( btc_amount_trunc )
-                                .arg( profit_margin_trunc );
-
     // update some stats
-    market_volumes[ market ] += volume_amt;
-    market_profit[ market ] += pos->per_trade_profit.toAmountString().toDouble();
-    market_profit_volume[ market_profit_str ] += volume_amt;
-    market_profit_fills[ market_profit_str ]++;
-    daily_market_profit_volume[ date_market_profit_str ] += volume_amt;
-    daily_market_volume[ date_market_str ] += volume_amt;
-    daily_market_profit[ date_market_str ] += pos->per_trade_profit.toAmountString().toDouble();
-    daily_volumes[ date_str ] += volume_amt;
-    daily_profit[ date_str ] += pos->per_trade_profit.toAmountString().toDouble();
+    market_volumes[ market ] += pos->btc_amount;
+    daily_market_volume[ date_market_str ] += pos->btc_amount;
+    daily_volumes[ date_str ] += pos->btc_amount;
     daily_fills[ date_str ]++;
     last_price[ market ] = pos->price;
-    market_fills[ market ]++;
 
     // avoid div0 just incase
     Coin risk_reward_val;
     if ( pos->btc_amount.isGreaterThanZero() )
         risk_reward_val = pos->per_trade_profit / pos->btc_amount;
-
-    // update dailymarketprofitRW
-    daily_market_profit_risk_reward[ date_market_profit_str ].first += risk_reward_val;
-    daily_market_profit_risk_reward[ date_market_profit_str ].second++;
-
-    // update dailyprofitRW
-    market_profit_risk_reward[ market_profit_str ].first += risk_reward_val;
-    market_profit_risk_reward[ market_profit_str ].second++;
 
     // add shortlong strategy stats (use blank tag for all onetime orders)
     addStrategyStats( pos );
@@ -101,95 +64,14 @@ void Stats::addStrategyStats( Position *const &pos )
         engine->spruce.addToShortLonged( pos->market, amount );
 }
 
-void Stats::clearSome( const QString &market )
-{
-    if ( market.size() > 0 )
-    {
-        kDebug() << "clearing strat stats for" << market;
-
-        QStringList market_profit_risk_reward_deleted;
-        QStringList daily_market_profit_risk_reward_deleted;
-        QStringList daily_market_profit_volume_deleted;
-        QStringList market_profit_volume_deleted;
-
-        // remove single market stats from market_profit_risk_reward
-        for ( QMap<QString /*day-market-profit*/, QPair<Coin,quint64> /*total, count*/>::const_iterator
-              i = market_profit_risk_reward.begin(); i != market_profit_risk_reward.end(); i++ )
-        {
-            if( i.key().contains( market ) )
-                market_profit_risk_reward_deleted.append( i.key() );
-        }
-
-        while ( market_profit_risk_reward_deleted.size() > 0 )
-            market_profit_risk_reward.remove( market_profit_risk_reward_deleted.takeLast() );
-        //
-
-        // remove single market stats from daily_market_profit_risk_reward
-        for ( QMap<QString /*day-market-profit*/, QPair<Coin,quint64> /*total, count*/>::const_iterator
-              i = daily_market_profit_risk_reward.begin(); i != daily_market_profit_risk_reward.end(); i++ )
-        {
-            if( i.key().contains( market ) )
-                daily_market_profit_risk_reward_deleted.append( i.key() );
-        }
-
-        while ( daily_market_profit_risk_reward_deleted.size() > 0 )
-            daily_market_profit_risk_reward.remove( daily_market_profit_risk_reward_deleted.takeLast() );
-        //
-
-        // remove single market stats from daily_market_profit_volume
-        for ( QMap<QString /*market*/, Coin /*volume*/>::const_iterator
-              i = daily_market_profit_volume.begin(); i != daily_market_profit_volume.end(); i++ )
-        {
-            if( i.key().contains( market ) )
-                daily_market_profit_volume_deleted.append( i.key() );
-        }
-
-        while ( daily_market_profit_volume_deleted.size() > 0 )
-            daily_market_profit_volume.remove( daily_market_profit_volume_deleted.takeLast() );
-        //
-
-        // remove single market stats from market_profit_volume
-        for ( QMap<QString /*market*/, Coin /*volume*/>::const_iterator
-              i = market_profit_volume.begin(); i != market_profit_volume.end(); i++ )
-        {
-            if( i.key().contains( market ) )
-                market_profit_volume_deleted.append( i.key() );
-        }
-
-        while ( market_profit_volume_deleted.size() > 0 )
-            market_profit_volume.remove( market_profit_volume_deleted.takeLast() );
-        //
-    }
-    else
-    {
-        kDebug() << "clearing strat stats for all";
-
-        market_profit_risk_reward.clear();
-        daily_market_profit_risk_reward.clear();
-        daily_market_profit_volume.clear();
-        market_profit_volume.clear();
-    }
-}
-
 void Stats::clearAll()
 {
     alpha.reset();
 
     market_volumes.clear();
-    market_profit.clear();
-    market_profit_fills.clear();
     daily_market_volume.clear();
-    daily_market_profit.clear();
     daily_volumes.clear();
-    daily_profit.clear();
-    market_fills.clear();
     last_price.clear();
-
-    // clear strat stats
-    market_profit_risk_reward.clear();
-    daily_market_profit_risk_reward.clear();
-    daily_market_profit_volume.clear();
-    market_profit_volume.clear();
 }
 
 void Stats::printOrders( QString market )
@@ -360,26 +242,6 @@ void Stats::printDailyFills()
     }
 }
 
-void Stats::printFills()
-{
-    qint64 total = 0;
-
-    QMap<QString /*market*/, qint64 /*total*/>::const_iterator i;
-    for ( i = market_fills.begin(); i != market_fills.end(); i++ )
-    {
-        const QString &market = i.key();
-        const qint64 &count = i.value();
-
-        kDebug() << QString( "%1: %2" )
-                .arg( market, 8 )
-                .arg( count );
-
-        total += count;
-    }
-
-    kDebug() << "total fills:" << total;
-}
-
 //void Stats::printOrdersTotal()
 //{
 //    qint64 total = 0;
@@ -453,57 +315,6 @@ void Stats::printStrategyShortLong( QString strategy_tag )
     kDebug() << "shortlong total:" << total;
 }
 
-void Stats::printProfit()
-{
-    Coin total;
-
-    QMap<QString /*market*/, Coin /*amount*/>::const_iterator i;
-    for ( i = market_profit.begin(); i != market_profit.end(); i++ )
-    {
-        const Coin &val = i.value();
-
-        total += val;
-        kDebug() << QString( "%1: %2" )
-                .arg( i.key(), 8 )
-                .arg( val );
-    }
-
-    kDebug() << "profit total:" << total;
-}
-
-void Stats::printDailyProfit()
-{
-    QMap<QString /*market*/, Coin /*amount*/>::const_iterator i;
-    for ( i = daily_profit.begin(); i != daily_profit.end(); i++ )
-    {
-        kDebug() << QString( "%1: %2" )
-                .arg( i.key(), 8 )
-                .arg( i.value() );
-    }
-}
-
-void Stats::printMarketProfit()
-{
-    QMap<QString /*market*/, Coin /*amount*/>::const_iterator i;
-    for ( i = market_profit.begin(); i != market_profit.end(); i++ )
-    {
-        kDebug() << QString( "%1: %2" )
-                .arg( i.key(), 8 )
-                .arg( i.value() );
-    }
-}
-
-void Stats::printDailyMarketProfit()
-{
-    QMap<QString /*market*/, Coin /*amount*/>::const_iterator i;
-    for ( i = daily_market_profit.begin(); i != daily_market_profit.end(); i++ )
-    {
-        kDebug() << QString( "%1: %2" )
-                .arg( i.key(), 8 )
-                .arg( i.value() );
-    }
-}
-
 void Stats::printDailyMarketVolume()
 {
     QMap<QString /*market*/, Coin /*amount*/>::const_iterator i;
@@ -512,74 +323,5 @@ void Stats::printDailyMarketVolume()
         kDebug() << QString( "%1: %2" )
                 .arg( i.key(), 8 )
                 .arg( i.value() );
-    }
-}
-
-void Stats::printDailyMarketProfitVolume()
-{
-    QMap<QString /*market*/, Coin /*amount*/>::const_iterator i;
-    for ( i = daily_market_profit_volume.begin(); i != daily_market_profit_volume.end(); i++ )
-    {
-        kDebug() << QString( "%1: %2" )
-                .arg( i.key(), 8 )
-                .arg( i.value() );
-    }
-}
-
-void Stats::printMarketProfitVolume()
-{
-    QMap<QString /*market*/, Coin /*amount*/>::const_iterator i;
-    for ( i = market_profit_volume.begin(); i != market_profit_volume.end(); i++ )
-    {
-        kDebug() << QString( "%1: %2" )
-                .arg( i.key() )
-                .arg( i.value() );
-    }
-}
-
-void Stats::printMarketProfitFills()
-{
-    QMap<QString /*market*/, qint64 /*total*/>::const_iterator i;
-    for ( i = market_profit_fills.begin(); i != market_profit_fills.end(); i++ )
-    {
-        const QString &market = i.key();
-        const qint64 &count = i.value();
-
-        kDebug() << QString( "%1: %2" )
-                .arg( market, 8 )
-                .arg( count );
-    }
-}
-
-void Stats::printDailyMarketProfitRW()
-{
-    QMap<QString /*day-market-profit*/, QPair<Coin,quint64> /*total, count*/>::const_iterator i;
-    for ( i = daily_market_profit_risk_reward.begin(); i != daily_market_profit_risk_reward.end(); i++ )
-    {
-        const QString &market = i.key();
-        const Coin &total = i.value().first;
-        const quint64 &count = i.value().second;
-
-        kDebug() << QString( "%1 %2" )
-                .arg( market, 8 )
-                .arg( total / count );
-    }
-}
-
-void Stats::printMarketProfitRW()
-{
-    QMap<QString /*market-profit*/, QPair<Coin,quint64> /*r-w ratios*/>::const_iterator i;
-    for ( i = market_profit_risk_reward.begin(); i != market_profit_risk_reward.end(); i++ )
-    {
-        const QString &market_profit_str = i.key();
-        const Coin &total = i.value().first;
-        const quint64 &count = i.value().second;
-
-        const Coin &volume = market_profit_volume.value( market_profit_str );
-
-        kDebug() << QString( "%1 rw:%2 vol:%3" )
-                .arg( market_profit_str, 8 )
-                .arg( total / count )
-                .arg( volume );
     }
 }

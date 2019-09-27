@@ -56,19 +56,9 @@ private:
     void command_setkeyandsecret( QStringList &args );
     void command_getvolume( QStringList &args );
     void command_getdailyvolume( QStringList &args );
-    void command_getdailyprofit( QStringList &args );
     void command_getdailyfills( QStringList &args );
-    void command_getprofit( QStringList &args );
     void command_getalpha( QStringList &args );
-    void command_getmarketalpha( QStringList &args );
-    void command_getdailymarketprofit( QStringList &args );
     void command_getdailymarketvolume( QStringList &args );
-    void command_getdailymarketprofitvolume( QStringList &args );
-    void command_getmarketprofitvolume( QStringList &args );
-    void command_getmarketprofitfills( QStringList &args );
-    void command_getdailymarketprofitriskreward( QStringList &args );
-    void command_getmarketprofitriskreward( QStringList &args );
-    void command_getfills( QStringList &args );
     void command_getshortlong( QStringList &args );
     void command_gethibuylosell( QStringList &args );
     void command_setmarketsettings( QStringList &args );
@@ -116,7 +106,6 @@ private:
     void command_getconfig( QStringList &args );
     void command_getinternal( QStringList &args );
     void command_setmaintenancetime( QStringList &args );
-    void command_clearstratstats( QStringList &args );
     void command_clearallstats( QStringList &args );
     void command_savemarket( QStringList &args );
     void command_savesettings( QStringList &args );

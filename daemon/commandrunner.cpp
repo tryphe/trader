@@ -49,19 +49,9 @@ CommandRunner::CommandRunner( Engine *_e, REST_OBJECT *_rest, Stats *_stats, QOb
     command_map.insert( "setkeyandsecret", std::bind( &CommandRunner::command_setkeyandsecret, this, _1 ) );
     command_map.insert( "getvolume", std::bind( &CommandRunner::command_getvolume, this, _1 ) );
     command_map.insert( "getdailyvolume", std::bind( &CommandRunner::command_getdailyvolume, this, _1 ) );
-    command_map.insert( "getdailyprofit", std::bind( &CommandRunner::command_getdailyprofit, this, _1 ) );
     command_map.insert( "getdailyfills", std::bind( &CommandRunner::command_getdailyfills, this, _1 ) );
-    command_map.insert( "getprofit", std::bind( &CommandRunner::command_getprofit, this, _1 ) );
     command_map.insert( "getalpha", std::bind( &CommandRunner::command_getalpha, this, _1 ) );
-    command_map.insert( "getmarketalpha", std::bind( &CommandRunner::command_getmarketalpha, this, _1 ) );
-    command_map.insert( "getdailymarketprofit", std::bind( &CommandRunner::command_getdailymarketprofit, this, _1 ) );
     command_map.insert( "getdailymarketvolume", std::bind( &CommandRunner::command_getdailymarketvolume, this, _1 ) );
-    command_map.insert( "getdailymarketprofitvolume", std::bind( &CommandRunner::command_getdailymarketprofitvolume, this, _1 ) );
-    command_map.insert( "getmarketprofitvolume", std::bind( &CommandRunner::command_getmarketprofitvolume, this, _1 ) );
-    command_map.insert( "getmarketprofitfills", std::bind( &CommandRunner::command_getmarketprofitfills, this, _1 ) );
-    command_map.insert( "getdailymarketprofitriskreward", std::bind( &CommandRunner::command_getdailymarketprofitriskreward, this, _1 ) );
-    command_map.insert( "getmarketprofitriskreward", std::bind( &CommandRunner::command_getmarketprofitriskreward, this, _1 ) );
-    command_map.insert( "getfills", std::bind( &CommandRunner::command_getfills, this, _1 ) );
     command_map.insert( "getshortlong", std::bind( &CommandRunner::command_getshortlong, this, _1 ) );
     command_map.insert( "gethibuylosell", std::bind( &CommandRunner::command_gethibuylosell, this, _1 ) );
     command_map.insert( "setmarketsettings", std::bind( &CommandRunner::command_setmarketsettings, this, _1 ) );
@@ -107,7 +97,6 @@ CommandRunner::CommandRunner( Engine *_e, REST_OBJECT *_rest, Stats *_stats, QOb
     command_map.insert( "getconfig", std::bind( &CommandRunner::command_getconfig, this, _1 ) );
     command_map.insert( "getinternal", std::bind( &CommandRunner::command_getinternal, this, _1 ) );
     command_map.insert( "setmaintenancetime", std::bind( &CommandRunner::command_setmaintenancetime, this, _1 ) );
-    command_map.insert( "clearstratstats", std::bind( &CommandRunner::command_clearstratstats, this, _1 ) );
     command_map.insert( "clearallstats", std::bind( &CommandRunner::command_clearallstats, this, _1 ) );
     command_map.insert( "savemarket", std::bind( &CommandRunner::command_savemarket, this, _1 ) );
     command_map.insert( "savesettings", std::bind( &CommandRunner::command_savesettings, this, _1 ) );
@@ -431,22 +420,10 @@ void CommandRunner::command_getdailyvolume( QStringList &args )
     stats->printDailyVolumes();
 }
 
-void CommandRunner::command_getdailyprofit( QStringList &args )
-{
-    Q_UNUSED( args )
-    stats->printDailyProfit();
-}
-
 void CommandRunner::command_getdailyfills( QStringList &args )
 {
     Q_UNUSED( args )
     stats->printDailyFills();
-}
-
-void CommandRunner::command_getprofit( QStringList &args )
-{
-    Q_UNUSED( args )
-    stats->printProfit();
 }
 
 void CommandRunner::command_getalpha( QStringList &args )
@@ -455,62 +432,15 @@ void CommandRunner::command_getalpha( QStringList &args )
     stats->alpha.printAlpha();
 }
 
-void CommandRunner::command_getmarketalpha( QStringList &args )
-{
-    stats->alpha.getAlpha( Market( args.value( 1 ) ) );
-}
-
-void CommandRunner::command_getdailymarketprofit( QStringList &args )
-{
-    Q_UNUSED( args )
-    stats->printDailyMarketProfit();
-}
-
 void CommandRunner::command_getdailymarketvolume( QStringList &args )
 {
     Q_UNUSED( args )
     stats->printDailyMarketVolume();
 }
 
-void CommandRunner::command_getdailymarketprofitvolume( QStringList &args )
-{
-    Q_UNUSED( args )
-    stats->printDailyMarketProfitVolume();
-}
-
-void CommandRunner::command_getmarketprofitvolume( QStringList &args )
-{
-    Q_UNUSED( args )
-    stats->printMarketProfitVolume();
-}
-
-void CommandRunner::command_getmarketprofitfills( QStringList &args )
-{
-    Q_UNUSED( args )
-    stats->printMarketProfitFills();
-}
-
-void CommandRunner::command_getdailymarketprofitriskreward( QStringList &args )
-{
-    Q_UNUSED( args )
-    stats->printDailyMarketProfitRW();
-}
-
-void CommandRunner::command_getmarketprofitriskreward( QStringList &args )
-{
-    Q_UNUSED( args )
-    stats->printMarketProfitRW();
-}
-
-void CommandRunner::command_getfills( QStringList &args )
-{
-    Q_UNUSED( args )
-    stats->printFills();
-}
-
 void CommandRunner::command_getshortlong( QStringList &args )
 {
-    stats->printStrategyShortLong( args.value( 1 ) );
+    stats->printStrategyShortLong( Market( args.value( 1 ) ) );
 }
 
 void CommandRunner::command_gethibuylosell( QStringList &args )
@@ -931,11 +861,6 @@ void CommandRunner::command_setmaintenancetime( QStringList &args )
 
     engine->setMaintenanceTime( time );
     kDebug() << "maintenance status has been reset and maintenance_time set to" << engine->getMaintenanceTime();
-}
-
-void CommandRunner::command_clearstratstats( QStringList &args )
-{
-    stats->clearSome( Market( args.value( 1 ) ) );
 }
 
 void CommandRunner::command_clearallstats( QStringList &args )
