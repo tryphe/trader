@@ -3,9 +3,9 @@ Formatting
 Command format: `<required> [optional=default_value]`\
 Commands are text arguments with spaces in between. If you setup the bash aliases in README.md, you can call them with `<exchange> <command>`. If not, you can use `trader-cli <exchange> <command>`. If you want to give the bot bulk commands, put them in `<config_dir>/in.txt` and save the file, one command per line.
 
-A note about markets
+Market formatting
 --------------------
-There is two accepted market formats for bot commands. They are `BASE-QUOTE` and `BASE_QUOTE` where BASE is the base currency, and QUOTE is the quote currency. For example, this means that if you are buying and selling LTC and BTC, and the market is priced in BTC, you are trading in the `BTC-LTC` market. This means `1 LTC = x BTC`, where `x` is the market price of `BTC-LTC`. You can also enter `BTC_LTC` and get the same result.
+There is two accepted market formats for bot commands: `BASE-QUOTE` and `BASE_QUOTE`. BASE is the base currency, and QUOTE is the quote currency. For example, this means that if you are buying and selling LTC and BTC, and the market is priced in BTC, you are trading in the `BTC-LTC` market. This means that BTC is the base currency, and LTC is the quote currency, where `1 LTC = x BTC`. `x` is the market price of `BTC-LTC`. You can also enter `BTC_LTC` and get the same result.
 
 Main bot commands
 -----------------
@@ -14,18 +14,18 @@ setorder <market> <buy|sell> <lo> <hi> <amount> <ghost|active>  - add a new ping
 cancelall [market=all]                          - cancels orders, clears position index, for one or all markets
 cancellocal [market=all]                        - cancels orders, clears position index, deletes positions, for one or all markets
 savemarket [market=all] [orders_per_side=1]     - save dat market yo
-savesettings					- save config to ~/tt/settings.txt
-exit/quit/stop
+savesettings					                          - save config to <config-dir>/settings.txt
+savestats                                       - save stats file <config-dir>/stats
 getbalances                                     - (runs an api) get exchange balances
 getorders <market>                              - show active positions by price
 getordersbyindex <market>                       - show active positions by index
-getshortlong <tag>				- print short/long total for tag
+getalpha                                        - print market alpha, avg_buy, avg_sell, volume, per-trade vol, trades
 getdailyvolume                                  - print total volume per day
-getvolume                                       - print each market volume and total volume
-getfills                                        - print # of fills for each market
 getdailymarketvolume                            - print market volume for each [day, market]
+getshortlong <tag>                              - print short/long total for tag
 getbuyselltotal                                 - print local order count
 gethibuylosell                                  - print market spreads
+exit/quit/stop
 ```
 
 Ping-pong options
@@ -71,8 +71,7 @@ setsafetydelaytime <ms>                         - tolerance for order_set_time a
 setrequesttimeout <ms>
 setcanceltimeout <ms>
 setslippagetimeout <ms>
-setslippagestaletime <ms>                       - delay inclusion of slippage prices into slippage calculations for n seconds after set
-clearstratstats                                 - clear stats for market
+setslippagestaletime <ms>                       - delay inclusion of slippage prices into slippage calculations for ms milliseconds
 clearallstats                                   - clear all stats
 getconfig                                       - show the current internal settings and trading preferences
 sendcommand <command> <url-args>                - send manual api command
