@@ -28,7 +28,7 @@ Coin AlphaTracker::getAlpha( const QString &market ) const
     const AlphaData &sell_data = sells.value( market );
     const AlphaData &buy_data = buys.value( market );
 
-    if ( sell_data.trades == 0 )
+    if ( sell_data.trades == 0 || buy_data.trades == 0 )
         return Coin();
 
     return ( sell_data.getAvgPrice() / buy_data.getAvgPrice() );
@@ -68,7 +68,7 @@ quint64 AlphaTracker::getTrades( const QString &market ) const
 
 void AlphaTracker::printAlpha() const
 {
-    const QList<QString> &keys = buys.keys();
+    const QList<QString> keys = getMarkets();
     for ( QList<QString>::const_iterator i = keys.begin(); i != keys.end(); i++ )
     {
         const QString &market = *i;
@@ -87,7 +87,7 @@ void AlphaTracker::printAlpha() const
 QString AlphaTracker::getSaveState() const
 {
     QString ret;
-    const QList<QString> &keys = buys.keys();
+    const QList<QString> keys = getMarkets();
     for ( QList<QString>::const_iterator i = keys.begin(); i != keys.end(); i++ )
     {
         const QString &market = *i;
@@ -137,4 +137,23 @@ void AlphaTracker::readSaveState( const QString &state )
         d.vp = args.at( 4 );
         d.trades = args.at( 5 ).toULongLong();
     }
+}
+
+QList<QString> AlphaTracker::getMarkets() const
+{
+    // put the keys of buys and sells into a qstringlist
+    QList<QString> ret;
+    for( quint8 side = SIDE_BUY; side < SIDE_SELL +1; side++ )
+    {
+        const QMap<QString,AlphaData> &map = side == SIDE_BUY ? buys : sells;
+        const QList<QString> &keys = map.keys();
+
+        for ( QList<QString>::const_iterator i = keys.begin(); i != keys.end(); i++ )
+            if ( !ret.contains( *i ) )
+                ret.append( *i );
+    }
+
+    // return sorted list
+    std::sort( ret.begin(), ret.end() );
+    return ret;
 }

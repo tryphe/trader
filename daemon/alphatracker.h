@@ -33,6 +33,8 @@ public:
     void readSaveState( const QString &state );
 
 private:
+    QList<QString> getMarkets() const;
+
     QMap<QString,AlphaData> buys, sells;
 };
 
