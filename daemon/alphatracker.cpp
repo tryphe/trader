@@ -11,7 +11,7 @@ void AlphaTracker::addAlpha( const QString &market, Position *pos )
     QMap<QString,AlphaData> &map = pos->side == SIDE_BUY ? buys : sells;
     AlphaData &d = map[ market ];
 
-    // for each trade, v += volume * price, and v += volume
+    // for each trade, v += volume, and vp += volume * price
     d.v += pos->btc_amount;
     d.vp += pos->btc_amount * pos->price;
     d.trades++;
