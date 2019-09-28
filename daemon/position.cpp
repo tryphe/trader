@@ -155,9 +155,11 @@ Position::~Position()
 
 void Position::calculateQuantity()
 {
+    if ( price.isZeroOrLess() )
+        return;
+
     // q = btc / price;
-    Coin p = Coin( price );
-    quantity = btc_amount / p;
+    quantity = btc_amount / price;
 
     // polo doesn't do this... do it anyways
 #if defined(EXCHANGE_BINANCE)
@@ -165,10 +167,7 @@ void Position::calculateQuantity()
 
     quantity.truncateByTicksize( ticksize );
 #endif
-    btc_amount = quantity * p;
-
-
-    //kDebug() << "quantity:" << quantity;
+    btc_amount = quantity * price;
 }
 
 void Position::flip()
