@@ -685,7 +685,7 @@ void Engine::processTicker( const QMap<QString, TickerInfo> &ticker_data, qint64
 
 #if defined(EXCHANGE_POLONIEX)
     // if we read the ticker from anywhere and the websocket account feed is active, prevent it from filling positions (websocket feed is instant for fill notifications anyways)
-    if ( rest->wss_1000_state )
+    if ( rest->getWSS1000State() )
         return;
 #endif
 
@@ -1289,7 +1289,7 @@ void Engine::findBetterPrice( Position *const &pos )
     if ( pos->price_reset_count > 0 )
         ticksize += ticksize * qFloor( ( qPow( pos->price_reset_count, 1.110 ) ) );
 #elif defined(EXCHANGE_POLONIEX)
-    const qreal slippage_mul = rest->slippage_multiplier.value( market, 0.005 );
+    const qreal slippage_mul = rest->getSlippageMul( market );
 
     if ( is_buy ) ticksize = pos->buy_price.ratio( slippage_mul ) + CoinAmount::SATOSHI;
     else          ticksize = pos->sell_price.ratio( slippage_mul ) + CoinAmount::SATOSHI;

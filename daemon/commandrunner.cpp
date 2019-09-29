@@ -107,9 +107,9 @@ CommandRunner::CommandRunner( Engine *_e, REST_OBJECT *_rest, Stats *_stats, QOb
     command_map.insert( "stop", std::bind( &CommandRunner::command_exit, this, _1 ) );
     command_map.insert( "quit", std::bind( &CommandRunner::command_exit, this, _1 ) );
 
-#if defined(EXCHANGE_BITTREX)
-    command_map.insert( "sethistoryinterval", std::bind( &CommandRunner::command_sethistoryinterval, this, _1 ) );
-#endif
+//#if defined(EXCHANGE_BITTREX)
+//    command_map.insert( "sethistoryinterval", std::bind( &CommandRunner::command_sethistoryinterval, this, _1 ) );
+//#endif
 
     kDebug() << "[CommandRunner]";
 }
@@ -776,7 +776,7 @@ void CommandRunner::command_getconfig( QStringList &args )
     //kDebug() << "market info      " << engine->getMarketInfoStructure();
 
 #if defined(EXCHANGE_POLONIEX)
-    kDebug() << "slippage_multipli" << rest->slippage_multiplier;
+//    kDebug() << "slippage_multipli" << rest->slippage_multiplier;
 #endif
     kDebug() << "limit_commands_queued =" << rest->limit_commands_queued;
     kDebug() << "limit_commands_queued_dc_check =" << rest->limit_commands_queued_dc_check;
@@ -802,7 +802,7 @@ void CommandRunner::command_getconfig( QStringList &args )
     kDebug() << "orderbook update interval =" << rest->orderbook_timer->interval();
 
 #if defined(EXCHANGE_BITTREX)
-    kDebug() << "order_history_timer interval =" << rest->order_history_timer->interval();
+//    kDebug() << "order_history_timer interval =" << rest->order_history_timer->interval();
 #endif
 
     kDebug() << "ticker interval =" << rest->ticker_timer->interval();
@@ -825,17 +825,17 @@ void CommandRunner::command_getinternal( QStringList &args )
 
 
     kDebug() << "avg response time:" << rest->avg_response_time.avgResponseTime();
-    kDebug() << "wss_heartbeat_time:" << QDateTime::fromMSecsSinceEpoch( rest->wss_heartbeat_time ).toString();
-    kDebug() << "wss_connect_try_time:" << QDateTime::fromMSecsSinceEpoch( rest->wss_connect_try_time ).toString();
+//    kDebug() << "wss_heartbeat_time:" << QDateTime::fromMSecsSinceEpoch( rest->wss_heartbeat_time ).toString();
+//    kDebug() << "wss_connect_try_time:" << QDateTime::fromMSecsSinceEpoch( rest->wss_connect_try_time ).toString();
     kDebug() << "orders_stale_trip_count: " << rest->orders_stale_trip_count;
     kDebug() << "books_stale_trip_count: " << rest->books_stale_trip_count;
     kDebug() << "nonce:" << rest->request_nonce;
 #if defined(EXCHANGE_BINANCE)
-    kDebug() << "ratelimit_second:" << rest->ratelimit_second;
-    kDebug() << "ratelimit_minute:" << rest->ratelimit_minute;
-    kDebug() << "ratelimit_day:" << rest->ratelimit_day;
+//    kDebug() << "ratelimit_second:" << rest->ratelimit_second;
+//    kDebug() << "ratelimit_minute:" << rest->ratelimit_minute;
+//    kDebug() << "ratelimit_day:" << rest->ratelimit_day;
 #elif defined(EXCHANGE_BITTREX)
-    kDebug() << "order_history_update_time:" << QDateTime::fromMSecsSinceEpoch( rest->order_history_update_time ).toString();
+//    kDebug() << "order_history_update_time:" << QDateTime::fromMSecsSinceEpoch( rest->order_history_update_time ).toString();
 #endif
 
     kDebug() << Global::getBuildString();
@@ -900,10 +900,10 @@ void CommandRunner::command_exit( QStringList &args )
     emit exitSignal();
 }
 
-#if defined(EXCHANGE_BITTREX)
-void CommandRunner::command_sethistoryinterval( QStringList &args )
-{
-    rest->order_history_timer->setInterval( args.value( 1 ).toInt() );
-    kDebug() << "bot order_history_timer interval set to" << rest->order_history_timer->interval();
-}
-#endif
+//#if defined(EXCHANGE_BITTREX)
+//void CommandRunner::command_sethistoryinterval( QStringList &args )
+//{
+//    rest->order_history_timer->setInterval( args.value( 1 ).toInt() );
+//    kDebug() << "bot order_history_timer interval set to" << rest->order_history_timer->interval();
+//}
+//#endif

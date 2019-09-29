@@ -19,19 +19,7 @@
 #include <QtMath>
 
 BncREST::BncREST( Engine *_engine )
-  : BaseREST( _engine ),
-    wss( nullptr ),
-    wss_connect_try_time( 0 ),
-    wss_heartbeat_time( 0 ),
-    binance_weight( 0 ),
-    exchangeinfo_timer( nullptr ),
-    wss_safety_delay_time( 2000 ), // only detect a wss filled order after this amount of time - for possible wss lag
-    ratelimit_second( 10 ),
-    ratelimit_minute( 600 ),
-    ratelimit_day( 100000 ),
-    wss_1000_state( false ), // account subscription
-    wss_1002_state( false ), // ticker subscription
-    wss_account_feed_update_time( 0 )
+  : BaseREST( _engine )
 {
     kDebug() << "[BncREST]";
 }

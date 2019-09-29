@@ -32,6 +32,17 @@ public:
 
     bool yieldToLag() const;
 
+    void sendNamRequest( Request *const &request );
+    void sendBuySell( Position *const &pos, bool quiet = true );
+    void sendCancel( const QString &_order_id, Position *const &pos = nullptr );
+    void parseBuySell( Request *const &request, const QJsonObject &response );
+    void parseCancelOrder( Request *const &request, const QJsonObject &response );
+    void parseOpenOrders( const QJsonArray &markets, qint64 request_time_sent_ms );
+    void parseReturnBalances( const QJsonObject &obj );
+    void parseOrderBook( const QJsonArray &info, qint64 request_time_sent_ms );
+    void parseExchangeInfo( const QJsonObject &obj );
+    void wssSendJsonObj( const QJsonObject &obj );
+
 public Q_SLOTS:
     void sendNamQueue();
     void onNamReply( QNetworkReply *const &reply );
@@ -45,39 +56,25 @@ public Q_SLOTS:
     void wssTextMessageReceived( const QString &msg );
     void wssSendSubscriptions();
 
-public:
-    void sendNamRequest( Request *const &request );
-    void sendBuySell( Position *const &pos, bool quiet = true );
-    void sendCancel( const QString &_order_id, Position *const &pos = nullptr );
-    void parseBuySell( Request *const &request, const QJsonObject &response );
-    void parseCancelOrder( Request *const &request, const QJsonObject &response );
-    void parseOpenOrders( const QJsonArray &markets, qint64 request_time_sent_ms );
-    void parseReturnBalances( const QJsonObject &obj );
-    void parseOrderBook( const QJsonArray &info, qint64 request_time_sent_ms );
-    void parseExchangeInfo( const QJsonObject &obj );
+private:
+    QMap<QString /*date MDY*/, qint32 /*num*/> daily_orders; // track daily orders sent
 
-    void wssSendJsonObj( const QJsonObject &obj );
+    qint64 wss_connect_try_time{ 0 },
+           wss_heartbeat_time{ 0 },
+           wss_account_feed_update_time{ 0 },
+           wss_safety_delay_time{ 2000 }; // only detect a wss filled order after this amount of time - for possible wss lag
 
-
-    QWebSocket *wss;
-    qint64 wss_connect_try_time;
-    qint64 wss_heartbeat_time;
+    bool wss_1000_state{ false }, // account subscription
+         wss_1002_state{ false }; // ticker subscription
 
     // rate limit stuff
-    qint32 binance_weight;
+    qint32 binance_weight{ 0 }, // current weight
+           ratelimit_second{ 10 }, // orders limit
+           ratelimit_minute{ 600 }, // weight limit
+           ratelimit_day{ 100000 }; // orders limit
 
-    QTimer *exchangeinfo_timer;
-
-    // rate limit - track orders sent
-    QMap<QString /*date MDY*/, qint32 /*num*/> daily_orders; // track daily orders
-
-    qint64 wss_safety_delay_time;
-    qint32 ratelimit_second, // orders limit
-           ratelimit_minute, // weight limit
-           ratelimit_day; // orders limit
-
-    bool wss_1000_state, wss_1002_state;
-    qint64 wss_account_feed_update_time;
+    QTimer *exchangeinfo_timer{ nullptr };
+    QWebSocket *wss{ nullptr };
 };
 
 #endif // EXCHANGE_BINANCE

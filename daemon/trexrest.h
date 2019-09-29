@@ -58,14 +58,10 @@ public:
 
     void wssSendJsonObj( const QJsonObject &obj );
 
-//private: // TODO: make these private
-    QWebSocket *wss;
-    qint64 wss_connect_try_time;
-    qint64 wss_heartbeat_time;
+private:
+    qint64 order_history_update_time{ 0 };
 
-    QTimer *order_history_timer;
-
-    qint64 order_history_update_time;
+    QTimer *order_history_timer{ nullptr };
 };
 
 #endif // EXCHANGE_BITTREX

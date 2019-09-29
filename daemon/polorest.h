@@ -46,6 +46,9 @@ public:
     void wssSendJsonObj( const QJsonObject &obj );
     void setupCurrencyMap( QMap<qint32, QString> &m );
 
+    bool getWSS1000State() const { return wss_1000_state; }
+    qreal getSlippageMul( const QString &market ) const { return slippage_multiplier.value( market, 0.005 ); }
+
 public Q_SLOTS:
     // timer slots
     void sendNamQueue();
@@ -62,26 +65,24 @@ public Q_SLOTS:
     void wssTextMessageReceived( const QString &msg );
     void wssSendSubscriptions();
 
-public:
-//private: // TODO: fix this
-    QWebSocket *wss;
-    qint64 wss_connect_try_time;
-    qint64 wss_heartbeat_time;
-
-    QTimer *fee_timer;
-    QTimer *wss_timer;
-
-    // currency ids for websocket feed
-    QMap<qint32, QString> currency_name_by_id;
-
+private:
+    QMap<qint32, QString> currency_name_by_id; // currency ids for websocket feed
     QMap<QString /*market*/, qreal> slippage_multiplier;
 
-    qint64 poloniex_throttle_time; // when we should wait until to sent the next request
-    qint64 wss_safety_delay_time;
+    bool wss_1000_state{ false }, // account subscription
+         wss_1002_state{ false }; // ticker subscription
 
-    bool wss_1000_state, wss_1002_state;
-    qint64 wss_1000_subscribe_try_time, wss_1002_subscribe_try_time;
-    qint64 wss_account_feed_update_time;
+    qint64 wss_connect_try_time{ 0 },
+           wss_heartbeat_time{ 0 },
+           wss_1000_subscribe_try_time{ 0 },
+           wss_1002_subscribe_try_time{ 0 },
+           wss_account_feed_update_time{ 0 };
+
+    qint64 poloniex_throttle_time{ 0 }; // when we should wait until to sent the next request
+
+    QTimer *fee_timer{ nullptr };
+    QTimer *wss_timer{ nullptr };
+    QWebSocket *wss{ nullptr };
 };
 
 #endif // EXCHANGE_POLONIEX

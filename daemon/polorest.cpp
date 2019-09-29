@@ -21,19 +21,7 @@
 #include <QWebSocket>
 
 PoloREST::PoloREST( Engine *_engine )
-  : BaseREST( _engine ),
-    wss( nullptr ),
-    wss_connect_try_time( 0 ),
-    wss_heartbeat_time( 0 ),
-    fee_timer( nullptr ),
-    wss_timer( nullptr ),
-    poloniex_throttle_time( 0 ), // when should we wait until to send nam_queue
-    wss_safety_delay_time( 2000 ), // only detect a wss filled order after this amount of time - for possible wss lag
-    wss_1000_state( false ), // account subscription
-    wss_1002_state( false ), // ticker subscription
-    wss_1000_subscribe_try_time( 0 ),
-    wss_1002_subscribe_try_time( 0 ),
-    wss_account_feed_update_time( 0 )
+  : BaseREST( _engine )
 {
     kDebug() << "[PoloREST]";
 }

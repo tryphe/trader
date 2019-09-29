@@ -113,9 +113,9 @@ private:
     void command_setchatty( QStringList &args );
     void command_exit( QStringList &args );
 
-#if defined(EXCHANGE_BITTREX)
-    void command_sethistoryinterval( QStringList &args );
-#endif
+//#if defined(EXCHANGE_BITTREX)
+//    void command_sethistoryinterval( QStringList &args );
+//#endif
 
     QMap<QString, std::function<void(QStringList&)>> command_map;
 

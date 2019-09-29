@@ -20,12 +20,7 @@
 #include <QDebug>
 
 TrexREST::TrexREST( Engine *_engine )
-  : BaseREST( _engine ),
-    wss( nullptr ),
-    wss_connect_try_time( 0 ),
-    wss_heartbeat_time( 0 ),
-    order_history_timer( nullptr ),
-    order_history_update_time( 0 )
+  : BaseREST( _engine )
 {
     kDebug() << "[TrexREST]";
 }
@@ -35,17 +30,6 @@ TrexREST::~TrexREST()
     order_history_timer->stop();
     delete order_history_timer;
     order_history_timer = nullptr;
-
-    // dispose of websocket
-    if ( wss )
-    {
-        // disconnect wss so we don't call wssCheckConnection()
-        disconnect( wss, &QWebSocket::disconnected, this, &TrexREST::wssCheckConnection );
-
-        wss->abort();
-        delete wss;
-        wss = nullptr;
-    }
 
     kDebug() << "[TrexREST] done.";
 }
@@ -61,12 +45,6 @@ void TrexREST::init()
     keystore.setKeys( BITTREX_KEY, BITTREX_SECRET );
 
     connect( nam, &QNetworkAccessManager::finished, this, &TrexREST::onNamReply );
-
-    // create websocket
-//    wss = new QWebSocket();
-//    connect( wss, &QWebSocket::connected, this, &TrexREST::wssConnected );
-//    connect( wss, &QWebSocket::disconnected, this, &TrexREST::wssCheckConnection );
-//    connect( wss, &QWebSocket::textMessageReceived, this, &TrexREST::wssTextMessageReceived );
 
     // we use this to send the requests at a predictable rate
     send_timer = new QTimer( this );
