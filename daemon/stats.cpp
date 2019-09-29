@@ -67,9 +67,9 @@ void Stats::clearAll()
     last_price.clear();
 }
 
-void Stats::printOrders( QString market )
+void Stats::printOrders( const QString &market, bool by_index )
 {
-    QMultiMap<QString/*price*/, Position*> sorted_orders;
+    QMultiMap<Coin/*price/idx*/,Position*> sorted_orders;
 
     // sort positions_all into map
     for ( QSet<Position*>::const_iterator i = engine->positions->all().begin(); i != engine->positions->all().end(); i++ )
@@ -77,7 +77,16 @@ void Stats::printOrders( QString market )
         Position *pos = *i;
 
         if ( market == pos->market )
-            sorted_orders.insert( pos->price, pos );
+        {
+            if ( by_index )
+            {
+                sorted_orders.insert( pos->getLowestMarketIndex(), pos );
+            }
+            else
+            {
+                sorted_orders.insert( pos->price, pos );
+            }
+        }
     }
 
     Coin sell_total;
@@ -86,57 +95,7 @@ void Stats::printOrders( QString market )
     Coin lo_sell = CoinAmount::A_LOT;
 
     // print the map
-    for ( QMultiMap<QString /*price*/, Position*>::const_iterator i = sorted_orders.begin(); i != sorted_orders.end(); i++ )
-    {
-        const Position *const &pos = i.value();
-        const QString &price = pos->price;
-
-        QString output_str = QString( "%1:  %2%3 %4%5>>>none<<< %6 o %7 %8" )
-                .arg( pos->price, -10 )
-                .arg( pos->is_landmark ? "L" : " " )
-                .arg( pos->is_slippage ? "S" : " " )
-                .arg( pos->side == SIDE_BUY ? ">>>grn<<<" : ">>>red<<<" )
-                .arg( pos->sideStr(), -4 )
-                .arg( pos->btc_amount )
-                .arg( pos->order_number, -11 )
-                .arg( pos->indices_str, -3 );
-
-        kDebug() << output_str;
-
-        // calculate totals
-        if      ( pos->side == SIDE_BUY  ) buy_total += pos->btc_amount;
-        else if ( pos->side == SIDE_SELL ) sell_total += pos->btc_amount;
-
-        // calculate hi_buy/lo_sell
-        if      ( pos->side == SIDE_BUY  && price > hi_buy  ) hi_buy = price;
-        else if ( pos->side == SIDE_SELL && price < lo_sell ) lo_sell = price;
-    }
-
-    kDebug() << "buy total:" << buy_total;
-    kDebug() << "sell total:" << sell_total;
-    kDebug() << "spread gap:" << lo_sell - hi_buy;
-}
-
-void Stats::printOrdersByIndex( QString market )
-{
-    QMultiMap<qint32/*idx*/, Position*> sorted_orders;
-
-    // sort positions_all into sorted_orders
-    for ( QSet<Position*>::const_iterator i = engine->positions->all().begin(); i != engine->positions->all().end(); i++ )
-    {
-        Position *pos = *i;
-
-        if ( market == pos->market )
-            sorted_orders.insert( pos->getLowestMarketIndex(), pos );
-    }
-
-    Coin sell_total;
-    Coin buy_total;
-    Coin hi_buy;
-    Coin lo_sell = CoinAmount::A_LOT;
-
-    // print the map
-    for ( QMultiMap<qint32 /*idx*/, Position*>::const_iterator i = sorted_orders.begin(); i != sorted_orders.end(); i++ )
+    for ( QMultiMap<Coin/*price/idx*/, Position*>::const_iterator i = sorted_orders.begin(); i != sorted_orders.end(); i++ )
     {
         const Position *const &pos = i.value();
         const QString &price = pos->price;

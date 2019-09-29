@@ -268,7 +268,7 @@ Position *Engine::addPosition( QString market_input, quint8 side, QString buy_pr
     }
 
     // send rest request
-    rest->sendBuySell( pos, quiet );
+    //rest->sendBuySell( pos, quiet );
     return pos;
 }
 

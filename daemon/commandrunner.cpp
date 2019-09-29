@@ -270,7 +270,7 @@ void CommandRunner::command_cancellowest( QStringList &args )
 
 void CommandRunner::command_getorders( QStringList &args )
 {
-    stats->printOrders( Market( args.value( 1 ) ) );
+    stats->printOrders( Market( args.value( 1 ) ), false );
 }
 
 void CommandRunner::command_getpositions( QStringList &args )
@@ -280,7 +280,7 @@ void CommandRunner::command_getpositions( QStringList &args )
 
 void CommandRunner::command_getordersbyindex( QStringList &args )
 {
-    stats->printOrdersByIndex( Market( args.value( 1 ) ) );
+    stats->printOrders( Market( args.value( 1 ) ), true );
 }
 
 void CommandRunner::command_setorder( QStringList &args )

@@ -26,9 +26,8 @@ public:
     void addStrategyStats( Position *const &pos );
     void clearAll();
 
-    void printPositions(QString market);
-    void printOrdersByIndex( QString market );
-    void printOrders( QString market );
+    void printPositions( QString market );
+    void printOrders( const QString &market, bool by_index = false );
     void printDailyVolumes();
     void printDailyFills();
     void printLastPrices();
