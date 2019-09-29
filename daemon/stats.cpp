@@ -39,11 +39,6 @@ void Stats::updateStats( Position *const &pos )
     daily_fills[ date_str ]++;
     last_price[ market ] = pos->price;
 
-    // avoid div0 just incase
-    Coin risk_reward_val;
-    if ( pos->btc_amount.isGreaterThanZero() )
-        risk_reward_val = pos->per_trade_profit / pos->btc_amount;
-
     // add shortlong strategy stats (use blank tag for all onetime orders)
     addStrategyStats( pos );
 }
@@ -219,26 +214,6 @@ void Stats::printDailyFills()
                 .arg( fills );
     }
 }
-
-//void Stats::printOrdersTotal()
-//{
-//    qint64 total = 0;
-
-//    QMap<QString /*market*/, qint32 /*total*/>::const_iterator i;
-//    for ( i = daily_orders.begin(); i != daily_orders.end(); i++ )
-//    {
-//        const QString &market = i.key();
-//        const qint64 &count = i.value();
-
-//        kDebug() << QString( "%1: %2" )
-//                .arg( market, 8 )
-//                .arg( count );
-
-//        total += count;
-//    }
-
-//    kDebug() << "total orders:" << total;
-//}
 
 void Stats::printLastPrices()
 {
