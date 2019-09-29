@@ -25,13 +25,13 @@ void AlphaTracker::reset()
 
 Coin AlphaTracker::getAlpha( const QString &market ) const
 {
-    const AlphaData &sell_data = sells.value( market );
-    const AlphaData &buy_data = buys.value( market );
+    const Coin sell_price = getAvgPrice( market, SIDE_SELL );
+    const Coin buy_price = getAvgPrice( market, SIDE_BUY );
 
-    if ( sell_data.trades == 0 || buy_data.trades == 0 )
+    if ( sell_price.isZeroOrLess() || sell_price.isZeroOrLess() )
         return Coin();
 
-    return ( getAvgPrice( market, SIDE_SELL ) / getAvgPrice( market, SIDE_BUY ) );
+    return ( sell_price / buy_price );
 }
 
 Coin AlphaTracker::getVolume( const QString &market ) const
@@ -80,7 +80,6 @@ void AlphaTracker::printAlpha() const
                     .arg( getVolume( market ), -12 )
                     .arg( getVolumePerTrade( market ), -12 )
                     .arg( getTrades( market ), -7 );
-
     }
 }
 
