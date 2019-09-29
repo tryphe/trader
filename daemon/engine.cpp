@@ -268,7 +268,7 @@ Position *Engine::addPosition( QString market_input, quint8 side, QString buy_pr
     }
 
     // send rest request
-    //rest->sendBuySell( pos, quiet );
+    rest->sendBuySell( pos, quiet );
     return pos;
 }
 
@@ -1132,7 +1132,7 @@ void Engine::saveStats()
     }
 
     QTextStream out_savefile( &savefile );
-    out_savefile << stats->alpha.getSaveState();
+    out_savefile << stats->alpha().getSaveState();
 
     // save the buffer
     out_savefile.flush();
@@ -1156,8 +1156,8 @@ void Engine::loadStats()
     QString data = loadfile.readAll();
     kDebug() << "[Engine] loaded stats," << data.size() << "bytes.";
 
-    stats->alpha.reset();
-    stats->alpha.readSaveState( data );
+    stats->alpha().reset();
+    stats->alpha().readSaveState( data );
 }
 
 void Engine::flipPosition( Position *const &pos )

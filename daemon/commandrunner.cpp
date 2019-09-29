@@ -422,7 +422,7 @@ void CommandRunner::command_getdailyfills( QStringList &args )
 void CommandRunner::command_getalpha( QStringList &args )
 {
     Q_UNUSED( args )
-    stats->alpha.printAlpha();
+    stats->alpha().printAlpha();
 }
 
 void CommandRunner::command_getdailymarketvolume( QStringList &args )

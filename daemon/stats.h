@@ -35,12 +35,12 @@ public:
     void printStrategyShortLong( QString strategy_tag );
     void printDailyMarketVolume();
 
-    QMap<QString /*strat*/, QMap<QString/*currency*/,Coin/*short-long*/>> shortlong;
-
-    // new way to track trade profit
-    AlphaTracker alpha;
+    AlphaTracker &alpha() { return m_alpha; }
 
 private:
+    AlphaTracker m_alpha;
+
+    QMap<QString /*strat*/, QMap<QString/*currency*/,Coin/*short-long*/>> shortlong;
     QMap<QString /*market*/, Coin /*volume*/> daily_market_volume; // track daily profit per market
     QMap<QString /*market*/, Coin /*volume*/> daily_volumes; // track daily volume total
     QMap<QString /*market*/, QString/*price*/> last_price; // track last seen price for each market

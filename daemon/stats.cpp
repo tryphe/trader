@@ -25,7 +25,7 @@ Stats::~Stats()
 void Stats::updateStats( Position *const &pos )
 {
     const QString &market = pos->market;
-    alpha.addAlpha( market, pos );
+    m_alpha.addAlpha( market, pos );
 
     // stringify date + market
     QString date_str = Global::getDateStringMDY(); // cache mdy
@@ -60,7 +60,7 @@ void Stats::addStrategyStats( Position *const &pos )
 
 void Stats::clearAll()
 {
-    alpha.reset();
+    m_alpha.reset();
 
     daily_market_volume.clear();
     daily_volumes.clear();
