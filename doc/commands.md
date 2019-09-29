@@ -10,7 +10,7 @@ There is two accepted market formats: `BASE-QUOTE` and `BASE_QUOTE`. BASE is the
 Main bot commands
 -----------------
 ```
-setorder <market> <buy|sell> <lo> <hi> <amount> <ghost|active>  - add a new ping-pong index
+setorder <market> <buy|sell> <lo> <hi> <amount> <ghost|active>  - add a new position
 cancelall [market=all]                          - cancels orders, clears position index, for one or all markets
 cancellocal [market=all]                        - cancels orders, clears position index, deletes positions, for one or all markets
 savemarket [market=all] [orders_per_side=1]     - save ping-pong state into <config-dir>/index-<market>.txt
