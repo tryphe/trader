@@ -31,7 +31,7 @@ Coin AlphaTracker::getAlpha( const QString &market ) const
     if ( sell_data.trades == 0 || buy_data.trades == 0 )
         return Coin();
 
-    return ( sell_data.getAvgPrice() / buy_data.getAvgPrice() );
+    return ( getAvgPrice( market, SIDE_SELL ) / getAvgPrice( market, SIDE_BUY ) );
 }
 
 Coin AlphaTracker::getVolume( const QString &market ) const
@@ -72,7 +72,7 @@ void AlphaTracker::printAlpha() const
     for ( QList<QString>::const_iterator i = keys.begin(); i != keys.end(); i++ )
     {
         const QString &market = *i;
-        kDebug() << QString( "%1 | alpha %2 | avg_buy %3 | avg_sell %4 | volume %5 | vol-per-trade %6 | trades %7" )
+        kDebug() << QString( "%1 | alpha %2 | buy %3 | sell %4 | vol %5 | vol-trade %6 | trades %7" )
                     .arg( market, -MARKET_STRING_WIDTH )
                     .arg( getAlpha( market ), -10 )
                     .arg( getAvgPrice( market, SIDE_BUY ), -12 )

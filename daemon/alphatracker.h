@@ -8,8 +8,6 @@ class Position;
 
 struct AlphaData
 {
-    Coin getAvgPrice() const { return trades == 0 ? Coin() : vp / trades; }
-
     Coin v, vp;
     quint64 trades{ 0 };
 };
