@@ -13,7 +13,7 @@ Main bot commands
 setorder <market> <buy|sell> <lo> <hi> <amount> <ghost|active>  - add a new position
 cancelall [market=all]                          - cancels orders, clears position index, for one or all markets
 cancellocal [market=all]                        - cancels orders, clears position index, deletes positions, for one or all markets
-savemarket [market=all] [orders_per_side=1]     - save ping-pong state into <config-dir>/index-<market>.txt
+savemarket [market=all] [orders_per_side=15]    - save ping-pong state into <config-dir>/index-<market>.txt
 savesettings                                    - save config to <config-dir>/settings.txt
 savestats                                       - save stats file <config-dir>/stats
 getbalances                                     - (runs an api) get exchange balances
