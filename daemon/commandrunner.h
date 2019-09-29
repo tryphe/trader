@@ -54,7 +54,6 @@ private:
     void command_shortindex( QStringList &args );
     void command_setcancelthresh( QStringList &args );
     void command_setkeyandsecret( QStringList &args );
-    void command_getvolume( QStringList &args );
     void command_getdailyvolume( QStringList &args );
     void command_getdailyfills( QStringList &args );
     void command_getalpha( QStringList &args );

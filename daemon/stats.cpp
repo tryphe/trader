@@ -34,7 +34,6 @@ void Stats::updateStats( Position *const &pos )
                                 .arg( market, 8 );
 
     // update some stats
-    market_volumes[ market ] += pos->btc_amount;
     daily_market_volume[ date_market_str ] += pos->btc_amount;
     daily_volumes[ date_str ] += pos->btc_amount;
     daily_fills[ date_str ]++;
@@ -68,7 +67,6 @@ void Stats::clearAll()
 {
     alpha.reset();
 
-    market_volumes.clear();
     daily_market_volume.clear();
     daily_volumes.clear();
     last_price.clear();
@@ -192,26 +190,6 @@ void Stats::printPositions( QString market )
                         .arg( data.fill_count, -3 )
                         .arg( data.alternate_size );
     }
-}
-
-void Stats::printVolumes()
-{ // print local volumes for all markets
-    Coin total_volume;
-
-    QMap<QString /*market*/, Coin /*volume*/>::const_iterator i;
-    for ( i = market_volumes.begin(); i != market_volumes.end(); i++ )
-    {
-        const QString &market = i.key();
-        const Coin &volume = market_volumes.value( market );
-
-        kDebug() << QString( "%1: %2" )
-                .arg( market, 8 )
-                .arg( volume );
-
-        total_volume += volume;
-    }
-
-    kDebug() << "volume total:" << total_volume;
 }
 
 void Stats::printDailyVolumes()

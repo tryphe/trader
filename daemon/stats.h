@@ -29,7 +29,6 @@ public:
     void printPositions(QString market);
     void printOrdersByIndex( QString market );
     void printOrders( QString market );
-    void printVolumes();
     void printDailyVolumes();
     void printDailyFills();
     void printLastPrices();
@@ -43,7 +42,6 @@ public:
     AlphaTracker alpha;
 
 private:
-    QMap<QString /*market*/, Coin /*volume*/> market_volumes; // track local market volume
     QMap<QString /*market*/, Coin /*volume*/> daily_market_volume; // track daily profit per market
     QMap<QString /*market*/, Coin /*volume*/> daily_volumes; // track daily volume total
     QMap<QString /*market*/, QString/*price*/> last_price; // track last seen price for each market

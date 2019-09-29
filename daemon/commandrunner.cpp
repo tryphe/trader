@@ -47,7 +47,6 @@ CommandRunner::CommandRunner( Engine *_e, REST_OBJECT *_rest, Stats *_stats, QOb
     command_map.insert( "shortindex", std::bind( &CommandRunner::command_shortindex, this, _1 ) );
     command_map.insert( "setcancelthresh", std::bind( &CommandRunner::command_setcancelthresh, this, _1 ) );
     command_map.insert( "setkeyandsecret", std::bind( &CommandRunner::command_setkeyandsecret, this, _1 ) );
-    command_map.insert( "getvolume", std::bind( &CommandRunner::command_getvolume, this, _1 ) );
     command_map.insert( "getdailyvolume", std::bind( &CommandRunner::command_getdailyvolume, this, _1 ) );
     command_map.insert( "getdailyfills", std::bind( &CommandRunner::command_getdailyfills, this, _1 ) );
     command_map.insert( "getalpha", std::bind( &CommandRunner::command_getalpha, this, _1 ) );
@@ -406,12 +405,6 @@ void CommandRunner::command_setkeyandsecret( QStringList &args )
 
     rest->keystore.setKeys( key, secret );
     kDebug() << "key and secret set.";
-}
-
-void CommandRunner::command_getvolume( QStringList &args )
-{
-    Q_UNUSED( args )
-    stats->printVolumes();
 }
 
 void CommandRunner::command_getdailyvolume( QStringList &args )
