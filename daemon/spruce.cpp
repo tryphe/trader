@@ -500,7 +500,7 @@ QMap<QString, Coin> Spruce::getMarketCoeffs()
         normalized_score -= CoinAmount::COIN; // subtract 1, the origin
 
         // clamp score above maximum
-        const Coin max_x = m_cost_cache.getMaxX();
+        const Coin &max_x = m_cost_cache.getMaxX();
         if ( normalized_score >= max_x )
             normalized_score = max_x;
 
