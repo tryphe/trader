@@ -12,8 +12,8 @@ public:
     explicit CostFunctionCache();
 
     Coin getY( const Coin &profile_u, const Coin &reserve, const Coin &x );
-    Coin getTicksize() const { return m_ticksize; }
-    Coin getMaxX() const { return m_max_x; }
+    const Coin &getTicksize() const { return m_ticksize; }
+    const Coin &getMaxX() const { return m_max_x; }
 
 private:
     Coin m_ticksize, m_max_x;
