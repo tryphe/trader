@@ -1,6 +1,6 @@
 Formatting
 ----------
-Command format: `<required> [optional=default_value]`\
+Command format: `command <required> [optional=default_value]`\
 Commands are text arguments with spaces in between. If you setup the bash aliases in README.md, you can call them with `<exchange> <command>`. If not, you can use `trader-cli <exchange> <command>`. If you want to give the bot bulk commands, put them in `<config_dir>/in.txt` and save the file, one command per line.
 
 Market formatting
@@ -13,19 +13,19 @@ Main bot commands
 setorder <market> <buy|sell> <lo> <hi> <amount> <ghost|active>  - add a new ping-pong index
 cancelall [market=all]                          - cancels orders, clears position index, for one or all markets
 cancellocal [market=all]                        - cancels orders, clears position index, deletes positions, for one or all markets
-savemarket [market=all] [orders_per_side=1]     - save dat market yo
+savemarket [market=all] [orders_per_side=1]     - save ping-pong state into <config-dir>/index-<market>.txt
 savesettings					                          - save config to <config-dir>/settings.txt
 savestats                                       - save stats file <config-dir>/stats
 getbalances                                     - (runs an api) get exchange balances
 getorders <market>                              - show active positions by price
 getordersbyindex <market>                       - show active positions by index
-getalpha                                        - print market alpha, avg_buy, avg_sell, volume, per-trade vol, trades
+getalpha                                        - print market alpha, vwap_buy, vwap_sell, volume, total volume, per-trade vol, trades
 getdailyvolume                                  - print total volume per day
 getdailymarketvolume                            - print market volume for each [day, market]
 getshortlong <tag>                              - print short/long total for tag
 getbuyselltotal                                 - print local order count
 gethibuylosell                                  - print market spreads
-exit/quit/stop
+exit/quit/stop                                  - quit daemon
 ```
 
 Ping-pong options
@@ -34,7 +34,7 @@ Ping-pong options
 setordermax <market> <max count>                - set automated max order count for market. 0 will disable automation of market
 setordermin <market> <min count>                - set automated min order count for market. 0 will disable automation of market
 setorderdc <market> <count>                     - set diverge/converge count for each landmark order
-setorderdcnice <market> <nice>
+setorderdcnice <market> <nice>                  - nice value for dc, recommended value 5 to 10
 setorderlandmarkstart <market> <n>              - offset from hi_buy to start diverge/converge
 setorderlandmarkthresh <market> <n>             - offset from order_max to start landmark sets
 setmarketsentiment <market> <bool>              - true = bullish, false = bearish
@@ -52,9 +52,9 @@ setnaminterval <ms>                             - set timer interval for packets
 setbookinterval <ms>                            - set timer interval for orderbook updates
 setpublicbookinterval <ms>                      - slippage calc price update interval
 setcheckinterval <ms>                           - set timer interval for timeout/buysellcount
-setdcinterval <ms>
-setsentcommandsmax <n>                          - limit the number of in-flight commands
-setcancelthresh <n>                             - upper limit for cancel loop
+setdcinterval <ms>                              - dc interval, recommended value 30000 to 300000
+setsentcommandsmax <n>                          - limit the number of in-flight commands to n
+setcancelthresh <n>                             - if a market has >= n orders, sent cancel commands before any other command
 ```
 
 Misc and testing - be careful!
@@ -63,7 +63,7 @@ Misc and testing - be careful!
 getbuildversion                                 - print build version
 setclearstrayorders <bool>                      - detect stray orders and cancel invalid duplicates(also required for scan-set)
 setgracetimelimit <ms>                          - threshhold to clear stray orders after detection, in seconds
-setslippagecalculated <bool>                    - try calculated slippage before additive. if disabled, additive+additive2 only
+setslippagecalculated <bool>                    - post-only increment type. false = linear, true = use spread as guideline
 setadjustbuysell <bool>                         - allow post-only error price to correct hi_buy/lo_sell price for slippage calculations
 setpostonly <bool>                              - use maker orders only for automatic orders
 setdcslippage <bool>                            - include slippage orders in diverge/converge function
