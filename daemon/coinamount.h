@@ -265,8 +265,7 @@ static inline QString toSubsatoshiFormat( qreal &r )
     static QString ret;
     ret = QString::number( r, 'f', CoinAmount::subsatoshi_decimals );
 
-    int dec_idx;
-    dec_idx = ret.indexOf( CoinAmount::decimal_exp );
+    const int dec_idx = ret.indexOf( CoinAmount::decimal_exp );
     ret.truncate( dec_idx + CoinAmount::subsatoshi_decimals + 1 ); // truncate to 8 decimals
     return ret;
 }
