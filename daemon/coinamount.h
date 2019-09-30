@@ -2,9 +2,7 @@
 #define COINAMOUNT_H
 
 #include <gmp.h>
-
 #include <QString>
-#include <QDebug>
 
 class Coin
 {
