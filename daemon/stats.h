@@ -3,13 +3,11 @@
 
 #include <QString>
 #include <QMap>
-#include <QPair>
 
 #include "global.h"
 #include "coinamount.h"
 #include "alphatracker.h"
 
-class QObject;
 class TrexREST;
 class PoloREST;
 class BncREST;
