@@ -326,19 +326,10 @@ QString Coin::toAmountString() const
 
 int Coin::toInt() const
 {
-    // index of y = x / m_tick_size;
-    QString str = toAmountString();
-    int dec_idx = str.indexOf( QChar('.') );
-
-    // check for valid decimal, we should never get here
-    if ( dec_idx < 0 )
-    {
-        kDebug() << "[Coin] local error: couldn't read decimal out of" << str;
-        return 0;
-    }
+    QString str = toString( 0 );
 
     // truncate decimal
-    str.truncate( dec_idx );
+    str.chop( 1 );
 
     // convert to int
     bool ok = false;
@@ -356,21 +347,10 @@ int Coin::toInt() const
 
 quint32 Coin::toUInt32() const
 {
-    // index of y = x / m_tick_size;
-    QString str = toAmountString();
-    int dec_idx = str.indexOf( QChar('.') );
+    QString str = toString( 0 );
 
-    // check for valid decimal, we should never get here
-    if ( dec_idx < 0 )
-    {
-        kDebug() << "[Coin] local error: couldn't read decimal out of" << str;
-        return 0;
-    }
-
-    // TODO: (optimization) make a version of toAmountString() without zeroes,
-    //       then we don't need this truncation. also for toInt().
     // truncate decimal
-    str.truncate( dec_idx );
+    str.chop( 1 );
 
     // convert to int
     bool ok = false;
