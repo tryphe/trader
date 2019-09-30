@@ -222,8 +222,6 @@ static inline void toSatoshiFormat( QString &s, int decimals = satoshi_decimals 
     int sz1 = s.size();
     while ( sz1++ - dec_idx < decimals )
         s.append( CoinAmount::zero_exp );
-
-    s.truncate( dec_idx + decimals );
 }
 
 static inline QString toSatoshiFormatStr( QString &s, int decimals = 8 )
@@ -244,12 +242,7 @@ static inline QString toSatoshiFormat( qreal &r )
          r == -std::numeric_limits<qreal>::infinity() )
         r = 0.;
 
-    static QString ret;
-    ret = QString::number( r, 'f', CoinAmount::str_base );
-
-    int dec_idx = ret.indexOf( CoinAmount::decimal_exp );
-    ret.truncate( dec_idx +9 ); // truncate to 8 decimals
-    return ret;
+    return QString::number( r, 'f', CoinAmount::satoshi_decimals );
 }
 static inline QString toSatoshiFormatExpr( qreal r )
 {
@@ -262,12 +255,7 @@ static inline QString toSubsatoshiFormat( qreal &r )
          r == -std::numeric_limits<qreal>::infinity() )
         r = 0.;
 
-    static QString ret;
-    ret = QString::number( r, 'f', CoinAmount::subsatoshi_decimals );
-
-    const int dec_idx = ret.indexOf( CoinAmount::decimal_exp );
-    ret.truncate( dec_idx + CoinAmount::subsatoshi_decimals + 1 ); // truncate to 8 decimals
-    return ret;
+    return QString::number( r, 'f', CoinAmount::subsatoshi_decimals );
 }
 static inline QString toSubsatoshiFormatExpr( qreal r )
 {
