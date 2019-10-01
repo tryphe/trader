@@ -107,7 +107,7 @@ FAQS
 ----
 **What the bot is NOT**
 
-~The bot doesn't read charts. It also doesn't have persistence yet (coming soon).~ ***Now featuring AI teknology, blah blah AI, quantum computing***
+~The bot doesn't read charts. It also doesn't have persistence yet (coming soon).~ ***Now featuring AI teknology, quantum computing, machine learning, divide and conquer, linear regression, many AIs much wow***
 
 **What about supporting xyz exchange?**
 
