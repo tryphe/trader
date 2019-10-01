@@ -8,7 +8,7 @@ Trader is released under the terms of the MIT license.
 
 Features
 --------
- - [x] Low resource usage. 20-30MB of RAM and 1 CPU are required. (pi works fine!)
+ - [x] Low resource usage. 5MB static binary, 15-20MB ram usage.
  - [x] Runs headless.
  - [x] Supports a large number of build targets. See [Qt platform requirements](https://doc-snapshots.qt.io/qt5-5.13/gettingstarted.html#platform-requirements) for more details.
  - [x] Order engine is adaptable to any exchange.
@@ -107,7 +107,7 @@ FAQS
 ----
 **What the bot is NOT**
 
-The bot doesn't read charts. It also doesn't have persistence yet (coming soon).
+~The bot doesn't read charts. It also doesn't have persistence yet (coming soon).~ ***Now featuring AI teknology, blah blah AI, quantum computing***
 
 **What about supporting xyz exchange?**
 
