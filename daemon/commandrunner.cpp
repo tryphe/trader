@@ -200,8 +200,8 @@ void CommandRunner::runCommandChunk( QString &s )
                         .arg( market )
                         .arg( orders_set )
                         .arg( engine->getMarketInfo( market ).position_index.size() )
-                        .arg( engine->positions->getMarketOrderTotal( market ) )
-                        .arg( engine->positions->getMarketOrderTotal( market, true ) );
+                        .arg( engine->getPositionMan()->getMarketOrderTotal( market ) )
+                        .arg( engine->getPositionMan()->getMarketOrderTotal( market, true ) );
     }
 }
 
@@ -245,12 +245,12 @@ void CommandRunner::command_getbuyselltotal( QStringList & )
 
 void CommandRunner::command_cancelall( QStringList &args )
 {
-    engine->positions->cancelAll( Market( args.value( 1 ) ) );
+    engine->getPositionMan()->cancelAll( Market( args.value( 1 ) ) );
 }
 
 void CommandRunner::command_cancellocal( QStringList &args )
 {
-    engine->positions->cancelLocal( Market( args.value( 1 ) ) );
+    engine->getPositionMan()->cancelLocal( Market( args.value( 1 ) ) );
 }
 
 //void CommandRunner::command_cancelorder( QStringList &args )
@@ -260,12 +260,12 @@ void CommandRunner::command_cancellocal( QStringList &args )
 
 void CommandRunner::command_cancelhighest( QStringList &args )
 {
-    engine->positions->cancelHighest( Market( args.value( 1 ) ) );
+    engine->getPositionMan()->cancelHighest( Market( args.value( 1 ) ) );
 }
 
 void CommandRunner::command_cancellowest( QStringList &args )
 {
-    engine->positions->cancelLowest( Market( args.value( 1 ) ) );
+    engine->getPositionMan()->cancelLowest( Market( args.value( 1 ) ) );
 }
 
 void CommandRunner::command_getorders( QStringList &args )
@@ -368,25 +368,25 @@ void CommandRunner::command_setorderlandmarkstart( QStringList &args )
 void CommandRunner::command_long( QStringList &args )
 {
     QString market = Market( args.value( 1 ) );
-    engine->positions->flipLoSellPrice( market, args.value( 2 ) );
+    engine->getPositionMan()->flipLoSellPrice( market, args.value( 2 ) );
 }
 
 void CommandRunner::command_longindex( QStringList &args )
 {
     QString market = Market( args.value( 1 ) );
-    engine->positions->flipLoSellIndex( market, args.value( 2 ) );
+    engine->getPositionMan()->flipLoSellIndex( market, args.value( 2 ) );
 }
 
 void CommandRunner::command_short( QStringList &args )
 {
     QString market = Market( args.value( 1 ) );
-    engine->positions->flipHiBuyPrice( market, args.value( 2 ) );
+    engine->getPositionMan()->flipHiBuyPrice( market, args.value( 2 ) );
 }
 
 void CommandRunner::command_shortindex( QStringList &args )
 {
     QString market = Market( args.value( 1 ) );
-    engine->positions->flipHiBuyIndex( market, args.value( 2 ) );
+    engine->getPositionMan()->flipHiBuyIndex( market, args.value( 2 ) );
 }
 
 void CommandRunner::command_setcancelthresh( QStringList &args )
@@ -529,8 +529,8 @@ void CommandRunner::command_settickerinterval( QStringList &args )
 
 void CommandRunner::command_setgracetimelimit( QStringList &args )
 {
-    engine->settings->stray_grace_time_limit = args.value( 1 ).toLong();
-    kDebug() << "stray_grace_time_limit set to" << engine->settings->stray_grace_time_limit;
+    engine->getSettings()->stray_grace_time_limit = args.value( 1 ).toLong();
+    kDebug() << "stray_grace_time_limit set to" << engine->getSettings()->stray_grace_time_limit;
 }
 
 void CommandRunner::command_setcheckinterval( QStringList &args )
@@ -547,32 +547,32 @@ void CommandRunner::command_setdcinterval( QStringList &args )
 
 void CommandRunner::command_setclearstrayorders( QStringList &args )
 {
-    engine->settings->should_clear_stray_orders = args.value( 1 ) == "true" ? true : false;
-    kDebug() << "should_clear_stray_orders set to" << engine->settings->should_clear_stray_orders;
+    engine->getSettings()->should_clear_stray_orders = args.value( 1 ) == "true" ? true : false;
+    kDebug() << "should_clear_stray_orders set to" << engine->getSettings()->should_clear_stray_orders;
 }
 
 void CommandRunner::command_setclearstrayordersall( QStringList &args )
 {
-    engine->settings->should_clear_stray_orders_all = args.value( 1 ) == "true" ? true : false;
-    kDebug() << "should_clear_stray_orders_all set to" << engine->settings->should_clear_stray_orders_all;
+    engine->getSettings()->should_clear_stray_orders_all = args.value( 1 ) == "true" ? true : false;
+    kDebug() << "should_clear_stray_orders_all set to" << engine->getSettings()->should_clear_stray_orders_all;
 }
 
 void CommandRunner::command_setslippagecalculated( QStringList &args )
 {
-    engine->settings->should_slippage_be_calculated = args.value( 1 ) == "true" ? true : false;
-    kDebug() << "should_slippage_be_calculated set to" << engine->settings->should_slippage_be_calculated;
+    engine->getSettings()->should_slippage_be_calculated = args.value( 1 ) == "true" ? true : false;
+    kDebug() << "should_slippage_be_calculated set to" << engine->getSettings()->should_slippage_be_calculated;
 }
 
 void CommandRunner::command_setadjustbuysell( QStringList &args )
 {
-    engine->settings->should_adjust_hibuy_losell = args.value( 1 ) == "true" ? true : false;
-    kDebug() << "should_adjust_hibuy_losell set to" << engine->settings->should_adjust_hibuy_losell;
+    engine->getSettings()->should_adjust_hibuy_losell = args.value( 1 ) == "true" ? true : false;
+    kDebug() << "should_adjust_hibuy_losell set to" << engine->getSettings()->should_adjust_hibuy_losell;
 }
 
 void CommandRunner::command_setdcslippage( QStringList &args )
 {
-    engine->settings->should_dc_slippage_orders = args.value( 1 ) == "true" ? true : false;
-    kDebug() << "should_dc_slippage_orders set to" << engine->settings->should_dc_slippage_orders;
+    engine->getSettings()->should_dc_slippage_orders = args.value( 1 ) == "true" ? true : false;
+    kDebug() << "should_dc_slippage_orders set to" << engine->getSettings()->should_dc_slippage_orders;
 }
 
 void CommandRunner::command_setorderbookstaletolerance( QStringList &args )
@@ -583,14 +583,14 @@ void CommandRunner::command_setorderbookstaletolerance( QStringList &args )
 
 void CommandRunner::command_setsafetydelaytime( QStringList &args )
 {
-    engine->settings->safety_delay_time = args.value( 1 ).toLongLong();
-    kDebug() << "safety_delay_time set to" << engine->settings->safety_delay_time << "ms";
+    engine->getSettings()->safety_delay_time = args.value( 1 ).toLongLong();
+    kDebug() << "safety_delay_time set to" << engine->getSettings()->safety_delay_time << "ms";
 }
 
 void CommandRunner::command_settickersafetydelaytime( QStringList &args )
 {
-    engine->settings->ticker_safety_delay_time = args.value( 1 ).toLongLong();
-    kDebug() << "ticker_safety_delay_time set to" << engine->settings->ticker_safety_delay_time << "ms";
+    engine->getSettings()->ticker_safety_delay_time = args.value( 1 ).toLongLong();
+    kDebug() << "ticker_safety_delay_time set to" << engine->getSettings()->ticker_safety_delay_time << "ms";
 }
 
 void CommandRunner::command_setslippagestaletime( QStringList &args )
@@ -625,14 +625,14 @@ void CommandRunner::command_settimeoutyield( QStringList &args )
 
 void CommandRunner::command_setrequesttimeout( QStringList &args )
 {
-    engine->settings->request_timeout = args.value( 1 ).toLong();
-    kDebug() << "request timeout is" << engine->settings->request_timeout;
+    engine->getSettings()->request_timeout = args.value( 1 ).toLong();
+    kDebug() << "request timeout is" << engine->getSettings()->request_timeout;
 }
 
 void CommandRunner::command_setcanceltimeout( QStringList &args )
 {
-    engine->settings->cancel_timeout = args.value( 1 ).toLong();
-    kDebug() << "cancel timeout is" << engine->settings->cancel_timeout;
+    engine->getSettings()->cancel_timeout = args.value( 1 ).toLong();
+    kDebug() << "cancel timeout is" << engine->getSettings()->cancel_timeout;
 }
 
 void CommandRunner::command_setslippagetimeout( QStringList &args )
@@ -649,15 +649,15 @@ void CommandRunner::command_setsprucebasecurrency( QStringList &args )
 {
     if ( !checkArgs( args, 1 ) ) return;
 
-    engine->spruce.setBaseCurrency( args.value( 1 ) );
-    kDebug() << "spruce base currency is now" << engine->spruce.getBaseCurrency();
+    engine->getSpruce().setBaseCurrency( args.value( 1 ) );
+    kDebug() << "spruce base currency is now" << engine->getSpruce().getBaseCurrency();
 }
 
 void CommandRunner::command_setspruceweight( QStringList &args )
 {
     if ( !checkArgs( args, 2 ) ) return;
 
-    engine->spruce.setCurrencyWeight( args.value( 1 ),
+    engine->getSpruce().setCurrencyWeight( args.value( 1 ),
                                       args.value( 2 ) );
     kDebug() << "spruce currency weight for" << args.value( 1 ) << "is" << args.value( 2 );
 }
@@ -666,7 +666,7 @@ void CommandRunner::command_setsprucestartnode( QStringList &args )
 {
     if ( !checkArgs( args, 3 ) ) return;
 
-    engine->spruce.addStartNode( args.value( 1 ),
+    engine->getSpruce().addStartNode( args.value( 1 ),
                                  args.value( 2 ),
                                  args.value( 3 ) );
     kDebug() << "spruce added start node for" << args.value( 1 ) << args.value( 2 ) << args.value( 3 );
@@ -676,76 +676,76 @@ void CommandRunner::command_setspruceshortlongtotal( QStringList &args )
 {
     if ( !checkArgs( args, 2 ) ) return;
 
-    engine->spruce.addToShortLonged( Market( args.value( 1 ) ),
+    engine->getSpruce().addToShortLonged( Market( args.value( 1 ) ),
                                      args.value( 2 ) );
     kDebug() << "spruce shortlong total for" << args.value( 1 ) << "is" << args.value( 2 );
 }
 
 void CommandRunner::command_setspruceleverage( QStringList &args )
 {
-    engine->spruce.setLeverage( args.value( 1 ) );
-    kDebug() << "spruce log leverage is" << engine->spruce.getLeverage();
+    engine->getSpruce().setLeverage( args.value( 1 ) );
+    kDebug() << "spruce log leverage is" << engine->getSpruce().getLeverage();
 }
 
 void CommandRunner::command_setspruceprofile( QStringList &args )
 {
-    engine->spruce.setProfileU( args.value( 1 ), args.value( 2 ) );
-    kDebug() << "spruce profile u for" << args.value( 1 ) << "is" << engine->spruce.getProfileU( args.value( 1 ) );
+    engine->getSpruce().setProfileU( args.value( 1 ), args.value( 2 ) );
+    kDebug() << "spruce profile u for" << args.value( 1 ) << "is" << engine->getSpruce().getProfileU( args.value( 1 ) );
 }
 
 void CommandRunner::command_setsprucereserve( QStringList &args )
 {
-    engine->spruce.setReserve( args.value( 1 ), args.value( 2 ) );
-    kDebug() << "spruce reserve for" << args.value( 1 ) << "is" << engine->spruce.getReserve( args.value( 1 ) );
+    engine->getSpruce().setReserve( args.value( 1 ), args.value( 2 ) );
+    kDebug() << "spruce reserve for" << args.value( 1 ) << "is" << engine->getSpruce().getReserve( args.value( 1 ) );
 }
 
 void CommandRunner::command_setsprucetarget( QStringList &args )
 {
-    engine->spruce.setTarget( args.value( 1 ) );
+    engine->getSpruce().setTarget( args.value( 1 ) );
     kDebug() << "spruce target is" << args.value( 1 );
 }
 
 void CommandRunner::command_setspruceordergreed( QStringList &args )
 {
-    engine->spruce.setOrderGreed( args.value( 1 ) );
-    engine->spruce.setOrderRandom( args.value( 2 ) );
+    engine->getSpruce().setOrderGreed( args.value( 1 ) );
+    engine->getSpruce().setOrderRandom( args.value( 2 ) );
     kDebug() << "spruce order greed is" << args.value( 1 ) << args.value( 2 );
 }
 
 void CommandRunner::command_setsprucelongmax( QStringList &args )
 {
-    engine->spruce.setLongMax( args.value( 1 ) );
-    kDebug() << "spruce longmax is" << engine->spruce.getLongMax();
+    engine->getSpruce().setLongMax( args.value( 1 ) );
+    kDebug() << "spruce longmax is" << engine->getSpruce().getLongMax();
 }
 
 void CommandRunner::command_setspruceshortmax( QStringList &args )
 {
-    engine->spruce.setShortMax( args.value( 1 ) );
-    kDebug() << "spruce shortmax is" << engine->spruce.getShortMax();
+    engine->getSpruce().setShortMax( args.value( 1 ) );
+    kDebug() << "spruce shortmax is" << engine->getSpruce().getShortMax();
 }
 
 void CommandRunner::command_setsprucemarketmax( QStringList &args )
 {
-    engine->spruce.setMarketMax( args.value( 1 ) );
-    kDebug() << "spruce marketmax is" << engine->spruce.getMarketMax();
+    engine->getSpruce().setMarketMax( args.value( 1 ) );
+    kDebug() << "spruce marketmax is" << engine->getSpruce().getMarketMax();
 }
 
 void CommandRunner::command_setspruceordersize( QStringList &args )
 {
-    engine->spruce.setOrderSize( args.value( 1 ) );
-    kDebug() << "spruce ordersize is" << engine->spruce.getOrderSize();
+    engine->getSpruce().setOrderSize( args.value( 1 ) );
+    kDebug() << "spruce ordersize is" << engine->getSpruce().getOrderSize();
 }
 
 void CommandRunner::command_setspruceordernice( QStringList &args )
 {
-    engine->spruce.setOrderNice( args.value( 1 ) );
-    kDebug() << "spruce order nice is" << engine->spruce.getOrderNice();
+    engine->getSpruce().setOrderNice( args.value( 1 ) );
+    kDebug() << "spruce order nice is" << engine->getSpruce().getOrderNice();
 }
 
 void CommandRunner::command_setspruceordertrail( QStringList &args )
 {
-    engine->spruce.setTrailingPriceLimit( args.value( 1 ) );
-    kDebug() << "spruce order trailing price limit is" << engine->spruce.getTrailingPriceLimit();
+    engine->getSpruce().setTrailingPriceLimit( args.value( 1 ) );
+    kDebug() << "spruce order trailing price limit is" << engine->getSpruce().getTrailingPriceLimit();
 }
 
 void CommandRunner::command_spruceup( QStringList & )
@@ -783,18 +783,18 @@ void CommandRunner::command_getconfig( QStringList &args )
     kDebug() << "limit_commands_sent =" << rest->limit_commands_sent;
     kDebug() << "limit_timeout_yield =" << rest->limit_timeout_yield;
     kDebug() << "market_cancel_thresh =" << rest->market_cancel_thresh;
-    kDebug() << "request_timeout =" << engine->settings->request_timeout;
-    kDebug() << "cancel_timeout =" << engine->settings->cancel_timeout;
-    kDebug() << "should_clear_stray_orders =" << engine->settings->should_clear_stray_orders;
-    kDebug() << "should_clear_stray_orders_all =" << engine->settings->should_clear_stray_orders_all;
-    kDebug() << "should_slippage_be_calculated =" << engine->settings->should_slippage_be_calculated;
-    kDebug() << "should_adjust_hibuy_losell =" << engine->settings->should_adjust_hibuy_losell;
-    kDebug() << "should_adjust_hibuy_losell_debugmsgs_ticker =" << engine->settings->should_adjust_hibuy_losell_debugmsgs_ticker;
-    kDebug() << "should_mitigate_blank_orderbook_flash =" << engine->settings->should_mitigate_blank_orderbook_flash;
-    kDebug() << "should_dc_slippage_orders =" << engine->settings->should_dc_slippage_orders;
-    kDebug() << "stray_grace_time_limit =" << engine->settings->stray_grace_time_limit;
-    kDebug() << "safety_delay_time =" << engine->settings->safety_delay_time;
-    kDebug() << "ticker_safety_delay_time =" << engine->settings->ticker_safety_delay_time;
+    kDebug() << "request_timeout =" << engine->getSettings()->request_timeout;
+    kDebug() << "cancel_timeout =" << engine->getSettings()->cancel_timeout;
+    kDebug() << "should_clear_stray_orders =" << engine->getSettings()->should_clear_stray_orders;
+    kDebug() << "should_clear_stray_orders_all =" << engine->getSettings()->should_clear_stray_orders_all;
+    kDebug() << "should_slippage_be_calculated =" << engine->getSettings()->should_slippage_be_calculated;
+    kDebug() << "should_adjust_hibuy_losell =" << engine->getSettings()->should_adjust_hibuy_losell;
+    kDebug() << "should_adjust_hibuy_losell_debugmsgs_ticker =" << engine->getSettings()->should_adjust_hibuy_losell_debugmsgs_ticker;
+    kDebug() << "should_mitigate_blank_orderbook_flash =" << engine->getSettings()->should_mitigate_blank_orderbook_flash;
+    kDebug() << "should_dc_slippage_orders =" << engine->getSettings()->should_dc_slippage_orders;
+    kDebug() << "stray_grace_time_limit =" << engine->getSettings()->stray_grace_time_limit;
+    kDebug() << "safety_delay_time =" << engine->getSettings()->safety_delay_time;
+    kDebug() << "ticker_safety_delay_time =" << engine->getSettings()->ticker_safety_delay_time;
     kDebug() << "slippage_stale_time =" << rest->slippage_stale_time;
     kDebug() << "orderbook_stale_tolerance =" << rest->orderbook_stale_tolerance;
 
@@ -808,7 +808,7 @@ void CommandRunner::command_getconfig( QStringList &args )
     kDebug() << "ticker interval =" << rest->ticker_timer->interval();
     kDebug() << "timeout interval =" << rest->timeout_timer->interval();
     kDebug() << "dc interval =" << rest->diverge_converge_timer->interval();
-    kDebug() << "is_chatty = " << engine->settings->is_chatty;
+    kDebug() << "is_chatty = " << engine->getSettings()->is_chatty;
 }
 
 void CommandRunner::command_getinternal( QStringList &args )
@@ -890,7 +890,7 @@ void CommandRunner::command_setchatty( QStringList &args )
 
     bool chatty = args.value( 1 ) == "true" ? true : false;
 
-    engine->settings->is_chatty = chatty;
+    engine->getSettings()->is_chatty = chatty;
     kDebug() << "is_chatty set to" << chatty;
 }
 

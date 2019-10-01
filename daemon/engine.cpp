@@ -451,13 +451,13 @@ void Engine::processOpenOrders( QVector<QString> &order_numbers, QMultiHash<QStr
         //kDebug() << "processing order" << order_number << market << side << btc_amount << "@" << price;
 
         // if we ran cancelall, try to cancel this order
-        if ( is_running_cancelall )
+        if ( positions->isRunningCancelAll() )
         {
             ct_all++;
 
             // match our market filter arg1
-            if ( cancel_market_filter != ALL &&
-                 cancel_market_filter != market )
+            if ( positions->getCancelMarketFilter() != ALL &&
+                 positions->getCancelMarketFilter() != market )
                 continue;
 
             ct_cancelled++;
@@ -535,10 +535,10 @@ void Engine::processOpenOrders( QVector<QString> &order_numbers, QMultiHash<QStr
     }
 
     // if we were cancelling orders, just return here
-    if ( is_running_cancelall )
+    if ( positions->isRunningCancelAll() )
     {
         kDebug() << "cancelled" << ct_cancelled << "orders," << ct_all << "orders total";
-        is_running_cancelall = false; // reset state to default
+        positions->setRunningCancelAll( false ); // reset state to default
         return;
     }
 

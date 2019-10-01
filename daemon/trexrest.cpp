@@ -110,7 +110,7 @@ void TrexREST::sendNamQueue()
         Position *const &pos = request->pos;
 
         // check for valid pos
-        if ( !pos || !engine->positions->isValid( pos ) )
+        if ( !pos || !engine->getPositionMan()->isValid( pos ) )
         {
             sorted_nam_queue.insert( Coin(), request );
             continue;
@@ -118,7 +118,7 @@ void TrexREST::sendNamQueue()
 
         // check if we should prioritize cancel
         if ( request->api_command == TREX_COMMAND_CANCEL &&
-             engine->positions->getMarketOrderTotal( pos->market ) >= market_cancel_thresh )
+             engine->getPositionMan()->getMarketOrderTotal( pos->market ) >= market_cancel_thresh )
         {
             // expedite the cancel
             sorted_nam_queue.insert( CoinAmount::COIN, request );
@@ -174,13 +174,13 @@ void TrexREST::sendNamRequest( Request *const &request )
     const QString &api_command = request->api_command;
 
     // set the order request time because we are sending the request
-    if ( engine->positions->isQueued( request->pos ) &&
+    if ( engine->getPositionMan()->isQueued( request->pos ) &&
          ( api_command == TREX_COMMAND_BUY || api_command == TREX_COMMAND_SELL ) )
     {
         request->pos->order_request_time = current_time;
     }
     // set cancel time properly
-    else if ( engine->positions->isActive( request->pos ) &&
+    else if ( engine->getPositionMan()->isActive( request->pos ) &&
               api_command == TREX_COMMAND_CANCEL )
     {
         request->pos->order_cancel_time = current_time;
@@ -242,7 +242,7 @@ void TrexREST::sendCancel( const QString &order_id, Position * const &pos )
 {
     sendRequest( TREX_COMMAND_CANCEL, "uuid=" + order_id, pos );
 
-    if ( pos && engine->positions->isActive( pos ) )
+    if ( pos && engine->getPositionMan()->isActive( pos ) )
     {
         pos->is_cancelling = true;
 
@@ -311,7 +311,7 @@ void TrexREST::onNamReply( QNetworkReply *const &reply )
             Position *const &pos = request->pos;
 
             // prevent unallocated access (if we are cancelling it should be an active order)
-            if ( !pos || !engine->positions->isActive( pos ) )
+            if ( !pos || !engine->getPositionMan()->isActive( pos ) )
             {
                 kDebug() << "unknown cancel reply:" << data;
 
@@ -352,7 +352,7 @@ void TrexREST::onNamReply( QNetworkReply *const &reply )
                  api_command == TREX_COMMAND_SELL )
             {
                 // check for bad ptr, and the position should also be queued
-                if ( !request->pos || !engine->positions->isQueued( request->pos ) )
+                if ( !request->pos || !engine->getPositionMan()->isQueued( request->pos ) )
                 {
                     deleteReply( reply, request );
                     return;
@@ -486,7 +486,7 @@ void TrexREST::parseBuySell( Request *const &request, const QJsonObject &respons
     }
 
     // check that the position is queued and not set
-    if ( !engine->positions->isQueued( request->pos ) )
+    if ( !engine->getPositionMan()->isQueued( request->pos ) )
     {
         //kDebug() << "local warning: position from response not found in positions_queued";
         return;
@@ -507,7 +507,7 @@ void TrexREST::parseBuySell( Request *const &request, const QJsonObject &respons
 
     const QString &order_number = response[ "uuid" ].toString(); // get the order number to track position id
 
-    engine->positions->activate( pos, order_number );
+    engine->getPositionMan()->activate( pos, order_number );
 }
 
 void TrexREST::parseCancelOrder( Request *const &request, const QJsonObject &response )
@@ -522,7 +522,7 @@ void TrexREST::parseCancelOrder( Request *const &request, const QJsonObject &res
     Position *const &pos = request->pos;
 
     // prevent unsafe access
-    if ( !pos || !engine->positions->isActive( pos ) )
+    if ( !pos || !engine->getPositionMan()->isActive( pos ) )
     {
         kDebug() << "successfully cancelled non-local order:" << response;
         return;
@@ -625,7 +625,7 @@ void TrexREST::parseReturnBalances( const QJsonArray &balances )
         }
         else // for alts, we format DOGE -> BTC-DOGE style string
         {
-            value_d *= engine->positions->getHiBuy( Market( "BTC", currency ) );
+            value_d *= engine->getPositionMan()->getHiBuy( Market( "BTC", currency ) );
             total_d += value_d;
         }
 
@@ -666,7 +666,7 @@ void TrexREST::parseGetOrder( const QJsonObject &order )
         return;
     }
 
-    Position *const &pos = engine->positions->getByOrderID( order_id );
+    Position *const &pos = engine->getPositionMan()->getByOrderID( order_id );
 
     if ( !pos )
         return;
@@ -760,7 +760,7 @@ void TrexREST::parseOrderHistory( const QJsonObject &obj )
         const QString &order_id = order.value( "OrderUuid" ).toString();
 
         // make sure order number is valid
-        Position *const &pos = engine->positions->getByOrderID( order_id );
+        Position *const &pos = engine->getPositionMan()->getByOrderID( order_id );
 
         if ( order_id.isEmpty() || !pos )
             continue;

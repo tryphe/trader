@@ -91,6 +91,10 @@ public:
     bool isDivergingConverging( const QString &market, const qint32 index ) const;
     int getDCCount() { return diverge_converge.size(); }
 
+    void setRunningCancelAll( bool b ) { is_running_cancelall = b; }
+    bool isRunningCancelAll() const { return is_running_cancelall; }
+    const QString &getCancelMarketFilter() const { return cancel_market_filter; }
+
 private:
     void setNextLowest( const QString &market, quint8 side = SIDE_BUY, bool landmark = false );
     void setNextHighest( const QString &market, quint8 side = SIDE_SELL, bool landmark = false );
@@ -108,6 +112,10 @@ private:
     // internal dc stuff
     QMap<QVector<Position*>/*waiting for cancel*/, QPair<bool/*is_landmark*/,QVector<qint32>/*indices*/>> diverge_converge;
     QMap<QString/*market*/, QVector<qint32>/*reserved idxs*/> diverging_converging; // store a vector of converging/diverging indices
+
+    // cancelall command state
+    QString cancel_market_filter;
+    bool is_running_cancelall{ false };
 
     Engine *engine;
 };

@@ -126,13 +126,13 @@ void PoloREST::sendNamRequest( Request *const &request )
 
     //  we are sending the request, set the order request time
     if ( ( api_command == BUY || api_command == SELL ) &&
-         engine->positions->isQueued( pos ) )
+         engine->getPositionMan()->isQueued( pos ) )
     {
         pos->order_request_time = current_time;
     }
     //  we are sending a cancel, set cancel time
     else if ( api_command == POLO_COMMAND_CANCEL &&
-              engine->positions->isActive( pos ) )
+              engine->getPositionMan()->isActive( pos ) )
     {
         pos->order_cancel_time = current_time;
     }
@@ -214,7 +214,7 @@ void PoloREST::sendCancel( const QString &order_id, Position *const &pos )
 {
     sendRequest( POLO_COMMAND_CANCEL, POLO_COMMAND_CANCEL_ARGS + order_id, pos );
 
-    if ( pos && engine->positions->isActive( pos ) )
+    if ( pos && engine->getPositionMan()->isActive( pos ) )
     {
         pos->is_cancelling = true;
 
@@ -235,7 +235,7 @@ void PoloREST::parseBuySell( Request *const &request, const QJsonObject &respons
     }
 
     // check that the position is queued and not set
-    if ( !engine->positions->isQueued( request->pos ) )
+    if ( !engine->getPositionMan()->isQueued( request->pos ) )
     {
         //kDebug() << "local warning: position from response not found in positions_queued";
         return;
@@ -256,7 +256,7 @@ void PoloREST::parseBuySell( Request *const &request, const QJsonObject &respons
 
     const QString &order_number = response[ "orderNumber" ].toString(); // get the order number to track position id
 
-    engine->positions->activate( pos, order_number );
+    engine->getPositionMan()->activate( pos, order_number );
 }
 
 void PoloREST::parseCancelOrder( Request *const &request, const QJsonObject &response )
@@ -271,7 +271,7 @@ void PoloREST::parseCancelOrder( Request *const &request, const QJsonObject &res
     Position *const &pos = request->pos;
 
     // prevent unsafe access
-    if ( !pos || !engine->positions->isActive( pos ) )
+    if ( !pos || !engine->getPositionMan()->isActive( pos ) )
     {
         kDebug() << "successfully cancelled non-local order:" << response;
         return;
@@ -392,7 +392,7 @@ void PoloREST::parseFeeInfo( const QJsonObject &info )
 
     if ( maker.isGreaterThanZero() )
     {
-        engine->settings->fee = maker;
+        engine->getSettings()->fee = maker;
         kDebug() << QString( "(fee) maker %1%, taker %2%, 30-day volume %3" )
                              .arg( ( maker * 100 ).toAmountString().mid( 0, 4 ) )
                              .arg( ( taker * 100 ).toAmountString().mid( 0, 4 ) )
@@ -528,7 +528,7 @@ void PoloREST::sendNamQueue()
         Position *const &pos = request->pos;
 
         // check for valid pos
-        if ( !pos || !engine->positions->isValid( pos ) )
+        if ( !pos || !engine->getPositionMan()->isValid( pos ) )
         {
             sorted_nam_queue.insert( Coin(), request );
             continue;
@@ -536,7 +536,7 @@ void PoloREST::sendNamQueue()
 
         // check for cancel
         if ( request->api_command == POLO_COMMAND_CANCEL &&
-             engine->positions->getMarketOrderTotal( pos->market ) >= market_cancel_thresh )
+             engine->getPositionMan()->getMarketOrderTotal( pos->market ) >= market_cancel_thresh )
         {
             // expedite the cancel
             sorted_nam_queue.insert( CoinAmount::COIN, request );
@@ -669,7 +669,7 @@ void PoloREST::onNamReply( QNetworkReply *const &reply )
         else if ( api_command == BUY || api_command == SELL )
         {
             // check for bad ptr, and the position should also be queued
-            if ( !request->pos || !engine->positions->isQueued( request->pos ) )
+            if ( !request->pos || !engine->getPositionMan()->isQueued( request->pos ) )
             {
                 deleteReply( reply, request );
                 return;
@@ -719,7 +719,7 @@ void PoloREST::onNamReply( QNetworkReply *const &reply )
             Position *const &pos = request->pos;
 
             // prevent unallocated access (if we are cancelling it should be an active order)
-            if ( !pos || !engine->positions->isValid( pos ) ) // check positions_all, these should be queued not active
+            if ( !pos || !engine->getPositionMan()->isValid( pos ) ) // check positions_all, these should be queued not active
             {
                 kDebug() << "unknown" << api_command << "reply:" << data;
                 deleteReply( reply, request );
@@ -743,7 +743,7 @@ void PoloREST::onNamReply( QNetworkReply *const &reply )
             Position *const &pos = request->pos;
 
             // prevent unallocated access (if we are cancelling it should be an active order)
-            if ( !pos || !engine->positions->isActive( pos ) )
+            if ( !pos || !engine->getPositionMan()->isActive( pos ) )
             {
                 kDebug() << "unknown cancel reply:" << data;
                 deleteReply( reply, request );
@@ -782,7 +782,7 @@ void PoloREST::onNamReply( QNetworkReply *const &reply )
             if ( api_command == BUY || api_command == SELL )
             {
                 // check for bad ptr, and the position should also be queued
-                if ( !request->pos || !engine->positions->isQueued( request->pos ) )
+                if ( !request->pos || !engine->getPositionMan()->isQueued( request->pos ) )
                 {
                     deleteReply( reply, request );
                     return;
@@ -1185,7 +1185,7 @@ void PoloREST::wssTextMessageReceived( const QString &msg )
                 if ( order_id.isEmpty() )
                     continue;
 
-                Position *const &pos = engine->positions->getByOrderID( order_id );
+                Position *const &pos = engine->getPositionMan()->getByOrderID( order_id );
 
                 // make sure pos is valid
                 if ( !pos )

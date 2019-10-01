@@ -55,7 +55,7 @@ void Stats::addStrategyStats( Position *const &pos )
     shortlong[ pos->strategy_tag ][ pos->market ] += amount;
 
     if ( pos->is_spruce )
-        engine->spruce.addToShortLonged( pos->market, amount );
+        engine->getSpruce().addToShortLonged( pos->market, amount );
 }
 
 void Stats::clearAll()
@@ -72,7 +72,9 @@ void Stats::printOrders( const QString &market, bool by_index )
     QMultiMap<Coin/*price/idx*/,Position*> sorted_orders;
 
     // sort positions_all into map
-    for ( QSet<Position*>::const_iterator i = engine->positions->all().begin(); i != engine->positions->all().end(); i++ )
+    QSet<Position*>::const_iterator begin = engine->getPositionMan()->all().begin(),
+                                    end = engine->getPositionMan()->all().end();
+    for ( QSet<Position*>::const_iterator i = begin; i != end; i++ )
     {
         Position *pos = *i;
 
@@ -190,7 +192,9 @@ void Stats::printBuySellTotal()
     QMap<QString /*market*/, qint32> buys, sells, total;
 
     // build indexes from active and queued positions
-    for ( QSet<Position*>::const_iterator i = engine->positions->all().begin(); i != engine->positions->all().end(); i++ )
+    QSet<Position*>::const_iterator begin = engine->getPositionMan()->all().begin(),
+                                    end = engine->getPositionMan()->all().end();
+    for ( QSet<Position*>::const_iterator i = begin; i != end; i++ )
     {
         Position *const &pos = *i;
 

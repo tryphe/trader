@@ -20,12 +20,6 @@ class Engine : public QObject
     Q_OBJECT
 
     friend class EngineTest;
-    friend class Position;
-    friend class PositionMan;
-    friend class CommandRunner;
-    friend class Stats;
-    friend class BaseREST;
-    friend class REST_OBJECT;
 
 public:
     explicit Engine();
@@ -49,6 +43,10 @@ public:
     void saveStats();
     void loadStats();
 
+    Spruce &getSpruce() { return spruce; }
+    PositionMan *getPositionMan() const { return positions; }
+    EngineSettings *getSettings() const { return settings; }
+
     // utility functions
     void setStats( Stats *_stats ) { stats = _stats; }
     Stats *getStats() const { return stats; }
@@ -63,9 +61,11 @@ public:
     QHash<QString, MarketInfo> &getMarketInfoStructure() { return market_info; }
     MarketInfo &getMarketInfo( const QString &market ) { return market_info[ market ]; }
 
+    bool hasWSSInterface() const { return wss_interface; }
     void setTesting( bool testing ) { is_testing = testing; }
     bool isTesting() const { return is_testing; }
     void setVerbosity( int v ) { verbosity = v; }
+    int getVerbosity() const { return verbosity; }
 
     void setMarketSettings( QString market, qint32 order_min, qint32 order_max, qint32 order_dc, qint32 order_dc_nice,
                             qint32 landmark_start, qint32 landmark_thresh, bool market_sentiment, qreal market_offset );
@@ -104,8 +104,6 @@ private:
     // state
     qint64 maintenance_time{ 0 };
     bool maintenance_triggered{ false };
-    QString cancel_market_filter;
-    bool is_running_cancelall{ false };
     bool is_testing{ false };
     int verbosity{ 1 }; // 0 = none, 1 = normal, 2 = extra
     bool wss_interface{ false };

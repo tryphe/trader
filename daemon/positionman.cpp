@@ -567,12 +567,12 @@ void PositionMan::flipLoSellIndex( const QString &market, QString tag )
 
 Coin PositionMan::getLoSell( const QString &market ) const
 {
-    return engine->market_info[ market ].lowest_sell;
+    return engine->getMarketInfoStructure()[ market ].lowest_sell;
 }
 
 Coin PositionMan::getHiBuy( const QString &market ) const
 {
-    return engine->market_info[ market ].highest_buy;
+    return engine->getMarketInfoStructure()[ market ].highest_buy;
 }
 
 qint32 PositionMan::getSellTotal( const QString &market ) const
@@ -668,7 +668,7 @@ void PositionMan::activate( Position * const &pos, const QString &order_number )
     positions_active.insert( pos );
     positions_by_number.insert( order_number, pos );
 
-    if ( engine->is_testing )
+    if ( engine->isTesting() )
     {
         pos->order_number = order_number;
     }
@@ -683,12 +683,12 @@ void PositionMan::activate( Position * const &pos, const QString &order_number )
     }
 
     // print set order
-    if ( engine->verbosity > 0 )
+    if ( engine->getVerbosity() > 0 )
         kDebug() << QString( "%1 %2" )
                     .arg( "set", -15 )
                     .arg( pos->stringifyOrder() );
 
-    if ( engine->wss_interface )
+    if ( engine->hasWSSInterface() )
     {
         QJsonArray ext_updates;
         pos->jsonifyPositionSet( ext_updates );
@@ -698,7 +698,7 @@ void PositionMan::activate( Position * const &pos, const QString &order_number )
 
     // check if the order was queued for a cancel (manual or automatic) while it was queued
     if ( pos->is_cancelling &&
-         pos->order_cancel_time < QDateTime::currentMSecsSinceEpoch() - engine->settings->cancel_timeout )
+         pos->order_cancel_time < QDateTime::currentMSecsSinceEpoch() - engine->getSettings()->cancel_timeout )
     {
         cancel( pos, true, pos->cancel_reason );
     }
@@ -720,7 +720,9 @@ void PositionMan::remove( Position * const &pos )
     QQueue<QPair<QNetworkReply*,Request*>> deleted_queue;
 
     // check nam_sent_queue for requests over timeout
-    for ( QHash<QNetworkReply*,Request*>::const_iterator i = engine->rest->nam_queue_sent.begin(); i != engine->rest->nam_queue_sent.end(); i++ )
+    QHash<QNetworkReply*,Request*>::const_iterator begin = engine->getRest()->nam_queue_sent.begin(),
+                                                   end = engine->getRest()->nam_queue_sent.end();
+    for ( QHash<QNetworkReply*,Request*>::const_iterator i = begin; i != end; i++ )
     {
         const Request *const &req = i.value();
 
@@ -736,7 +738,7 @@ void PositionMan::remove( Position * const &pos )
     while ( deleted_queue.size() > 0 )
     {
         QPair<QNetworkReply*,Request*> pair = deleted_queue.takeFirst();
-        engine->rest->deleteReply( pair.first, pair.second );
+        engine->getRest()->deleteReply( pair.first, pair.second );
     }
 
     /// step 3: remove from maps/containers
@@ -744,7 +746,7 @@ void PositionMan::remove( Position * const &pos )
     positions_queued.remove( pos ); // remove from tracking queue
     positions_all.remove( pos ); // remove from all
     positions_by_number.remove( pos->order_number ); // remove order from positions
-    engine->market_info[ pos->market ].order_prices.removeOne( pos->price ); // remove from prices
+    engine->getMarketInfoStructure()[ pos->market ].order_prices.removeOne( pos->price ); // remove from prices
 
     delete pos; // we're done with this on the heap
 }
@@ -824,7 +826,7 @@ void PositionMan::converge( QMap<QString, QVector<qint32> > &market_map, quint8 
             // check if we have enough orders to make a landmark
             if ( new_order.size() == dc_value )
             {
-                if ( engine->verbosity > 0 )
+                if ( engine->getVerbosity() > 0 )
                     kDebug() << QString( "converging %1 %2" )
                                  .arg( market, -MARKET_STRING_WIDTH )
                                  .arg( Global::printVectorqint32( new_order ) );
@@ -856,7 +858,7 @@ void PositionMan::converge( QMap<QString, QVector<qint32> > &market_map, quint8 
         }
 
         // flow control
-        if ( engine->rest->yieldToFlowControl() || engine->rest->nam_queue.size() >= engine->rest->limit_commands_queued_dc_check )
+        if ( engine->getRest()->yieldToFlowControl() || engine->getRest()->nam_queue.size() >= engine->getRest()->limit_commands_queued_dc_check )
             return;
     }
 }
@@ -878,7 +880,7 @@ void PositionMan::diverge( QMap<QString, QVector<qint32> > &market_map )
         const qint32 index = indices.value( 0 );
         Position *const &pos = getByIndex( market, index ); // get position for index
 
-        if ( engine->verbosity > 0 )
+        if ( engine->getVerbosity() > 0 )
             kDebug() << QString( "diverging  %1 %2" )
                          .arg( market, -MARKET_STRING_WIDTH )
                          .arg( Global::printVectorqint32( pos->market_indices ) );
@@ -894,7 +896,7 @@ void PositionMan::diverge( QMap<QString, QVector<qint32> > &market_map )
         cancel( pos, true, CANCELLING_FOR_DC );
 
         // flow control
-        if ( engine->rest->yieldToFlowControl() || engine->rest->nam_queue.size() >= engine->rest->limit_commands_queued_dc_check )
+        if ( engine->getRest()->yieldToFlowControl() || engine->getRest()->nam_queue.size() >= engine->getRest()->limit_commands_queued_dc_check )
             return;
     }
 }
@@ -916,7 +918,7 @@ void PositionMan::cancelAll( QString market )
     // clear market index
     if ( market == ALL )
     {
-        for ( QHash<QString, MarketInfo>::iterator i = engine->market_info.begin(); i != engine->market_info.end(); i++ )
+        for ( QHash<QString, MarketInfo>::iterator i = engine->getMarketInfoStructure().begin(); i != engine->getMarketInfoStructure().end(); i++ )
         {
             (*i).order_prices.clear();
             (*i).position_index.clear();
@@ -925,20 +927,20 @@ void PositionMan::cancelAll( QString market )
     }
     else
     {
-        engine->market_info[ market ].order_prices.clear();
-        engine->market_info[ market ].position_index.clear();
+        engine->getMarketInfoStructure()[ market ].order_prices.clear();
+        engine->getMarketInfoStructure()[ market ].position_index.clear();
         kDebug() << "cleared" << market << "market index";
     }
 
-    engine->is_running_cancelall = true;
-    engine->cancel_market_filter = market;
+    is_running_cancelall = true;
+    cancel_market_filter = market;
 
 #if defined(EXCHANGE_BITTREX)
-    engine->rest->sendRequest( TREX_COMMAND_GET_ORDERS );
+    engine->getRest()->sendRequest( TREX_COMMAND_GET_ORDERS );
 #elif defined(EXCHANGE_BINANCE)
-    engine->rest->sendRequest( BNC_COMMAND_GETORDERS, "", nullptr, 40 );
+    engine->getRest()->sendRequest( BNC_COMMAND_GETORDERS, "", nullptr, 40 );
 #elif defined(EXCHANGE_POLONIEX)
-    engine->rest->sendRequest( POLO_COMMAND_GETORDERS, POLO_COMMAND_GETORDERS_ARGS );
+    engine->getRest()->sendRequest( POLO_COMMAND_GETORDERS, POLO_COMMAND_GETORDERS_ARGS );
 #endif
 }
 
@@ -986,7 +988,7 @@ void PositionMan::cancelLocal( QString market )
     // clear market index
     if ( market == ALL )
     {
-        for ( QHash<QString, MarketInfo>::iterator i = engine->market_info.begin(); i != engine->market_info.end(); i++ )
+        for ( QHash<QString, MarketInfo>::iterator i = engine->getMarketInfoStructure().begin(); i != engine->getMarketInfoStructure().end(); i++ )
         {
             (*i).order_prices.clear();
             (*i).position_index.clear();
@@ -994,11 +996,11 @@ void PositionMan::cancelLocal( QString market )
     }
     else
     {
-        engine->market_info[ market ].order_prices.clear();
-        engine->market_info[ market ].position_index.clear();
+        engine->getMarketInfoStructure()[ market ].order_prices.clear();
+        engine->getMarketInfoStructure()[ market ].position_index.clear();
     }
 
-    if ( !engine->is_testing )
+    if ( !engine->isTesting() )
         kDebug() << "cleared" << market << "market indices";
 }
 
@@ -1015,7 +1017,7 @@ void PositionMan::cancel( Position *const &pos, bool quiet, quint8 cancel_reason
     pos->cancel_reason = cancel_reason;
 
     // if testing, skip ahead to processCancelledOrder logic which just calls remove();
-    if ( engine->is_testing )
+    if ( engine->isTesting() )
     {
         if ( cancel_reason == CANCELLING_FOR_DC )
         {
@@ -1062,7 +1064,7 @@ void PositionMan::cancel( Position *const &pos, bool quiet, quint8 cancel_reason
     }
 
     // send request
-    engine->rest->sendCancel( pos->order_number, pos );
+    engine->getRest()->sendCancel( pos->order_number, pos );
 }
 
 void PositionMan::cancelHighest( const QString &market )
@@ -1088,7 +1090,7 @@ void PositionMan::cancelLowest( const QString &market )
 void PositionMan::divergeConverge()
 {
     // flow control
-    if ( engine->rest->yieldToFlowControl() || engine->rest->nam_queue.size() >= engine->rest->limit_commands_queued_dc_check )
+    if ( engine->getRest()->yieldToFlowControl() || engine->getRest()->nam_queue.size() >= engine->getRest()->limit_commands_queued_dc_check )
         return;
 
     QMap<QString/*market*/,qint32> market_hi_buy_idx; // calculate hi_buy position for each market
@@ -1126,7 +1128,7 @@ void PositionMan::divergeConverge()
     {
         Position *const &pos = *i;
         const QString &market = pos->market;
-        const MarketInfo &info = engine->market_info[ market ];
+        const MarketInfo &info = engine->getMarketInfoStructure()[ market ];
 
         // skip if one-time order or market has slippage
         if ( pos->is_onetime || market_has_slippage.value( market ) )
@@ -1141,7 +1143,7 @@ void PositionMan::divergeConverge()
         // check buy orders
         if (  pos->side == SIDE_BUY &&                              // buys only
              !pos->is_cancelling &&                                 // must not be cancelling
-             !( !engine->settings->should_dc_slippage_orders && pos->is_slippage ) && // must not be slippage
+             !( !engine->getSettings()->should_dc_slippage_orders && pos->is_slippage ) && // must not be slippage
               pos->order_number.size() &&                           // must be set
              !isDivergingConverging( market, first_idx ) &&
              !converge_buys[ market ].contains( first_idx ) &&
@@ -1167,7 +1169,7 @@ void PositionMan::divergeConverge()
         //check sell orders
         if (  pos->side == SIDE_SELL &&                             // sells only
              !pos->is_cancelling &&                                 // must not be cancelling
-             !( !engine->settings->should_dc_slippage_orders && pos->is_slippage ) && // must not be slippage
+             !( !engine->getSettings()->should_dc_slippage_orders && pos->is_slippage ) && // must not be slippage
               pos->order_number.size() &&                           // must be set
              !isDivergingConverging( market, first_idx ) &&
              !converge_sells[ market ].contains( first_idx ) &&
@@ -1219,7 +1221,7 @@ void PositionMan::checkBuySellCount()
     }
 
     // run until we stop setting new orders or flow control returns
-    const QList<QString> &markets = engine->market_info.keys();
+    const QList<QString> &markets = engine->getMarketInfoStructure().keys();
     quint16 new_orders_ct;
     do
     {
@@ -1229,7 +1231,7 @@ void PositionMan::checkBuySellCount()
         for ( QList<QString>::const_iterator i = markets.begin(); i != markets.end(); i++ )
         {
             const QString &market = *i;
-            const MarketInfo &info = engine->market_info[ market ];
+            const MarketInfo &info = engine->getMarketInfoStructure()[ market ];
             const qint32 &order_min = info.order_min;
             const qint32 &order_max = info.order_max;
             qint32 buy_count = buys[ market ];
@@ -1252,7 +1254,7 @@ void PositionMan::checkBuySellCount()
                 buy_count--;
 
                 // flow control
-                if ( engine->rest->yieldToFlowControl() )
+                if ( engine->getRest()->yieldToFlowControl() )
                     return;
             }
 
@@ -1274,7 +1276,7 @@ void PositionMan::checkBuySellCount()
             }
 
             // flow control
-            if ( engine->rest->yieldToFlowControl() )
+            if ( engine->getRest()->yieldToFlowControl() )
                 return;
             ///
 
@@ -1287,7 +1289,7 @@ void PositionMan::checkBuySellCount()
                 sell_count--;
 
                 // flow control
-                if ( engine->rest->yieldToFlowControl() )
+                if ( engine->getRest()->yieldToFlowControl() )
                     return;
             }
 
@@ -1309,7 +1311,7 @@ void PositionMan::checkBuySellCount()
             }
 
             // flow control
-            if ( engine->rest->yieldToFlowControl() )
+            if ( engine->getRest()->yieldToFlowControl() )
                 return;
             ///
         }
@@ -1338,7 +1340,7 @@ void PositionMan::setNextLowest( const QString &market, quint8 side, bool landma
     if ( new_index < 0 || new_index > std::numeric_limits<qint32>::max() -2 )
         return;
 
-    const MarketInfo &info = engine->market_info[ market ];
+    const MarketInfo &info = engine->getMarketInfoStructure()[ market ];
     const qint32 dc_val = info.order_dc;
 
     // count down until we find an index without a position
@@ -1428,7 +1430,7 @@ void PositionMan::setNextHighest( const QString &market, quint8 side, bool landm
     if ( new_index < 1 || new_index > std::numeric_limits<qint32>::max() -1 )
         return;
 
-    const MarketInfo &info = engine->market_info[ market ];
+    const MarketInfo &info = engine->getMarketInfoStructure()[ market ];
     const qint32 dc_val = info.order_dc;
 
     // count up until we find an index without a position

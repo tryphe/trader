@@ -25,7 +25,7 @@ BaseREST::BaseREST( Engine *_engine )
 
     // this timer diverges/converges ping-pong orders
     diverge_converge_timer = new QTimer( this );
-    connect( diverge_converge_timer, &QTimer::timeout, engine->positions, &PositionMan::divergeConverge );
+    connect( diverge_converge_timer, &QTimer::timeout, engine->getPositionMan(), &PositionMan::divergeConverge );
     diverge_converge_timer->setTimerType( Qt::VeryCoarseTimer );
     diverge_converge_timer->start( 100000 );
 
