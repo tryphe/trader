@@ -18,10 +18,11 @@ class Stats;
 class Engine;
 class QTimer;
 class Position;
+class REST_OBJECT;
 
 struct BaseREST : public QObject
 {
-    explicit BaseREST( Engine *_engine );
+    explicit BaseREST( Engine *_engine , REST_OBJECT *_rest);
     ~BaseREST();
 
     bool yieldToFlowControl() const;
@@ -66,6 +67,7 @@ struct BaseREST : public QObject
     QTimer *spruce_timer{ nullptr };
 
     QNetworkAccessManager *nam{ nullptr };
+    REST_OBJECT *rest;
     Stats *stats{ nullptr }; // note: initialization happens out of class
     Engine *engine{ nullptr };
 };

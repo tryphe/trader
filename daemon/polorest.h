@@ -53,7 +53,7 @@ public Q_SLOTS:
     // timer slots
     void sendNamQueue();
     void onCheckBotOrders();
-    void onCheckOrderBooks();
+    void onCheckTicker();
     void onCheckFee();
 
     // nam slots

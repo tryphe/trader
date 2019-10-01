@@ -38,7 +38,7 @@ public Q_SLOTS:
 
     void onCheckBotOrders();
     void onCheckOrderHistory();
-    void onCheckOrderBooks();
+    void onCheckTicker();
 
     void wssConnected();
     void wssCheckConnection();

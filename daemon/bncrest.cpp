@@ -19,7 +19,7 @@
 #include <QtMath>
 
 BncREST::BncREST( Engine *_engine )
-  : BaseREST( _engine )
+  : BaseREST( _engine, this )
 {
     kDebug() << "[BncREST]";
 }
@@ -62,29 +62,11 @@ void BncREST::init()
 //    connect( wss, &QWebSocket::disconnected, this, &BncREST::wssCheckConnection );
 //    connect( wss, &QWebSocket::textMessageReceived, this, &BncREST::wssTextMessageReceived );
 
-    // we use this to send the requests at a predictable rate
-    send_timer = new QTimer( this );
-    connect( send_timer, &QTimer::timeout, this, &BncREST::sendNamQueue );
-    send_timer->setTimerType( Qt::CoarseTimer );
-    send_timer->start( 111 );
-
-    // this timer requests the order book
-    orderbook_timer = new QTimer( this );
-    connect( orderbook_timer, &QTimer::timeout, this, &BncREST::onCheckBotOrders );
-    orderbook_timer->setTimerType( Qt::VeryCoarseTimer );
-    orderbook_timer->start( 12000 );
-
     // this timer syncs the maker fee so we can estimate profit
     exchangeinfo_timer = new QTimer( this );
     connect( exchangeinfo_timer, &QTimer::timeout, this, &BncREST::onCheckExchangeInfo );
     exchangeinfo_timer->setTimerType( Qt::VeryCoarseTimer );
     exchangeinfo_timer->start( 60000 ); // 1 minute (turns to 1 hour after first parse)
-
-    // this timer reads the lo_sell and hi_buy prices for all coins
-    ticker_timer = new QTimer( this );
-    connect( ticker_timer, &QTimer::timeout, this, &BncREST::onCheckTicker );
-    ticker_timer->setTimerType( Qt::VeryCoarseTimer );
-    ticker_timer->start( 10000 );
 
     onCheckExchangeInfo();
     onCheckTicker();

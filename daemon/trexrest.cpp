@@ -20,7 +20,7 @@
 #include <QDebug>
 
 TrexREST::TrexREST( Engine *_engine )
-  : BaseREST( _engine )
+  : BaseREST( _engine, this )
 {
     kDebug() << "[TrexREST]";
 }
@@ -46,29 +46,11 @@ void TrexREST::init()
 
     connect( nam, &QNetworkAccessManager::finished, this, &TrexREST::onNamReply );
 
-    // we use this to send the requests at a predictable rate
-    send_timer = new QTimer( this );
-    connect( send_timer, &QTimer::timeout, this, &TrexREST::sendNamQueue );
-    send_timer->setTimerType( Qt::CoarseTimer );
-    send_timer->start( 330 ); // recommended threshold 1s
-
     // this timer requests the order book
     order_history_timer = new QTimer( this );
     connect( order_history_timer, &QTimer::timeout, this, &TrexREST::onCheckOrderHistory );
     order_history_timer->setTimerType( Qt::VeryCoarseTimer );
     order_history_timer->start( 3000 );
-
-    // this timer requests the order book
-    orderbook_timer = new QTimer( this );
-    connect( orderbook_timer, &QTimer::timeout, this, &TrexREST::onCheckBotOrders );
-    orderbook_timer->setTimerType( Qt::VeryCoarseTimer );
-    orderbook_timer->start( 20000 );
-
-    // this timer reads the lo_sell and hi_buy prices for all coins
-    ticker_timer = new QTimer( this );
-    connect( ticker_timer, &QTimer::timeout, this, &TrexREST::onCheckOrderBooks );
-    ticker_timer->setTimerType( Qt::VeryCoarseTimer );
-    ticker_timer->start( 10000 );
 
 #ifdef EXTRA_NICE
     order_history_timer->setInterval( 50000 );
@@ -76,8 +58,8 @@ void TrexREST::init()
     ticker_timer->setInterval( 52000 );
 #endif
 
+    onCheckTicker();
     onCheckBotOrders();
-    onCheckOrderBooks();
 }
 
 void TrexREST::sendNamQueue()
@@ -448,7 +430,7 @@ void TrexREST::onCheckOrderHistory()
     sendRequest( TREX_COMMAND_GET_ORDER_HIST );
 }
 
-void TrexREST::onCheckOrderBooks()
+void TrexREST::onCheckTicker()
 {
     if ( isCommandQueued( TREX_COMMAND_GET_MARKET_SUMS ) || isCommandSent( TREX_COMMAND_GET_MARKET_SUMS, 10 ) )
         return;

@@ -10,12 +10,31 @@
 #include <QTimer>
 #include <QThread>
 
-BaseREST::BaseREST( Engine *_engine )
+BaseREST::BaseREST( Engine *_engine, REST_OBJECT *_rest )
     : QObject( nullptr ),
+      rest( _rest ),
       engine( _engine )
 {
     kDebug() << "[BaseREST]";
     nam = new QNetworkAccessManager();
+
+    // we use this to send the requests at a predictable rate
+    send_timer = new QTimer( this );
+    connect( send_timer, &QTimer::timeout, rest, &REST_OBJECT::sendNamQueue );
+    send_timer->setTimerType( Qt::CoarseTimer );
+    send_timer->start( TIMER_INTERVAL_NAM_SEND ); // minimum threshold 200 or so
+
+    // this timer requests the order book
+    orderbook_timer = new QTimer( this );
+    connect( orderbook_timer, &QTimer::timeout, rest, &REST_OBJECT::onCheckBotOrders );
+    orderbook_timer->setTimerType( Qt::VeryCoarseTimer );
+    orderbook_timer->start( TIMER_INTERVAL_ORDERBOOK );
+
+    // this timer reads the lo_sell and hi_buy prices for all coins
+    ticker_timer = new QTimer( this );
+    connect( ticker_timer, &QTimer::timeout, rest, &REST_OBJECT::onCheckTicker );
+    ticker_timer->setTimerType( Qt::VeryCoarseTimer );
+    ticker_timer->start( TIMER_INTERVAL_TICKER );
 
     // this timer checks for nam requests that have been queued too long
     timeout_timer = new QTimer( this );

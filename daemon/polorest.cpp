@@ -21,7 +21,7 @@
 #include <QWebSocket>
 
 PoloREST::PoloREST( Engine *_engine )
-  : BaseREST( _engine )
+  : BaseREST( _engine, this )
 {
     kDebug() << "[PoloREST]";
 }
@@ -71,31 +71,12 @@ void PoloREST::init()
     connect( wss, &QWebSocket::disconnected, this, &PoloREST::wssCheckConnection );
     connect( wss, &QWebSocket::textMessageReceived, this, &PoloREST::wssTextMessageReceived );
 
-    // we use this to send the requests at a predictable rate
-    send_timer = new QTimer( this );
-    connect( send_timer, &QTimer::timeout, this, &PoloREST::sendNamQueue );
-    send_timer->setTimerType( Qt::CoarseTimer );
-    send_timer->start( 200 ); // minimum threshold 200 or so
-
-    // this timer requests the order book
-    orderbook_timer = new QTimer( this );
-    connect( orderbook_timer, &QTimer::timeout, this, &PoloREST::onCheckBotOrders );
-    orderbook_timer->setTimerType( Qt::VeryCoarseTimer );
-    orderbook_timer->start( 5000 );
-
     // this timer syncs the maker fee so we can estimate profit
     fee_timer = new QTimer( this );
     connect( fee_timer, &QTimer::timeout, this, &PoloREST::onCheckFee );
     fee_timer->setTimerType( Qt::VeryCoarseTimer );
     fee_timer->start( 60000 * 60 * 12 ); // 12 hours (TODO: find the specific time that poloniex updates it)
     onCheckFee();
-
-    // this timer reads the lo_sell and hi_buy prices for all coins
-    ticker_timer = new QTimer( this );
-    connect( ticker_timer, &QTimer::timeout, this, &PoloREST::onCheckOrderBooks );
-    ticker_timer->setTimerType( Qt::VeryCoarseTimer );
-    ticker_timer->start( 10000 );
-    onCheckOrderBooks();
 
     // check websocket frequently
     wss_timer = new QTimer( this );
@@ -596,7 +577,7 @@ void PoloREST::onCheckBotOrders()
     sendRequest( POLO_COMMAND_GETORDERS, POLO_COMMAND_GETORDERS_ARGS );
 }
 
-void PoloREST::onCheckOrderBooks()
+void PoloREST::onCheckTicker()
 {
     if ( isCommandQueued( POLO_COMMAND_GETBOOKS ) || isCommandSent( POLO_COMMAND_GETBOOKS, 10 ) )
         return;

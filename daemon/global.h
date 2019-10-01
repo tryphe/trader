@@ -65,6 +65,9 @@ static const QLatin1String DEFAULT_MARKET_STRING_TEMPLATE   ( "%1_%2" );
     static const QLatin1String EXCHANGE_STR                 ( "Bittrex" );
     static const int INTERFACE_PORT                         ( 62000 );
     static const int ORDER_STRING_SIZE                      ( 22 );
+    static const int TIMER_INTERVAL_NAM_SEND                ( 330 );
+    static const int TIMER_INTERVAL_ORDERBOOK               ( 20000 );
+    static const int TIMER_INTERVAL_TICKER                  ( 10000 );
 
     static const QLatin1String TREX_REST_URL                ( "https://bittrex.com/api/v1.1/" );
     static const QLatin1String TREX_COMMAND_CANCEL          ( "market/cancel" );
@@ -85,6 +88,9 @@ static const QLatin1String DEFAULT_MARKET_STRING_TEMPLATE   ( "%1_%2" );
     static const QLatin1String EXCHANGE_STR                 ( "Binance" );
     static const int INTERFACE_PORT                         ( 62001 );
     static const int ORDER_STRING_SIZE                      ( 15 );
+    static const int TIMER_INTERVAL_NAM_SEND                ( 111 );
+    static const int TIMER_INTERVAL_ORDERBOOK               ( 12000 );
+    static const int TIMER_INTERVAL_TICKER                  ( 10000 );
 
     static const QLatin1String BNC_URL                      ( "https://api.binance.com/api/v3/" );
     static const QLatin1String BNC_URL_WSS                  ( "wss://api.binance.com" );
@@ -106,6 +112,9 @@ static const QLatin1String DEFAULT_MARKET_STRING_TEMPLATE   ( "%1_%2" );
     static const QLatin1String EXCHANGE_STR                 ( "Poloniex" );
     static const int INTERFACE_PORT                         ( 62002 );
     static const int ORDER_STRING_SIZE                      ( 11 );
+    static const int TIMER_INTERVAL_NAM_SEND                ( 200 );
+    static const int TIMER_INTERVAL_ORDERBOOK               ( 5000 );
+    static const int TIMER_INTERVAL_TICKER                  ( 10000 );
 
     static const QLatin1String POLO_URL_TRADE               ( "https://poloniex.com/tradingApi" );
     static const QLatin1String POLO_URL_PUBLIC              ( "https://poloniex.com/public" );
