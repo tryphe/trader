@@ -17,6 +17,9 @@ BaseREST::BaseREST( Engine *_engine, REST_OBJECT *_rest )
 {
     kDebug() << "[BaseREST]";
     nam = new QNetworkAccessManager();
+    connect( nam, &QNetworkAccessManager::finished, rest, &REST_OBJECT::onNamReply );
+
+    keystore.setKeys( _KEY, _SECRET );
 
     // we use this to send the requests at a predictable rate
     send_timer = new QTimer( this );

@@ -14,7 +14,6 @@
 #include "position.h"
 #include "keystore.h"
 #include "baserest.h"
-#include "keydefs.h"
 
 class QNetworkReply;
 class QTimer;

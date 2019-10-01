@@ -52,10 +52,6 @@ void BncREST::init()
     BaseREST::limit_timeout_yield = 12;
     BaseREST::market_cancel_thresh = 300; // limit for market order total for weighting cancels to be sent first
 
-    keystore.setKeys( BINANCE_KEY, BINANCE_SECRET );
-
-    connect( nam, &QNetworkAccessManager::finished, this, &BncREST::onNamReply );
-
     // create websocket
 //    wss = new QWebSocket();
 //    connect( wss, &QWebSocket::connected, this, &BncREST::wssConnected );

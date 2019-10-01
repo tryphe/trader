@@ -6,7 +6,6 @@
 #include "positionman.h"
 #include "stats.h"
 #include "engine.h"
-#include "keydefs.h"
 
 #include <QTimer>
 #include <QNetworkAccessManager>
@@ -41,10 +40,6 @@ void TrexREST::init()
     BaseREST::limit_commands_sent = 45; // stop checks if we are over this many commands sent
     BaseREST::limit_timeout_yield = 6;
     BaseREST::market_cancel_thresh = 300; // limit for market order total for weighting cancels to be sent first
-
-    keystore.setKeys( BITTREX_KEY, BITTREX_SECRET );
-
-    connect( nam, &QNetworkAccessManager::finished, this, &TrexREST::onNamReply );
 
     // this timer requests the order book
     order_history_timer = new QTimer( this );

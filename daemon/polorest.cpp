@@ -8,7 +8,6 @@
 #include "engine.h"
 #include "enginesettings.h"
 #include "coinamount.h"
-#include "keydefs.h"
 
 #include <QTimer>
 #include <QNetworkAccessManager>
@@ -58,12 +57,8 @@ void PoloREST::init()
     BaseREST::limit_timeout_yield = 5;
     BaseREST::market_cancel_thresh = 99; // limit for market order total for weighting cancels to be sent first
 
-    keystore.setKeys( POLONIEX_KEY, POLONIEX_SECRET );
-
     // setup currency ids
     setupCurrencyMap( currency_name_by_id );
-
-    connect( nam, &QNetworkAccessManager::finished, this, &PoloREST::onNamReply );
 
     // create websocket
     wss = new QWebSocket();
