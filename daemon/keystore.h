@@ -8,7 +8,6 @@
 #include <QVector>
 #include <QRandomGenerator>
 
-
 class KeyStore
 {
 public:
@@ -45,9 +44,6 @@ public:
         const QByteArray &pad_to_use = m_getPad();
         m_key = xorDecodeEncode( key, pad_to_use );
         m_secret = xorDecodeEncode( secret, pad_to_use );
-
-        //qDebug() << "pad size:" << m_pad.size() << "offset:" << m_offset;
-        //qDebug() << "key:" << m_key.toHex() << "secret:" << m_secret.toHex();
     }
 
     void test()
@@ -83,17 +79,14 @@ public:
     }
 
     bool isKeyOrSecretEmpty() const { return m_key.isEmpty() || m_secret.isEmpty(); }
-    QByteArray getKey() { return xorDecodeEncode( m_key, m_getPad() ); }
-    QByteArray getSecret() { return xorDecodeEncode( m_secret, m_getPad() ); }
-    QPair<QByteArray, QByteArray> getKeyAndSecret() { const QByteArray &pad_to_use = m_getPad();
-                                                      return QPair<QByteArray, QByteArray>( xorDecodeEncode( m_key, pad_to_use ),
-                                                                                            xorDecodeEncode( m_secret, pad_to_use ) ); }
+    QByteArray getKey() const { return xorDecodeEncode( m_key, m_getPad() ); }
+    QByteArray getSecret() const { return xorDecodeEncode( m_secret, m_getPad() ); }
+
 private:
     const QByteArray m_getPad() const { return m_pad.mid( m_offset, pad_size ); }
 
     QByteArray m_key, m_secret, m_pad;
     quint16 m_offset;
 };
-
 
 #endif // KEYSTORE_H
