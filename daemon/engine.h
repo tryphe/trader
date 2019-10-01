@@ -63,10 +63,6 @@ public:
     QHash<QString, MarketInfo> &getMarketInfoStructure() { return market_info; }
     MarketInfo &getMarketInfo( const QString &market ) { return market_info[ market ]; }
 
-    QPair<Coin,Coin> getSpruceSpread( const QString &market );
-
-    Spruce spruce;
-
     void setTesting( bool testing ) { is_testing = testing; }
     bool isTesting() const { return is_testing; }
     void setVerbosity( int v ) { verbosity = v; }
@@ -87,6 +83,8 @@ public Q_SLOTS:
     void handleUserMessage( const QString &str );
 
 private:
+    QPair<Coin,Coin> getSpruceSpread( const QString &market );
+
     // timer routines
     void cleanGraceTimes();
     void checkMaintenance();
@@ -99,10 +97,9 @@ private:
 
     Coin getPriceForMarket( quint8 side, const QString &currency, const QString &base );
 
+    Spruce spruce;
     QHash<QString, MarketInfo> market_info;
-
-    // other
-    QHash<QString/*order_id*/, qint64/*seen_time*/> order_grace_times; // record "seen" time to allow for grace period before we remove stray orders
+    QHash<QString/*order_id*/, qint64/*seen_time*/> order_grace_times; // record "seen" time to allow for stray grace period
 
     // state
     qint64 maintenance_time{ 0 };
