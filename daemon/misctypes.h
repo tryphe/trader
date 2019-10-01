@@ -12,23 +12,17 @@ struct Request
 {
     explicit Request()
     {
-        time_sent_ms = 0;
-        weight = 0;
-        pos = nullptr;
     }
 
     QString api_command;
     QString body;
-    qint64 time_sent_ms; // track timeouts
-    quint16 weight; // for binance, command weight
-    Position *pos;
+    qint64 time_sent_ms{ 0 }; // track timeouts
+    quint16 weight{ 0 }; // for binance, command weight
+    Position *pos{ nullptr };
 };
 
 struct OrderInfo
 {
-    explicit OrderInfo()
-    {
-    }
     explicit OrderInfo( const QString &_order_number,
                         const quint8 &_side,
                         const QString &_price,
@@ -50,8 +44,6 @@ struct TickerInfo
 {
     explicit TickerInfo()
     {
-        ask_price = 0.;
-        bid_price = 0.;
     }
     explicit TickerInfo( const Coin &_ask_price,
                          const Coin &_bid_price )
@@ -64,17 +56,16 @@ struct TickerInfo
                                   .arg( bid_price )
                                   .arg( ask_price ); }
 
-    Coin ask_price;
-    Coin bid_price;
+    Coin ask_price{ 0. };
+    Coin bid_price{ 0. };
 };
 
 class AvgResponseTime
 {
 public:
     explicit AvgResponseTime()
-        : total( 0 ),
-          iterations( 0 )
-    {}
+    {
+    }
 
     void addResponseTime( quint64 time )
     {
@@ -84,7 +75,8 @@ public:
     quint64 avgResponseTime() const { return iterations == 0 ? 0 : total / iterations; }
 
 private:
-    quint64 total, iterations;
+    quint64 total{ 0 },
+            iterations{ 0 };
 };
 
 #endif // MISCTYPES_H
