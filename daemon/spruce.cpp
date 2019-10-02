@@ -213,7 +213,7 @@ QString Spruce::getSaveState()
     for ( QMap<QString,Coin>::const_iterator i = m_currency_profile_u.begin(); i != m_currency_profile_u.end(); i++ )
     {
         const QString &currency = i.key();
-        const QString &profile_u = i.value();
+        const Coin &profile_u = i.value();
 
         // don't save default value
         if ( profile_u == DEFAULT_PROFILE_U )
@@ -228,7 +228,7 @@ QString Spruce::getSaveState()
     for ( QMap<QString,Coin>::const_iterator i = m_currency_reserve.begin(); i != m_currency_reserve.end(); i++ )
     {
         const QString &currency = i.key();
-        const QString &reserve = i.value();
+        const Coin &reserve = i.value();
 
         // don't save default value
         if ( reserve == DEFAULT_RESERVE )
@@ -501,7 +501,7 @@ QMap<QString, Coin> Spruce::getMarketCoeffs()
 
         // clamp score above maximum
         const Coin &max_x = m_cost_cache.getMaxX();
-        if ( normalized_score >= max_x )
+        if ( normalized_score > max_x )
             normalized_score = max_x;
 
         // translate the normalized score with the cost function
