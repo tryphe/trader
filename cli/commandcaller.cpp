@@ -27,6 +27,7 @@ CommandCaller::CommandCaller( QString exchange, QByteArray command, QObject *par
     {
         QLocalSocket::write( command );
         QLocalSocket::flush();
+        QLocalSocket::close();
     }
     else
     {
