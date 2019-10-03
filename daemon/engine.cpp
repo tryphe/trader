@@ -1673,7 +1673,10 @@ void Engine::onSpruceUp()
 
             // don't go over our per-market max
             if ( spruce_active.value( market ) + order_size >= order_max )
+            {
+                kDebug() << "[Spruce] info:" << market << "over market order max";
                 continue;
+            }
 
             // don't go over the abs value of our new projected position
             if ( spruce_active.value( market ) + order_size_limit >= amount_to_shortlong_abs )
