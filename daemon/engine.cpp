@@ -188,11 +188,22 @@ Position *Engine::addPosition( QString market_input, quint8 side, QString buy_pr
     // make position object
     Position *const &pos = new Position( market, side, buy_price, sell_price, order_size, strategy_tag, indices, landmark, this );
 
-    // check for correctly loaded position data
-    if ( !pos || !pos->market.isValid() || pos->price.isZeroOrLess() || pos->btc_amount.isZeroOrLess() || pos->quantity.isZeroOrLess() )
+    // check for correctly loaded position data and size
+    if ( !pos ||
+         !pos->market.isValid() ||
+          pos->price.isZeroOrLess() ||
+          pos->btc_amount.isZeroOrLess() ||
+          pos->quantity.isZeroOrLess() )
     {
-        kDebug() << "local warning: new position failed to initialize" << market << side << buy_price << sell_price << order_size << indices << landmark;
+        kDebug() << "local warning: failed to set order because of invalid value:" << market << side << buy_price << sell_price << order_size << indices << landmark;
         if ( pos ) delete pos;
+        return nullptr;
+    }
+
+    // check for minimum position size
+    if ( pos->btc_amount < MINIMUM_ORDER_SIZE )
+    {
+        kDebug() << "local warning: failed to set order: size" << pos->btc_amount << "is under the minimum size" << MINIMUM_ORDER_SIZE;
         return nullptr;
     }
 

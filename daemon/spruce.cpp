@@ -20,7 +20,7 @@ Spruce::Spruce()
     m_trailing_price_limit = "0.96";
 
     /// per-exchange constants
-    m_order_size_min = "0.00070000"; // TODO: scale this minimum to each exchange
+    m_order_size_min = MINIMUM_ORDER_SIZE;
 
     /// internal
     m_leverage = CoinAmount::COIN;

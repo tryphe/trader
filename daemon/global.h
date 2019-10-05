@@ -2,6 +2,7 @@
 #define GLOBAL_H
 
 #include "build-config.h"
+#include "coinamount.h"
 #include "keydefs.h"
 #include <assert.h>
 #include <gmp.h>
@@ -63,6 +64,7 @@ static const QLatin1String DEFAULT_MARKET_STRING_TEMPLATE   ( "%1_%2" );
     #define EXCHANGE_SUBPATH                                BITTREX_SUBPATH
     #define _KEY BITTREX_KEY
     #define _SECRET BITTREX_SECRET
+    static const Coin MINIMUM_ORDER_SIZE                    ( "0.00065000" );
     static const QLatin1String MARKET_STRING_TEMPLATE       ( "%1-%2" );
     static const QLatin1String EXCHANGE_STR                 ( "Bittrex" );
     static const int INTERFACE_PORT                         ( 62000 );
@@ -88,6 +90,7 @@ static const QLatin1String DEFAULT_MARKET_STRING_TEMPLATE   ( "%1_%2" );
     #define EXCHANGE_SUBPATH                                BINANCE_SUBPATH
     #define _KEY BINANCE_KEY
     #define _SECRET BINANCE_SECRET
+    static const Coin MINIMUM_ORDER_SIZE                    ( "0.00105000" );
     static const QLatin1String MARKET_STRING_TEMPLATE       ( "%2%1" );
     static const QLatin1String EXCHANGE_STR                 ( "Binance" );
     static const int INTERFACE_PORT                         ( 62001 );
@@ -114,6 +117,7 @@ static const QLatin1String DEFAULT_MARKET_STRING_TEMPLATE   ( "%1_%2" );
     #define EXCHANGE_SUBPATH                                POLONIEX_SUBPATH
     #define _KEY POLONIEX_KEY
     #define _SECRET POLONIEX_SECRET
+    static const Coin MINIMUM_ORDER_SIZE                    ( "0.00011000" );
     static const QLatin1String MARKET_STRING_TEMPLATE       ( "%1_%2" );
     static const QLatin1String EXCHANGE_STR                 ( "Poloniex" );
     static const int INTERFACE_PORT                         ( 62002 );
