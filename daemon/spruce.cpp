@@ -4,11 +4,11 @@
 #include "market.h"
 
 #include <QRandomGenerator>
+#include <QQueue>
 
 Spruce::Spruce()
 {
     /// user settings
-    m_target = "0.95"; // keep our market valuations at most 1-x% apart
     m_order_greed = "0.99"; // keep our spread at least 1-x% apart
     m_order_greed_randomness = "0.005"; // randomly subtract tenths of a pct from greed up to this amount
 
@@ -183,9 +183,6 @@ QString Spruce::getSaveState()
     // save log factor
     ret += QString( "setspruceleverage %1\n" ).arg( m_leverage );
 
-    // save target
-    ret += QString( "setsprucetarget %1\n" ).arg( m_target );
-
     // save order greed
     ret += QString( "setspruceordergreed %1 %2\n" )
             .arg( m_order_greed )
@@ -327,14 +324,10 @@ bool Spruce::equalizeDates()
     // find hi/lo coeffs
     m_start_coeffs = m_relative_coeffs = getRelativeCoeffs();
 
-    // avoid infinite loop
-    static const Coin target_limit = Coin( "0.997" );
-    if ( m_target > target_limit )
-        m_target = target_limit;
-
-    const Coin min_adjustment = CoinAmount::SATOSHI * 50000;
+    const Coin min_adjustment = CoinAmount::SATOSHI * 25000;
     const Coin hi_equity = getEquityNow( m_relative_coeffs.hi_currency );
     const Coin ticksize = std::max( min_adjustment, hi_equity / 10000 );
+    const Coin ticksize_leveraged = ticksize * m_leverage;
 
     // if we don't have enough to make the adjustment, abort
     if ( hi_equity < min_adjustment )
@@ -352,17 +345,15 @@ bool Spruce::equalizeDates()
     //
     // get initial coeffs
     // find hi/lo
-    // while hi.ratio(0.99) > lo
+    // while ( more is left to short/long )
     //     short highest coeff market
     //     long lowest coeff market
     //     get new market coeffs, set new hi/lo
     ///
-    quint16 i = 0;
-    while ( m_relative_coeffs.hi_coeff * m_target > m_relative_coeffs.lo_coeff )
-    {
-        if ( i++ == 10001 ) // safety break
-            break;
 
+    quint16 i = 0;
+    while ( true )
+    {
         // find highest/lowest coeff market
         for ( QList<Node*>::const_iterator i = nodes_now.begin(); i != nodes_now.end(); i++ )
         {
@@ -371,12 +362,12 @@ bool Spruce::equalizeDates()
             if ( n->currency == m_relative_coeffs.hi_currency &&
                  n->amount > ticksize ) // check if we have enough to short
             {
-                shortlongs[ n->currency ] -= ticksize * m_leverage;
+                shortlongs[ n->currency ] -= ticksize_leveraged;
                 n->amount -= ticksize;
             }
             else if ( n->currency == m_relative_coeffs.lo_currency )
             {
-                shortlongs[ n->currency ] += ticksize * m_leverage;
+                shortlongs[ n->currency ] += ticksize_leveraged;
                 n->amount += ticksize;
             }
             else
@@ -388,6 +379,9 @@ bool Spruce::equalizeDates()
         }
 
         m_relative_coeffs = getRelativeCoeffs();
+
+        if ( i++ == 10000 ) // safety break at iteration 10000, the full equity mark
+            break;
     }
 
     // put shortlongs into amount_to_shortlong with market name as key
