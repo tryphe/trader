@@ -107,7 +107,7 @@ FAQS
 ----
 **What the bot is NOT**
 
-~The bot doesn't read charts. It also doesn't have persistence yet (coming soon).~ ***Now featuring AI teknology, quantum computing, machine learning, divide and conquer, linear regression, many AIs much wow***
+The bot doesn't use common chart indicators, like momentum indicators or standard deviation formulas. Instead, it relies on user-generated ping-pong, and automatic ping-pong based on a cross-market tit-for-tat strategy (coming soon).
 
 **What about supporting xyz exchange?**
 
