@@ -449,7 +449,7 @@ bool Spruce::normalizeEquity()
     for ( QList<Node*>::const_iterator i = nodes_start.begin(); i != nodes_start.end(); i++ )
     {
         Node *n = *i;
-        n->amount = mean_equity_for_market.value( n->currency, CoinAmount::COIN );
+        n->amount = mean_equity_for_market.value( n->currency );
         n->recalculateQuantityByPrice();
         start_quantities.insert( n->currency, n->quantity );
     }
