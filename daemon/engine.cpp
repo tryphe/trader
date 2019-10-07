@@ -69,7 +69,6 @@ Position *Engine::addPosition( QString market_input, quint8 side, QString buy_pr
         return nullptr;
     }
 
-
     MarketInfo &info = market_info[ market ];
     // check if bid/ask price exists
     if ( info.highest_buy.isZeroOrLess() || info.lowest_sell.isZeroOrLess() )
@@ -140,8 +139,6 @@ Position *Engine::addPosition( QString market_input, quint8 side, QString buy_pr
     QString formatted_buy_price = Coin( buy_price );
     QString formatted_sell_price = Coin( sell_price );
     QString formatted_order_size = Coin( order_size );
-
-    //kDebug() << sell_price.size() << sell_price << formatted_sell_price.size() << formatted_sell_price;
 
     // anti-stupid check: did we put in price/amount decimals that didn't go into the price? abort if so
     if ( buy_price.size() > formatted_buy_price.size() ||
