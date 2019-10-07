@@ -20,9 +20,6 @@ Spruce::Spruce()
     m_order_nice = "2";
     m_trailing_price_limit = "0.96";
 
-    /// per-exchange constants
-    m_order_size_min = MINIMUM_ORDER_SIZE;
-
     /// internal
     m_leverage = CoinAmount::COIN;
 }
@@ -280,7 +277,7 @@ Coin Spruce::getMarketSellMax( QString market ) const
 }
 Coin Spruce::getOrderSize(QString market) const
 {
-    return market.isEmpty() ? m_order_size : std::max( m_order_size * getMarketWeight( market ), m_order_size_min );
+    return market.isEmpty() ? m_order_size : std::max( m_order_size * getMarketWeight( market ), Coin( MINIMUM_ORDER_SIZE ) );
 }
 
 void Spruce::setProfileU( QString currency, Coin u )

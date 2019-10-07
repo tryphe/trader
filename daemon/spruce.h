@@ -118,7 +118,7 @@ private:
     QMap<QString,Coin> amount_to_shortlong; // amount to shortlong now based on total above
     QMap<QString,Coin> original_quantity; // track original start quantity, since it changes
     Coin m_order_greed, m_order_greed_randomness, m_long_max, m_short_max, m_market_buy_max, m_market_sell_max,
-    m_order_size, m_order_size_min, m_order_nice, m_trailing_price_limit;
+    m_order_size, m_order_nice, m_trailing_price_limit;
 
     QList<Node*> nodes_start, nodes_now;
     QMap<QString/*currency*/,Coin> m_last_coeffs;
