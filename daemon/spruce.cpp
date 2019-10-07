@@ -324,13 +324,12 @@ bool Spruce::equalizeDates()
     // find hi/lo coeffs
     m_start_coeffs = m_relative_coeffs = getRelativeCoeffs();
 
-    const Coin min_adjustment = CoinAmount::SATOSHI * 25000;
     const Coin hi_equity = getEquityNow( m_relative_coeffs.hi_currency );
-    const Coin ticksize = std::max( min_adjustment, hi_equity / 10000 );
+    const Coin ticksize = std::max( CoinAmount::SATOSHI * 10000, hi_equity / 10000 );
     const Coin ticksize_leveraged = ticksize * m_leverage;
 
     // if we don't have enough to make the adjustment, abort
-    if ( hi_equity < min_adjustment )
+    if ( hi_equity < MINIMUM_ORDER_SIZE )
     {
         kDebug() << "[Spruce] local warning: not enough equity to equalizeDates" << hi_equity;
         return false;
