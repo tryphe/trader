@@ -36,7 +36,6 @@ public:
     void processTicker( const QMap<QString, TickerInfo> &ticker_data, qint64 request_time_sent_ms = 0 );
     void processCancelledOrder( Position *const &pos );
 
-    //void cancelOrderByPrice( const QString &market, QString price );
     void saveMarket( QString market, qint32 num_orders = 15 );
     void saveSettings();
     void loadSettings();

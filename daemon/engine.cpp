@@ -829,24 +829,6 @@ void Engine::processCancelledOrder( Position * const &pos )
     positions->remove( pos );
 }
 
-//void Engine::cancelOrderByPrice( const QString &market, QString price )
-//{
-//    // now we can look for the order we should delete
-//    for ( QSet<Position*>::const_iterator k = active().begin(); k != active().end(); k++ )
-//    {
-//        Position *const &pos = *k;
-
-//        if (  pos->market == market &&
-//             !pos->is_cancelling &&
-//            ( pos->buy_price == price ||
-//              pos->sell_price == price ) )
-//        {
-//            positions->cancel( pos );
-//            break;
-//        }
-//    }
-//}
-
 void Engine::cancelOrderMeatDCOrder( Position * const &pos )
 {
     QVector<Position*> cancelling_positions;
