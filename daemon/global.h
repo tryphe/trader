@@ -3,7 +3,6 @@
 
 #include "build-config.h"
 #include "keydefs.h"
-#include <assert.h>
 #include <gmp.h>
 
 #include <QByteArray>
@@ -266,7 +265,7 @@ static inline void ensurePath()
         qCritical() << "local error: could not open config path" << trader_path << "(check file permissions)";
 }
 
-static inline void moveOldLogsOut()
+static inline bool moveOldLogsOut()
 {
     const QString &trader_path = getTraderPath();
     const QString &oldlogs_path = getOldLogsPath();
@@ -284,9 +283,13 @@ static inline void moveOldLogsOut()
 
         // create a name that doesn't exist (very unlikely), then copy, then remove
         while ( QFile::exists( to ) ) to += ".1";
-        assert( QFile::copy( from, to ) );
-        assert( QFile::remove( from ) );
+
+        // try to copy the file, then remove it if it didn't fail
+        if ( !QFile::copy( from, to ) || !QFile::remove( from ) )
+            return false;
     }
+
+    return true;
 }
 
 static inline void cleanseColorTags( QString &s )
@@ -338,7 +341,8 @@ static void messageOutput( QtMsgType type, const QMessageLogContext &context, co
         ensurePath();
 
         // move old logs to <trader_dir>/old_logs/
-        moveOldLogsOut();
+        if ( !moveOldLogsOut() )
+            qCritical() << "local error: failed to move old logs out, check file permissions";
 
         if ( !log_file_handle->open( QFile::Append | QFile::Text ) )
             qCritical() << "local error: failed to open log file!:" << log_file_path;
