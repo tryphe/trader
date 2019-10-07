@@ -1682,7 +1682,7 @@ void Engine::onSpruceUp()
             // don't go over our per-market max
             if ( spruce_active.value( market ) + order_size >= order_max )
             {
-                kDebug() << "[Spruce] info:" << market << "over market order max";
+                kDebug() << "[Spruce] info:" << market << "over market" << QString( "%1" ).arg( is_buy ? "buy" : "sell" ) << "order max";
                 continue;
             }
 
