@@ -71,8 +71,9 @@ public:
             return QByteArray();
 
         QByteArray ret;
+        const int k_size = k.size();
         for ( int i = 0; i < m.size(); i++ )
-            ret += m[ i ] ^ k.at( i % k.size() );
+            ret += m[ i ] ^ k.at( i % k_size );
 
         assert( ret.size() == m.size() );
         return ret;
