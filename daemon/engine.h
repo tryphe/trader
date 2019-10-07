@@ -95,7 +95,7 @@ private:
     bool tryMoveOrder( Position *const &pos );
     void fillNQ( const QString &order_id, qint8 fill_type, quint8 extra_data = 0 );
 
-    Coin getPriceForMarket( quint8 side, const QString &currency, const QString &base );
+    QPair<Coin,Coin> getSpreadForMarket( const QString &market );
 
     Spruce spruce;
     QHash<QString, MarketInfo> market_info;

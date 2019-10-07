@@ -201,7 +201,7 @@ Position *Engine::addPosition( QString market_input, quint8 side, QString buy_pr
     }
 
     // check for minimum position size
-    if ( pos->btc_amount < MINIMUM_ORDER_SIZE )
+    if ( pos->btc_amount < MINIMUM_ORDER_SIZE - CoinAmount::SATOSHI )
     {
         kDebug() << "local warning: failed to set order: size" << pos->btc_amount << "is under the minimum size" << MINIMUM_ORDER_SIZE;
         return nullptr;
@@ -370,19 +370,17 @@ if ( !is_testing )
     positions->remove( pos );
 }
 
-Coin Engine::getPriceForMarket( quint8 side, const QString &currency, const QString &base )
+QPair<Coin,Coin> Engine::getSpreadForMarket( const QString &market )
 {
-    const QString market = Market( base, currency );
-
     if ( !market_info.contains( market ) )
-        return Coin();
+        return QPair<Coin,Coin>( Coin(), Coin() );
 
     const MarketInfo &info = market_info[ market ];
 
     if ( info.highest_buy.isZeroOrLess() || info.lowest_sell.isZeroOrLess() )
-        return Coin();
+        return QPair<Coin,Coin>( Coin(), Coin() );
 
-    return side == SIDE_BUY ? info.highest_buy : info.lowest_sell;
+    return QPair<Coin,Coin>( info.highest_buy, info.lowest_sell );
 }
 
 void Engine::processFilledOrders( QVector<Position*> &to_be_filled, qint8 fill_type )
@@ -1610,7 +1608,6 @@ void Engine::onSpruceUp()
         return;
 
     QMap<QString/*market*/,Coin> spread_price;
-    QMap<QString/*market*/,QPair<Coin,Coin>> spruce_spread;
     const QList<QString> &currencies = spruce.getCurrencies();
 
     const Coin long_max = spruce.getLongMax();
@@ -1623,7 +1620,9 @@ void Engine::onSpruceUp()
         for ( QList<QString>::const_iterator i = currencies.begin(); i != currencies.end(); i++ )
         {
             const QString &currency = *i;
-            Coin price = getPriceForMarket( side, currency, spruce.getBaseCurrency() );
+            const QPair<Coin,Coin> spread = getSpreadForMarket( Market( spruce.getBaseCurrency(), currency ) );
+            const Coin &price = ( side == SIDE_BUY ) ? spread.first :
+                                                       spread.second;
 
             // if the ticker isn't updated, just skip this whole function
             if ( price.isZeroOrLess() )
@@ -1665,11 +1664,8 @@ void Engine::onSpruceUp()
             const Coin order_max = spruce.getMarketMax( market );
             const Coin order_size_limit = order_size * spruce.getOrderNice();
 
-            // get spread price for new spruce order (fill map for every market for the loop below)
-            if ( !spruce_spread.contains( market ) )
-                spruce_spread.insert( market, getSpruceSpread( market ) );
-
-            const QPair<Coin,Coin> &spread = spruce_spread[ market ];
+            // get spread price for new spruce order(don't cache because the function generates a random number)
+            const QPair<Coin,Coin> spread = getSpruceSpread( market );
             const Coin &buy_price = spread.first;
             const Coin &sell_price = spread.second;
 
@@ -1754,7 +1750,7 @@ void Engine::onSpruceUp()
             {
                 // get spread price for new spruce order
                 const QString &market = pos->market;
-                const QPair<Coin,Coin> &spread = spruce_spread.value( market );
+                const QPair<Coin,Coin> spread = getSpreadForMarket( market );
                 const Coin &buy_price = spread.first;
                 const Coin &sell_price = spread.second;
 
