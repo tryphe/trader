@@ -719,8 +719,10 @@ void CommandRunner::command_setspruceshortmax( QStringList &args )
 
 void CommandRunner::command_setsprucemarketmax( QStringList &args )
 {
-    engine->getSpruce().setMarketMax( args.value( 1 ) );
-    kDebug() << "spruce marketmax is" << engine->getSpruce().getMarketMax();
+    engine->getSpruce().setMarketBuyMax( args.value( 1 ) );
+    engine->getSpruce().setMarketSellMax( args.value( 2 ) );
+    kDebug() << "spruce marketmax is" << engine->getSpruce().getMarketBuyMax()
+                                      << engine->getSpruce().getMarketSellMax();
 }
 
 void CommandRunner::command_setspruceordersize( QStringList &args )

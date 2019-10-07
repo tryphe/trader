@@ -73,8 +73,10 @@ public:
     Coin getLongMax() const { return m_long_max; }
     void setShortMax( Coin shortmax ) { m_short_max = shortmax; }
     Coin getShortMax() const { return m_short_max; }
-    void setMarketMax( Coin marketmax ) { m_market_max = marketmax; }
-    Coin getMarketMax( QString market = "" ) const;
+    void setMarketBuyMax( Coin marketmax ) { m_market_buy_max = marketmax; }
+    Coin getMarketBuyMax( QString market = "" ) const;
+    void setMarketSellMax( Coin marketmax ) { m_market_sell_max = marketmax; }
+    Coin getMarketSellMax( QString market = "" ) const;
     void setOrderSize( Coin ordersize ) { m_order_size = ordersize; }
     Coin getOrderSize( QString market = "" ) const;
 
@@ -115,7 +117,7 @@ private:
     QMap<QString,Coin> shortlonged_total; // running total of shorted/longed coins
     QMap<QString,Coin> amount_to_shortlong; // amount to shortlong now based on total above
     QMap<QString,Coin> original_quantity; // track original start quantity, since it changes
-    Coin m_order_greed, m_order_greed_randomness, m_long_max, m_short_max, m_market_max,
+    Coin m_order_greed, m_order_greed_randomness, m_long_max, m_short_max, m_market_buy_max, m_market_sell_max,
     m_order_size, m_order_size_min, m_order_nice, m_trailing_price_limit;
 
     QList<Node*> nodes_start, nodes_now;

@@ -14,7 +14,8 @@ Spruce::Spruce()
 
     m_long_max = "0.3000000"; // max long total
     m_short_max = "-0.50000000"; // max short total
-    m_market_max = "0.20000000";
+    m_market_buy_max = "0.20000000";
+    m_market_sell_max = "0.20000000";
     m_order_size = "0.00500000";
     m_order_nice = "2";
     m_trailing_price_limit = "0.96";
@@ -195,7 +196,8 @@ QString Spruce::getSaveState()
     ret += QString( "setspruceshortmax %1\n" ).arg( m_short_max );
 
     // save market max
-    ret += QString( "setsprucemarketmax %1\n" ).arg( m_market_max );
+    ret += QString( "setsprucemarketmax %1 %2\n" ).arg( m_market_buy_max )
+                                                  .arg( m_market_sell_max );
 
     // save order size
     ret += QString( "setspruceordersize %1\n" ).arg( m_order_size );
@@ -266,11 +268,16 @@ QString Spruce::getSaveState()
     return ret;
 }
 
-Coin Spruce::getMarketMax( QString market ) const
+Coin Spruce::getMarketBuyMax( QString market ) const
 {
-    return market.isEmpty() ? m_market_max : std::max( m_market_max * getMarketWeight( market ), m_market_max * Coin( "0.1" ) );
+    return market.isEmpty() ? m_market_buy_max : std::max( m_market_buy_max * getMarketWeight( market ), m_market_buy_max * Coin( "0.1" ) );
 }
 
+Coin Spruce::getMarketSellMax( QString market ) const
+{
+    return market.isEmpty() ? m_market_sell_max : std::max( m_market_sell_max * getMarketWeight( market ), m_market_sell_max * Coin( "0.1" ) );
+
+}
 Coin Spruce::getOrderSize(QString market) const
 {
     return market.isEmpty() ? m_order_size : std::max( m_order_size * getMarketWeight( market ), m_order_size_min );

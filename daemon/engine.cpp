@@ -201,7 +201,7 @@ Position *Engine::addPosition( QString market_input, quint8 side, QString buy_pr
     }
 
     // check for minimum position size
-    if ( pos->btc_amount < MINIMUM_ORDER_SIZE - CoinAmount::SATOSHI )
+    if ( pos->btc_amount < Coin( MINIMUM_ORDER_SIZE ) - CoinAmount::SATOSHI )
     {
         kDebug() << "local warning: failed to set order: size" << pos->btc_amount << "is under the minimum size" << MINIMUM_ORDER_SIZE;
         return nullptr;
@@ -1661,7 +1661,8 @@ void Engine::onSpruceUp()
 
             const bool is_buy = amount_to_shortlong.isZeroOrLess();
             const Coin order_size = spruce.getOrderSize( market );
-            const Coin order_max = spruce.getMarketMax( market );
+            const Coin order_max = is_buy ? spruce.getMarketBuyMax( market ) :
+                                            spruce.getMarketSellMax( market );
             const Coin order_size_limit = order_size * spruce.getOrderNice();
 
             // get spread price for new spruce order(don't cache because the function generates a random number)
