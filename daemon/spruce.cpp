@@ -307,10 +307,10 @@ Coin Spruce::getLastCoeffForMarket( const QString &market ) const
 {
     QString currency = Market( market ).getQuote();
 
-    if ( !m_last_coeffs.contains( currency ) )
+    if ( !m_coeffs.value( 0 ).contains( currency ) )
         qDebug() << "[Spruce] local warning: can't find coeff for currency" << currency;
 
-    return m_last_coeffs.value( currency );
+    return m_coeffs.value( 0 ).value( currency );
 }
 
 bool Spruce::equalizeDates()
@@ -328,8 +328,10 @@ bool Spruce::equalizeDates()
     // find hi/lo coeffs
     m_start_coeffs = m_relative_coeffs = getRelativeCoeffs();
 
+    static const int MAX_PROBLEM_PARTS = 15000;
+    static const Coin MIN_TICKSIZE = CoinAmount::SATOSHI * 60000;
     const Coin hi_equity = getEquityNow( m_relative_coeffs.hi_currency );
-    const Coin ticksize = std::max( CoinAmount::SATOSHI * 10000, hi_equity / 10000 );
+    const Coin ticksize = std::max( MIN_TICKSIZE, hi_equity / MAX_PROBLEM_PARTS );
     const Coin ticksize_leveraged = ticksize * m_leverage;
 
     // if we don't have enough to make the adjustment, abort
@@ -340,9 +342,7 @@ bool Spruce::equalizeDates()
     }
 
     // run divide-and-conquer algorithm which approaches an optimal portfolio according to
-    // a per-market cost function. we might have a bunch of wasted iterations, because the noise
-    // causes the markets to never be in the same state as the last iteration, but at least
-    // we know we're fulfilling the full amount of equity possible to trade. (hi_equity)
+    // a per-market cost function.
 
     /// psuedocode
     //
@@ -383,7 +383,13 @@ bool Spruce::equalizeDates()
 
         m_relative_coeffs = getRelativeCoeffs();
 
-        if ( i++ == 10000 ) // safety break at iteration 10000, the full equity mark
+        // break on consistent sawtooth pattern, which means we're done!
+        if ( m_coeffs.value( 0 ) == m_coeffs.value( m_coeffs.value( 0 ).size() -1 ) ||
+             m_coeffs.value( 0 ) == m_coeffs.value( m_coeffs.value( 0 ).size() -2 ) )
+            break;
+
+        // break at max equity to avoid infinite loop
+        if ( i++ == MAX_PROBLEM_PARTS )
             break;
     }
 
@@ -521,11 +527,17 @@ QMap<QString, Coin> Spruce::getMarketCoeffs()
 RelativeCoeffs Spruce::getRelativeCoeffs()
 {
     // get coeffs for time distances of balances
-    m_last_coeffs = getMarketCoeffs();
+    m_coeffs.prepend( getMarketCoeffs() );
+
+    // remove cache beyond number of markets
+    if ( m_coeffs.size() > m_coeffs.value( 0 ).size() )
+        m_coeffs.removeLast();
 
     // find the highest and lowest coefficents
     RelativeCoeffs ret;
-    for ( QMap<QString,Coin>::const_iterator i = m_last_coeffs.begin(); i != m_last_coeffs.end(); i++ )
+    QMap<QString,Coin>::const_iterator begin = m_coeffs.at( 0 ).begin(),
+                                       end = m_coeffs.at( 0 ).end();
+    for ( QMap<QString,Coin>::const_iterator i = begin; i != end; i++ )
     {
         const QString &currency = i.key();
         const Coin &coeff = i.value();

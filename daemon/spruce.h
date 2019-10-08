@@ -6,6 +6,7 @@
 
 #include <QString>
 #include <QMap>
+#include <QVector>
 
 static const Coin DEFAULT_PROFILE_U = Coin("10");
 static const Coin DEFAULT_RESERVE = Coin("0.05");
@@ -121,7 +122,7 @@ private:
     m_order_size, m_order_nice, m_trailing_price_limit;
 
     QList<Node*> nodes_start, nodes_now;
-    QMap<QString/*currency*/,Coin> m_last_coeffs;
+    QVector<QMap<QString/*currency*/,Coin>> m_coeffs;
 
     Coin m_leverage;
 };
