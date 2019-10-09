@@ -1621,28 +1621,31 @@ void Engine::onSpruceUp()
         // count value of spruce positions for each market
         QMap<QString,Coin> spruce_active = positions->getActiveSpruceEquityTotal( side );
 
-        const QMap<QString,Coin> &amount_to_shortlong_map = spruce.getAmountToShortLongMap();
-        const Coin &shortlong_total = spruce.getAmountToShortLongTotal();
+        const QMap<QString,Coin> &qty_to_shortlong_map = spruce.getQuantityToShortLongMap();
 
-        kDebug() << QString( "[Spruce %1] hi-lo coeffs[%2 %3 %4 %5] current shortlong [%6]" )
+        kDebug() << QString( "[Spruce %1] hi-lo coeffs[%2 %3 %4 %5]" )
                         .arg( side == SIDE_BUY ? "buys " : "sells" )
                         .arg( spruce.startCoeffs().lo_currency )
                         .arg( spruce.startCoeffs().lo_coeff )
                         .arg( spruce.startCoeffs().hi_currency )
-                        .arg( spruce.startCoeffs().hi_coeff )
-                        .arg( shortlong_total );
+                        .arg( spruce.startCoeffs().hi_coeff );
 
-        for ( QMap<QString,Coin>::const_iterator i = amount_to_shortlong_map.begin(); i != amount_to_shortlong_map.end(); i++ )
+        for ( QMap<QString,Coin>::const_iterator i = qty_to_shortlong_map.begin(); i != qty_to_shortlong_map.end(); i++ )
         {
             const QString &market = i.key();
-            const Coin &amount_to_shortlong = i.value();
+            const Coin &qty_to_shortlong = i.value();
+            const Coin qty_to_shortlong_abs = qty_to_shortlong.abs();
+
+            const Coin amount_to_shortlong = spruce.getCurrencyPriceByMarket( market ) * qty_to_shortlong;
             const Coin amount_to_shortlong_abs = amount_to_shortlong.abs();
 
-            const bool is_buy = amount_to_shortlong.isZeroOrLess();
+            const bool is_buy = qty_to_shortlong.isZeroOrLess();
             const Coin order_size = spruce.getOrderSize( market );
             const Coin order_max = is_buy ? spruce.getMarketBuyMax( market ) :
                                             spruce.getMarketSellMax( market );
             const Coin order_size_limit = order_size * spruce.getOrderNice();
+
+            const Coin &spruce_active_for_side = spruce_active.value( market );
 
             // get spread price for new spruce order(don't cache because the function generates a random number)
             const QPair<Coin,Coin> spread = getSpruceSpread( market );
@@ -1659,34 +1662,35 @@ void Engine::onSpruceUp()
                 continue;
 
             // don't go over our per-market max
-            if ( spruce_active.value( market ) + order_size >= order_max )
+            if ( spruce_active_for_side + order_size >= order_max )
             {
                 kDebug() << "[Spruce] info:" << market << "over market" << QString( "%1" ).arg( is_buy ? "buy" : "sell" ) << "order max";
                 continue;
             }
 
             // don't go over the abs value of our new projected position
-            if ( spruce_active.value( market ) + order_size_limit >= amount_to_shortlong_abs )
+            if ( spruce_active_for_side + order_size_limit >= amount_to_shortlong_abs )
                 continue;
 
             // are we too long/short to place another order on this side?
-            if ( is_buy && shortlong_total > long_max )
+            if ( is_buy && spruce_active_for_side > long_max )
             {
                 kDebug() << "[Spruce] info:" << market << "too long for now";
                 continue;
             }
-            else if ( !is_buy && shortlong_total < short_max )
+            else if ( !is_buy && spruce_active_for_side > short_max.abs() )
             {
                 kDebug() << "[Spruce] info:" << market << "too short for now";
                 continue;
             }
 
-            kDebug() << QString( "[Spruce %1] %2 | coeff %3 | to-shortlong %4 | on-order %5" )
+            kDebug() << QString( "[Spruce %1] %2 | coeff %3 | qty-to-shortlong %4 | amt-to-shortlong %5 | on-order %6" )
                            .arg( side == SIDE_BUY ? "buys " : "sells" )
                            .arg( market, MARKET_STRING_WIDTH )
                            .arg( spruce.getLastCoeffForMarket( market ), 12 )
-                           .arg( amount_to_shortlong, 12 )
-                           .arg( spruce_active.value( market ), 12 );
+                           .arg( qty_to_shortlong, 20 )
+                           .arg( amount_to_shortlong, 13 )
+                           .arg( spruce_active_for_side, 12 );
 
             // cancel conflicting positions
             for ( QSet<Position*>::const_iterator j = positions->all().begin(); j != positions->all().end(); j++ )
@@ -1758,7 +1762,7 @@ void Engine::onSpruceUp()
 
                 // make sure map is populated
                 if ( !spruce_amount_to_shortlong.contains( market ) )
-                    spruce_amount_to_shortlong.insert( market, spruce.getAmountToShortLongNow( market ) );
+                    spruce_amount_to_shortlong.insert( market, spruce.getCurrencyPriceByMarket( market ) * spruce.getQuantityToShortLongNow( market ) );
 
                 const Coin &amount_to_shortlong = spruce_amount_to_shortlong.value( market );
                 const Coin order_size = spruce.getOrderSize( market );

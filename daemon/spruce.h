@@ -3,6 +3,7 @@
 
 #include "coinamount.h"
 #include "costfunctioncache.h"
+#include "market.h"
 
 #include <QString>
 #include <QMap>
@@ -62,8 +63,8 @@ public:
     void clearLiveNodes();
 
     bool calculateAmountToShortLong();
-    Coin getAmountToShortLongNow( QString market );
-    void addToShortLonged( QString market, Coin amount );
+    Coin getQuantityToShortLongNow( QString market );
+    void addToShortLonged( QString market, Coin qty );
 
     QList<QString> getCurrencies() const;
     QList<QString> getMarkets() const;
@@ -83,8 +84,9 @@ public:
 
     const RelativeCoeffs &startCoeffs() { return m_start_coeffs; }
     const RelativeCoeffs &relativeCoeffs() { return m_relative_coeffs; }
-    const QMap<QString,Coin> &getAmountToShortLongMap() { return m_amount_to_shortlong_map; }
-    const Coin &getAmountToShortLongTotal() { return m_amount_to_shortlong_total; }
+    const QMap<QString,Coin> &getQuantityToShortLongMap() { return m_quantity_to_shortlong_map; }
+
+    Coin getCurrencyPriceByMarket( Market market );
 
     void setLeverage( Coin l ) { m_leverage = l; }
     Coin getLeverage() const { return m_leverage; }
@@ -109,15 +111,15 @@ private:
     RelativeCoeffs getRelativeCoeffs();
 
     RelativeCoeffs m_relative_coeffs, m_start_coeffs;
-    QMap<QString,Coin> m_amount_to_shortlong_map;
-    Coin m_amount_to_shortlong_total;
+    QMap<QString,Coin> m_quantity_to_shortlong_map;
+
+    QMap<QString,Coin> original_quantity; // track original start quantity, since it changes
+    QMap<QString,Coin> quantity_already_shortlong; // running total of shorted/longed coins
+    QMap<QString,Coin> quantity_to_shortlong; // amount to shortlong now based on total above
 
     QString base_currency;
     QMap<QString,Coin> currency_weight; // note: weights are >0 and <=1
     QMultiMap<Coin,QString> currency_weight_by_coin; // note: weights are >0 and <=1
-    QMap<QString,Coin> shortlonged_total; // running total of shorted/longed coins
-    QMap<QString,Coin> amount_to_shortlong; // amount to shortlong now based on total above
-    QMap<QString,Coin> original_quantity; // track original start quantity, since it changes
     Coin m_order_greed, m_order_greed_randomness, m_long_max, m_short_max, m_market_buy_max, m_market_sell_max,
     m_order_size, m_order_nice, m_trailing_price_limit;
 

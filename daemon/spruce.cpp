@@ -120,35 +120,33 @@ bool Spruce::calculateAmountToShortLong()
         return false;
 
     // record amount to shortlong in a map and get total
-    m_amount_to_shortlong_map.clear();
-    m_amount_to_shortlong_total = Coin();
+    m_quantity_to_shortlong_map.clear();
 
     QList<QString> markets = getMarkets();
     for ( QList<QString>::const_iterator i = markets.begin(); i != markets.end(); i++ )
     {
         const QString &market = *i;
-        const Coin &shortlong_market = getAmountToShortLongNow( market );
+        const Coin &shortlong_market = getQuantityToShortLongNow( market );
 
-        m_amount_to_shortlong_map[ market ] = shortlong_market;
-        m_amount_to_shortlong_total += shortlong_market;
+        m_quantity_to_shortlong_map[ market ] = shortlong_market;
     }
 
     return true;
 }
 
-Coin Spruce::getAmountToShortLongNow( QString market )
+Coin Spruce::getQuantityToShortLongNow( QString market )
 {
-    if ( !amount_to_shortlong.contains( market ) )
+    if ( !quantity_to_shortlong.contains( market ) )
         return Coin();
 
-    Coin ret = -amount_to_shortlong.value( market ) + shortlonged_total.value( market );
+    Coin ret = -quantity_to_shortlong.value( market ) + quantity_already_shortlong.value( market );
 
     return ret;
 }
 
-void Spruce::addToShortLonged( QString market, Coin amount )
+void Spruce::addToShortLonged( QString market, Coin qty )
 {
-    shortlonged_total[ market ] += amount;
+    quantity_already_shortlong[ market ] += qty;
 }
 
 QList<QString> Spruce::getCurrencies() const
@@ -254,8 +252,8 @@ QString Spruce::getSaveState()
                 .arg( n->price.toSubSatoshiString() );
     }
 
-    // save shortlonged_total
-    for ( QMap<QString,Coin>::const_iterator i = shortlonged_total.begin(); i != shortlonged_total.end(); i++ )
+    // save quantity_already_shortlong
+    for ( QMap<QString,Coin>::const_iterator i = quantity_already_shortlong.begin(); i != quantity_already_shortlong.end(); i++ )
     {
         ret += QString( "setspruceshortlongtotal %1 %2\n" )
                 .arg( Market( i.key() ) )
@@ -275,9 +273,22 @@ Coin Spruce::getMarketSellMax( QString market ) const
     return market.isEmpty() ? m_market_sell_max : std::max( m_market_sell_max * getMarketWeight( market ), m_market_sell_max * Coin( "0.1" ) );
 
 }
-Coin Spruce::getOrderSize(QString market) const
+Coin Spruce::getOrderSize( QString market ) const
 {
     return market.isEmpty() ? m_order_size : std::max( m_order_size * getMarketWeight( market ), Coin( MINIMUM_ORDER_SIZE ) );
+}
+
+Coin Spruce::getCurrencyPriceByMarket( Market market )
+{
+    for ( QList<Node*>::const_iterator i = nodes_now.begin(); i != nodes_now.end(); i++ )
+    {
+        Node *n = *i;
+
+        if ( n->currency == market.getQuote() )
+            return n->price;
+    }
+
+    return Coin();
 }
 
 void Spruce::setProfileU( QString currency, Coin u )
@@ -361,16 +372,17 @@ bool Spruce::equalizeDates()
         for ( QList<Node*>::const_iterator i = nodes_now.begin(); i != nodes_now.end(); i++ )
         {
             Node *n = *i;
+            Coin negated_qty = ( ticksize_leveraged / n->price );
 
             if ( n->currency == m_relative_coeffs.hi_currency &&
                  n->amount > ticksize ) // check if we have enough to short
             {
-                shortlongs[ n->currency ] -= ticksize_leveraged;
+                shortlongs[ n->currency ] -= negated_qty;
                 n->amount -= ticksize;
             }
             else if ( n->currency == m_relative_coeffs.lo_currency )
             {
-                shortlongs[ n->currency ] += ticksize_leveraged;
+                shortlongs[ n->currency ] += negated_qty;
                 n->amount += ticksize;
             }
             else
@@ -393,9 +405,9 @@ bool Spruce::equalizeDates()
             break;
     }
 
-    // put shortlongs into amount_to_shortlong with market name as key
+    // put shortlongs into qty_to_shortlong with market name as key
     for ( QMap<QString,Coin>::const_iterator i = shortlongs.begin(); i != shortlongs.end(); i++ )
-        amount_to_shortlong[ Market( base_currency, i.key() ) ] = i.value();
+        quantity_to_shortlong[ Market( base_currency, i.key() ) ] = i.value();
 
     return true;
 }
@@ -467,7 +479,7 @@ bool Spruce::normalizeEquity()
     for ( QList<Node*>::const_iterator i = nodes_now.begin(); i != nodes_now.end(); i++ )
     {
         Node *n = *i;
-        n->quantity = start_quantities.value( n->currency );
+        n->quantity = start_quantities.value( n->currency ) + quantity_already_shortlong.value( Market( base_currency, n->currency ) );
         n->recalculateAmountByQuantity();
     }
 
