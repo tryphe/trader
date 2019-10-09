@@ -1635,17 +1635,19 @@ void Engine::onSpruceUp()
             const QString &market = i.key();
             const Coin &qty_to_shortlong = i.value();
             const Coin qty_to_shortlong_abs = qty_to_shortlong.abs();
-
             const Coin amount_to_shortlong = spruce.getCurrencyPriceByMarket( market ) * qty_to_shortlong;
             const Coin amount_to_shortlong_abs = amount_to_shortlong.abs();
+            const Coin &spruce_active_for_side = spruce_active.value( market );
 
+            // cache some order info
+            static const int ORDERSIZE_EXPAND_THRESH = 20;
+            static const int ORDERSIZE_EXPAND_MAX = 5;
             const bool is_buy = qty_to_shortlong.isZeroOrLess();
-            const Coin order_size = spruce.getOrderSize( market );
+            const Coin order_size_cache = spruce.getOrderSize( market );
+            const Coin order_size = std::min( order_size_cache * ORDERSIZE_EXPAND_MAX, std::max( order_size_cache, amount_to_shortlong_abs / ORDERSIZE_EXPAND_THRESH ) );
             const Coin order_max = is_buy ? spruce.getMarketBuyMax( market ) :
                                             spruce.getMarketSellMax( market );
             const Coin order_size_limit = order_size * spruce.getOrderNice();
-
-            const Coin &spruce_active_for_side = spruce_active.value( market );
 
             // get spread price for new spruce order(don't cache because the function generates a random number)
             const QPair<Coin,Coin> spread = getSpruceSpread( market );
