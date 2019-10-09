@@ -46,16 +46,16 @@ void Stats::updateStats( Position *const &pos )
 void Stats::addStrategyStats( Position *const &pos )
 {
     // track stats related to this strategy tag
-    Coin amount;
-    if ( pos->side == SIDE_BUY )
-        amount += pos->btc_amount;
-    else
-        amount -= pos->btc_amount;
+    const Coin amount = ( pos->side == SIDE_BUY ) ?  pos->btc_amount
+                                                  : -pos->btc_amount;
+
+    const Coin quantity = ( pos->side == SIDE_BUY ) ?  pos->quantity
+                                                    : -pos->quantity;
 
     shortlong[ pos->strategy_tag ][ pos->market ] += amount;
 
     if ( pos->is_spruce )
-        engine->getSpruce().addToShortLonged( pos->market, pos->quantity );
+        engine->getSpruce().addToShortLonged( pos->market, quantity );
 }
 
 void Stats::clearAll()
