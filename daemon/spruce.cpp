@@ -9,6 +9,8 @@
 Spruce::Spruce()
 {
     /// user settings
+    m_order_size = "0.00500000";
+    m_order_nice = "2";
     m_order_greed = "0.99"; // keep our spread at least 1-x% apart
     m_order_greed_randomness = "0.005"; // randomly subtract tenths of a pct from greed up to this amount
 
@@ -16,11 +18,7 @@ Spruce::Spruce()
     m_short_max = "-0.50000000"; // max short total
     m_market_buy_max = "0.20000000";
     m_market_sell_max = "0.20000000";
-    m_order_size = "0.00500000";
-    m_order_nice = "2";
     m_trailing_price_limit = "0.96";
-
-    /// internal
     m_leverage = CoinAmount::COIN;
 }
 
@@ -375,7 +373,7 @@ bool Spruce::equalizeDates()
             Coin negated_qty = ( ticksize_leveraged / n->price );
 
             if ( n->currency == m_relative_coeffs.hi_currency &&
-                 n->amount > ticksize ) // check if we have enough to short
+                 n->quantity > negated_qty ) // check if we have enough to short
             {
                 shortlongs[ n->currency ] -= negated_qty;
                 n->amount -= ticksize;
