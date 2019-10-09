@@ -542,7 +542,7 @@ RelativeCoeffs Spruce::getRelativeCoeffs()
     m_coeffs.prepend( getMarketCoeffs() );
 
     // remove cache beyond number of markets
-    if ( m_coeffs.size() > m_coeffs.value( 0 ).size() )
+    if ( m_coeffs.size() > m_coeffs.at( 0 ).size() )
         m_coeffs.removeLast();
 
     // find the highest and lowest coefficents
