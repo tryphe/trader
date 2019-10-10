@@ -4,7 +4,6 @@
 #include "market.h"
 
 #include <QRandomGenerator>
-#include <QQueue>
 
 Spruce::Spruce()
 {
