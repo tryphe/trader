@@ -17,8 +17,8 @@ public:
     Market( const QString &_base, const QString &_quote );
     bool isValid() const;
 
-    operator QString() const;
-    QString toExchangeString() const;
+    operator QString() const; // obtain universal string
+    QString toExchangeString() const; // obtain exchange-specific string
 
     const QString &getBase() const { return base; }
     const QString &getQuote() const { return quote; }
