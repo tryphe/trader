@@ -836,7 +836,7 @@ void Engine::cancelOrderMeatDCOrder( Position * const &pos )
     QVector<qint32> new_indices;
 
     // look for our position's DC list and try to obtain it into cancelling_positions
-    for ( QMap<QVector<Position*>, QPair<bool, QVector<qint32>>>::const_iterator i = positions->diverge_converge.begin(); i != positions->diverge_converge.end(); i++ )
+    for ( QMap<QVector<Position*>, QPair<bool, QVector<qint32>>>::const_iterator i = positions->getDCMap().begin(); i != positions->getDCMap().end(); i++ )
     {
         const QVector<Position*> &position_list = i.key();
         const QPair<bool, QVector<qint32>> &pair = i.value();
@@ -857,7 +857,7 @@ void Engine::cancelOrderMeatDCOrder( Position * const &pos )
              break;
         }
 
-        positions->diverge_converge.remove( position_list );
+        positions->getDCMap().remove( position_list );
         break;
     }
 
@@ -876,7 +876,7 @@ void Engine::cancelOrderMeatDCOrder( Position * const &pos )
         {
             // clear from diverging_converging
             for ( int i = 0; i < new_indices.size(); i++ )
-                positions->diverging_converging[ pos->market ].removeOne( new_indices.value( i ) );
+                positions->getDCPending()[ pos->market ].removeOne( new_indices.value( i ) );
 
             pos->market_indices = new_indices;
             addLandmarkPositionFor( pos );
@@ -890,7 +890,7 @@ void Engine::cancelOrderMeatDCOrder( Position * const &pos )
                 qint32 idx = new_indices.value( i );
 
                 // clear from diverging_converging
-                positions->diverging_converging[ pos->market ].removeOne( idx );
+                positions->getDCPending()[ pos->market ].removeOne( idx );
 
                 // check for valid index data - incase we are cancelling
                 if ( !info.position_index.size() )
@@ -911,7 +911,7 @@ void Engine::cancelOrderMeatDCOrder( Position * const &pos )
     // if we didn't clear the dc list, put it back into the map to trigger next time
     else
     {
-        positions->diverge_converge.insert( cancelling_positions, qMakePair( new_order_is_landmark, new_indices ) );
+        positions->getDCMap().insert( cancelling_positions, qMakePair( new_order_is_landmark, new_indices ) );
     }
 }
 
@@ -1220,8 +1220,8 @@ void Engine::printInternal()
     kDebug() << "maintenance_time:" << maintenance_time;
     kDebug() << "maintenance_triggered:" << maintenance_triggered;
 
-    kDebug() << "diverge_converge: " << positions->diverge_converge;
-    kDebug() << "diverging_converging: " << positions->diverging_converging;
+    kDebug() << "diverge_converge: " << positions->getDCPending();
+    kDebug() << "diverging_converging: " << positions->getDCMap();
 }
 
 QPair<Coin, Coin> Engine::getSpruceSpread( const QString &market )

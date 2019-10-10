@@ -22,7 +22,6 @@ class PositionMan : public QObject
     Q_OBJECT
 
     friend class EngineTest;
-    friend class Engine; // TODO: fix this
 
 public:
     explicit PositionMan( Engine *_engine, QObject *parent = nullptr );
@@ -90,6 +89,8 @@ public:
     void divergeConverge();
     bool isDivergingConverging( const QString &market, const qint32 index ) const;
     int getDCCount() { return diverge_converge.size(); }
+    QMap<QVector<Position*>,QPair<bool,QVector<qint32>>> &getDCMap() { return diverge_converge; }
+    QMap<QString, QVector<qint32>> &getDCPending() { return diverging_converging; }
 
     void setRunningCancelAll( bool b ) { is_running_cancelall = b; }
     bool isRunningCancelAll() const { return is_running_cancelall; }
