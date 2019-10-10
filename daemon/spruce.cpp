@@ -321,6 +321,80 @@ Coin Spruce::getLastCoeffForMarket( const QString &market ) const
     return m_coeffs.value( 0 ).value( currency );
 }
 
+bool Spruce::normalizeEquity()
+{
+    if ( nodes_start.size() != nodes_now.size() )
+    {
+        qDebug() << "[Spruce] local error: spruce: start node count not equal date1 node count";
+        return false;
+    }
+
+    Coin total, original_total, total_scaled;
+
+    // step 1: calculate total equity
+    for ( QList<Node*>::const_iterator i = nodes_start.begin(); i != nodes_start.end(); i++ )
+    {
+        Node *n = *i;
+        total += n->quantity * n->price;
+    }
+    original_total = total;
+
+    // step 2: calculate mean equity if we were to weight each market the same
+    QMap<QString,Coin> mean_equity_for_market;
+
+    Coin mean_equity = total / nodes_start.size();
+    mean_equity.truncateByTicksize( "0.00000001" ); // toss subsatoshi digits
+
+    // step 3: calculate weighted equity from lowest to highest weight (map is sorted by weight)
+    //         for each market and recalculate mean/total equity
+    int ct = nodes_start.size();
+    for ( QMultiMap<Coin,QString>::const_iterator i = currency_weight_by_coin.begin(); i != currency_weight_by_coin.end(); i++ )
+    {
+        const QString &currency = i.value();
+        const Coin &weight = i.key();
+        const Coin equity_to_use = mean_equity * weight;
+
+        mean_equity_for_market.insert( currency, equity_to_use );
+
+        total_scaled += equity_to_use; // record equity to ensure total_scaled == original total
+
+        // if this is the last item, exit here
+        if ( --ct == 0 ) break;
+
+        // do some things to help next iteration, recalculate mean equity based on amount used
+        total -= equity_to_use;
+        mean_equity = total / ct;
+    }
+
+    if ( total_scaled != original_total )
+    {
+        qDebug() << "[Spruce] local error: spruce: total_scaled != original total (check number of spruce markets)";
+        return false;
+    }
+
+    // step 4: apply mean equity for each market
+    QMap<QString,Coin> start_quantities; // cache date1 quantity to store in date2
+
+    // calculate new equity for all dates: e = mean / price
+    for ( QList<Node*>::const_iterator i = nodes_start.begin(); i != nodes_start.end(); i++ )
+    {
+        Node *n = *i;
+        n->amount = mean_equity_for_market.value( n->currency );
+        n->recalculateQuantityByPrice();
+        start_quantities.insert( n->currency, n->quantity );
+    }
+
+    // step 5: put the mean adjusted date1 quantites into date2. after this step, we can figure out the new "normalized" valuations
+    for ( QList<Node*>::const_iterator i = nodes_now.begin(); i != nodes_now.end(); i++ )
+    {
+        Node *n = *i;
+        n->quantity = start_quantities.value( n->currency ) + quantity_already_shortlong.value( Market( base_currency, n->currency ) );
+        n->recalculateAmountByQuantity();
+    }
+
+    return true;
+}
+
 bool Spruce::equalizeDates()
 {
     // ensure dates exist
@@ -409,78 +483,38 @@ bool Spruce::equalizeDates()
     return true;
 }
 
-bool Spruce::normalizeEquity()
+RelativeCoeffs Spruce::getRelativeCoeffs()
 {
-    if ( nodes_start.size() != nodes_now.size() )
+    // get coeffs for time distances of balances
+    m_coeffs.prepend( getMarketCoeffs() );
+
+    // remove cache beyond number of markets
+    if ( m_coeffs.size() > m_coeffs.at( 0 ).size() )
+        m_coeffs.removeLast();
+
+    // find the highest and lowest coefficents
+    RelativeCoeffs ret;
+    QMap<QString,Coin>::const_iterator begin = m_coeffs.at( 0 ).begin(),
+                                       end = m_coeffs.at( 0 ).end();
+    for ( QMap<QString,Coin>::const_iterator i = begin; i != end; i++ )
     {
-        qDebug() << "[Spruce] local error: spruce: start node count not equal date1 node count";
-        return false;
+        const QString &currency = i.key();
+        const Coin &coeff = i.value();
+
+        if ( coeff > ret.hi_coeff )
+        {
+            ret.hi_coeff  = coeff;
+            ret.hi_currency = currency;
+        }
+
+        if ( coeff < ret.lo_coeff )
+        {
+            ret.lo_coeff  = coeff;
+            ret.lo_currency = currency;
+        }
     }
 
-    Coin total, original_total, total_scaled;
-
-    // step 1: calculate total equity
-    for ( QList<Node*>::const_iterator i = nodes_start.begin(); i != nodes_start.end(); i++ )
-    {
-        Node *n = *i;
-        total += n->quantity * n->price;
-    }
-    original_total = total;
-
-    // step 2: calculate mean equity if we were to weight each market the same
-    QMap<QString,Coin> mean_equity_for_market;
-
-    Coin mean_equity = total / nodes_start.size();
-    mean_equity.truncateByTicksize( "0.00000001" ); // toss subsatoshi digits
-
-    // step 3: calculate weighted equity from lowest to highest weight (map is sorted by weight)
-    //         for each market and recalculate mean/total equity
-    int ct = nodes_start.size();
-    for ( QMultiMap<Coin,QString>::const_iterator i = currency_weight_by_coin.begin(); i != currency_weight_by_coin.end(); i++ )
-    {
-        const QString &currency = i.value();
-        const Coin &weight = i.key();
-        const Coin equity_to_use = mean_equity * weight;
-
-        mean_equity_for_market.insert( currency, equity_to_use );
-
-        total_scaled += equity_to_use; // record equity to ensure total_scaled == original total
-
-        // if this is the last item, exit here
-        if ( --ct == 0 ) break;
-
-        // do some things to help next iteration, recalculate mean equity based on amount used
-        total -= equity_to_use;
-        mean_equity = total / ct;
-    }
-
-    if ( total_scaled != original_total )
-    {
-        qDebug() << "[Spruce] local error: spruce: total_scaled != original total (check number of spruce markets)";
-        return false;
-    }
-
-    // step 4: apply mean equity for each market
-    QMap<QString,Coin> start_quantities; // cache date1 quantity to store in date2
-
-    // calculate new equity for all dates: e = mean / price
-    for ( QList<Node*>::const_iterator i = nodes_start.begin(); i != nodes_start.end(); i++ )
-    {
-        Node *n = *i;
-        n->amount = mean_equity_for_market.value( n->currency );
-        n->recalculateQuantityByPrice();
-        start_quantities.insert( n->currency, n->quantity );
-    }
-
-    // step 5: put the mean adjusted date1 quantites into date2. after this step, we can figure out the new "normalized" valuations
-    for ( QList<Node*>::const_iterator i = nodes_now.begin(); i != nodes_now.end(); i++ )
-    {
-        Node *n = *i;
-        n->quantity = start_quantities.value( n->currency ) + quantity_already_shortlong.value( Market( base_currency, n->currency ) );
-        n->recalculateAmountByQuantity();
-    }
-
-    return true;
+    return ret;
 }
 
 QMap<QString, Coin> Spruce::getMarketCoeffs()
@@ -531,38 +565,4 @@ QMap<QString, Coin> Spruce::getMarketCoeffs()
     }
 
     return relative_coeff;
-}
-
-RelativeCoeffs Spruce::getRelativeCoeffs()
-{
-    // get coeffs for time distances of balances
-    m_coeffs.prepend( getMarketCoeffs() );
-
-    // remove cache beyond number of markets
-    if ( m_coeffs.size() > m_coeffs.at( 0 ).size() )
-        m_coeffs.removeLast();
-
-    // find the highest and lowest coefficents
-    RelativeCoeffs ret;
-    QMap<QString,Coin>::const_iterator begin = m_coeffs.at( 0 ).begin(),
-                                       end = m_coeffs.at( 0 ).end();
-    for ( QMap<QString,Coin>::const_iterator i = begin; i != end; i++ )
-    {
-        const QString &currency = i.key();
-        const Coin &coeff = i.value();
-
-        if ( coeff > ret.hi_coeff )
-        {
-            ret.hi_coeff  = coeff;
-            ret.hi_currency = currency;
-        }
-
-        if ( coeff < ret.lo_coeff )
-        {
-            ret.lo_coeff  = coeff;
-            ret.lo_currency = currency;
-        }
-    }
-
-    return ret;
 }

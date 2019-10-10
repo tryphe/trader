@@ -101,8 +101,8 @@ public:
     Coin getLastCoeffForMarket( const QString &market ) const;
 
 private:
-    bool equalizeDates();
     bool normalizeEquity();
+    bool equalizeDates();
 
     CostFunctionCache m_cost_cache;
     QMap<QString,Coin> m_currency_profile_u, m_currency_reserve;
