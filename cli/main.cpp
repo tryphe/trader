@@ -4,9 +4,9 @@
 #include <QString>
 #include <QByteArray>
 
-int main(int argc, char *argv[])
+int main( int argc, char *argv[] )
 {
-    QCoreApplication a(argc, argv);
+    QCoreApplication a( argc, argv );
 
     // read args
     QStringList args = QCoreApplication::arguments();
@@ -16,8 +16,7 @@ int main(int argc, char *argv[])
     QString exchange = args.size() == 0 ? QLatin1String() : args.takeFirst();
     QString joined = args.join( QChar( ' ' ) );
 
-    CommandCaller *c = new CommandCaller( exchange, joined.toLocal8Bit() );
-    delete c;
+    CommandCaller c( exchange, joined.toLocal8Bit() );
 
     return 0;
 }
