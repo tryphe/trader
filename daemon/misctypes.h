@@ -56,8 +56,8 @@ struct TickerInfo
                                   .arg( bid_price )
                                   .arg( ask_price ); }
 
-    Coin ask_price{ 0. };
-    Coin bid_price{ 0. };
+    Coin ask_price;
+    Coin bid_price;
 };
 
 class AvgResponseTime
