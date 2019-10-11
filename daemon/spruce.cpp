@@ -388,7 +388,7 @@ bool Spruce::normalizeEquity()
     for ( QList<Node*>::const_iterator i = nodes_now.begin(); i != nodes_now.end(); i++ )
     {
         Node *n = *i;
-        n->quantity = start_quantities.value( n->currency ) + quantity_already_shortlong.value( Market( base_currency, n->currency ) );
+        n->quantity = start_quantities.value( n->currency );
         n->recalculateAmountByQuantity();
     }
 
