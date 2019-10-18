@@ -28,7 +28,6 @@ CommandRunner::CommandRunner( Engine *_e, REST_OBJECT *_rest, Stats *_stats, QOb
     command_map.insert( "getbuyselltotal", std::bind( &CommandRunner::command_getbuyselltotal, this, _1 ) );
     command_map.insert( "cancelall", std::bind( &CommandRunner::command_cancelall, this, _1 ) );
     command_map.insert( "cancellocal", std::bind( &CommandRunner::command_cancellocal, this, _1 ) );
-    //command_map.insert( "cancelorder", std::bind( &CommandRunner::command_cancelorder, this, _1 ) );
     command_map.insert( "cancelhighest", std::bind( &CommandRunner::command_cancelhighest, this, _1 ) );
     command_map.insert( "cancellowest", std::bind( &CommandRunner::command_cancellowest, this, _1 ) );
     command_map.insert( "getorders", std::bind( &CommandRunner::command_getorders, this, _1 ) );
@@ -105,10 +104,6 @@ CommandRunner::CommandRunner( Engine *_e, REST_OBJECT *_rest, Stats *_stats, QOb
     command_map.insert( "exit", std::bind( &CommandRunner::command_exit, this, _1 ) );
     command_map.insert( "stop", std::bind( &CommandRunner::command_exit, this, _1 ) );
     command_map.insert( "quit", std::bind( &CommandRunner::command_exit, this, _1 ) );
-
-//#if defined(EXCHANGE_BITTREX)
-//    command_map.insert( "sethistoryinterval", std::bind( &CommandRunner::command_sethistoryinterval, this, _1 ) );
-//#endif
 
     kDebug() << "[CommandRunner]";
 }
@@ -251,11 +246,6 @@ void CommandRunner::command_cancellocal( QStringList &args )
 {
     engine->getPositionMan()->cancelLocal( Market( args.value( 1 ) ) );
 }
-
-//void CommandRunner::command_cancelorder( QStringList &args )
-//{
-//    engine->cancelOrderByPrice( args.value( 1 ), args.value( 2 ) );
-//}
 
 void CommandRunner::command_cancelhighest( QStringList &args )
 {
@@ -895,11 +885,3 @@ void CommandRunner::command_exit( QStringList &args )
     Q_UNUSED( args )
     emit exitSignal();
 }
-
-//#if defined(EXCHANGE_BITTREX)
-//void CommandRunner::command_sethistoryinterval( QStringList &args )
-//{
-//    rest->order_history_timer->setInterval( args.value( 1 ).toInt() );
-//    kDebug() << "bot order_history_timer interval set to" << rest->order_history_timer->interval();
-//}
-//#endif
