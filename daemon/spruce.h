@@ -127,6 +127,7 @@ private:
     m_order_size, m_order_nice, m_trailing_price_limit, m_order_nice_spreadput;
 
     QList<Node*> nodes_start, nodes_now;
+    QMap<QString,Node*> nodes_now_by_currency;
     QVector<QMap<QString/*currency*/,Coin>> m_coeffs;
 
     Coin m_leverage;

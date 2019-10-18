@@ -101,12 +101,15 @@ void Spruce::addLiveNode( QString _currency, QString _price )
     n->price = _price;
 
     nodes_now += n;
+    nodes_now_by_currency.insert( _currency, n );
 }
 
 void Spruce::clearLiveNodes()
 {
     while ( nodes_now.size() > 0 )
         delete nodes_now.takeFirst();
+
+    nodes_now_by_currency.clear();
 }
 
 bool Spruce::calculateAmountToShortLong()
@@ -441,29 +444,24 @@ bool Spruce::equalizeDates()
     quint16 i = 0;
     while ( true )
     {
-        // find highest/lowest coeff market
-        for ( QList<Node*>::const_iterator i = nodes_now.begin(); i != nodes_now.end(); i++ )
+        Node *node_long  = nodes_now_by_currency.value( m_relative_coeffs.lo_currency ),
+             *node_short = nodes_now_by_currency.value( m_relative_coeffs.hi_currency );
+
+        Coin qty_short = ( ticksize_leveraged / node_short->price ),
+             qty_long  = ( ticksize_leveraged / node_long->price );
+
+        // short highest coeff, long lowest coeff
+        if ( node_long && node_short &&
+             node_short->quantity > qty_short )
         {
-            Node *n = *i;
-            Coin negated_qty = ( ticksize_leveraged / n->price );
+            shortlongs[ node_short->currency ] -= qty_short;
+            shortlongs[ node_long->currency  ] += qty_long;
 
-            if ( n->currency == m_relative_coeffs.hi_currency &&
-                 n->quantity > negated_qty ) // check if we have enough to short
-            {
-                shortlongs[ n->currency ] -= negated_qty;
-                n->amount -= ticksize;
-            }
-            else if ( n->currency == m_relative_coeffs.lo_currency )
-            {
-                shortlongs[ n->currency ] += negated_qty;
-                n->amount += ticksize;
-            }
-            else
-            {
-                continue;
-            }
+            node_short->amount -= ticksize;
+            node_long->amount += ticksize;
 
-            n->recalculateQuantityByPrice();
+            node_short->recalculateQuantityByPrice();
+            node_long->recalculateQuantityByPrice();
         }
 
         m_relative_coeffs = getRelativeCoeffs();
