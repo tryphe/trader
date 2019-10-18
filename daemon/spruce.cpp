@@ -464,6 +464,7 @@ bool Spruce::equalizeDates()
             node_long->recalculateQuantityByPrice();
         }
 
+        // get new coeffs so we can analyze m_coeffs
         m_relative_coeffs = getRelativeCoeffs();
 
         // break on consistent sawtooth pattern, which means we're done!
