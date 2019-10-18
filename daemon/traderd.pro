@@ -23,7 +23,6 @@ SOURCES += main.cpp \
     commandlistener.cpp \
     commandrunner.cpp \
     costfunctioncache.cpp \
-    enginesettings.cpp \
     fallbacklistener.cpp \
     market.cpp \
     position.cpp \

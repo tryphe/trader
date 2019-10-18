@@ -1,14 +1,15 @@
 #ifndef ENGINESETTINGS_H
 #define ENGINESETTINGS_H
 
+#include "global.h"
 #include "coinamount.h"
 
 struct EngineSettings
 {
-    explicit EngineSettings();
-    ~EngineSettings();
+    explicit EngineSettings() {}
+    ~EngineSettings() {}
 
-    Coin fee;
+    Coin fee{ DEFAULT_FEERATE };
 
     // global settings (probably shouldn't be modified)
     bool is_chatty{ false };
@@ -22,8 +23,8 @@ struct EngineSettings
     qint64 request_timeout{ 3 * 60000 }; // how long before we resend most requests
     qint64 cancel_timeout{ 5 * 60000 }; // how long before we resend a cancel request
     qint64 stray_grace_time_limit{ 10 * 60000 }; // how long before we cancel stray orders, if enabled
-    qint64 safety_delay_time{ 2000 }; // safety delay, should be more than your ping by a second or two
-    qint64 ticker_safety_delay_time{ 2000 }; // ^
+    qint64 safety_delay_time{ SAFETY_DELAY }; // safety delay, should be more than your ping by a second or two
+    qint64 ticker_safety_delay_time{ SAFETY_DELAY }; // ^
 };
 
 #endif // ENGINESETTINGS_H
