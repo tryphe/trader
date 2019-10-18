@@ -1239,9 +1239,13 @@ QPair<Coin, Coin> Engine::getSpruceSpread( const QString &market )
     // ensure the spread is more profitable than fee*2
     int j = 0;
     const Coin greed = spruce.getOrderGreed();
+
+    // alternate between subtracting from sell side first to buy side first
+    const bool greed_vibrate_state = QRandomGenerator::global()->generate() % 2 == 0;
+
     while ( buy_price > sell_price * greed )
     {
-        if ( j++ % 2 == 0 )
+        if ( j++ % 2 == greed_vibrate_state ? 0 : 1 )
             buy_price -= ticksize;
         else
             sell_price += ticksize;
@@ -1599,14 +1603,15 @@ void Engine::onSpruceUp()
         for ( QList<QString>::const_iterator i = currencies.begin(); i != currencies.end(); i++ )
         {
             const QString &currency = *i;
-            const QPair<Coin,Coin> spread = getSpreadForMarket( Market( spruce.getBaseCurrency(), currency ) );
+            const Market market( spruce.getBaseCurrency(), currency );
+            const QPair<Coin,Coin> spread = getSpreadForMarket( market );
             const Coin &price = ( side == SIDE_BUY ) ? spread.first :
                                                        spread.second;
 
             // if the ticker isn't updated, just skip this whole function
             if ( price.isZeroOrLess() )
             {
-                kDebug() << "[Spruce] local error: no ticker for currency" << spruce.getBaseCurrency() << currency;
+                kDebug() << "[Spruce] local error: no ticker for currency" << market;
                 return;
             }
 
@@ -1643,14 +1648,22 @@ void Engine::onSpruceUp()
             static const int ORDERSIZE_EXPAND_THRESH = 20;
             static const int ORDERSIZE_EXPAND_MAX = 5;
             const bool is_buy = qty_to_shortlong.isZeroOrLess();
-            const Coin order_size_cache = spruce.getOrderSize( market );
-            const Coin order_size = std::min( order_size_cache * ORDERSIZE_EXPAND_MAX, std::max( order_size_cache, amount_to_shortlong_abs / ORDERSIZE_EXPAND_THRESH ) );
+            const Coin order_size_unscaled = spruce.getOrderSize( market );
+            const Coin order_size = std::min( order_size_unscaled * ORDERSIZE_EXPAND_MAX, std::max( order_size_unscaled, amount_to_shortlong_abs / ORDERSIZE_EXPAND_THRESH ) );
             const Coin order_max = is_buy ? spruce.getMarketBuyMax( market ) :
                                             spruce.getMarketSellMax( market );
-            const Coin order_size_limit = order_size * spruce.getOrderNice();
+            const Coin order_size_limit = order_size_unscaled * spruce.getOrderNice();
 
             // get spread price for new spruce order(don't cache because the function generates a random number)
-            const QPair<Coin,Coin> spread = getSpruceSpread( market );
+            QPair<Coin,Coin> spread = getSpruceSpread( market );
+
+            // put prices at spread if pending amount to shortlong is greater than size * order_nice_spreadput
+            if ( amount_to_shortlong_abs - spruce_active_for_side > order_size_unscaled * spruce.getOrderNiceSpreadPut() )
+            {
+                const MarketInfo &info = getMarketInfo( market );
+                spread.first = info.highest_buy;
+                spread.second = info.lowest_sell;
+            }
             const Coin &buy_price = spread.first;
             const Coin &sell_price = spread.second;
 
@@ -1694,18 +1707,18 @@ void Engine::onSpruceUp()
                            .arg( amount_to_shortlong, 13 )
                            .arg( spruce_active_for_side, 12 );
 
-            // cancel conflicting positions
+            // cancel conflicting spruce positions
             for ( QSet<Position*>::const_iterator j = positions->all().begin(); j != positions->all().end(); j++ )
             {
                 Position *const &pos = *j;
 
-                if ( pos->market != market )
+                if ( !pos->is_spruce || pos->market != market )
                     continue;
 
                 if ( (  is_buy && pos->side == SIDE_SELL && buy_price  >= pos->sell_price.ratio( 0.9945 ) ) ||
                      ( !is_buy && pos->side == SIDE_BUY  && sell_price <= pos->buy_price.ratio( 1.0055 ) ) )
                 {
-                    kDebug() << "[Spruce] cancelling conflicting order" << pos->order_number;
+                    kDebug() << "[Spruce] cancelling conflicting spruce order" << pos->order_number;
                     positions->cancel( pos );
                 }
             }

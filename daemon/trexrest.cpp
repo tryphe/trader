@@ -49,8 +49,8 @@ void TrexREST::init()
 
 #ifdef EXTRA_NICE
     order_history_timer->setInterval( 50000 );
-    orderbook_timer->setInterval( 51000 );
-    ticker_timer->setInterval( 52000 );
+    orderbook_timer->setInterval( 100000 );
+    ticker_timer->setInterval( 20000 );
 #endif
 
     onCheckTicker();

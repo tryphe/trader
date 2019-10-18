@@ -10,6 +10,7 @@ Spruce::Spruce()
     /// user settings
     m_order_size = "0.00500000";
     m_order_nice = "2";
+    m_order_nice_spreadput = "30";
     m_order_greed = "0.99"; // keep our spread at least 1-x% apart
     m_order_greed_randomness = "0.005"; // randomly subtract tenths of a pct from greed up to this amount
 
@@ -195,7 +196,8 @@ QString Spruce::getSaveState()
     ret += QString( "setspruceordersize %1\n" ).arg( m_order_size );
 
     // save order size
-    ret += QString( "setspruceordernice %1\n" ).arg( m_order_nice );
+    ret += QString( "setspruceordernice %1 %2\n" ).arg( m_order_nice )
+                                                  .arg( m_order_nice_spreadput );
 
     // save order trailing limit
     ret += QString( "setspruceordertrail %1\n" ).arg( m_trailing_price_limit );
