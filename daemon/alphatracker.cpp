@@ -68,15 +68,17 @@ quint64 AlphaTracker::getTrades( const QString &market ) const
 
 void AlphaTracker::printAlpha() const
 {
-    Coin total_volume;
+    Coin total_volume, estimated_pl;
     const QList<QString> keys = getMarkets();
     for ( QList<QString>::const_iterator i = keys.begin(); i != keys.end(); i++ )
     {
         const QString &market = *i;
         const Coin volume = getVolume( market );
+        const Coin alpha = getAlpha( market );
+
         kDebug() << QString( "%1 | alpha %2 | buy %3 | sell %4 | vol %5 | vol-trade %6 | trades %7" )
                     .arg( market, -MARKET_STRING_WIDTH )
-                    .arg( getAlpha( market ), -10 )
+                    .arg( alpha, -10 )
                     .arg( getAvgPrice( market, SIDE_BUY ), -12 )
                     .arg( getAvgPrice( market, SIDE_SELL ), -12 )
                     .arg( volume, -12 )
@@ -84,9 +86,11 @@ void AlphaTracker::printAlpha() const
                     .arg( getTrades( market ), -7 );
 
         total_volume += volume;
+        estimated_pl += ( alpha - CoinAmount::COIN - ( Coin( DEFAULT_FEERATE ) *2 ) ) * volume;
     }
 
     kDebug() << "total volume:" << total_volume;
+    kDebug() << "estimated pl:" << estimated_pl;
 }
 
 QString AlphaTracker::getSaveState() const
