@@ -725,7 +725,10 @@ void CommandRunner::command_setspruceordernice( QStringList &args )
 {
     engine->getSpruce().setOrderNice( args.value( 1 ) );
     engine->getSpruce().setOrderNiceSpreadPut( args.value( 2 ) );
-    kDebug() << "spruce order nice is" << engine->getSpruce().getOrderNice() << engine->getSpruce().getOrderNiceSpreadPut();
+    engine->getSpruce().setOrderNiceZeroBound( args.value( 3 ) );
+    kDebug() << "spruce order nice is" << engine->getSpruce().getOrderNice()
+                                       << engine->getSpruce().getOrderNiceSpreadPut()
+                                       << engine->getSpruce().getOrderNiceZeroBound();
 }
 
 void CommandRunner::command_setspruceordertrail( QStringList &args )

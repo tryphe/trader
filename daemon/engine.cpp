@@ -1784,8 +1784,8 @@ void Engine::onSpruceUp()
                 const Coin order_size_limit = order_size * spruce.getOrderNice();
 
                 /// step 2: if the order is active but our rating is the opposite polarity, cancel it
-                if ( ( amount_to_shortlong >  order_size && pos->side == SIDE_BUY  ) ||
-                     ( amount_to_shortlong < -order_size && pos->side == SIDE_SELL ) )
+                if ( ( amount_to_shortlong >  order_size * spruce.getOrderNiceZeroBound() && pos->side == SIDE_BUY  ) ||
+                     ( amount_to_shortlong < -order_size * spruce.getOrderNiceZeroBound() && pos->side == SIDE_SELL ) )
                 {
                     positions->cancel( pos, false, CANCELLING_FOR_SPRUCE_2 );
                     continue;
