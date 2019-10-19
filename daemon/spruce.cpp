@@ -449,21 +449,23 @@ bool Spruce::equalizeDates()
         Node *node_long  = nodes_now_by_currency.value( m_relative_coeffs.lo_currency ),
              *node_short = nodes_now_by_currency.value( m_relative_coeffs.hi_currency );
 
-        Coin qty_short = ( ticksize_leveraged / node_short->price ),
-             qty_long  = ( ticksize_leveraged / node_long->price );
-
         // short highest coeff, long lowest coeff
-        if ( node_long && node_short &&
-             node_short->quantity > qty_short )
+        if ( node_long && node_short )
         {
-            shortlongs[ node_short->currency ] -= qty_short;
-            shortlongs[ node_long->currency  ] += qty_long;
+            Coin qty_short = ( ticksize_leveraged / node_short->price ),
+                 qty_long  = ( ticksize_leveraged / node_long->price );
 
-            node_short->amount -= ticksize;
-            node_long->amount += ticksize;
+            if ( node_short->quantity > qty_short )
+            {
+                shortlongs[ node_short->currency ] -= qty_short;
+                shortlongs[ node_long->currency  ] += qty_long;
 
-            node_short->recalculateQuantityByPrice();
-            node_long->recalculateQuantityByPrice();
+                node_short->amount -= ticksize;
+                node_long->amount += ticksize;
+
+                node_short->recalculateQuantityByPrice();
+                node_long->recalculateQuantityByPrice();
+            }
         }
 
         // get new coeffs so we can analyze m_qtys
