@@ -466,12 +466,13 @@ bool Spruce::equalizeDates()
             node_long->recalculateQuantityByPrice();
         }
 
-        // get new coeffs so we can analyze m_coeffs
+        // get new coeffs so we can analyze m_qtys
         m_relative_coeffs = getRelativeCoeffs();
 
         // break on consistent sawtooth pattern, which means we're done!
-        if ( m_coeffs.value( 0 ) == m_coeffs.value( m_coeffs.value( 0 ).size() -1 ) ||
-             m_coeffs.value( 0 ) == m_coeffs.value( m_coeffs.value( 0 ).size() -2 ) )
+        if ( m_qtys.size() >= nodes_now_by_currency.size() &&
+             ( m_qtys.value( 0 ) == m_qtys.value( m_qtys.value( 0 ).size() -1 ) ||
+               m_qtys.value( 0 ) == m_qtys.value( m_qtys.value( 0 ).size() -2 ) ) )
             break;
 
         // break at max equity to avoid infinite loop
@@ -492,11 +493,12 @@ RelativeCoeffs Spruce::getRelativeCoeffs()
     m_coeffs.prepend( getMarketCoeffs() );
 
     // remove cache beyond number of markets
-    if ( m_coeffs.size() > m_coeffs.at( 0 ).size() )
+    if ( m_coeffs.size() > 1 )
         m_coeffs.removeLast();
 
     // find the highest and lowest coefficents
     RelativeCoeffs ret;
+    QMap<QString/*currency*/,Coin> qtys;
     QMap<QString,Coin>::const_iterator begin = m_coeffs.at( 0 ).begin(),
                                        end = m_coeffs.at( 0 ).end();
     for ( QMap<QString,Coin>::const_iterator i = begin; i != end; i++ )
@@ -515,7 +517,16 @@ RelativeCoeffs Spruce::getRelativeCoeffs()
             ret.lo_coeff  = coeff;
             ret.lo_currency = currency;
         }
+
+        // build qtys
+        qtys.insert( currency, nodes_now_by_currency.value( currency )->quantity );
     }
+
+    m_qtys.prepend( qtys );
+
+    // remove cache beyond number of qtys
+    if ( m_qtys.size() > m_coeffs.at( 0 ).size() )
+        m_qtys.removeLast();
 
     return ret;
 }

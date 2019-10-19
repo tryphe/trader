@@ -131,7 +131,7 @@ private:
 
     QList<Node*> nodes_start, nodes_now;
     QMap<QString,Node*> nodes_now_by_currency;
-    QVector<QMap<QString/*currency*/,Coin>> m_coeffs;
+    QVector<QMap<QString/*currency*/,Coin>> m_coeffs, m_qtys;
 
     Coin m_leverage;
 };
