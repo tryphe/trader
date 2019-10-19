@@ -322,10 +322,10 @@ Coin Spruce::getLastCoeffForMarket( const QString &market ) const
 {
     QString currency = Market( market ).getQuote();
 
-    if ( !m_coeffs.value( 0 ).contains( currency ) )
+    if ( !m_last_coeffs.contains( currency ) )
         qDebug() << "[Spruce] local warning: can't find coeff for currency" << currency;
 
-    return m_coeffs.value( 0 ).value( currency );
+    return m_last_coeffs.value( currency );
 }
 
 bool Spruce::normalizeEquity()
@@ -492,17 +492,13 @@ bool Spruce::equalizeDates()
 RelativeCoeffs Spruce::getRelativeCoeffs()
 {
     // get coeffs for time distances of balances
-    m_coeffs.prepend( getMarketCoeffs() );
-
-    // remove cache beyond number of markets
-    if ( m_coeffs.size() > 1 )
-        m_coeffs.removeLast();
+    m_last_coeffs = getMarketCoeffs();
 
     // find the highest and lowest coefficents
     RelativeCoeffs ret;
     QMap<QString/*currency*/,Coin> qtys;
-    QMap<QString,Coin>::const_iterator begin = m_coeffs.at( 0 ).begin(),
-                                       end = m_coeffs.at( 0 ).end();
+    QMap<QString,Coin>::const_iterator begin = m_last_coeffs.begin(),
+                                       end = m_last_coeffs.end();
     for ( QMap<QString,Coin>::const_iterator i = begin; i != end; i++ )
     {
         const QString &currency = i.key();
@@ -526,8 +522,8 @@ RelativeCoeffs Spruce::getRelativeCoeffs()
 
     m_qtys.prepend( qtys );
 
-    // remove cache beyond number of qtys
-    if ( m_qtys.size() > m_coeffs.at( 0 ).size() )
+    // remove cache beyond number of currencies
+    if ( m_qtys.size() > m_last_coeffs.size() )
         m_qtys.removeLast();
 
     return ret;
