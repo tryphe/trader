@@ -20,7 +20,7 @@ Coin CostFunctionCache::getY( const Coin &profile_u, const Coin &reserve, const 
     static const int MAX_RAM_CACHE = 20000; // how many values
     static const int FIELD_SIZE = 10;
     static const QString pre_path = Global::getCostFunctionCachePath() + QDir::separator() + "cf-";
-    static const int projected_file_size = ( ( m_max_x / m_ticksize ).toInt() +1 ) * FIELD_SIZE; // +1 for zero
+    const int projected_file_size = ( ( m_max_x / m_ticksize ).toInt() +1 ) * FIELD_SIZE; // +1 for zero
 
     static_assert( MAX_RAM_CACHE > 1000 );
 
