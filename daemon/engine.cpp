@@ -1742,93 +1742,93 @@ void Engine::onSpruceUp()
             Position *const &pos = *j;
 
             // search for stale spruce order for the side we are setting
-            if (  pos->is_spruce &&
-                  pos->order_set_time > 0 &&
-                  side == pos->side &&
-                 !pos->is_cancelling )
+            if ( !pos->is_spruce ||
+                  pos->order_set_time == 0 ||
+                  side != pos->side ||
+                  pos->is_cancelling )
+                continue;
+
+            // get spread price for new spruce order
+            const QString &market = pos->market;
+            const QPair<Coin,Coin> spread = getSpreadForMarket( market );
+            const Coin &buy_price = spread.first;
+            const Coin &sell_price = spread.second;
+
+            // get trailing price limit ratio, ie. bid/ask at 25sat/26sat is 0.961
+            Coin trailing_price_limit = spruce.getTrailingPriceLimit();
+
+            // if the spread gap is wider than our limit, raise the limit to the gap ratio
+            const Coin bid_ask_ratio = buy_price / sell_price;
+            if ( bid_ask_ratio < trailing_price_limit )
+                trailing_price_limit = bid_ask_ratio;
+
+            const MarketInfo &info = market_info.value( market );
+
+            /// step 1: look for prices that are trailing the spread too far
+            if ( buy_price.isGreaterThanZero() && sell_price.isGreaterThanZero() &&
+                 ( ( pos->side == SIDE_BUY  && pos->price < buy_price * trailing_price_limit &&
+                     pos->price < buy_price - info.price_ticksize )
+                   ||
+                   ( pos->side == SIDE_SELL && pos->price > sell_price * ( ( CoinAmount::COIN *2 ) - trailing_price_limit ) &&
+                     pos->price > sell_price + info.price_ticksize ) ) )
             {
-                // get spread price for new spruce order
-                const QString &market = pos->market;
-                const QPair<Coin,Coin> spread = getSpreadForMarket( market );
-                const Coin &buy_price = spread.first;
-                const Coin &sell_price = spread.second;
+                positions->cancel( pos, false, CANCELLING_FOR_SPRUCE );
+                continue;
+            }
 
-                // get trailing price limit ratio, ie. bid/ask at 25sat/26sat is 0.961
-                Coin trailing_price_limit = spruce.getTrailingPriceLimit();
+            // make sure map is populated
+            if ( !spruce_amount_to_shortlong.contains( market ) )
+                spruce_amount_to_shortlong.insert( market, spruce.getCurrencyPriceByMarket( market ) * spruce.getQuantityToShortLongNow( market ) );
 
-                // if the spread gap is wider than our limit, raise the limit to the gap ratio
-                const Coin bid_ask_ratio = buy_price / sell_price;
-                if ( bid_ask_ratio < trailing_price_limit )
-                    trailing_price_limit = bid_ask_ratio;
+            const Coin &amount_to_shortlong = spruce_amount_to_shortlong.value( market );
+            const Coin order_size = spruce.getOrderSize( market );
+            const Coin order_size_limit = order_size * spruce.getOrderNice();
 
-                const MarketInfo &info = market_info.value( market );
+            /// step 2: if the order is active but our rating is the opposite polarity, cancel it
+            if ( ( amount_to_shortlong >  order_size * spruce.getOrderNiceZeroBound() && pos->side == SIDE_BUY  ) ||
+                 ( amount_to_shortlong < -order_size * spruce.getOrderNiceZeroBound() && pos->side == SIDE_SELL ) )
+            {
+                positions->cancel( pos, false, CANCELLING_FOR_SPRUCE_2 );
+                continue;
+            }
 
-                /// step 1: look for prices that are trailing the spread too far
-                if ( buy_price.isGreaterThanZero() && sell_price.isGreaterThanZero() &&
-                     ( ( pos->side == SIDE_BUY  && pos->price < buy_price * trailing_price_limit &&
-                         pos->price < buy_price - info.price_ticksize )
-                       ||
-                       ( pos->side == SIDE_SELL && pos->price > sell_price * ( ( CoinAmount::COIN *2 ) - trailing_price_limit ) &&
-                         pos->price > sell_price + info.price_ticksize ) ) )
+            /// step 3: look for spruce active <> what we should short/long
+            if ( ( pos->side == SIDE_BUY  && amount_to_shortlong.isZeroOrLess() &&
+                   amount_to_shortlong + spruce_offset.value( market ) >  order_size_limit ) ||
+                 ( pos->side == SIDE_SELL && amount_to_shortlong.isGreaterThanZero() &&
+                   amount_to_shortlong + spruce_offset.value( market ) < -order_size_limit ) )
+            {
+                // if it's a buy, we should cancel the lowest price. if it's a sell, cancel the highets price.
+                Position *const &pos_to_cancel = pos->side == SIDE_BUY ? positions->getLowestSpruceBuy( market ) :
+                                                                         positions->getHighestSpruceSell( market );
+
+                // check badptr just incase, but should be impossible to get here
+                if ( pos_to_cancel )
                 {
-                    positions->cancel( pos, false, CANCELLING_FOR_SPRUCE );
+                    // negate spruce offset by order size
+                    if ( pos_to_cancel->side == SIDE_BUY  )
+                        spruce_offset[ market ] -= pos_to_cancel->btc_amount;
+                    else
+                        spruce_offset[ market ] += pos_to_cancel->btc_amount;
+
+                    positions->cancel( pos_to_cancel, false, CANCELLING_FOR_SPRUCE_3 );
                     continue;
                 }
+            }
 
-                // make sure map is populated
-                if ( !spruce_amount_to_shortlong.contains( market ) )
-                    spruce_amount_to_shortlong.insert( market, spruce.getCurrencyPriceByMarket( market ) * spruce.getQuantityToShortLongNow( market ) );
+            const Coin &active_amount = spruce_active.value( market );
 
-                const Coin &amount_to_shortlong = spruce_amount_to_shortlong.value( market );
-                const Coin order_size = spruce.getOrderSize( market );
-                const Coin order_size_limit = order_size * spruce.getOrderNice();
+            /// step 4: look for active amount > amount_to_shortlong + order_size_limit
+            if ( ( pos->side == SIDE_BUY  && amount_to_shortlong.isZeroOrLess() &&
+                   -active_amount < amount_to_shortlong - order_size_limit ) ||
+                 ( pos->side == SIDE_SELL && amount_to_shortlong.isGreaterThanZero() &&
+                    active_amount > amount_to_shortlong + order_size_limit ) )
+            {
+                // negate spruce_active
+                spruce_active[ market ] -= pos->btc_amount;
 
-                /// step 2: if the order is active but our rating is the opposite polarity, cancel it
-                if ( ( amount_to_shortlong >  order_size * spruce.getOrderNiceZeroBound() && pos->side == SIDE_BUY  ) ||
-                     ( amount_to_shortlong < -order_size * spruce.getOrderNiceZeroBound() && pos->side == SIDE_SELL ) )
-                {
-                    positions->cancel( pos, false, CANCELLING_FOR_SPRUCE_2 );
-                    continue;
-                }
-
-                /// step 3: look for spruce active <> what we should short/long
-                if ( ( pos->side == SIDE_BUY  && amount_to_shortlong.isZeroOrLess() &&
-                       amount_to_shortlong + spruce_offset.value( market ) >  order_size_limit ) ||
-                     ( pos->side == SIDE_SELL && amount_to_shortlong.isGreaterThanZero() &&
-                       amount_to_shortlong + spruce_offset.value( market ) < -order_size_limit ) )
-                {
-                    // if it's a buy, we should cancel the lowest price. if it's a sell, cancel the highets price.
-                    Position *const &pos_to_cancel = pos->side == SIDE_BUY ? positions->getLowestSpruceBuy( market ) :
-                                                                             positions->getHighestSpruceSell( market );
-
-                    // check badptr just incase, but should be impossible to get here
-                    if ( pos_to_cancel )
-                    {
-                        // negate spruce offset by order size
-                        if ( pos_to_cancel->side == SIDE_BUY  )
-                            spruce_offset[ market ] -= pos_to_cancel->btc_amount;
-                        else
-                            spruce_offset[ market ] += pos_to_cancel->btc_amount;
-
-                        positions->cancel( pos_to_cancel, false, CANCELLING_FOR_SPRUCE_3 );
-                        continue;
-                    }
-                }
-
-                const Coin &active_amount = spruce_active.value( market );
-
-                /// step 4: look for active amount > amount_to_shortlong + order_size_limit
-                if ( ( pos->side == SIDE_BUY  && amount_to_shortlong.isZeroOrLess() &&
-                       -active_amount < amount_to_shortlong - order_size_limit ) ||
-                     ( pos->side == SIDE_SELL && amount_to_shortlong.isGreaterThanZero() &&
-                        active_amount > amount_to_shortlong + order_size_limit ) )
-                {
-                    // negate spruce_active
-                    spruce_active[ market ] -= pos->btc_amount;
-
-                    positions->cancel( pos, false, CANCELLING_FOR_SPRUCE_4 );
-                    continue;
-                }
+                positions->cancel( pos, false, CANCELLING_FOR_SPRUCE_4 );
+                continue;
             }
         }
     }
