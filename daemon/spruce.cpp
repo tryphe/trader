@@ -13,7 +13,7 @@ Spruce::Spruce()
     m_order_nice_spreadput = "30";
     m_order_nice_zerobound = "0";
     m_order_greed = "0.99"; // keep our spread at least 1-x% apart
-    m_order_greed_randomness = "0.005"; // randomly subtract tenths of a pct from greed up to this amount
+    m_order_greed_buy_randomness = m_order_greed_sell_randomness = "0.005"; // randomly subtract tenths of a pct from greed up to this amount
 
     m_long_max = "0.3000000"; // max long total
     m_short_max = "-0.50000000"; // max short total
@@ -61,7 +61,7 @@ Coin Spruce::getMarketWeight( QString market ) const
     return Coin();
 }
 
-Coin Spruce::getOrderGreed()
+Coin Spruce::getOrderGreed( quint8 side )
 {
     // if greed is unset, just return m_order_greed
     if ( !m_order_greed.isGreaterThanZero() )
@@ -69,7 +69,8 @@ Coin Spruce::getOrderGreed()
 
     // try to generate rand range
     const Coin iter = CoinAmount::COIN / 1000;
-    const quint32 range = ( m_order_greed_randomness / iter ).toUInt32();
+    const Coin &randomness = side == SIDE_BUY ? m_order_greed_buy_randomness : m_order_greed_sell_randomness;
+    const quint32 range = ( randomness / iter ).toUInt32();
 
     // if the range is 0, return here to prevent a range of 0-1
     if ( range == 0 )
@@ -182,9 +183,10 @@ QString Spruce::getSaveState()
     ret += QString( "setspruceleverage %1\n" ).arg( m_leverage );
 
     // save order greed
-    ret += QString( "setspruceordergreed %1 %2\n" )
+    ret += QString( "setspruceordergreed %1 %2 %3\n" )
             .arg( m_order_greed )
-            .arg( m_order_greed_randomness );
+            .arg( m_order_greed_buy_randomness )
+            .arg( m_order_greed_sell_randomness );
 
     // save long max
     ret += QString( "setsprucelongmax %1\n" ).arg( m_long_max );

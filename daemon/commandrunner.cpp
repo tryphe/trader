@@ -691,8 +691,9 @@ void CommandRunner::command_setsprucereserve( QStringList &args )
 void CommandRunner::command_setspruceordergreed( QStringList &args )
 {
     engine->getSpruce().setOrderGreed( args.value( 1 ) );
-    engine->getSpruce().setOrderRandom( args.value( 2 ) );
-    kDebug() << "spruce order greed is" << args.value( 1 ) << args.value( 2 );
+    engine->getSpruce().setOrderRandomBuy( args.value( 2 ) );
+    engine->getSpruce().setOrderRandomSell( args.value( 3 ) );
+    kDebug() << "spruce order greed is" << args.value( 1 ) << args.value( 2 ) << args.value( 3 );
 }
 
 void CommandRunner::command_setsprucelongmax( QStringList &args )

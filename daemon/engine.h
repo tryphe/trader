@@ -82,7 +82,7 @@ public Q_SLOTS:
     void handleUserMessage( const QString &str );
 
 private:
-    QPair<Coin,Coin> getSpruceSpread( const QString &market );
+    QPair<Coin,Coin> getSpruceSpread( const QString &market, quint8 side );
 
     // timer routines
     void cleanGraceTimes();

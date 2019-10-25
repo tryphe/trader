@@ -49,8 +49,9 @@ public:
     Coin getMarketWeight( QString market ) const;
 
     void setOrderGreed( Coin ratio ) { m_order_greed = ratio; }
-    void setOrderRandom( Coin r ) { m_order_greed_randomness = r; }
-    Coin getOrderGreed();
+    void setOrderRandomBuy( Coin r ) { m_order_greed_buy_randomness = r; }
+    void setOrderRandomSell( Coin r ) { m_order_greed_sell_randomness = r; }
+    Coin getOrderGreed( quint8 side );
 
     void setOrderNice( Coin nice ) { m_order_nice = nice; }
     Coin getOrderNice() const { return m_order_nice; }
@@ -126,8 +127,9 @@ private:
     QString base_currency;
     QMap<QString,Coin> currency_weight; // note: weights are >0 and <=1
     QMultiMap<Coin,QString> currency_weight_by_coin; // note: weights are >0 and <=1
-    Coin m_order_greed, m_order_greed_randomness, m_long_max, m_short_max, m_market_buy_max, m_market_sell_max,
-    m_order_size, m_order_nice, m_trailing_price_limit, m_order_nice_spreadput, m_order_nice_zerobound;
+    Coin m_order_greed, m_order_greed_buy_randomness, m_order_greed_sell_randomness, m_long_max,
+    m_short_max, m_market_buy_max, m_market_sell_max, m_order_size, m_order_nice, m_trailing_price_limit,
+    m_order_nice_spreadput, m_order_nice_zerobound;
 
     QList<Node*> nodes_start, nodes_now;
     QMap<QString,Node*> nodes_now_by_currency;

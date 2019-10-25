@@ -1224,7 +1224,7 @@ void Engine::printInternal()
     kDebug() << "diverging_converging: " << positions->getDCMap();
 }
 
-QPair<Coin, Coin> Engine::getSpruceSpread( const QString &market )
+QPair<Coin, Coin> Engine::getSpruceSpread( const QString &market, quint8 side )
 {
     // calculate a profitable spread
     const MarketInfo &info = market_info[ market ];
@@ -1238,7 +1238,7 @@ QPair<Coin, Coin> Engine::getSpruceSpread( const QString &market )
 
     // ensure the spread is more profitable than fee*2
     int j = 0;
-    const Coin greed = spruce.getOrderGreed();
+    const Coin greed = spruce.getOrderGreed( side );
 
     // alternate between subtracting from sell side first to buy side first
     const bool greed_vibrate_state = QRandomGenerator::global()->generate() % 2 == 0;
@@ -1655,7 +1655,7 @@ void Engine::onSpruceUp()
             const Coin order_size_limit = order_size_unscaled * spruce.getOrderNice();
 
             // get spread price for new spruce order(don't cache because the function generates a random number)
-            QPair<Coin,Coin> spread = getSpruceSpread( market );
+            QPair<Coin,Coin> spread = getSpruceSpread( market, side );
 
             // put prices at spread if pending amount to shortlong is greater than size * order_nice_spreadput
             if ( amount_to_shortlong_abs - spruce_active_for_side > order_size_unscaled * spruce.getOrderNiceSpreadPut() )
