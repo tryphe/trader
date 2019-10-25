@@ -35,17 +35,26 @@ Engine::Engine()
     connect( maintenance_timer, &QTimer::timeout, this, &Engine::onEngineMaintenance );
     maintenance_timer->setTimerType( Qt::VeryCoarseTimer );
     maintenance_timer->start( 60000 );
+
+    // autosave spruce settings
+    autosave_timer = new QTimer( this );
+    connect( autosave_timer, &QTimer::timeout, this, &Engine::autoSaveSpruceSettings );
+    autosave_timer->setTimerType( Qt::VeryCoarseTimer );
+    autosave_timer->start( 30 * 60000 );
 }
 
 Engine::~Engine()
 {
     maintenance_timer->stop();
+    autosave_timer->stop();
 
     delete maintenance_timer;
+    delete autosave_timer;
     delete positions;
     delete settings;
 
     maintenance_timer = nullptr;
+    autosave_timer = nullptr;
     positions = nullptr;
     settings = nullptr;
 
@@ -1146,6 +1155,50 @@ void Engine::loadStats()
 
     stats->alpha().reset();
     stats->alpha().readSaveState( data );
+}
+
+void Engine::autoSaveSpruceSettings()
+{
+    if ( !spruce.isActive() )
+        return;
+
+    const QString trader_path = Global::getTraderPath();
+    const QString settings_path = trader_path + QDir::separator() + "settings.txt";
+    const QString stats_path = trader_path + QDir::separator() + "stats";
+
+    // backup settings file
+    if ( QFile::exists( settings_path ) )
+    {
+        QString new_settings_path = Global::getOldLogsPath() + QDir::separator() + "settings.txt." + QString::number( QDateTime::currentSecsSinceEpoch() );
+        kDebug() << "backing up settings...";
+
+        if ( QFile::copy( settings_path, new_settings_path ) )
+        {
+            QFile::remove( settings_path ); // remove old file on success
+            saveSettings();
+        }
+        else
+        {
+            kDebug() << "local error: couldn't backup settings file to" << new_settings_path;
+        }
+    }
+
+    // backup stats file
+    if ( QFile::exists( stats_path ) )
+    {
+        QString new_stats_path = Global::getOldLogsPath() + QDir::separator() + "stats." + QString::number( QDateTime::currentSecsSinceEpoch() );
+        kDebug() << "backing up stats...";
+
+        if ( QFile::copy( stats_path, new_stats_path ) )
+        {
+            QFile::remove( stats_path ); // remove old file on success
+            saveStats();
+        }
+        else
+        {
+            kDebug() << "local error: couldn't backup stats file to" << new_stats_path;
+        }
+    }
 }
 
 void Engine::flipPosition( Position *const &pos )

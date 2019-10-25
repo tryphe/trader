@@ -87,6 +87,7 @@ private:
     // timer routines
     void cleanGraceTimes();
     void checkMaintenance();
+    void autoSaveSpruceSettings();
 
     void addLandmarkPositionFor( Position *const &pos );
     void flipPosition( Position *const &pos );
@@ -110,6 +111,7 @@ private:
     PositionMan *positions{ nullptr };
     EngineSettings *settings{ nullptr };
     QTimer *maintenance_timer{ nullptr };
+    QTimer *autosave_timer{ nullptr };
 
     REST_OBJECT *rest{ nullptr };
     Stats *stats{ nullptr };

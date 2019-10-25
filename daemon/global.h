@@ -273,8 +273,8 @@ static inline void ensurePath()
 
 static inline bool moveOldLogsOut()
 {
-    const QString &trader_path = getTraderPath();
-    const QString &oldlogs_path = getOldLogsPath();
+    const QString trader_path = getTraderPath();
+    const QString oldlogs_path = getOldLogsPath();
 
     // get log files from previous runs
     QStringList files = QDir( trader_path ).entryList( QStringList() << "log.*.txt", QDir::Files | QDir::Readable | QDir::Writable, QDir::Name );
