@@ -1765,7 +1765,10 @@ void Engine::onSpruceUp()
             {
                 Position *const &pos = *j;
 
-                if ( !pos->is_spruce || pos->market != market )
+                if ( !pos->is_spruce ||
+                      pos->is_cancelling ||
+                      pos->order_set_time == 0 ||
+                      pos->market != market )
                     continue;
 
                 if ( (  is_buy && pos->side == SIDE_SELL && buy_price  >= pos->sell_price.ratio( 0.9945 ) ) ||
@@ -1796,9 +1799,9 @@ void Engine::onSpruceUp()
 
             // search for stale spruce order for the side we are setting
             if ( !pos->is_spruce ||
+                  pos->is_cancelling ||
                   pos->order_set_time == 0 ||
-                  side != pos->side ||
-                  pos->is_cancelling )
+                  side != pos->side )
                 continue;
 
             // get spread price for new spruce order
