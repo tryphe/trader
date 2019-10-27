@@ -83,6 +83,7 @@ public Q_SLOTS:
 
 private:
     QPair<Coin,Coin> getSpruceSpread( const QString &market, quint8 side );
+    QPair<Coin,Coin> getSpruceSpreadLimit( const QString &market, quint8 side );
 
     // timer routines
     void cleanGraceTimes();

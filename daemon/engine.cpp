@@ -1307,6 +1307,51 @@ QPair<Coin, Coin> Engine::getSpruceSpread( const QString &market, quint8 side )
     return spread;
 }
 
+QPair<Coin, Coin> Engine::getSpruceSpreadLimit( const QString &market, quint8 side )
+{
+    // get trailing limit for this side
+    const Coin trailing_limit = spruce.getOrderTrailingLimit( side );
+
+    // calculate possible spread1
+    const MarketInfo &info = market_info[ market ];
+    const Coin &ticksize = info.price_ticksize;
+
+    // first, vibrate one way
+    QPair<Coin,Coin> spread1 = QPair<Coin,Coin>( info.highest_buy, info.lowest_sell );
+    Coin &buy1_price = spread1.first;
+    Coin &sell1_price = spread1.second;
+
+    int j = 0;
+    while ( buy1_price > sell1_price * trailing_limit )
+    {
+        if ( j++ % 2 == 0 )
+            buy1_price -= ticksize;
+        else
+            sell1_price += ticksize;
+    }
+
+    // vibrate the other way
+    QPair<Coin,Coin> spread2 = QPair<Coin,Coin>( info.highest_buy, info.lowest_sell );
+    Coin &buy2_price = spread2.first;
+    Coin &sell2_price = spread2.second;
+
+    j = 1;
+    while ( buy2_price > sell2_price * trailing_limit )
+    {
+        if ( j++ % 2 == 0 )
+            buy2_price -= ticksize;
+        else
+            sell2_price += ticksize;
+    }
+
+    // combine vibrations
+    QPair<Coin,Coin> combined_spread = QPair<Coin,Coin>( std::min( buy1_price,  buy2_price ),
+                                                         std::max( sell1_price, sell2_price ) );
+
+    return combined_spread;
+}
+
+
 void Engine::findBetterPrice( Position *const &pos )
 {
 #if defined(EXCHANGE_BITTREX)
@@ -1804,24 +1849,17 @@ void Engine::onSpruceUp()
                   side != pos->side )
                 continue;
 
-            // get spread price for new spruce order
+            // get possible spread price vibration limits for new spruce order on this side
             const QString &market = pos->market;
-            const QPair<Coin,Coin> spread = getSpreadForMarket( market );
-            const Coin &buy_price = spread.first;
-            const Coin &sell_price = spread.second;
-
-            // get trailing price limit
-            const Coin trailing_price_limit = spruce.getOrderTrailingLimit( side );
+            const QPair<Coin,Coin> spread_limit = getSpruceSpreadLimit( market, side );
+            const Coin &buy_price_limit = spread_limit.first;
+            const Coin &sell_price_limit = spread_limit.second;
 
             const MarketInfo &info = market_info.value( market );
 
             /// step 1: look for prices that are trailing the spread too far
-            if ( buy_price.isGreaterThanZero() && sell_price.isGreaterThanZero() &&
-                 ( ( pos->side == SIDE_BUY  && pos->price < buy_price * trailing_price_limit &&
-                     pos->price < buy_price - info.price_ticksize )
-                   ||
-                   ( pos->side == SIDE_SELL && pos->price > sell_price * ( ( CoinAmount::COIN *2 ) - trailing_price_limit ) &&
-                     pos->price > sell_price + info.price_ticksize ) ) )
+            if ( buy_price_limit.isGreaterThanZero() && sell_price_limit.isGreaterThanZero() &&
+                 ( pos->price < buy_price_limit || pos->price > sell_price_limit ) )
             {
                 positions->cancel( pos, false, CANCELLING_FOR_SPRUCE );
                 continue;
@@ -1853,7 +1891,7 @@ void Engine::onSpruceUp()
                 Position *const &pos_to_cancel = pos->side == SIDE_BUY ? positions->getLowestSpruceBuy( market ) :
                                                                          positions->getHighestSpruceSell( market );
 
-                // check badptr just incase, but should be impossible to get here
+                // check badptr just incase, but should be impossible to not get here
                 if ( pos_to_cancel )
                 {
                     // negate spruce offset by order size
