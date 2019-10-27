@@ -98,7 +98,6 @@ private:
     void command_setsprucemarketmax( QStringList &args );
     void command_setspruceordersize( QStringList &args );
     void command_setspruceordernice( QStringList &args );
-    void command_setspruceordertrail( QStringList &args );
     void command_spruceup( QStringList &args );
 
     void command_getconfig( QStringList &args );

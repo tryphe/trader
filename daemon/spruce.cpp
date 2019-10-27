@@ -19,7 +19,6 @@ Spruce::Spruce()
     m_short_max = "-0.50000000"; // max short total
     m_market_buy_max = "0.20000000";
     m_market_sell_max = "0.20000000";
-    m_trailing_price_limit = "0.96";
     m_leverage = CoinAmount::COIN;
 }
 
@@ -205,9 +204,6 @@ QString Spruce::getSaveState()
     ret += QString( "setspruceordernice %1 %2 %3\n" ).arg( m_order_nice )
                                                      .arg( m_order_nice_spreadput )
                                                      .arg( m_order_nice_zerobound );
-
-    // save order trailing limit
-    ret += QString( "setspruceordertrail %1\n" ).arg( m_trailing_price_limit );
 
     // save profile u
     for ( QMap<QString,Coin>::const_iterator i = m_currency_profile_u.begin(); i != m_currency_profile_u.end(); i++ )

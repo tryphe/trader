@@ -1810,13 +1810,8 @@ void Engine::onSpruceUp()
             const Coin &buy_price = spread.first;
             const Coin &sell_price = spread.second;
 
-            // get trailing price limit ratio, ie. bid/ask at 25sat/26sat is 0.961
-            Coin trailing_price_limit = spruce.getTrailingPriceLimit();
-
-            // if the spread gap is wider than our limit, raise the limit to the gap ratio
-            const Coin bid_ask_ratio = buy_price / sell_price;
-            if ( bid_ask_ratio < trailing_price_limit )
-                trailing_price_limit = bid_ask_ratio;
+            // get trailing price limit
+            const Coin trailing_price_limit = spruce.getOrderTrailingLimit( side );
 
             const MarketInfo &info = market_info.value( market );
 
