@@ -24,12 +24,12 @@ Features
  
  TODO
  ----
-  - [ ] GUI (work in progress)
-  - [ ] WSS notifications (work in progress)
+  - [ ] Automatic ping-pong (wip)
+  - [ ] GUI (backburner)
+  - [ ] WSS notifications (backburner)
   - [ ] Add more exchanges.
   - [ ] Extensible API and querying system. (Note: CLI input and log output are the only interface at the moment)
   - [ ] External stats tracker for stats persistence.
-  - [ ] User settings file.
 
 Dependencies: Compiling Qt and installing libgmp (unix/linux)
 ---------------------------------
