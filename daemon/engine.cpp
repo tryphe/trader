@@ -1766,7 +1766,7 @@ void Engine::onSpruceUp()
 
             const MarketInfo &info = market_info.value( market );
 
-            /// step 1: look for prices that are trailing the spread too far
+            /// cancellor 1: look for prices that are trailing the spread too far
             if ( buy_price_limit.isGreaterThanZero() && sell_price_limit.isGreaterThanZero() &&
                  ( pos->price < buy_price_limit || pos->price > sell_price_limit ) )
             {
@@ -1786,7 +1786,7 @@ void Engine::onSpruceUp()
             const Coin order_size = spruce.getOrderSize( market );
             const Coin order_size_limit = order_size * spruce.getOrderNice();
 
-            /// step 2: if the order is active but our rating is the opposite polarity, cancel it
+            /// cancellor 2: if the order is active but our rating is the opposite polarity, cancel it
             if ( ( amount_to_shortlong >  order_size * spruce.getOrderNiceZeroBound() && pos->side == SIDE_BUY  ) ||
                  ( amount_to_shortlong < -order_size * spruce.getOrderNiceZeroBound() && pos->side == SIDE_SELL ) )
             {
@@ -1794,7 +1794,7 @@ void Engine::onSpruceUp()
                 continue;
             }
 
-            /// step 3: look for spruce active <> what we should short/long
+            /// cancellor 3: look for spruce active <> what we should short/long
             if ( ( pos->side == SIDE_BUY  && amount_to_shortlong.isZeroOrLess() &&
                    amount_to_shortlong + spruce_offset.value( market ) >  order_size_limit ) ||
                  ( pos->side == SIDE_SELL && amount_to_shortlong.isGreaterThanZero() &&
@@ -1820,7 +1820,7 @@ void Engine::onSpruceUp()
 
             const Coin &active_amount = spruce_active.value( market );
 
-            /// step 4: look for active amount > amount_to_shortlong + order_size_limit
+            /// cancellor 4: look for active amount > amount_to_shortlong + order_size_limit
             if ( ( pos->side == SIDE_BUY  && amount_to_shortlong.isZeroOrLess() &&
                    -active_amount < amount_to_shortlong - order_size_limit ) ||
                  ( pos->side == SIDE_SELL && amount_to_shortlong.isGreaterThanZero() &&
