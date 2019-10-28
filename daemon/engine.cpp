@@ -1835,6 +1835,11 @@ void Engine::onSpruceUp()
         // auto populated map to store how much we should short/long
         QMap<QString, Coin> spruce_amount_to_shortlong;
 
+        // because price is atomic, incorporate a limit for trailing price cancellor 1 for each market.
+        // 1 = cancelling pace matches the pace of setting orders, 2 = double the pace
+        static const int CANCELLOR1_LIMIT = 2;
+        QMap<QString,int> cancellor1_current;
+
         // look for spruce positions we should cancel on this side
         const QSet<Position*>::const_iterator begin = positions->active().begin(),
                                               end = positions->active().end();
@@ -1861,8 +1866,12 @@ void Engine::onSpruceUp()
             if ( buy_price_limit.isGreaterThanZero() && sell_price_limit.isGreaterThanZero() &&
                  ( pos->price < buy_price_limit || pos->price > sell_price_limit ) )
             {
-                positions->cancel( pos, false, CANCELLING_FOR_SPRUCE );
-                continue;
+                // limit cancellor 1 to trigger CANCELLOR1_LIMIT times, per market, per side, per spruce tick
+                if ( ++cancellor1_current[ market ] <= CANCELLOR1_LIMIT )
+                {
+                    positions->cancel( pos, false, CANCELLING_FOR_SPRUCE );
+                    continue;
+                }
             }
 
             // make sure map is populated
