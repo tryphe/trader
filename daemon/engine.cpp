@@ -1730,9 +1730,6 @@ void Engine::onSpruceUp()
                         .arg( spruce.startCoeffs().hi_currency )
                         .arg( spruce.startCoeffs().hi_coeff );
 
-        // auto populated map to store how much we should short/long
-        QMap<QString, Coin> spruce_amount_to_shortlong;
-
         // because price is atomic, incorporate a limit for trailing price cancellor 1 for each market.
         // 1 = cancelling pace matches the pace of setting orders, 2 = double the pace
         static const int CANCELLOR1_LIMIT = 2;
@@ -1772,11 +1769,7 @@ void Engine::onSpruceUp()
                 }
             }
 
-            // make sure map is populated
-            if ( !spruce_amount_to_shortlong.contains( market ) )
-                spruce_amount_to_shortlong.insert( market, spruce.getCurrencyPriceByMarket( market ) * spruce.getQuantityToShortLongNow( market ) );
-
-            const Coin &amount_to_shortlong = spruce_amount_to_shortlong.value( market );
+            const Coin amount_to_shortlong = spruce.getCurrencyPriceByMarket( market ) * spruce.getQuantityToShortLongNow( market );
             const Coin order_size = spruce.getOrderSize( market );
             const Coin order_size_limit = order_size * spruce.getOrderNice();
 
