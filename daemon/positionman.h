@@ -69,8 +69,8 @@ public:
     Coin getHiBuyFlipPrice( const QString &market ) const;
     Coin getLoSellFlipPrice( const QString &market ) const;
 
-    QMap<QString,Coin> getActiveSpruceEquityTotal( quint8 side );
-    QMap<QString,Coin> getActiveSpruceOrdersOffset( quint8 side );
+    Coin getActiveSpruceEquityTotal( const QString &market, quint8 side );
+    Coin getActiveSpruceOrdersOffset( const QString &market, quint8 side );
 
     void add( Position *const &pos );
     void activate( Position *const &pos, const QString &order_number );

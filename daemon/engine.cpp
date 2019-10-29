@@ -1721,9 +1721,6 @@ void Engine::onSpruceUp()
         if ( !spruce.calculateAmountToShortLong() )
             return;
 
-        // count value of spruce positions for each market
-        QMap<QString,Coin> spruce_active = positions->getActiveSpruceEquityTotal( side );
-
         const QMap<QString,Coin> &qty_to_shortlong_map = spruce.getQuantityToShortLongMap();
 
         kDebug() << QString( "[Spruce %1] hi-lo coeffs[%2 %3 %4 %5]" )
@@ -1732,9 +1729,6 @@ void Engine::onSpruceUp()
                         .arg( spruce.startCoeffs().lo_coeff )
                         .arg( spruce.startCoeffs().hi_currency )
                         .arg( spruce.startCoeffs().hi_coeff );
-
-        // store active spruce positions for this side
-        QMap<QString, Coin> spruce_offset = positions->getActiveSpruceOrdersOffset( side );
 
         // auto populated map to store how much we should short/long
         QMap<QString, Coin> spruce_amount_to_shortlong;
@@ -1794,31 +1788,28 @@ void Engine::onSpruceUp()
                 continue;
             }
 
+            // store active spruce offset for this side
+            const Coin spruce_offset = positions->getActiveSpruceOrdersOffset( market, side );
+
             /// cancellor 3: look for spruce active <> what we should short/long
             if ( ( pos->side == SIDE_BUY  && amount_to_shortlong.isZeroOrLess() &&
-                   amount_to_shortlong + spruce_offset.value( market ) >  order_size_limit ) ||
+                   amount_to_shortlong + spruce_offset >  order_size_limit ) ||
                  ( pos->side == SIDE_SELL && amount_to_shortlong.isGreaterThanZero() &&
-                   amount_to_shortlong + spruce_offset.value( market ) < -order_size_limit ) )
+                   amount_to_shortlong + spruce_offset < -order_size_limit ) )
             {
-                // if it's a buy, we should cancel the lowest price. if it's a sell, cancel the highets price.
+                // if it's a buy, we should cancel the lowest price. if it's a sell, cancel the highest price.
                 Position *const &pos_to_cancel = pos->side == SIDE_BUY ? positions->getLowestSpruceBuy( market ) :
                                                                          positions->getHighestSpruceSell( market );
 
-                // check badptr just incase, but should be impossible to not get here
-                if ( pos_to_cancel )
-                {
-                    // negate spruce offset by order size
-                    if ( pos_to_cancel->side == SIDE_BUY  )
-                        spruce_offset[ market ] -= pos_to_cancel->btc_amount;
-                    else
-                        spruce_offset[ market ] += pos_to_cancel->btc_amount;
-
-                    positions->cancel( pos_to_cancel, false, CANCELLING_FOR_SPRUCE_3 );
+                // check badptr just incase, but should be impossible to get here
+                if ( !pos_to_cancel )
                     continue;
-                }
+
+                positions->cancel( pos_to_cancel, false, CANCELLING_FOR_SPRUCE_3 );
+                continue;
             }
 
-            const Coin &active_amount = spruce_active.value( market );
+            const Coin active_amount = positions->getActiveSpruceEquityTotal( market, side );
 
             /// cancellor 4: look for active amount > amount_to_shortlong + order_size_limit
             if ( ( pos->side == SIDE_BUY  && amount_to_shortlong.isZeroOrLess() &&
@@ -1826,9 +1817,6 @@ void Engine::onSpruceUp()
                  ( pos->side == SIDE_SELL && amount_to_shortlong.isGreaterThanZero() &&
                     active_amount > amount_to_shortlong + order_size_limit ) )
             {
-                // negate spruce_active
-                spruce_active[ market ] -= pos->btc_amount;
-
                 positions->cancel( pos, false, CANCELLING_FOR_SPRUCE_4 );
                 continue;
             }
@@ -1841,7 +1829,7 @@ void Engine::onSpruceUp()
             const Coin qty_to_shortlong_abs = qty_to_shortlong.abs();
             const Coin amount_to_shortlong = spruce.getCurrencyPriceByMarket( market ) * qty_to_shortlong;
             const Coin amount_to_shortlong_abs = amount_to_shortlong.abs();
-            const Coin &spruce_active_for_side = spruce_active.value( market );
+            const Coin spruce_active_for_side = positions->getActiveSpruceEquityTotal( market, side );
 
             // cache some order info
             static const int ORDERSIZE_EXPAND_THRESH = 20;
