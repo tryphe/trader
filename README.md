@@ -18,11 +18,11 @@ Features
  - [x] Anti-mistake. Prevents taking a price 10% lower or higher from the current spread(also overridable), [and more](https://github.com/tryphe/trader/blob/master/daemon/engine.cpp#L87)!
  - [x] Ping-pong using fixed, user-generated positions. Also able to combine positions.
  - [x] Because trades aren't made using a browser interface, coin theft by withdrawal through browser hijacking is impossible.
- - [x] Poloniex REST and WSS feed support.
  - [x] Bittrex REST support.
  - [x] Binance REST support.
- 
- TODO
+ - [x] Poloniex REST and WSS feed support (deprecated)
+
+TODO
  ----
   - [ ] Automatic ping-pong (wip)
   - [ ] GUI (backburner)
