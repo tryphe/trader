@@ -141,7 +141,7 @@ Coin Spruce::getQuantityToShortLongNow( QString market )
     if ( !quantity_to_shortlong.contains( market ) )
         return Coin();
 
-    Coin ret = -quantity_to_shortlong.value( market );
+    Coin ret = -quantity_to_shortlong.value( market ) + quantity_already_shortlong.value( market );
 
     return ret;
 }
@@ -393,7 +393,7 @@ bool Spruce::normalizeEquity()
     for ( QList<Node*>::const_iterator i = nodes_now.begin(); i != nodes_now.end(); i++ )
     {
         Node *n = *i;
-        n->quantity = start_quantities.value( n->currency ) + quantity_already_shortlong.value( Market( base_currency, n->currency ) );
+        n->quantity = start_quantities.value( n->currency );
         n->recalculateAmountByQuantity();
     }
 
