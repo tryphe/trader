@@ -712,7 +712,7 @@ void TrexREST::parseOrderBook( const QJsonArray &info, qint64 request_time_sent_
 
 void TrexREST::parseOrderHistory( const QJsonObject &obj )
 {
-    //kDebug() << "order history" << obj;
+    kDebug() << "order history" << obj;
 
     const QJsonArray &orders = obj.value( "result" ).toArray();
 
@@ -733,7 +733,6 @@ void TrexREST::parseOrderHistory( const QJsonObject &obj )
              !order.contains( "QuantityRemaining" ) )
             continue;
 
-        const Coin qty_remaining = order.value( "QuantityRemaining" ).toDouble();
         const QString &order_id = order.value( "OrderUuid" ).toString();
 
         // make sure order number is valid
@@ -742,12 +741,24 @@ void TrexREST::parseOrderHistory( const QJsonObject &obj )
         if ( order_id.isEmpty() || !pos )
             continue;
 
+        const Coin qty_remaining = order.value( "QuantityRemaining" ).toDouble();
+        const Coin qty_filled = order.value( "Quantity" ).toDouble();
+        const QString &timestamp = order.value( "TimeStamp" ).toString();
+        const QString tag = qty_filled.toAmountString() + timestamp;
+
         // partial fill
-        if ( qty_remaining.isGreaterThanZero() )
+        if ( qty_remaining.isGreaterThanZero() &&
+             !pos->partial_order_tags_processed.contains( tag ) &&
+             !filled_orders.contains( pos ) )
         {
-            pos->btc_amount_remaining = qty_remaining * pos->price;
-            kDebug() << "partial fill" << order_id << "qty_remaining:" << qty_remaining << "qty_total:" << pos->quantity << "price:" << pos->price << "btc_total:" << pos->btc_amount << "btc_remaining:" << pos->btc_amount_remaining;
+            pos->btc_amount_remaining -= qty_filled * pos->price;
+            pos->partial_order_tags_processed += tag;
             stats->updateStats( pos, true );
+
+            kDebug() << "partial fill" << order_id << "btc_amount_remaining:" << pos->btc_amount_remaining
+                     << "btc_total:" << pos->btc_amount << "qty_filled:" << qty_filled
+                     << "qty_total:" << pos->quantity << "price:" << pos->price;
+
             continue;
         }
 

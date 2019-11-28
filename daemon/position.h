@@ -62,6 +62,7 @@ public:
 
     // track indices for market map
     QVector<qint32> market_indices;
+    QVector<QString> partial_order_tags_processed;
 
     bool is_cancelling,
     is_landmark,
