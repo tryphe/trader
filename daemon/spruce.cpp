@@ -136,7 +136,7 @@ bool Spruce::calculateAmountToShortLong()
     return true;
 }
 
-Coin Spruce::getQuantityToShortLongNow( QString market )
+Coin Spruce::getQuantityToShortLongNow( const QString &market )
 {
     if ( !quantity_to_shortlong.contains( market ) )
         return Coin();
@@ -146,7 +146,7 @@ Coin Spruce::getQuantityToShortLongNow( QString market )
     return ret;
 }
 
-void Spruce::addToShortLonged( QString market, Coin qty )
+void Spruce::addToShortLonged( const QString &market, const Coin &qty )
 {
     quantity_already_shortlong[ market ] += qty;
 }

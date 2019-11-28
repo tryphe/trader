@@ -334,6 +334,9 @@ void Engine::fillNQ( const QString &order_id, qint8 fill_type , quint8 extra_dat
         return;
     }
 
+    // this is a full fill, so there's 0 remaining
+    pos->btc_amount_remaining = Coin();
+
     // update stats
     stats->updateStats( pos );
 

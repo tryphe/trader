@@ -728,12 +728,12 @@ void TrexREST::parseOrderHistory( const QJsonObject &obj )
     {
         const QJsonObject &order = (*i).toObject();
 
-        // make sure value exists and is zero
+        // make sure values exist
         if ( !order.contains( "OrderUuid" ) ||
-             !order.contains( "QuantityRemaining" ) ||
-              order.value( "QuantityRemaining" ).toDouble() != 0. )
+             !order.contains( "QuantityRemaining" ) )
             continue;
 
+        const Coin qty_remaining = order.value( "QuantityRemaining" ).toDouble();
         const QString &order_id = order.value( "OrderUuid" ).toString();
 
         // make sure order number is valid
@@ -742,9 +742,14 @@ void TrexREST::parseOrderHistory( const QJsonObject &obj )
         if ( order_id.isEmpty() || !pos )
             continue;
 
-        // make sure not cancelling
-        if ( pos->is_cancelling )
+        // partial fill
+        if ( qty_remaining.isGreaterThanZero() )
+        {
+            pos->btc_amount_remaining = qty_remaining * pos->price;
+            kDebug() << "partial fill" << order_id << "qty_remaining:" << qty_remaining << "qty_total:" << pos->quantity << "price:" << pos->price << "btc_total:" << pos->btc_amount << "btc_remaining:" << pos->btc_amount_remaining;
+            stats->updateStats( pos, true );
             continue;
+        }
 
         // add positions to process
         filled_orders += pos;

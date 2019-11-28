@@ -68,8 +68,8 @@ public:
     void clearLiveNodes();
 
     bool calculateAmountToShortLong();
-    Coin getQuantityToShortLongNow( QString market );
-    void addToShortLonged( QString market, Coin qty );
+    Coin getQuantityToShortLongNow( const QString &market );
+    void addToShortLonged( const QString &market, const Coin &qty );
 
     QList<QString> getCurrencies() const;
     QList<QString> getMarkets() const;

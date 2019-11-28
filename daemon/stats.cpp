@@ -22,10 +22,10 @@ Stats::~Stats()
     kDebug() << "[Stats] done.";
 }
 
-void Stats::updateStats( Position *const &pos )
+void Stats::updateStats( Position *const &pos, bool partial_fill )
 {
     const QString &market = pos->market;
-    m_alpha.addAlpha( market, pos );
+    m_alpha.addAlpha( market, pos, partial_fill );
 
     // stringify date + market
     QString date_str = Global::getDateStringMDY(); // cache mdy
@@ -33,11 +33,16 @@ void Stats::updateStats( Position *const &pos )
                                 .arg( date_str )
                                 .arg( market, 8 );
 
+    const Coin amount = pos->getAmountFilled();
+
     // update some stats
-    daily_market_volume[ date_market_str ] += pos->btc_amount;
-    daily_volumes[ date_str ] += pos->btc_amount;
-    daily_fills[ date_str ]++;
+    daily_market_volume[ date_market_str ] += amount;
+    daily_volumes[ date_str ] += amount;
     last_price[ market ] = pos->price;
+
+    // update fill count
+    if ( !partial_fill )
+        daily_fills[ date_str ]++;
 
     // add shortlong strategy stats (use blank tag for all onetime orders)
     addStrategyStats( pos );
@@ -46,11 +51,11 @@ void Stats::updateStats( Position *const &pos )
 void Stats::addStrategyStats( Position *const &pos )
 {
     // track stats related to this strategy tag
-    const Coin amount = ( pos->side == SIDE_BUY ) ?  pos->btc_amount
-                                                  : -pos->btc_amount;
+    const Coin amount = ( pos->side == SIDE_BUY ) ?  pos->getAmountFilled()
+                                                  : -pos->getAmountFilled();
 
-    const Coin quantity = ( pos->side == SIDE_BUY ) ?  pos->quantity
-                                                    : -pos->quantity;
+    const Coin quantity = ( pos->side == SIDE_BUY ) ?  pos->getAmountFilled() / pos->price
+                                                    : -pos->getAmountFilled() / pos->price;
 
     shortlong[ pos->strategy_tag ][ pos->market ] += amount;
 

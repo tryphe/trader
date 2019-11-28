@@ -20,7 +20,7 @@ public:
     explicit Stats( Engine *_engine, REST_OBJECT *_rest = nullptr );
     ~Stats();
 
-    void updateStats( Position *const &pos );
+    void updateStats( Position *const &pos , bool partial_fill = false );
     void addStrategyStats( Position *const &pos );
     void clearAll();
 

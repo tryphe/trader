@@ -6,15 +6,17 @@ AlphaTracker::AlphaTracker()
 {
 }
 
-void AlphaTracker::addAlpha( const QString &market, Position *pos )
+void AlphaTracker::addAlpha( const QString &market, Position *pos, bool partial_fill )
 {
     QMap<QString,AlphaData> &map = pos->side == SIDE_BUY ? buys : sells;
     AlphaData &d = map[ market ];
 
     // for each trade, v += volume, and vp += volume * price
-    d.v += pos->btc_amount;
-    d.vp += pos->btc_amount * pos->price;
-    d.trades++;
+    d.v += pos->getAmountFilled();
+    d.vp += pos->getAmountFilled() * pos->price;
+
+    if ( !partial_fill )
+        d.trades++;
 }
 
 void AlphaTracker::reset()
