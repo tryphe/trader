@@ -30,6 +30,8 @@ Engine::Engine()
 {
     kDebug() << "[Engine]";
 
+    start_time = QDateTime::currentDateTime();
+
     // engine maintenance timer
     maintenance_timer = new QTimer( this );
     connect( maintenance_timer, &QTimer::timeout, this, &Engine::onEngineMaintenance );
@@ -334,11 +336,11 @@ void Engine::fillNQ( const QString &order_id, qint8 fill_type , quint8 extra_dat
         return;
     }
 
-    // this is a full fill, so there's 0 remaining
-    pos->btc_amount_remaining = Coin();
-
     // update stats
-    stats->updateStats( pos );
+    stats->updateStats( pos->market, pos->side, pos->strategy_tag, pos->btc_amount, pos->quantity, pos->price );
+
+    // add order_id to previously filled orders
+    previously_filled_orders += pos->order_number;
 
     MarketInfo &info = market_info[ pos->market ];
 
@@ -1215,8 +1217,8 @@ void Engine::flipPosition( Position *const &pos )
     pos->flip(); // flip our position
 
     // we cancelled for shortlong, track stats related to this strategy tag
-    if ( pos->cancel_reason == CANCELLING_FOR_SHORTLONG )
-        stats->addStrategyStats( pos );
+//    if ( pos->cancel_reason == CANCELLING_FOR_SHORTLONG )
+//        stats->addStrategyStats( pos );
 
     if ( pos->is_landmark ) // landmark pos
     {

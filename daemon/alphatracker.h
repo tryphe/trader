@@ -17,7 +17,7 @@ class AlphaTracker
 public:
     AlphaTracker();
 
-    void addAlpha( const QString &market, Position *pos , bool partial_fill = false );
+    void addAlpha( const QString &market, const quint8 side, const Coin &btc_amount, const Coin &price, bool partial_fill );
     void reset();
 
     Coin getAlpha( const QString &market ) const;

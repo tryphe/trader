@@ -17,6 +17,7 @@
 #include <QThread>
 #include <QWebSocket>
 #include <QDebug>
+#include <QDateTime>
 
 TrexREST::TrexREST( Engine *_engine )
   : BaseREST( _engine, this )
@@ -712,7 +713,7 @@ void TrexREST::parseOrderBook( const QJsonArray &info, qint64 request_time_sent_
 
 void TrexREST::parseOrderHistory( const QJsonObject &obj )
 {
-    kDebug() << "order history" << obj;
+    //kDebug() << "order history" << obj;
 
     const QJsonArray &orders = obj.value( "result" ).toArray();
 
@@ -733,34 +734,46 @@ void TrexREST::parseOrderHistory( const QJsonObject &obj )
              !order.contains( "QuantityRemaining" ) )
             continue;
 
+        const QString &timestamp = order.value( "TimeStamp" ).toString();
+        const QDateTime order_time = QDateTime::fromString( timestamp, "yyyy-MM-ddTHH:mm:ss.z" );
+
+        // make sure the fill time was after the bot start time
+        if ( order_time < engine->getStartTime() )
+            continue;
+
+        const Coin qty_remaining = order.value( "QuantityRemaining" ).toDouble();
         const QString &order_id = order.value( "OrderUuid" ).toString();
+        const QString tag = order_id + timestamp;
+
+        // partial fill for an order that was cancelled
+        if ( qty_remaining.isGreaterThanZero() &&
+             !engine->isOrderAlreadyFilled( order_id ) &&
+             !engine->getPositionMan()->isValidOrderID( order_id ) &&
+             !engine->isPartialFillProcessed( tag ) )
+        {
+            engine->addPartialFill( tag );
+
+            const Market market = order.value( "Exchange" ).toString();
+            const Coin price = order.value( "PricePerUnit" ).toDouble();
+            const Coin btc_amount_filled = order.value( "Price" ).toDouble();
+            const Coin qty_filled = order.value( "Quantity" ).toDouble();
+            const quint8 side = ( order.value( "OrderType" ).toString() == "LIMIT_SELL" ) ? SIDE_SELL
+                                                                                          : SIDE_BUY;
+
+            // TODO: FIX THIS (we don't know if it's a spruce order, but assume for now)
+            stats->updateStats( market, side, "spruce", btc_amount_filled, qty_filled, price, true );
+
+            kDebug() << "partial-fill:" << order_id << "market:" << market
+                     << "btc_amount_filled:" << btc_amount_filled;
+
+            continue;
+        }
 
         // make sure order number is valid
         Position *const &pos = engine->getPositionMan()->getByOrderID( order_id );
 
         if ( order_id.isEmpty() || !pos )
             continue;
-
-        const Coin qty_remaining = order.value( "QuantityRemaining" ).toDouble();
-        const Coin qty_filled = order.value( "Quantity" ).toDouble();
-        const QString &timestamp = order.value( "TimeStamp" ).toString();
-        const QString tag = qty_filled.toAmountString() + timestamp;
-
-        // partial fill
-        if ( qty_remaining.isGreaterThanZero() &&
-             !pos->partial_order_tags_processed.contains( tag ) &&
-             !filled_orders.contains( pos ) )
-        {
-            pos->btc_amount_remaining -= qty_filled * pos->price;
-            pos->partial_order_tags_processed += tag;
-            stats->updateStats( pos, true );
-
-            kDebug() << "partial fill" << order_id << "btc_amount_remaining:" << pos->btc_amount_remaining
-                     << "btc_total:" << pos->btc_amount << "qty_filled:" << qty_filled
-                     << "qty_total:" << pos->quantity << "price:" << pos->price;
-
-            continue;
-        }
 
         // add positions to process
         filled_orders += pos;

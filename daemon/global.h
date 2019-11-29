@@ -315,12 +315,12 @@ static inline void fillInColors( QString &s )
 static inline QString getOrderString( const QString &order_id )
 {
     // for bittrex, shorten the id a bit by turning it into base64
-#if defined(EXCHANGE_BITTREX)
-    QByteArray b = QByteArray::fromHex( QString( order_id ).remove( QChar( '-' ) ).toUtf8() );
-    return QString( b.toBase64( QByteArray::OmitTrailingEquals ) );
-#else
+//#if defined(EXCHANGE_BITTREX)
+//    QByteArray b = QByteArray::fromHex( QString( order_id ).remove( QChar( '-' ) ).toUtf8() );
+//    return QString( b.toBase64( QByteArray::OmitTrailingEquals ) );
+//#else
     return order_id;
-#endif
+//#endif
 }
 
 

@@ -6,14 +6,14 @@ AlphaTracker::AlphaTracker()
 {
 }
 
-void AlphaTracker::addAlpha( const QString &market, Position *pos, bool partial_fill )
+void AlphaTracker::addAlpha( const QString &market, const quint8 side, const Coin &btc_amount, const Coin &price, bool partial_fill )
 {
-    QMap<QString,AlphaData> &map = pos->side == SIDE_BUY ? buys : sells;
+    QMap<QString,AlphaData> &map = side == SIDE_BUY ? buys : sells;
     AlphaData &d = map[ market ];
 
     // for each trade, v += volume, and vp += volume * price
-    d.v += pos->getAmountFilled();
-    d.vp += pos->getAmountFilled() * pos->price;
+    d.v += btc_amount;
+    d.vp += btc_amount * price;
 
     if ( !partial_fill )
         d.trades++;

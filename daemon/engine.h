@@ -57,8 +57,15 @@ public:
     void setMaintenanceTime( qint64 time ) { maintenance_time = time; }
     qint64 getMaintenanceTime() const { return maintenance_time; }
 
+    QDateTime getStartTime() const { return start_time; }
+
     QHash<QString, MarketInfo> &getMarketInfoStructure() { return market_info; }
     MarketInfo &getMarketInfo( const QString &market ) { return market_info[ market ]; }
+
+    bool isOrderAlreadyFilled( const QString &order_id ) { return previously_filled_orders.contains( order_id ); }
+
+    void addPartialFill( const QString &tag ) { previous_partial_fills.insert( tag ); }
+    bool isPartialFillProcessed( const QString &tag ) { return previous_partial_fills.contains( tag ); }
 
     bool hasWSSInterface() const { return wss_interface; }
     void setTesting( bool testing ) { is_testing = testing; }
@@ -101,8 +108,12 @@ private:
     Spruce spruce;
     QHash<QString, MarketInfo> market_info;
     QHash<QString/*order_id*/, qint64/*seen_time*/> order_grace_times; // record "seen" time to allow for stray grace period
+    QSet<QString> previously_filled_orders;
+    QSet<QString> previous_partial_fills;
 
-    // state
+    QDateTime start_time;
+
+    // primitives
     qint64 maintenance_time{ 0 };
     bool maintenance_triggered{ false };
     bool is_testing{ false };

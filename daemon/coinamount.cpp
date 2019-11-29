@@ -301,7 +301,7 @@ QString Coin::toString( const int decimals = CoinAmount::subsatoshi_decimals ) c
         ret.prepend( CoinAmount::zero_exp );
     }
 
-    // reuse sz1 to calculate a new decimal index and insert decimal
+    // reuse sz to calculate a new decimal index and insert decimal
     sz -= decimals;
     ret.insert( sz, CoinAmount::decimal_exp );
 

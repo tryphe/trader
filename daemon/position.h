@@ -21,7 +21,6 @@ public:
     void calculateQuantity();
     void flip();
     QString getFlippedPrice() { return side == SIDE_BUY ? sell_price_original : buy_price_original; }
-    Coin getAmountFilled() const { return btc_amount - btc_amount_remaining; }
     bool applyPriceSide();
     void applyOffset();
     void applyOffset( qreal offset, bool sentiment = true );
@@ -55,14 +54,13 @@ public:
     QString indices_str;
     Coin price, buy_price, sell_price;
     Coin buy_price_original, sell_price_original;
-    Coin original_size, btc_amount, btc_amount_remaining, per_trade_profit, profit_margin;
+    Coin original_size, btc_amount, per_trade_profit, profit_margin;
     quint32 price_reset_count;
     quint32 max_age_minutes; // how many minutes the order should exist for before we cancel it
     QString strategy_tag; // tag for short/long
 
     // track indices for market map
     QVector<qint32> market_indices;
-    QVector<QString> partial_order_tags_processed;
 
     bool is_cancelling,
     is_landmark,

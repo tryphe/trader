@@ -86,7 +86,7 @@ Coin CostFunctionCache::getY( const Coin &profile_u, const Coin &reserve, const 
         f.close();
     }
 
-    /// step 2: open the cache file and cache our value into ram
+    /// step 3: open the cache file and cache our value into ram
     // index of y = x / m_tick_size;
     int y_idx = ( x / m_ticksize ).toInt();
 

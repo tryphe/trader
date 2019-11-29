@@ -22,10 +22,10 @@ Stats::~Stats()
     kDebug() << "[Stats] done.";
 }
 
-void Stats::updateStats( Position *const &pos, bool partial_fill )
+void Stats::updateStats( const QString &market, const quint8 side, const QString &strategy_tag, const Coin &btc_amount,
+                         const Coin &quantity, const Coin &price, bool partial_fill )
 {
-    const QString &market = pos->market;
-    m_alpha.addAlpha( market, pos, partial_fill );
+    m_alpha.addAlpha( market, side, btc_amount, price, partial_fill );
 
     // stringify date + market
     QString date_str = Global::getDateStringMDY(); // cache mdy
@@ -33,34 +33,26 @@ void Stats::updateStats( Position *const &pos, bool partial_fill )
                                 .arg( date_str )
                                 .arg( market, 8 );
 
-    const Coin amount = pos->getAmountFilled();
-
     // update some stats
-    daily_market_volume[ date_market_str ] += amount;
-    daily_volumes[ date_str ] += amount;
-    last_price[ market ] = pos->price;
+    daily_market_volume[ date_market_str ] += btc_amount;
+    daily_volumes[ date_str ] += btc_amount;
+    last_price[ market ] = price;
 
     // update fill count
     if ( !partial_fill )
         daily_fills[ date_str ]++;
 
-    // add shortlong strategy stats (use blank tag for all onetime orders)
-    addStrategyStats( pos );
-}
+    // track stats offset related to this strategy
+    const Coin amount_offset = ( side == SIDE_BUY ) ?  btc_amount
+                                                    : -btc_amount;
 
-void Stats::addStrategyStats( Position *const &pos )
-{
-    // track stats related to this strategy tag
-    const Coin amount = ( pos->side == SIDE_BUY ) ?  pos->getAmountFilled()
-                                                  : -pos->getAmountFilled();
+    const Coin quantity_offset = ( side == SIDE_BUY ) ?  quantity
+                                                      : -quantity;
 
-    const Coin quantity = ( pos->side == SIDE_BUY ) ?  pos->getAmountFilled() / pos->price
-                                                    : -pos->getAmountFilled() / pos->price;
+    shortlong[ strategy_tag ][ market ] += amount_offset;
 
-    shortlong[ pos->strategy_tag ][ pos->market ] += amount;
-
-    if ( pos->is_spruce )
-        engine->getSpruce().addToShortLonged( pos->market, quantity );
+    if ( strategy_tag == "spruce" )
+        engine->getSpruce().addToShortLonged( market, quantity_offset );
 }
 
 void Stats::clearAll()

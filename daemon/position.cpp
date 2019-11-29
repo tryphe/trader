@@ -252,9 +252,6 @@ void Position::applyOffset( qreal _offset, bool sentiment )
     else// if ( !sentiment && !is_buy )
         btc_amount.applyRatio( hi_scalar );
 
-    // amount remaining is the total amount
-    btc_amount_remaining = btc_amount;
-
     // calculate lo/hi amounts
     Coin amount_lo_d;
     Coin amount_hi_d;
