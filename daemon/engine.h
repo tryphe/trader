@@ -62,11 +62,6 @@ public:
     QHash<QString, MarketInfo> &getMarketInfoStructure() { return market_info; }
     MarketInfo &getMarketInfo( const QString &market ) { return market_info[ market ]; }
 
-    bool isOrderAlreadyFilled( const QString &order_id ) { return previously_filled_orders.contains( order_id ); }
-
-    void addPartialFill( const QString &tag ) { previous_partial_fills.insert( tag ); }
-    bool isPartialFillProcessed( const QString &tag ) { return previous_partial_fills.contains( tag ); }
-
     bool hasWSSInterface() const { return wss_interface; }
     void setTesting( bool testing ) { is_testing = testing; }
     bool isTesting() const { return is_testing; }
@@ -77,6 +72,8 @@ public:
                             qint32 landmark_start, qint32 landmark_thresh, bool market_sentiment, qreal market_offset );
 
     void findBetterPrice( Position *const &pos );
+
+    QMultiMap<qint64/*time thresh*/,QString/*order_id*/> cancelled_orders_for_polling;
 
 signals:
     void newEngineMessage( QString &str ); // new wss message
@@ -108,8 +105,6 @@ private:
     Spruce spruce;
     QHash<QString, MarketInfo> market_info;
     QHash<QString/*order_id*/, qint64/*seen_time*/> order_grace_times; // record "seen" time to allow for stray grace period
-    QSet<QString> previously_filled_orders;
-    QSet<QString> previous_partial_fills;
 
     QDateTime start_time;
 

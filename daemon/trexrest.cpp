@@ -50,8 +50,8 @@ void TrexREST::init()
 
 #ifdef EXTRA_NICE
     order_history_timer->setInterval( 50000 );
-    orderbook_timer->setInterval( 100000 );
-    ticker_timer->setInterval( 20000 );
+    orderbook_timer->setInterval( 200000 );
+    ticker_timer->setInterval( 15000 );
 #endif
 
     onCheckTicker();
@@ -60,6 +60,28 @@ void TrexREST::init()
 
 void TrexREST::sendNamQueue()
 {
+    // check for cancelled orders that we should poll for partial fills
+    if ( nam_queue.isEmpty() &&
+         engine->cancelled_orders_for_polling.size() > 0 )
+    {
+        const qint64 current_time = QDateTime::currentMSecsSinceEpoch();
+
+        for ( QMultiMap<qint64/*time thresh*/,QString/*order_id*/>::const_iterator i = engine->cancelled_orders_for_polling.begin();
+              i != engine->cancelled_orders_for_polling.end(); i++ )
+        {
+            const qint64 &time_thresh = i.key();
+            const QString &order_number = i.value();
+
+            // if we found one that meets our time threshold, queue that request and break
+            if ( current_time > time_thresh )
+            {
+                sendRequest( TREX_COMMAND_GET_ORDER, "uuid=" + order_number, nullptr );
+                engine->cancelled_orders_for_polling.remove( time_thresh, order_number );
+                break;
+            }
+        }
+    }
+
     // check for requests
     if ( nam_queue.isEmpty() )
         return;
@@ -69,7 +91,7 @@ void TrexREST::sendNamQueue()
     {
         // print something every minute
         static qint64 last_print_time = 0;
-        qint64 current_time = QDateTime::currentMSecsSinceEpoch();
+        const qint64 current_time = QDateTime::currentMSecsSinceEpoch();
         if ( last_print_time < current_time - 60000 )
         {
             kDebug() << "local info: nam_queue_sent.size > limit_commands_sent, waiting.";
@@ -314,6 +336,17 @@ void TrexREST::onNamReply( QNetworkReply *const &reply )
 
             // there are some errors that we don't handle yet, so we just go on with handling them as if everything is fine
             engine->processCancelledOrder( pos );
+
+            deleteReply( reply, request );
+            return;
+        }
+        // save getorder for later
+        else if ( api_command == TREX_COMMAND_GET_ORDER &&
+                  ( is_html || is_throttled ) )
+        {
+            // poll again after 1 minute
+            const QString order_number = request->body.mid( 5 );
+            engine->cancelled_orders_for_polling.insert( QDateTime::currentMSecsSinceEpoch() + 60000, order_number );
 
             deleteReply( reply, request );
             return;
@@ -626,28 +659,57 @@ void TrexREST::parseReturnBalances( const QJsonArray &balances )
 
 void TrexREST::parseGetOrder( const QJsonObject &order )
 {
-    // parse blank object correctly
+    // avoid parsing with missing fields
     if ( !order.contains( "OrderUuid" ) ||
-         !order.contains( "IsOpen" ) )
+         !order.contains( "IsOpen" ) ||
+         !order.contains( "Price" ) ||
+         !order.contains( "Quantity" ) ||
+         !order.contains( "QuantityRemaining" ) ||
+         !order.contains( "PricePerUnit" ) ||
+         !order.contains( "Exchange" ) ||
+         !order.contains( "Type" ) )
     {
         kDebug() << "local error: required fields were missing in getorder" << order;
         return;
     }
 
-    const QString &order_id = order[ "OrderUuid" ].toString();
-    const bool is_open = order[ "IsOpen" ].toBool();
+    const QString order_id = order.value( "OrderUuid" ).toString();
+    const bool is_open = order.value( "IsOpen" ).toBool();
 
-    // debug output
-    if ( is_open )
+    // we should check for partial fill
+    if ( !is_open && // order was closed
+         !engine->getPositionMan()->isValidOrderID( order_id ) ) // position doesn't exist locally
     {
-        kDebug() << "nofill: order is still open, waiting for uuid" << order_id;
+        const Coin btc_amount_filled = order.value( "Price" ).toDouble();
+        const Coin qty = order.value( "Quantity" ).toDouble();
+        const Coin qty_remaining = order.value( "QuantityRemaining" ).toDouble();
+        const Coin qty_filled = qty - qty_remaining;
+        const Coin price = order.value( "PricePerUnit" ).toDouble();
+
+        // we filled something (check that both values are gz just incase)
+        if ( btc_amount_filled.isGreaterThanZero() &&
+             qty_filled.isGreaterThanZero() &&
+             price.isGreaterThanZero() )
+        {
+            const Market market = order.value( "Exchange" ).toString();
+            const quint8 side = ( order.value( "Type" ).toString() == "LIMIT_SELL" ) ? SIDE_SELL
+                                                                                     : SIDE_BUY;
+
+            // TODO: FIX THIS (we don't know if it's a spruce order, but assume for now)
+            stats->updateStats( market, side, "spruce", btc_amount_filled, qty_filled, price, true );
+
+            kDebug() << "partial-fill:" << order_id << "market:" << market
+                     << "btc_amount_filled:" << btc_amount_filled;
+        }
+
         return;
     }
 
-    Position *const &pos = engine->getPositionMan()->getByOrderID( order_id );
-
-    if ( !pos )
+    // return if order is open or position doesn't exist
+    if ( is_open || !engine->getPositionMan()->isValidOrderID( order_id ) )
         return;
+
+    Position *const &pos = engine->getPositionMan()->getByOrderID( order_id );
 
     // do single order fill
     engine->processFilledOrders( QVector<Position*>() << pos, FILL_GETORDER );
@@ -734,40 +796,19 @@ void TrexREST::parseOrderHistory( const QJsonObject &obj )
              !order.contains( "QuantityRemaining" ) )
             continue;
 
-        const QString &timestamp = order.value( "TimeStamp" ).toString();
-        const QDateTime order_time = QDateTime::fromString( timestamp, "yyyy-MM-ddTHH:mm:ss.z" );
+//        const QString &timestamp = order.value( "TimeStamp" ).toString();
+//        const QDateTime order_time = QDateTime::fromString( timestamp, "yyyy-MM-ddTHH:mm:ss.z" );
 
-        // make sure the fill time was after the bot start time
-        if ( order_time < engine->getStartTime() )
-            continue;
+//        // make sure the fill time was after the bot start time
+//        if ( order_time < engine->getStartTime() )
+//            continue;
 
         const Coin qty_remaining = order.value( "QuantityRemaining" ).toDouble();
         const QString &order_id = order.value( "OrderUuid" ).toString();
-        const QString tag = order_id + timestamp;
 
         // partial fill for an order that was cancelled
-        if ( qty_remaining.isGreaterThanZero() &&
-             !engine->isOrderAlreadyFilled( order_id ) &&
-             !engine->getPositionMan()->isValidOrderID( order_id ) &&
-             !engine->isPartialFillProcessed( tag ) )
-        {
-            engine->addPartialFill( tag );
-
-            const Market market = order.value( "Exchange" ).toString();
-            const Coin price = order.value( "PricePerUnit" ).toDouble();
-            const Coin btc_amount_filled = order.value( "Price" ).toDouble();
-            const Coin qty_filled = order.value( "Quantity" ).toDouble();
-            const quint8 side = ( order.value( "OrderType" ).toString() == "LIMIT_SELL" ) ? SIDE_SELL
-                                                                                          : SIDE_BUY;
-
-            // TODO: FIX THIS (we don't know if it's a spruce order, but assume for now)
-            stats->updateStats( market, side, "spruce", btc_amount_filled, qty_filled, price, true );
-
-            kDebug() << "partial-fill:" << order_id << "market:" << market
-                     << "btc_amount_filled:" << btc_amount_filled;
-
+        if ( qty_remaining.isGreaterThanZero() )
             continue;
-        }
 
         // make sure order number is valid
         Position *const &pos = engine->getPositionMan()->getByOrderID( order_id );

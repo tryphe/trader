@@ -340,7 +340,7 @@ void Engine::fillNQ( const QString &order_id, qint8 fill_type , quint8 extra_dat
     stats->updateStats( pos->market, pos->side, pos->strategy_tag, pos->btc_amount, pos->quantity, pos->price );
 
     // add order_id to previously filled orders
-    previously_filled_orders += pos->order_number;
+    //previously_filled_orders += pos->order_number;
 
     MarketInfo &info = market_info[ pos->market ];
 
@@ -588,13 +588,9 @@ void Engine::processOpenOrders( QVector<QString> &order_numbers, QMultiHash<QStr
         return;
     }
 
-#if defined(EXCHANGE_BITTREX)
-    qint32 filled_count = 0;
-#elif defined(EXCHANGE_BINANCE) || defined(EXCHANGE_POLONIEX)
-    QVector<Position*> filled_orders;
-#endif
-
     // now we can look for local positions to invalidate based on if the order exists
+    // (except bittrex, which is laggy. we'll just use the history there for fills)
+#if !defined(EXCHANGE_BITTREX)
     for ( QSet<Position*>::const_iterator k = positions->active().begin(); k != positions->active().end(); k++ )
     {
         Position *const &pos = *k;
@@ -622,35 +618,20 @@ void Engine::processOpenOrders( QVector<QString> &order_numbers, QMultiHash<QStr
         // check that the api request timestamp was at/after our request send time
         if ( pos->order_set_time >= request_time_sent_ms )
             continue;
-
-#if defined(EXCHANGE_BITTREX)
-        // rate limiter for getorder
-        if ( pos->order_getorder_time > current_time - 30000 )
-            continue;
-
-        // dopn't fill-nq, send getorder to check on the order (which could trigger fill-nq)
-        rest->sendRequest( TREX_COMMAND_GET_ORDER, "uuid=" + pos->order_number, pos );
-        pos->order_getorder_time = current_time;
-
-        // rate limit so we don't fill the queue up with 'getorder' commands;
-        if ( filled_count++ >= 5 )
-            break;
-    }
-#elif defined(EXCHANGE_BINANCE) || defined(EXCHANGE_POLONIEX)
         // add orders to process
         filled_orders += pos;
     }
 
     processFilledOrders( filled_orders, FILL_GETORDER );
+#else
+    // avoid warning
+    Q_UNUSED( request_time_sent_ms );
 #endif
 }
 
 void Engine::processTicker( const QMap<QString, TickerInfo> &ticker_data, qint64 request_time_sent_ms )
 {
-    const qint64 current_time = QDateTime::currentMSecsSinceEpoch();
-
     // store deleted positions, because we can't delete and iterate a hash<>
-    QVector<Position*> filled_orders;
     static QJsonArray ext_updates;
 
     for ( QMap<QString, TickerInfo>::const_iterator i = ticker_data.begin(); i != ticker_data.end(); i++ )
@@ -709,13 +690,17 @@ void Engine::processTicker( const QMap<QString, TickerInfo> &ticker_data, qint64
         return;
 #endif
 
+#if !defined(EXCHANGE_BITTREX)
+    const qint64 current_time = QDateTime::currentMSecsSinceEpoch();
+
+    QVector<Position*> filled_orders;
+
     // did we find bid == ask (we shouldn't have)
     bool found_equal_bid_ask = false;
 
-#if defined(EXCHANGE_BITTREX)
     qint32 filled_count = 0;
-#endif
     // check for any orders that could've been filled
+    // (note: removed because ping-pong is deprecated, history-fill is preferred)
     for ( QSet<Position*>::const_iterator j = positions->active().begin(); j != positions->active().end(); j++ )
     {
         Position *const &pos = *j;
@@ -760,21 +745,7 @@ void Engine::processTicker( const QMap<QString, TickerInfo> &ticker_data, qint64
             if ( pos->order_set_time > request_time_sent_ms - settings->ticker_safety_delay_time || // if the request time is supplied, check that we didn't send the ticker command before the position was set
                  pos->order_set_time > current_time - settings->ticker_safety_delay_time ) // allow for a safe period to avoid orders we just set possibly not showing up yet
             {
-                // for trex, if the order is new, check on it manually with 'getorder'
-#if defined(EXCHANGE_BITTREX)
-                // only send getorder every 30 seconds
-                if ( pos->order_getorder_time > current_time - 30000 )
-                    continue;
-
-                // rate limit so we don't fill the queue up with getorder commands;
-                if ( filled_count++ < 5 )
-                {
-                    // send getorder
-                    rest->sendRequest( TREX_COMMAND_GET_ORDER, "uuid=" + pos->order_number, pos );
-                    pos->order_getorder_time = current_time;
-                }
-#endif
-                // for other exchanges, skip the order until it's a few seconds older
+                // skip the order until it's a few seconds older
                 continue;
             }
 
@@ -793,6 +764,7 @@ void Engine::processTicker( const QMap<QString, TickerInfo> &ticker_data, qint64
     // show warning we if we found equal bid/ask
     if ( found_equal_bid_ask )
         kDebug() << "local error: found ask <= bid for at least one market";
+#endif
 }
 
 void Engine::processCancelledOrder( Position * const &pos )
@@ -838,6 +810,9 @@ void Engine::processCancelledOrder( Position * const &pos )
         cancelOrderMeatDCOrder( pos );
     else if ( pos->cancel_reason == CANCELLING_FOR_SHORTLONG )
         flipPosition( pos );
+
+    // queue for polling later
+    cancelled_orders_for_polling.insert( 0, pos->order_number );
 
     // delete position
     positions->remove( pos );
