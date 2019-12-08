@@ -54,6 +54,7 @@ static const QLatin1String BITTREX_SUBPATH                  ( "tt" );
 static const QLatin1String POLONIEX_SUBPATH                 ( "pt" );
 static const QLatin1String BINANCE_SUBPATH                  ( "bt" );
 static const int           MARKET_STRING_WIDTH              ( 10 );
+static const int           PRICE_WIDTH                      ( 17 );
 static const QLatin1String DEFAULT_MARKET_STRING_TEMPLATE   ( "%1_%2" );
 
 /// urls/symbols

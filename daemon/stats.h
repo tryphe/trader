@@ -20,8 +20,8 @@ public:
     explicit Stats( Engine *_engine, REST_OBJECT *_rest = nullptr );
     ~Stats();
 
-    void updateStats( const QString &market, const quint8 side, const QString &strategy_tag, const Coin &btc_amount,
-                      const Coin &quantity, const Coin &price, bool partial_fill = false );
+    void updateStats( const QString &fill_type_str, const QString &market, const QString &order_id, const quint8 side, const QString &strategy_tag, const Coin &btc_amount,
+                      const Coin &quantity, const Coin &price, const Coin &btc_commission, bool partial_fill = false );
     void clearAll();
 
     void printPositions( QString market );

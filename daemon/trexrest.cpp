@@ -56,6 +56,19 @@ void TrexREST::init()
 
     onCheckTicker();
     onCheckBotOrders();
+
+    //sendRequest( TREX_COMMAND_GET_ORDER, "uuid=be7a6806-965f-4e45-8f92-746150ee7e5c", nullptr );
+
+    // test output
+//    const Coin commission = Coin( "0.000015" );
+//    const Coin price = Coin( "0.0001" );
+//    const Coin qty = Coin( "100");
+//    const Coin btc_amount = Coin( "0.01" );
+
+//    stats->updateStats( "getorder", "BTC_TEST", "be7a6806-965f-4e45-8f92-746150ee7e5c", SIDE_BUY, "spruce",
+//                        btc_amount, qty, price, commission, true );
+//    stats->updateStats( "getorder", "BTC_TEST", "b000000b-965f-4e45-8f92-746150ee7e5c", SIDE_SELL, "spruce",
+//                        btc_amount, qty, price, commission, true );
 }
 
 void TrexREST::sendNamQueue()
@@ -641,11 +654,11 @@ void TrexREST::parseReturnBalances( const QJsonArray &balances )
         }
 
         QString out = QString( "%1: %2 AVAIL: %3 PEND: %4 VAL: %5" )
-                       .arg( currency, -4 )
-                       .arg( balance, -17 )
-                       .arg( available, -17 )
-                       .arg( pending, -16 )
-                       .arg( value_d, -16 );
+                       .arg( currency, -5 )
+                       .arg( balance, -PRICE_WIDTH )
+                       .arg( available, -PRICE_WIDTH )
+                       .arg( pending, -PRICE_WIDTH )
+                       .arg( value_d, -PRICE_WIDTH );
 
         // append deposit address if there is one
         if ( address.size() > 0 )
@@ -667,7 +680,8 @@ void TrexREST::parseGetOrder( const QJsonObject &order )
          !order.contains( "QuantityRemaining" ) ||
          !order.contains( "PricePerUnit" ) ||
          !order.contains( "Exchange" ) ||
-         !order.contains( "Type" ) )
+         !order.contains( "Type" ) ||
+         !order.contains( "CommissionPaid" ) )
     {
         kDebug() << "local error: required fields were missing in getorder" << order;
         return;
@@ -685,6 +699,7 @@ void TrexREST::parseGetOrder( const QJsonObject &order )
         const Coin qty_remaining = order.value( "QuantityRemaining" ).toDouble();
         const Coin qty_filled = qty - qty_remaining;
         const Coin price = order.value( "PricePerUnit" ).toDouble();
+        const Coin btc_commission = order.value( "CommissionPaid" ).toDouble();
 
         // we filled something (check that both values are gz just incase)
         if ( btc_amount_filled.isGreaterThanZero() &&
@@ -696,10 +711,7 @@ void TrexREST::parseGetOrder( const QJsonObject &order )
                                                                                      : SIDE_BUY;
 
             // TODO: FIX THIS (we don't know if it's a spruce order, but assume for now)
-            stats->updateStats( market, side, "spruce", btc_amount_filled, qty_filled, price, true );
-
-            kDebug() << "partial-fill:" << order_id << "market:" << market
-                     << "btc_amount_filled:" << btc_amount_filled;
+            stats->updateStats( "getorder", market, order_id, side, "spruce", btc_amount_filled, qty_filled, price, btc_commission, true );
         }
 
         return;
@@ -775,8 +787,6 @@ void TrexREST::parseOrderBook( const QJsonArray &info, qint64 request_time_sent_
 
 void TrexREST::parseOrderHistory( const QJsonObject &obj )
 {
-    //kDebug() << "order history" << obj;
-
     const QJsonArray &orders = obj.value( "result" ).toArray();
 
     // check result size
@@ -793,8 +803,12 @@ void TrexREST::parseOrderHistory( const QJsonObject &obj )
 
         // make sure values exist
         if ( !order.contains( "OrderUuid" ) ||
-             !order.contains( "QuantityRemaining" ) )
+             !order.contains( "QuantityRemaining" ) ||
+             !order.contains( "Commission" ) )
+        {
+            kDebug() << "local warning: missing field in order history object:" << order;
             continue;
+        }
 
 //        const QString &timestamp = order.value( "TimeStamp" ).toString();
 //        const QDateTime order_time = QDateTime::fromString( timestamp, "yyyy-MM-ddTHH:mm:ss.z" );
@@ -804,9 +818,10 @@ void TrexREST::parseOrderHistory( const QJsonObject &obj )
 //            continue;
 
         const Coin qty_remaining = order.value( "QuantityRemaining" ).toDouble();
+        const Coin btc_commission = order.value( "Commission" ).toDouble();
         const QString &order_id = order.value( "OrderUuid" ).toString();
 
-        // partial fill for an order that was cancelled
+        // partial fill, ignore for now (partials are filled with getorder)
         if ( qty_remaining.isGreaterThanZero() )
             continue;
 
@@ -815,6 +830,8 @@ void TrexREST::parseOrderHistory( const QJsonObject &obj )
 
         if ( order_id.isEmpty() || !pos )
             continue;
+
+        pos->btc_commission = btc_commission;
 
         // add positions to process
         filled_orders += pos;

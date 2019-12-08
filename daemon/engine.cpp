@@ -300,18 +300,18 @@ void Engine::addLandmarkPositionFor( Position *const &pos )
 
 void Engine::fillNQ( const QString &order_id, qint8 fill_type , quint8 extra_data )
 {
-    // 1 = getorder-fill
-    // 2 = history-fill
-    // 3 = ticker-fill
-    // 4 = cancel-fill
-    // 5 = wss-fill
+    // 1 = getorder
+    // 2 = history
+    // 3 = ticker
+    // 4 = cancel
+    // 5 = wss
 
     static const QStringList fill_strings = QStringList()
-            << "getorder-fill"
-            << "history-fill"
-            << "ticker-fill"
-            << "cancel-fill"
-            << "wss-fill";
+            << "getorder"
+            << "history"
+            << "ticker"
+            << "cancel"
+            << "wss";
 
     // check for correct value
     if ( fill_type < 1 || fill_type > 5 )
@@ -336,12 +336,6 @@ void Engine::fillNQ( const QString &order_id, qint8 fill_type , quint8 extra_dat
         return;
     }
 
-    // update stats
-    stats->updateStats( pos->market, pos->side, pos->strategy_tag, pos->btc_amount, pos->quantity, pos->price );
-
-    // add order_id to previously filled orders
-    //previously_filled_orders += pos->order_number;
-
     MarketInfo &info = market_info[ pos->market ];
 
     // increment ping-pong "alternate_size" variable to take the place of order_size after 1 fill
@@ -355,15 +349,11 @@ void Engine::fillNQ( const QString &order_id, qint8 fill_type , quint8 extra_dat
         info.position_index[ pos->market_indices.value( i ) ].iterateFillCount();
     }
 
-    if ( verbosity > 0 )
-    {
-        QString fill_str = fill_strings.value( fill_type -1, "unknown-fill" );
-        if ( extra_data > 0 ) fill_str += QChar('-') + QString::number( extra_data );
+    QString fill_str = fill_strings.value( fill_type -1, "unknown" );
+    if ( extra_data > 0 ) fill_str += QChar('-') + QString::number( extra_data );
 
-        kDebug() << QString( "%1 %2" )
-                      .arg( fill_str, -15 )
-                      .arg( pos->stringifyPositionChange() );
-    }
+    // update stats
+    stats->updateStats( fill_str, pos->market, pos->order_number, pos->side, pos->strategy_tag, pos->btc_amount, pos->quantity, pos->price, pos->btc_commission );
 
     // set the next position
     flipPosition( pos );

@@ -22,10 +22,33 @@ Stats::~Stats()
     kDebug() << "[Stats] done.";
 }
 
-void Stats::updateStats( const QString &market, const quint8 side, const QString &strategy_tag, const Coin &btc_amount,
-                         const Coin &quantity, const Coin &price, bool partial_fill )
+void Stats::updateStats( const QString &fill_type_str, const QString &market, const QString &order_id, const quint8 side,
+                         const QString &strategy_tag, const Coin &btc_amount, const Coin &quantity, const Coin &price,
+                         const Coin &btc_commission, bool partial_fill )
 {
-    m_alpha.addAlpha( market, side, btc_amount, price, partial_fill );
+    Coin final_btc_amount = btc_amount - btc_commission;
+    Coin final_quantity = quantity - ( btc_commission / price );
+
+    if ( engine->getVerbosity() > 0 )
+    {
+        const bool is_buy = ( side == SIDE_BUY );
+        const QString side_str = QString( "%1%2>>>none<<<" )
+                                 .arg( is_buy ? ">>>grn<<<" : ">>>red<<<" )
+                                 .arg( is_buy ? "buy " : "sell" );
+
+        kDebug() << QString( "%1(%2): %3 %4 %5 (c %7 (q %8 @ %9 o %10" )
+                    .arg( partial_fill ? "part" : "full" )
+                    .arg( fill_type_str, -8 )
+                    .arg( side_str )
+                    .arg( market, MARKET_STRING_WIDTH )
+                    .arg( btc_amount, PRICE_WIDTH )
+                    .arg( btc_commission + ")", -PRICE_WIDTH -1 )
+                    .arg( final_quantity + ")", -PRICE_WIDTH -1 )
+                    .arg( price, -PRICE_WIDTH )
+                    .arg( order_id );
+    }
+
+    m_alpha.addAlpha( market, side, final_btc_amount, price, partial_fill );
 
     // stringify date + market
     QString date_str = Global::getDateStringMDY(); // cache mdy
@@ -34,8 +57,8 @@ void Stats::updateStats( const QString &market, const quint8 side, const QString
                                 .arg( market, 8 );
 
     // update some stats
-    daily_market_volume[ date_market_str ] += btc_amount;
-    daily_volumes[ date_str ] += btc_amount;
+    daily_market_volume[ date_market_str ] += final_btc_amount;
+    daily_volumes[ date_str ] += final_btc_amount;
     last_price[ market ] = price;
 
     // update fill count
@@ -43,16 +66,17 @@ void Stats::updateStats( const QString &market, const quint8 side, const QString
         daily_fills[ date_str ]++;
 
     // track stats offset related to this strategy
-    const Coin amount_offset = ( side == SIDE_BUY ) ?  btc_amount
-                                                    : -btc_amount;
+    const Coin amount_offset = ( side == SIDE_BUY ) ?  final_btc_amount
+                                                    : -final_btc_amount;
 
-    const Coin quantity_offset = ( side == SIDE_BUY ) ?  quantity
-                                                      : -quantity;
+    const Coin quantity_offset = ( side == SIDE_BUY ) ?  final_quantity
+                                                      : -final_quantity;
 
     shortlong[ strategy_tag ][ market ] += amount_offset;
 
     if ( strategy_tag == "spruce" )
         engine->getSpruce().addToShortLonged( market, quantity_offset );
+
 }
 
 void Stats::clearAll()
