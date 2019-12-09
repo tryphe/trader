@@ -23,11 +23,11 @@ Stats::~Stats()
 }
 
 void Stats::updateStats( const QString &fill_type_str, const QString &market, const QString &order_id, const quint8 side,
-                         const QString &strategy_tag, const Coin &btc_amount, const Coin &quantity, const Coin &price,
+                         const QString &strategy_tag, const Coin &btc_amount, const Coin &price,
                          const Coin &btc_commission, bool partial_fill )
 {
     Coin final_btc_amount = btc_amount - btc_commission;
-    Coin final_quantity = quantity - ( btc_commission / price );
+    Coin final_quantity = final_btc_amount / price;
 
     if ( engine->getVerbosity() > 0 )
     {
@@ -76,7 +76,6 @@ void Stats::updateStats( const QString &fill_type_str, const QString &market, co
 
     if ( strategy_tag == "spruce" )
         engine->getSpruce().addToShortLonged( market, quantity_offset );
-
 }
 
 void Stats::clearAll()

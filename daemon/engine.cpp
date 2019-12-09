@@ -353,7 +353,7 @@ void Engine::fillNQ( const QString &order_id, qint8 fill_type , quint8 extra_dat
     if ( extra_data > 0 ) fill_str += QChar('-') + QString::number( extra_data );
 
     // update stats
-    stats->updateStats( fill_str, pos->market, pos->order_number, pos->side, pos->strategy_tag, pos->btc_amount, pos->quantity, pos->price, pos->btc_commission );
+    stats->updateStats( fill_str, pos->market, pos->order_number, pos->side, pos->strategy_tag, pos->btc_amount, pos->price, pos->btc_commission );
 
     // set the next position
     flipPosition( pos );

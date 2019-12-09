@@ -57,9 +57,9 @@ void TrexREST::init()
     onCheckTicker();
     onCheckBotOrders();
 
-    //sendRequest( TREX_COMMAND_GET_ORDER, "uuid=be7a6806-965f-4e45-8f92-746150ee7e5c", nullptr );
+//    sendRequest( TREX_COMMAND_GET_ORDER, "uuid=38ea80", nullptr );
 
-    // test output
+//    // test output
 //    const Coin commission = Coin( "0.000015" );
 //    const Coin price = Coin( "0.0001" );
 //    const Coin qty = Coin( "100");
@@ -711,7 +711,7 @@ void TrexREST::parseGetOrder( const QJsonObject &order )
                                                                                      : SIDE_BUY;
 
             // TODO: FIX THIS (we don't know if it's a spruce order, but assume for now)
-            stats->updateStats( "getorder", market, order_id, side, "spruce", btc_amount_filled, qty_filled, price, btc_commission, true );
+            stats->updateStats( "getorder", market, order_id, side, "spruce", btc_amount_filled, price, btc_commission, true );
         }
 
         return;
