@@ -89,13 +89,18 @@ Position::Position( QString _market, quint8 _side, QString _buy_price, QString _
 //        kDebug() << "landmark price:" << buy_price;
 //        kDebug() << "landmark weights:" << ordersize_weights;
 
-#if defined(EXCHANGE_BINANCE)
-        // we want to "round" up or down each landmark order, in order to preserve our weighted profit ratio
-        const Coin &shim = !engine ? CoinAmount::ORDER_SHIM : engine->getMarketInfo( market ).price_ticksize.ratio( 0.5 );
-#else
-        // default 0.5 satoshi for other exchanges
-        const Coin &shim = CoinAmount::ORDER_SHIM;
-#endif
+        Coin shim;
+        if ( engine->engine_type == ENGINE_BINANCE )
+        {
+            // we want to "round" up or down each landmark order, in order to preserve our weighted profit ratio
+            shim = !engine ? CoinAmount::ORDER_SHIM : engine->getMarketInfo( market ).price_ticksize.ratio( 0.5 );
+        }
+        else
+        {
+            // default 0.5 satoshi for other exchanges
+            shim = CoinAmount::ORDER_SHIM;
+        }
+
         // apply the weighted price, rounded to the nearest half-satoshi
         buy_price = ( lo_price_weight_total / ordersize_weight_total ) - shim;
         sell_price = ( hi_price_weight_total / ordersize_weight_total ) + shim;
@@ -118,15 +123,16 @@ Position::Position( QString _market, quint8 _side, QString _buy_price, QString _
     }
 
     // truncate order by exchange tick size
-#if defined(EXCHANGE_BINANCE)
-    const Coin &ticksize = !engine ? CoinAmount::SATOSHI : engine->getMarketInfo( market ).price_ticksize;
-    buy_price.truncateByTicksize( ticksize );
-    sell_price.truncateByTicksize( ticksize );
+    if ( engine->engine_type == ENGINE_BINANCE )
+    {
+        const Coin &ticksize = !engine ? CoinAmount::SATOSHI : engine->getMarketInfo( market ).price_ticksize;
+        buy_price.truncateByTicksize( ticksize );
+        sell_price.truncateByTicksize( ticksize );
 
-    // prevent buy_price from being less than ticksize
-    if ( !ticksize.isZeroOrLess() && buy_price < ticksize )
-        buy_price = ticksize;
-#endif
+        // prevent buy_price from being less than ticksize
+        if ( !ticksize.isZeroOrLess() && buy_price < ticksize )
+            buy_price = ticksize;
+    }
 
     // set original prices, so that if we set slippage, we can go back towards these prices
     buy_price_original = buy_price;
@@ -161,12 +167,15 @@ void Position::calculateQuantity()
     // q = btc / price;
     quantity = btc_amount / price;
 
-    // polo doesn't do this... do it anyways
-#if defined(EXCHANGE_BINANCE)
-    const Coin &ticksize = !engine ? CoinAmount::SATOSHI : engine->getMarketInfo( market ).price_ticksize;
+    // truncate quantity by price ticksize
+    if ( engine->engine_type == ENGINE_BINANCE )
+    {
+        // TODO: maybe we should truncate by quantity_ticksize instead?
+        const Coin &ticksize = !engine ? CoinAmount::SATOSHI : engine->getMarketInfo( market ).price_ticksize;
+        quantity.truncateByTicksize( ticksize );
+    }
 
-    quantity.truncateByTicksize( ticksize );
-#endif
+    // polo doesn't do this... do it anyways
     btc_amount = quantity * price;
 }
 
@@ -342,8 +351,6 @@ void Position::jsonifyPositionCancel( QJsonArray &arr )
 
 QString Position::stringifyOrder()
 {
-    const QString &order_number_str = Global::getOrderString( order_number );
-
     QString ret = QString( "%1%2  %3 %4 %5 @ %6               o %7 %8")
                 .arg( is_landmark ? "L" : is_onetime ? "O" : " " )
                 .arg( is_slippage ? "S" : " " )
@@ -351,7 +358,7 @@ QString Position::stringifyOrder()
                 .arg( market, MARKET_STRING_WIDTH )
                 .arg( btc_amount, 11 )
                 .arg( price, 10 )
-                .arg( order_number_str, ORDER_STRING_SIZE )
+                .arg( order_number, ORDER_STRING_SIZE )
                 .arg( indices_str );
 
     return ret;
@@ -388,8 +395,6 @@ QString Position::stringifyNewPosition()
 
 QString Position::stringifyPositionChange()
 {
-    const QString &order_number_str = Global::getOrderString( order_number );
-
     // make a string that looks like 0.00009999 -> 0.00120000
     //                               <price>       <next price>
     bool is_buy = ( side == SIDE_BUY );
@@ -412,7 +417,7 @@ QString Position::stringifyPositionChange()
             .arg( market, MARKET_STRING_WIDTH )
             .arg( btc_amount, 11 )
             .arg( price_str, -24 )
-            .arg( order_number_str, ORDER_STRING_SIZE )
+            .arg( order_number, ORDER_STRING_SIZE )
             .arg( indices_str )
             .arg( !is_onetime && per_trade_profit.isGreaterThanZero() ? " p " + per_trade_profit : "" );
 }

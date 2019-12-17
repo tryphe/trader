@@ -23,12 +23,14 @@
 #include <QJsonDocument>
 #include <QTimer>
 
-Engine::Engine()
+Engine::Engine( const quint8 _engine_type )
     : QObject( nullptr ),
       positions( new PositionMan( this ) ),
-      settings( new EngineSettings() )
+      settings( new EngineSettings( _engine_type ) )
 {
-    kDebug() << "[Engine]";
+    engine_type = _engine_type;
+
+    kDebug() << "[Engine" << engine_type << "]";
 
     start_time = QDateTime::currentDateTime();
 
@@ -59,10 +61,6 @@ Engine::~Engine()
     autosave_timer = nullptr;
     positions = nullptr;
     settings = nullptr;
-
-    // these are deleted in trader
-    rest = nullptr;
-    stats = nullptr;
 
     kDebug() << "[Engine] done.";
 }
@@ -209,28 +207,33 @@ Position *Engine::addPosition( QString market_input, quint8 side, QString buy_pr
     }
 
     // check for minimum position size
-    if ( pos->btc_amount < Coin( MINIMUM_ORDER_SIZE ) - CoinAmount::SATOSHI )
+    const Coin minimum_order_size = engine_type == ENGINE_BITTREX  ? Coin( BITTREX_MINIMUM_ORDER_SIZE ) :
+                                    engine_type == ENGINE_BINANCE  ? Coin( BINANCE_MINIMUM_ORDER_SIZE ) :
+                                    engine_type == ENGINE_POLONIEX ? Coin( POLONIEX_MINIMUM_ORDER_SIZE ) :
+                                                                    Coin();
+    if ( pos->btc_amount < Coin( minimum_order_size ) - CoinAmount::SATOSHI )
     {
-        kDebug() << "local warning: failed to set order: size" << pos->btc_amount << "is under the minimum size" << MINIMUM_ORDER_SIZE;
+        kDebug() << "local warning: failed to set order: size" << pos->btc_amount << "is under the minimum size" << minimum_order_size;
         return nullptr;
     }
 
     // enforce PERCENT_PRICE on binance
-#if defined(EXCHANGE_BINANCE)
-    // respect the binance limits with a 20% padding (we don't know what the 5min avg is, so we'll just compress the range)
-    Coin buy_limit = ( info.highest_buy * info.price_min_mul.ratio( 1.2 ) ).truncatedByTicksize( "0.00000001" );
-    Coin sell_limit = ( info.lowest_sell * info.price_max_mul.ratio( 0.8 ) ).truncatedByTicksize( "0.00000001" );
-
-    // regardless of the order type, enforce lo/hi price >0 to be in bounds
-    if ( ( pos->side == SIDE_BUY  && pos->buy_price.isGreaterThanZero() && buy_limit.isGreaterThanZero() && pos->buy_price < buy_limit ) ||
-         ( pos->side == SIDE_SELL && pos->sell_price.isGreaterThanZero() && sell_limit.isGreaterThanZero() && pos->sell_price > sell_limit ) )
+    if ( engine_type == ENGINE_BINANCE )
     {
-        if ( pos->is_onetime ) // if ping-pong, don't warn
-            kDebug() << "local warning: hit PERCENT_PRICE limit for" << market << buy_limit << sell_limit << "for pos" << pos->stringifyOrderWithoutOrderID();
-        delete pos;
-        return nullptr;
+        // respect the binance limits with a 20% padding (we don't know what the 5min avg is, so we'll just compress the range)
+        Coin buy_limit = ( info.highest_buy * info.price_min_mul.ratio( 1.2 ) ).truncatedByTicksize( "0.00000001" );
+        Coin sell_limit = ( info.lowest_sell * info.price_max_mul.ratio( 0.8 ) ).truncatedByTicksize( "0.00000001" );
+
+        // regardless of the order type, enforce lo/hi price >0 to be in bounds
+        if ( ( pos->side == SIDE_BUY  && pos->buy_price.isGreaterThanZero() && buy_limit.isGreaterThanZero() && pos->buy_price < buy_limit ) ||
+             ( pos->side == SIDE_SELL && pos->sell_price.isGreaterThanZero() && sell_limit.isGreaterThanZero() && pos->sell_price > sell_limit ) )
+        {
+            if ( pos->is_onetime ) // if ping-pong, don't warn
+                kDebug() << "local warning: hit PERCENT_PRICE limit for" << market << buy_limit << sell_limit << "for pos" << pos->stringifyOrderWithoutOrderID();
+            delete pos;
+            return nullptr;
+        }
     }
-#endif
 
     pos->is_onetime = is_onetime;
     pos->is_taker = is_taker;
@@ -287,7 +290,7 @@ Position *Engine::addPosition( QString market_input, quint8 side, QString buy_pr
     }
 
     // send rest request
-    rest->sendBuySell( pos, quiet );
+    sendBuySell( pos, quiet );
     return pos;
 }
 
@@ -352,23 +355,60 @@ void Engine::fillNQ( const QString &order_id, qint8 fill_type , quint8 extra_dat
     QString fill_str = fill_strings.value( fill_type -1, "unknown" );
     if ( extra_data > 0 ) fill_str += QChar('-') + QString::number( extra_data );
 
-    // update stats
-    stats->updateStats( fill_str, pos->market, pos->order_number, pos->side, pos->strategy_tag, pos->btc_amount, pos->price, pos->btc_commission );
+    // update stats and print
+    // note: btc_commission is set in rest->parseOrderHistory
+    updateStatsAndPrintFill( fill_str, pos->market, pos->order_number, pos->side, pos->strategy_tag, pos->btc_amount, pos->price, pos->btc_commission, false );
 
     // set the next position
     flipPosition( pos );
 
     // on trex, remove any 'getorder's in queue related to this uuid, to prevent spam
-#if defined(EXCHANGE_BITTREX)
-// if testing, don't access rest because it's null
-if ( !is_testing )
-{
-    rest->removeRequest( TREX_COMMAND_GET_ORDER, QString( "uuid=%1" ).arg( order_id ) ); // note: uses pos*
-}
-#endif
+    // if testing, don't access rest because it's null
+    if ( engine_type == ENGINE_BITTREX && !is_testing )
+    {
+        rest_trex->removeRequest( TREX_COMMAND_GET_ORDER, QString( "uuid=%1" ).arg( order_id ) ); // note: uses pos*
+    }
 
     // delete
     positions->remove( pos );
+}
+
+void Engine::updateStatsAndPrintFill( const QString &fill_type, const Market &market, const QString &order_id, const quint8 side,
+                                      const QString &strategy_tag, const Coin &btc_amount, const Coin &price, const Coin &btc_commission,
+                                      bool partial_fill )
+{
+    // negate commission from final qty
+    Coin final_btc_amount = btc_amount - btc_commission;
+    Coin final_quantity = final_btc_amount / price;
+
+    // add stats changes to alpha tracker
+    alpha->addAlpha( market, side, final_btc_amount, price, partial_fill );
+
+    // add qty changes to spruce strat
+    const Coin quantity_offset = ( side == SIDE_BUY ) ?  final_quantity
+                                                      : -final_quantity;
+
+    if ( strategy_tag == "spruce" )
+        spruce->addToShortLonged( market, quantity_offset );
+
+    if ( getVerbosity() > 0 )
+    {
+        const bool is_buy = ( side == SIDE_BUY );
+        const QString side_str = QString( "%1%2>>>none<<<" )
+                                 .arg( is_buy ? ">>>grn<<<" : ">>>red<<<" )
+                                 .arg( is_buy ? "buy " : "sell" );
+
+        kDebug() << QString( "%1(%2): %3 %4 %5 (c %7 (q %8 @ %9 o %10" )
+                    .arg( partial_fill ? "part" : "full" )
+                    .arg( fill_type, -8 )
+                    .arg( side_str )
+                    .arg( market, MARKET_STRING_WIDTH )
+                    .arg( btc_amount, PRICE_WIDTH )
+                    .arg( btc_commission + ")", -PRICE_WIDTH -1 )
+                    .arg( final_quantity + ")", -PRICE_WIDTH -1 )
+                    .arg( price, -PRICE_WIDTH )
+                    .arg( order_id );
+    }
 }
 
 QPair<Coin,Coin> Engine::getSpreadForMarket( const QString &market )
@@ -386,8 +426,6 @@ QPair<Coin,Coin> Engine::getSpreadForMarket( const QString &market )
 
 void Engine::processFilledOrders( QVector<Position*> &to_be_filled, qint8 fill_type )
 {
-    static QJsonArray ext_updates;
-
     /// step 1: build markets list
     QMap<QString,QVector<Position*>> markets;
     for ( QVector<Position*>::const_iterator i = to_be_filled.begin(); i != to_be_filled.end(); i++ )
@@ -418,7 +456,6 @@ void Engine::processFilledOrders( QVector<Position*> &to_be_filled, qint8 fill_t
                  ( pos->side == SIDE_BUY  && pos->getFlippedPrice() >  price_avg ) )  // new sell is gte avg
             {
                 to_be_filled.removeOne( pos );
-                if ( wss_interface ) pos->jsonifyPositionFill( ext_updates );
                 fillNQ( pos->order_number, fill_type );
             }
         }
@@ -428,17 +465,7 @@ void Engine::processFilledOrders( QVector<Position*> &to_be_filled, qint8 fill_t
     for ( QVector<Position*>::const_iterator i = to_be_filled.begin(); i != to_be_filled.end(); i++ )
     {
         Position *const &pos = *i;
-
-        if ( wss_interface ) pos->jsonifyPositionFill( ext_updates );
         fillNQ( pos->order_number, fill_type );
-    }
-
-    /// step 4: send updates to wss if enabled
-    if ( wss_interface && !ext_updates.isEmpty() )
-    {
-        QString msg = Global::jsonArrayToString( ext_updates );
-        emit newEngineMessage( msg );
-        ext_updates = QJsonArray(); // clear static variable
     }
 }
 
@@ -478,7 +505,7 @@ void Engine::processOpenOrders( QVector<QString> &order_numbers, QMultiHash<QStr
                 kDebug() << "cancelling non-bot order" << market << side << btc_amount << "@" << price << "id:" << order_number;
 
                 // send a one time cancel request for orders we don't own
-                rest->sendCancel( order_number );
+                sendCancel( order_number, nullptr );
                 continue;
             }
 
@@ -562,7 +589,7 @@ void Engine::processOpenOrders( QVector<QString> &order_numbers, QMultiHash<QStr
         while ( stray_orders.size() > 0 )
         {
             const QString &order_number = stray_orders.takeFirst();
-            rest->sendCancel( order_number );
+            sendCancel( order_number, nullptr );
             // reset grace time incase we see this order again from the next response
             order_grace_times.insert( order_number, current_time + settings->stray_grace_time_limit /* don't try to cancel again for 10m */ );
         }
@@ -580,49 +607,48 @@ void Engine::processOpenOrders( QVector<QString> &order_numbers, QMultiHash<QStr
 
     // now we can look for local positions to invalidate based on if the order exists
     // (except bittrex, which is laggy. we'll just use the history there for fills)
-#if !defined(EXCHANGE_BITTREX)
-    for ( QSet<Position*>::const_iterator k = positions->active().begin(); k != positions->active().end(); k++ )
+    if ( engine_type != ENGINE_BITTREX )
     {
-        Position *const &pos = *k;
+        QVector<Position*> filled_orders;
 
-        // avoid nullptr
-        if ( !pos )
-            continue;
+        for ( QSet<Position*>::const_iterator k = positions->active().begin(); k != positions->active().end(); k++ )
+        {
+            Position *const &pos = *k;
 
-        // has the order been "set"? if not, we should skip it
-        if ( pos->order_set_time == 0 )
-            continue;
+            // avoid nullptr
+            if ( !pos )
+                continue;
 
-        // check that we weren't cancelling the order
-        if ( pos->order_cancel_time > 0 || pos->is_cancelling )
-            continue;
+            // has the order been "set"? if not, we should skip it
+            if ( pos->order_set_time == 0 )
+                continue;
 
-        // allow for a safe period to avoid orders we just set possibly not showing up yet
-        if ( pos->order_set_time > current_time - settings->safety_delay_time )
-            continue;
+            // check that we weren't cancelling the order
+            if ( pos->order_cancel_time > 0 || pos->is_cancelling )
+                continue;
 
-        // is the order in the list of orders?
-        if ( order_numbers.contains( pos->order_number ) )
-            continue;
+            // allow for a safe period to avoid orders we just set possibly not showing up yet
+            if ( pos->order_set_time > current_time - settings->safety_delay_time )
+                continue;
 
-        // check that the api request timestamp was at/after our request send time
-        if ( pos->order_set_time >= request_time_sent_ms )
-            continue;
-        // add orders to process
-        filled_orders += pos;
+            // is the order in the list of orders?
+            if ( order_numbers.contains( pos->order_number ) )
+                continue;
+
+            // check that the api request timestamp was at/after our request send time
+            if ( pos->order_set_time >= request_time_sent_ms )
+                continue;
+            // add orders to process
+            filled_orders += pos;
+        }
+
+        processFilledOrders( filled_orders, FILL_GETORDER );
     }
-
-    processFilledOrders( filled_orders, FILL_GETORDER );
-#else
-    // avoid warning
-    Q_UNUSED( request_time_sent_ms );
-#endif
 }
 
 void Engine::processTicker( const QMap<QString, TickerInfo> &ticker_data, qint64 request_time_sent_ms )
 {
     // store deleted positions, because we can't delete and iterate a hash<>
-    static QJsonArray ext_updates;
 
     for ( QMap<QString, TickerInfo>::const_iterator i = ticker_data.begin(); i != ticker_data.end(); i++ )
     {
@@ -643,30 +669,17 @@ void Engine::processTicker( const QMap<QString, TickerInfo> &ticker_data, qint64
         {
             info.highest_buy = bid;
             info.lowest_sell = ask;
-
-            if ( wss_interface ) info.jsonifyTicker( ext_updates, market );
         }
         // update bid price
         else if ( info.highest_buy != bid )
         {
             info.highest_buy = bid;
-
-            if ( wss_interface ) info.jsonifyBid( ext_updates, market );
         }
         // update ask price
         else if ( info.lowest_sell != ask )
         {
             info.lowest_sell = ask;
-
-            if ( wss_interface ) info.jsonifyAsk( ext_updates, market );
         }
-    }
-
-    if ( wss_interface && !ext_updates.isEmpty() )
-    {
-        QString ret = Global::jsonArrayToString( ext_updates );
-        emit newEngineMessage( ret );
-        ext_updates = QJsonArray(); // clear static variable
     }
 
     // if this is a ticker feed, just process the ticker data. the fill feed will cause false fills when the ticker comes in just as new positions were set,
@@ -674,100 +687,94 @@ void Engine::processTicker( const QMap<QString, TickerInfo> &ticker_data, qint64
     if ( request_time_sent_ms <= 0 )
         return;
 
-#if defined(EXCHANGE_POLONIEX)
-    // if we read the ticker from anywhere and the websocket account feed is active, prevent it from filling positions (websocket feed is instant for fill notifications anyways)
-    if ( rest->getWSS1000State() )
-        return;
-#endif
-
-#if !defined(EXCHANGE_BITTREX)
-    const qint64 current_time = QDateTime::currentMSecsSinceEpoch();
-
-    QVector<Position*> filled_orders;
-
-    // did we find bid == ask (we shouldn't have)
-    bool found_equal_bid_ask = false;
-
-    qint32 filled_count = 0;
-    // check for any orders that could've been filled
-    // (note: removed because ping-pong is deprecated, history-fill is preferred)
-    for ( QSet<Position*>::const_iterator j = positions->active().begin(); j != positions->active().end(); j++ )
+    if ( engine_type == ENGINE_POLONIEX )
     {
-        Position *const &pos = *j;
+        // if we read the ticker from anywhere and the websocket account feed is active, prevent it from filling positions (websocket feed is instant for fill notifications anyways)
+        if ( rest_polo->getWSS1000State() )
+            return;
+    }
 
-        if ( !pos )
-            continue;
+    if ( engine_type == ENGINE_POLONIEX ||
+         engine_type == ENGINE_BINANCE )
+    {
+        const qint64 current_time = QDateTime::currentMSecsSinceEpoch();
 
-        const QString &market = pos->market;
-        if ( market.isEmpty() || !ticker_data.contains( market ) )
-            continue;
+        QVector<Position*> filled_orders;
 
-        const TickerInfo &ticker = ticker_data[ market ];
+        // did we find bid == ask (we shouldn't have)
+        bool found_equal_bid_ask = false;
 
-        const Coin &ask = ticker.ask_price;
-        const Coin &bid = ticker.bid_price;
-
-        // check for equal bid/ask
-        if ( ask <= bid )
+        // check for any orders that could've been filled
+        // (note: removed because ping-pong is deprecated, history-fill is preferred)
+        for ( QSet<Position*>::const_iterator j = positions->active().begin(); j != positions->active().end(); j++ )
         {
-            found_equal_bid_ask = true;
-            continue;
-        }
+            Position *const &pos = *j;
 
-        // check for missing information
-        if ( ask.isZeroOrLess() || bid.isZeroOrLess() )
-            continue;
+            if ( !pos )
+                continue;
 
-        // check for position price collision with ticker prices
-        quint8 fill_details = 0;
-        if      ( pos->side == SIDE_SELL && pos->sell_price <= bid ) // sell price <= hi buy
-            fill_details = 1;
-        else if ( pos->side == SIDE_BUY  && pos->buy_price >= ask ) // buy price => lo sell
-            fill_details = 2;
-        else if ( pos->side == SIDE_SELL && pos->sell_price < ask ) // sell price < lo sell
-            fill_details = 3;
-        else if ( pos->side == SIDE_BUY  && pos->buy_price > bid ) // buy price > hi buy
-            fill_details = 4;
+            const QString &market = pos->market;
+            if ( market.isEmpty() || !ticker_data.contains( market ) )
+                continue;
 
-        if ( fill_details > 0 )
-        {
-            // is the order pretty new?
-            if ( pos->order_set_time > request_time_sent_ms - settings->ticker_safety_delay_time || // if the request time is supplied, check that we didn't send the ticker command before the position was set
-                 pos->order_set_time > current_time - settings->ticker_safety_delay_time ) // allow for a safe period to avoid orders we just set possibly not showing up yet
+            const TickerInfo &ticker = ticker_data[ market ];
+
+            const Coin &ask = ticker.ask_price;
+            const Coin &bid = ticker.bid_price;
+
+            // check for equal bid/ask
+            if ( ask <= bid )
             {
-                // skip the order until it's a few seconds older
+                found_equal_bid_ask = true;
                 continue;
             }
 
-            // check that we weren't cancelling the order
-            if ( pos->order_cancel_time > 0 || pos->is_cancelling )
+            // check for missing information
+            if ( ask.isZeroOrLess() || bid.isZeroOrLess() )
                 continue;
 
-            // add to filled orders
-            filled_orders += pos;
+            // check for position price collision with ticker prices
+            quint8 fill_details = 0;
+            if      ( pos->side == SIDE_SELL && pos->sell_price <= bid ) // sell price <= hi buy
+                fill_details = 1;
+            else if ( pos->side == SIDE_BUY  && pos->buy_price >= ask ) // buy price => lo sell
+                fill_details = 2;
+            else if ( pos->side == SIDE_SELL && pos->sell_price < ask ) // sell price < lo sell
+                fill_details = 3;
+            else if ( pos->side == SIDE_BUY  && pos->buy_price > bid ) // buy price > hi buy
+                fill_details = 4;
+
+            if ( fill_details > 0 )
+            {
+                // is the order pretty new?
+                if ( pos->order_set_time > request_time_sent_ms - settings->ticker_safety_delay_time || // if the request time is supplied, check that we didn't send the ticker command before the position was set
+                     pos->order_set_time > current_time - settings->ticker_safety_delay_time ) // allow for a safe period to avoid orders we just set possibly not showing up yet
+                {
+                    // skip the order until it's a few seconds older
+                    continue;
+                }
+
+                // check that we weren't cancelling the order
+                if ( pos->order_cancel_time > 0 || pos->is_cancelling )
+                    continue;
+
+                // add to filled orders
+                filled_orders += pos;
+            }
         }
+
+        // fill positions
+        processFilledOrders( filled_orders, FILL_TICKER );
+
+        // show warning we if we found equal bid/ask
+        if ( found_equal_bid_ask )
+            kDebug() << "local error: found ask <= bid for at least one market";
     }
-
-    // fill positions
-    processFilledOrders( filled_orders, FILL_TICKER );
-
-    // show warning we if we found equal bid/ask
-    if ( found_equal_bid_ask )
-        kDebug() << "local error: found ask <= bid for at least one market";
-#endif
 }
 
 void Engine::processCancelledOrder( Position * const &pos )
 {
     // pos must be valid!
-
-    if ( wss_interface )
-    {
-        QJsonArray cancel_data;
-        pos->jsonifyPositionCancel( cancel_data );
-        QString msg = Global::jsonArrayToString( cancel_data );
-        emit newEngineMessage( msg );
-    }
 
     // we succeeded at resetting(cancelling) a slippage position, now put it back to the -same side- and at its original prices
     if ( pos->is_slippage && pos->cancel_reason == CANCELLING_FOR_SLIPPAGE_RESET )
@@ -1015,7 +1022,8 @@ void Engine::saveMarket( QString market, qint32 num_orders )
 void Engine::saveSettings()
 {
     // open settings file
-    QString path = Global::getMarketSettingsPath();
+    const QString path = getSettingsPath();
+
     QFile savefile( path );
 
     if ( !savefile.open( QIODevice::WriteOnly | QIODevice::Text ) )
@@ -1024,7 +1032,7 @@ void Engine::saveSettings()
         return;
     }
 
-    MarketInfo default_market;
+    const MarketInfo default_market;
     QTextStream out_savefile( &savefile );
 
     for ( QHash<QString, MarketInfo>::const_iterator i = market_info.begin(); i != market_info.end(); i++ )
@@ -1056,7 +1064,7 @@ void Engine::saveSettings()
     }
 
     // save spruce state
-    out_savefile << spruce.getSaveState();
+    out_savefile << spruce->getSaveState();
 
     // save the buffer
     out_savefile.flush();
@@ -1065,7 +1073,7 @@ void Engine::saveSettings()
 
 void Engine::loadSettings()
 {
-    QString path = Global::getMarketSettingsPath();
+    const QString path = getSettingsPath();
     QFile loadfile( path );
 
     if ( !loadfile.open( QIODevice::ReadWrite | QIODevice::Text ) )
@@ -1077,7 +1085,7 @@ void Engine::loadSettings()
     if ( loadfile.bytesAvailable() == 0 )
         return;
 
-    spruce = Spruce(); // cleanup leftover spruce
+    spruce->clear();
 
     // emit new lines
     QString data = loadfile.readAll();
@@ -1099,7 +1107,7 @@ void Engine::saveStats()
     }
 
     QTextStream out_savefile( &savefile );
-    out_savefile << stats->alpha().getSaveState();
+    out_savefile << alpha->getSaveState();
 
     // save the buffer
     out_savefile.flush();
@@ -1123,13 +1131,13 @@ void Engine::loadStats()
     QString data = loadfile.readAll();
     kDebug() << "[Engine] loaded stats," << data.size() << "bytes.";
 
-    stats->alpha().reset();
-    stats->alpha().readSaveState( data );
+    alpha->reset();
+    alpha->readSaveState( data );
 }
 
 void Engine::autoSaveSpruceSettings()
 {
-    if ( !spruce.isActive() )
+    if ( !spruce->isActive() )
         return;
 
     const QString trader_path = Global::getTraderPath();
@@ -1261,7 +1269,7 @@ QPair<Coin, Coin> Engine::getSpruceSpread( const QString &market, quint8 side )
 
     // ensure the spread is more profitable than fee*2
     int j = 0;
-    const Coin greed = spruce.getOrderGreed( side );
+    const Coin greed = spruce->getOrderGreed( side );
 
     // alternate between subtracting from sell side first to buy side first
     const bool greed_vibrate_state = QRandomGenerator::global()->generate() % 2 == 0;
@@ -1280,7 +1288,7 @@ QPair<Coin, Coin> Engine::getSpruceSpread( const QString &market, quint8 side )
 QPair<Coin, Coin> Engine::getSpruceSpreadLimit( const QString &market, quint8 side )
 {
     // get trailing limit for this side
-    const Coin trailing_limit = spruce.getOrderTrailingLimit( side );
+    const Coin trailing_limit = spruce->getOrderTrailingLimit( side );
 
     // calculate possible spread1
     const MarketInfo &info = market_info[ market ];
@@ -1324,11 +1332,12 @@ QPair<Coin, Coin> Engine::getSpruceSpreadLimit( const QString &market, quint8 si
 
 void Engine::findBetterPrice( Position *const &pos )
 {
-#if defined(EXCHANGE_BITTREX)
-    Q_UNUSED( pos )
-    kDebug() << "local warning: tried to run findBetterPrice() on bittrex but does not a have post-only mode";
-    return;
-#else
+    if ( engine_type == ENGINE_BITTREX )
+    {
+        kDebug() << "local warning: tried to run findBetterPrice() on bittrex but does not a have post-only mode";
+        return;
+    }
+
     static const quint8 SLIPPAGE_CALCULATED = 1;
     static const quint8 SLIPPAGE_ADDITIVE = 2;
 
@@ -1343,17 +1352,20 @@ void Engine::findBetterPrice( Position *const &pos )
     Coin &lo_sell = info.lowest_sell;
     Coin ticksize;
 
-#if defined(EXCHANGE_BINANCE)
-    ticksize = info.price_ticksize;
+    if ( engine_type == ENGINE_BINANCE )
+    {
+        ticksize = info.price_ticksize;
 
-    if ( pos->price_reset_count > 0 )
-        ticksize += ticksize * qFloor( ( qPow( pos->price_reset_count, 1.110 ) ) );
-#elif defined(EXCHANGE_POLONIEX)
-    const qreal slippage_mul = rest->getSlippageMul( market );
+        if ( pos->price_reset_count > 0 )
+            ticksize += ticksize * qFloor( ( qPow( pos->price_reset_count, 1.110 ) ) );
+    }
+    else if ( engine_type == ENGINE_POLONIEX )
+    {
+        const qreal slippage_mul = rest_polo->getSlippageMul( market );
 
-    if ( is_buy ) ticksize = pos->buy_price.ratio( slippage_mul ) + CoinAmount::SATOSHI;
-    else          ticksize = pos->sell_price.ratio( slippage_mul ) + CoinAmount::SATOSHI;
-#endif
+        if ( is_buy ) ticksize = pos->buy_price.ratio( slippage_mul ) + CoinAmount::SATOSHI;
+        else          ticksize = pos->sell_price.ratio( slippage_mul ) + CoinAmount::SATOSHI;
+    }
 
     //kDebug() << "slippage offset" << ticksize << pos->buy_price << pos->sell_price;
 
@@ -1468,7 +1480,44 @@ void Engine::findBetterPrice( Position *const &pos )
 
     // add new price from prices index for detecting stray orders
     info.order_prices.append( pos->price );
-#endif
+}
+
+void Engine::sendBuySell( Position * const &pos , bool quiet )
+{
+    if ( engine_type == ENGINE_BITTREX )
+        rest_trex->sendBuySell( pos, quiet );
+    else if ( engine_type == ENGINE_BINANCE )
+        rest_bnc->sendBuySell( pos, quiet );
+    else if ( engine_type == ENGINE_POLONIEX )
+        rest_polo->sendBuySell( pos, quiet );
+}
+
+void Engine::sendCancel( const QString &order_number, Position * const &pos )
+{
+    if ( engine_type == ENGINE_BITTREX )
+        rest_trex->sendCancel( order_number, pos );
+    else if ( engine_type == ENGINE_BINANCE )
+        rest_bnc->sendCancel( order_number, pos );
+    else if ( engine_type == ENGINE_POLONIEX )
+        rest_polo->sendCancel( order_number, pos );
+}
+
+void Engine::sendNamQueue()
+{
+    if ( engine_type == ENGINE_BITTREX )
+        rest_trex->sendNamQueue();
+    else if ( engine_type == ENGINE_BINANCE )
+        rest_bnc->sendNamQueue();
+    else if ( engine_type == ENGINE_POLONIEX )
+        rest_polo->sendNamQueue();
+}
+
+bool Engine::yieldToFlowControl()
+{
+    return engine_type == ENGINE_BITTREX  ? rest_trex->yieldToFlowControl() :
+           engine_type == ENGINE_BINANCE  ? rest_bnc->yieldToFlowControl() :
+           engine_type == ENGINE_POLONIEX ? rest_polo->yieldToFlowControl() :
+                                           false;
 }
 
 void Engine::onEngineMaintenance()
@@ -1585,7 +1634,7 @@ void Engine::onCheckTimeouts()
     for ( QSet<Position*>::const_iterator i = positions->queued().begin(); i != positions->queued().end(); i++ )
     {
         // flow control
-        if ( rest->yieldToFlowControl() || ( rest->nam_queue.size() >= rest->limit_timeout_yield ) )
+        if ( yieldToFlowControl() )
             return;
 
         Position *const &pos = *i;
@@ -1597,7 +1646,7 @@ void Engine::onCheckTimeouts()
         {
             kDebug() << "order timeout detected, resending" << pos->stringifyOrder();
 
-            rest->sendBuySell( pos );
+            sendBuySell( pos );
         }
     }
 
@@ -1607,7 +1656,7 @@ void Engine::onCheckTimeouts()
     for ( QSet<Position*>::const_iterator j = begin; j != end; j++ )
     {
         // flow control
-        if ( rest->yieldToFlowControl() || ( rest->nam_queue.size() >= rest->limit_timeout_yield ) )
+        if ( yieldToFlowControl() )
             return;
 
         Position *const &pos = *j;
@@ -1655,23 +1704,23 @@ void Engine::onCheckTimeouts()
 
 void Engine::onSpruceUp()
 {
-    if ( !spruce.isActive() )
+    if ( !spruce->isActive() )
         return;
 
     QMap<QString/*market*/,Coin> spread_price;
-    const QList<QString> &currencies = spruce.getCurrencies();
+    const QList<QString> &currencies = spruce->getCurrencies();
 
-    const Coin long_max = spruce.getLongMax();
-    const Coin short_max = spruce.getShortMax();
+    const Coin long_max = spruce->getLongMax();
+    const Coin short_max = spruce->getShortMax();
 
     // one pass each for buys and sells
     for ( quint8 side = SIDE_BUY; side < SIDE_SELL +1; side++ )
     {
-        spruce.clearLiveNodes();
+        spruce->clearLiveNodes();
         for ( QList<QString>::const_iterator i = currencies.begin(); i != currencies.end(); i++ )
         {
             const QString &currency = *i;
-            const Market market( spruce.getBaseCurrency(), currency );
+            const Market market( spruce->getBaseCurrency(), currency );
             const QPair<Coin,Coin> spread = getSpreadForMarket( market );
             const Coin &price = ( side == SIDE_BUY ) ? spread.first :
                                                        spread.second;
@@ -1684,21 +1733,21 @@ void Engine::onSpruceUp()
             }
 
             spread_price.insert( currency, price );
-            spruce.addLiveNode( currency, price );
+            spruce->addLiveNode( currency, price );
         }
 
         // calculate amount to short/long, and fail if necessary
-        if ( !spruce.calculateAmountToShortLong() )
+        if ( !spruce->calculateAmountToShortLong() )
             return;
 
-        const QMap<QString,Coin> &qty_to_shortlong_map = spruce.getQuantityToShortLongMap();
+        const QMap<QString,Coin> &qty_to_shortlong_map = spruce->getQuantityToShortLongMap();
 
         kDebug() << QString( "[Spruce %1] hi-lo coeffs[%2 %3 %4 %5]" )
                         .arg( side == SIDE_BUY ? "buys " : "sells" )
-                        .arg( spruce.startCoeffs().lo_currency )
-                        .arg( spruce.startCoeffs().lo_coeff )
-                        .arg( spruce.startCoeffs().hi_currency )
-                        .arg( spruce.startCoeffs().hi_coeff );
+                        .arg( spruce->startCoeffs().lo_currency )
+                        .arg( spruce->startCoeffs().lo_coeff )
+                        .arg( spruce->startCoeffs().hi_currency )
+                        .arg( spruce->startCoeffs().hi_coeff );
 
         // because price is atomic, incorporate a limit for trailing price cancellor 1 for each market.
         // 1 = cancelling pace matches the pace of setting orders, 2 = double the pace
@@ -1739,13 +1788,13 @@ void Engine::onSpruceUp()
                 }
             }
 
-            const Coin amount_to_shortlong = spruce.getCurrencyPriceByMarket( market ) * spruce.getQuantityToShortLongNow( market );
-            const Coin order_size = spruce.getOrderSize( market );
-            const Coin order_size_limit = order_size * spruce.getOrderNice();
+            const Coin amount_to_shortlong = spruce->getCurrencyPriceByMarket( market ) * spruce->getQuantityToShortLongNow( market );
+            const Coin order_size = spruce->getOrderSize( market );
+            const Coin order_size_limit = order_size * spruce->getOrderNice();
 
             /// cancellor 2: if the order is active but our rating is the opposite polarity, cancel it
-            if ( ( amount_to_shortlong >  order_size * spruce.getOrderNiceZeroBound() && pos->side == SIDE_BUY  ) ||
-                 ( amount_to_shortlong < -order_size * spruce.getOrderNiceZeroBound() && pos->side == SIDE_SELL ) )
+            if ( ( amount_to_shortlong >  order_size * spruce->getOrderNiceZeroBound() && pos->side == SIDE_BUY  ) ||
+                 ( amount_to_shortlong < -order_size * spruce->getOrderNiceZeroBound() && pos->side == SIDE_SELL ) )
             {
                 positions->cancel( pos, false, CANCELLING_FOR_SPRUCE_2 );
                 continue;
@@ -1790,7 +1839,7 @@ void Engine::onSpruceUp()
             const QString &market = i.key();
             const Coin &qty_to_shortlong = i.value();
             const Coin qty_to_shortlong_abs = qty_to_shortlong.abs();
-            const Coin amount_to_shortlong = spruce.getCurrencyPriceByMarket( market ) * qty_to_shortlong;
+            const Coin amount_to_shortlong = spruce->getCurrencyPriceByMarket( market ) * qty_to_shortlong;
             const Coin amount_to_shortlong_abs = amount_to_shortlong.abs();
             const Coin spruce_active_for_side = positions->getActiveSpruceEquityTotal( market, side );
 
@@ -1798,17 +1847,17 @@ void Engine::onSpruceUp()
             static const int ORDERSIZE_EXPAND_THRESH = 20;
             static const int ORDERSIZE_EXPAND_MAX = 5;
             const bool is_buy = qty_to_shortlong.isZeroOrLess();
-            const Coin order_size_unscaled = spruce.getOrderSize( market );
+            const Coin order_size_unscaled = spruce->getOrderSize( market );
             const Coin order_size = std::min( order_size_unscaled * ORDERSIZE_EXPAND_MAX, std::max( order_size_unscaled, amount_to_shortlong_abs / ORDERSIZE_EXPAND_THRESH ) );
-            const Coin order_max = is_buy ? spruce.getMarketBuyMax( market ) :
-                                            spruce.getMarketSellMax( market );
-            const Coin order_size_limit = order_size_unscaled * spruce.getOrderNice();
+            const Coin order_max = is_buy ? spruce->getMarketBuyMax( market ) :
+                                            spruce->getMarketSellMax( market );
+            const Coin order_size_limit = order_size_unscaled * spruce->getOrderNice();
 
             // get spread price for new spruce order(don't cache because the function generates a random number)
             QPair<Coin,Coin> spread = getSpruceSpread( market, side );
 
             // put prices at spread if pending amount to shortlong is greater than size * order_nice_spreadput
-            if ( amount_to_shortlong_abs - spruce_active_for_side > order_size_unscaled * spruce.getOrderNiceSpreadPut() )
+            if ( amount_to_shortlong_abs - spruce_active_for_side > order_size_unscaled * spruce->getOrderNiceSpreadPut() )
             {
                 const MarketInfo &info = getMarketInfo( market );
                 spread.first = info.highest_buy;
@@ -1852,7 +1901,7 @@ void Engine::onSpruceUp()
             kDebug() << QString( "[Spruce %1] %2 | coeff %3 | qty-to-shortlong %4 | amt-to-shortlong %5 | on-order %6" )
                            .arg( side == SIDE_BUY ? "buys " : "sells" )
                            .arg( market, MARKET_STRING_WIDTH )
-                           .arg( spruce.getLastCoeffForMarket( market ), 12 )
+                           .arg( spruce->getLastCoeffForMarket( market ), 12 )
                            .arg( qty_to_shortlong, 20 )
                            .arg( amount_to_shortlong, 13 )
                            .arg( spruce_active_for_side, 12 );

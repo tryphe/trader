@@ -18,6 +18,10 @@
 #define kDebug QMessageLogger( __FILE__, __LINE__, Q_FUNC_INFO ).debug().noquote
 
 /// global symbols
+static const quint8 ENGINE_BITTREX                          ( 0 );
+static const quint8 ENGINE_BINANCE                          ( 1 );
+static const quint8 ENGINE_POLONIEX                         ( 2 );
+
 static const quint8 SIDE_BUY                                ( 1 );
 static const quint8 SIDE_SELL                               ( 2 );
 
@@ -55,97 +59,78 @@ static const QLatin1String POLONIEX_SUBPATH                 ( "pt" );
 static const QLatin1String BINANCE_SUBPATH                  ( "bt" );
 static const int           MARKET_STRING_WIDTH              ( 10 );
 static const int           PRICE_WIDTH                      ( 17 );
+static const int           ORDER_STRING_SIZE                ( 22 );
 static const QLatin1String DEFAULT_MARKET_STRING_TEMPLATE   ( "%1_%2" );
 
-/// urls/symbols
-#if defined(EXCHANGE_BITTREX)
-    #define REST_OBJECT                                     TrexREST
-    #define EXCHANGE_SUBPATH                                BITTREX_SUBPATH
-    #define _KEY BITTREX_KEY
-    #define _SECRET BITTREX_SECRET
-    static const QLatin1String DEFAULT_FEERATE              ( "0.0025" );
-    static const QLatin1String MINIMUM_ORDER_SIZE           ( "0.00065000" );
-    static const QLatin1String MARKET_STRING_TEMPLATE       ( "%1-%2" );
-    static const QLatin1String EXCHANGE_STR                 ( "Bittrex" );
-    static const int INTERFACE_PORT                         ( 62000 );
-    static const int ORDER_STRING_SIZE                      ( 22 );
-    static const int TIMER_INTERVAL_NAM_SEND                ( 330 );
-    static const int TIMER_INTERVAL_ORDERBOOK               ( 20000 );
-    static const int TIMER_INTERVAL_TICKER                  ( 10000 );
-    static const int SAFETY_DELAY                           ( 8500 );
+// trex symbols
+static const QLatin1String BITTREX_DEFAULT_FEERATE          ( "0.0015" );
+static const QLatin1String BITTREX_MINIMUM_ORDER_SIZE       ( "0.00065000" );
+static const QLatin1String BITTREX_MARKET_STRING_TEMPLATE   ( "%1-%2" );
+static const QLatin1String BITTREX_EXCHANGE_STR             ( "Bittrex" );
+static const int BITTREX_TIMER_INTERVAL_NAM_SEND            ( 330 );
+static const int BITTREX_TIMER_INTERVAL_ORDERBOOK           ( 20000 );
+static const int BITTREX_TIMER_INTERVAL_TICKER              ( 10000 );
+static const int BITTREX_SAFETY_DELAY                       ( 8500 );
 
-    static const QLatin1String TREX_REST_URL                ( "https://bittrex.com/api/v1.1/" );
-    static const QLatin1String TREX_COMMAND_CANCEL          ( "market/cancel" );
-    static const QLatin1String TREX_COMMAND_BUY             ( "market/buylimit" );
-    static const QLatin1String TREX_COMMAND_SELL            ( "market/selllimit" );
-    static const QLatin1String TREX_COMMAND_GET_ORDERS      ( "market/getopenorders" );
-    static const QLatin1String TREX_COMMAND_GET_ORDER       ( "account/getorder" );
-    static const QLatin1String TREX_COMMAND_GET_ORDER_HIST  ( "account/getorderhistory" );
-    static const QLatin1String TREX_COMMAND_GET_BALANCES    ( "account/getbalances" );
-    static const QLatin1String TREX_COMMAND_GET_MARKET_SUMS ( "public/getmarketsummaries" );
-    static const QLatin1String TREX_APIKEY                  ( "apikey" );
-    static const QByteArray TREX_APISIGN                    ( "apisign" );
+static const QLatin1String TREX_REST_URL                    ( "https://bittrex.com/api/v1.1/" );
+static const QLatin1String TREX_COMMAND_CANCEL              ( "market/cancel" );
+static const QLatin1String TREX_COMMAND_BUY                 ( "market/buylimit" );
+static const QLatin1String TREX_COMMAND_SELL                ( "market/selllimit" );
+static const QLatin1String TREX_COMMAND_GET_ORDERS          ( "market/getopenorders" );
+static const QLatin1String TREX_COMMAND_GET_ORDER           ( "account/getorder" );
+static const QLatin1String TREX_COMMAND_GET_ORDER_HIST      ( "account/getorderhistory" );
+static const QLatin1String TREX_COMMAND_GET_BALANCES        ( "account/getbalances" );
+static const QLatin1String TREX_COMMAND_GET_MARKET_SUMS     ( "public/getmarketsummaries" );
+static const QLatin1String TREX_APIKEY                      ( "apikey" );
+static const QByteArray TREX_APISIGN                        ( "apisign" );
 
-#elif defined(EXCHANGE_BINANCE)
-    #define REST_OBJECT                                     BncREST
-    #define EXCHANGE_SUBPATH                                BINANCE_SUBPATH
-    #define _KEY BINANCE_KEY
-    #define _SECRET BINANCE_SECRET
-    static const QLatin1String DEFAULT_FEERATE              ( "0.001" );
-    static const QLatin1String MINIMUM_ORDER_SIZE           ( "0.00105000" );
-    static const QLatin1String MARKET_STRING_TEMPLATE       ( "%2%1" );
-    static const QLatin1String EXCHANGE_STR                 ( "Binance" );
-    static const int INTERFACE_PORT                         ( 62001 );
-    static const int ORDER_STRING_SIZE                      ( 15 );
-    static const int TIMER_INTERVAL_NAM_SEND                ( 111 );
-    static const int TIMER_INTERVAL_ORDERBOOK               ( 12000 );
-    static const int TIMER_INTERVAL_TICKER                  ( 10000 );
-    static const int SAFETY_DELAY                           ( 2000 );
+// binance symbols
+static const QLatin1String BINANCE_DEFAULT_FEERATE          ( "0.001" );
+static const QLatin1String BINANCE_MINIMUM_ORDER_SIZE       ( "0.00105000" );
+static const QLatin1String BINANCE_MARKET_STRING_TEMPLATE   ( "%2%1" );
+static const QLatin1String BINANCE_EXCHANGE_STR             ( "Binance" );
+static const int BINANCE_TIMER_INTERVAL_NAM_SEND            ( 111 );
+static const int BINANCE_TIMER_INTERVAL_ORDERBOOK           ( 12000 );
+static const int BINANCE_TIMER_INTERVAL_TICKER              ( 10000 );
+static const int BINANCE_SAFETY_DELAY                       ( 2000 );
 
-    static const QLatin1String BNC_URL                      ( "https://api.binance.com/api/v3/" );
-    static const QLatin1String BNC_URL_WSS                  ( "wss://api.binance.com" );
-    static const QLatin1String BNC_COMMAND_GETORDERS        ( "sign-get-openOrders" );
-    static const QLatin1String BNC_COMMAND_BUYSELL          ( "sign-post-order" );
-    static const QLatin1String BNC_COMMAND_CANCEL           ( "sign-delete-order" );
-    static const QLatin1String BNC_COMMAND_GETTICKER        ( "get-ticker/bookTicker" );
-    static const QLatin1String BNC_COMMAND_GETEXCHANGEINFO  ( "get-v1-exchangeInfo" );
-    static const QLatin1String BNC_COMMAND_GETBALANCES      ( "sign-get-account" );
-    static const QLatin1String BNC_RECVWINDOW               ( "recvWindow" );
-    static const QLatin1String BNC_TIMESTAMP                ( "timestamp" );
-    static const QLatin1String BNC_SIGNATURE                ( "signature" );
-    static const QByteArray BNC_APIKEY                      ( "X-MBX-APIKEY" );
+static const QLatin1String BNC_URL                          ( "https://api.binance.com/api/v3/" );
+static const QLatin1String BNC_URL_WSS                      ( "wss://api.binance.com" );
+static const QLatin1String BNC_COMMAND_GETORDERS            ( "sign-get-openOrders" );
+static const QLatin1String BNC_COMMAND_BUYSELL              ( "sign-post-order" );
+static const QLatin1String BNC_COMMAND_CANCEL               ( "sign-delete-order" );
+static const QLatin1String BNC_COMMAND_GETTICKER            ( "get-ticker/bookTicker" );
+static const QLatin1String BNC_COMMAND_GETEXCHANGEINFO      ( "get-v1-exchangeInfo" );
+static const QLatin1String BNC_COMMAND_GETBALANCES          ( "sign-get-account" );
+static const QLatin1String BNC_RECVWINDOW                   ( "recvWindow" );
+static const QLatin1String BNC_TIMESTAMP                    ( "timestamp" );
+static const QLatin1String BNC_SIGNATURE                    ( "signature" );
+static const QByteArray BNC_APIKEY                          ( "X-MBX-APIKEY" );
 
-#elif defined(EXCHANGE_POLONIEX)
-    #define REST_OBJECT                                     PoloREST
-    #define EXCHANGE_SUBPATH                                POLONIEX_SUBPATH
-    #define _KEY POLONIEX_KEY
-    #define _SECRET POLONIEX_SECRET
-    static const QLatin1String DEFAULT_FEERATE              ( "0.001" );
-    static const QLatin1String MINIMUM_ORDER_SIZE           ( "0.00011000" );
-    static const QLatin1String MARKET_STRING_TEMPLATE       ( "%1_%2" );
-    static const QLatin1String EXCHANGE_STR                 ( "Poloniex" );
-    static const int INTERFACE_PORT                         ( 62002 );
-    static const int ORDER_STRING_SIZE                      ( 11 );
-    static const int TIMER_INTERVAL_NAM_SEND                ( 200 );
-    static const int TIMER_INTERVAL_ORDERBOOK               ( 5000 );
-    static const int TIMER_INTERVAL_TICKER                  ( 10000 );
-    static const int SAFETY_DELAY                           ( 2000 );
+// polo symbols
+static const QLatin1String POLONIEX_DEFAULT_FEERATE         ( "0.001" );
+static const QLatin1String POLONIEX_MINIMUM_ORDER_SIZE      ( "0.00011000" );
+static const QLatin1String POLONIEX_MARKET_STRING_TEMPLATE  ( "%1_%2" );
+static const QLatin1String POLONIEX_EXCHANGE_STR            ( "Poloniex" );
+static const int POLONIEX_TIMER_INTERVAL_NAM_SEND           ( 200 );
+static const int POLONIEX_TIMER_INTERVAL_ORDERBOOK          ( 5000 );
+static const int POLONIEX_TIMER_INTERVAL_TICKER             ( 10000 );
+static const int POLONIEX_SAFETY_DELAY                      ( 2000 );
 
-    static const QLatin1String POLO_URL_TRADE               ( "https://poloniex.com/tradingApi" );
-    static const QLatin1String POLO_URL_PUBLIC              ( "https://poloniex.com/public" );
-    static const QLatin1String POLO_URL_PRIVATE             ( "https://poloniex.com/private" );
-    static const QLatin1String POLO_URL_WSS                 ( "wss://api2.poloniex.com/" );
+static const QLatin1String POLO_URL_TRADE               ( "https://poloniex.com/tradingApi" );
+static const QLatin1String POLO_URL_PUBLIC              ( "https://poloniex.com/public" );
+static const QLatin1String POLO_URL_PRIVATE             ( "https://poloniex.com/private" );
+static const QLatin1String POLO_URL_WSS                 ( "wss://api2.poloniex.com/" );
 
-    static const QLatin1String POLO_COMMAND_GETCHARTDATA    ( "returnChartData" );
-    static const QLatin1String POLO_COMMAND_GETBALANCES     ( "returnCompleteBalances" );
-    static const QLatin1String POLO_COMMAND_GETORDERS       ( "returnOpenOrders" );
-    static const QLatin1String POLO_COMMAND_GETORDERS_ARGS  ( "currencyPair=all" );
-    static const QLatin1String POLO_COMMAND_CANCEL          ( "cancelOrder" );
-    static const QLatin1String POLO_COMMAND_CANCEL_ARGS     ( "orderNumber=" );
-    static const QLatin1String POLO_COMMAND_GETBOOKS        ( "returnOrderBook" );
-    static const QLatin1String POLO_COMMAND_GETBOOKS_ARGS   ( "currencyPair=all&depth=1" );
-    static const QLatin1String POLO_COMMAND_GETFEE          ( "returnFeeInfo" );
-#endif
+static const QLatin1String POLO_COMMAND_GETCHARTDATA    ( "returnChartData" );
+static const QLatin1String POLO_COMMAND_GETBALANCES     ( "returnCompleteBalances" );
+static const QLatin1String POLO_COMMAND_GETORDERS       ( "returnOpenOrders" );
+static const QLatin1String POLO_COMMAND_GETORDERS_ARGS  ( "currencyPair=all" );
+static const QLatin1String POLO_COMMAND_CANCEL          ( "cancelOrder" );
+static const QLatin1String POLO_COMMAND_CANCEL_ARGS     ( "orderNumber=" );
+static const QLatin1String POLO_COMMAND_GETBOOKS        ( "returnOrderBook" );
+static const QLatin1String POLO_COMMAND_GETBOOKS_ARGS   ( "currencyPair=all&depth=1" );
+static const QLatin1String POLO_COMMAND_GETFEE          ( "returnFeeInfo" );
 
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -179,8 +164,7 @@ static inline const QString printVectorqint32( const QVector<qint32> &vec )
 
 static inline QString getBuildString()
 {
-    return QString( "exchange[%1]  bot version[%2]  qt[%3]  gmp[%4]  ssl[%5]  build time[%6 %7]" )
-            .arg( EXCHANGE_STR )
+    return QString( "bot version[%1]  qt[%2]  gmp[%3]  ssl[%4]  build time[%5 %6]" )
             .arg( BUILD_VERSION )
             .arg( QT_VERSION_STR )
             .arg( __gmp_version )
@@ -210,39 +194,32 @@ static inline QByteArray getBncSignature( const QByteArray &body, const QByteArr
     return QMessageAuthenticationCode::hash( body, secret, QCryptographicHash::Sha256 ).toHex();
 }
 
-static inline const QString getUniversalPath()
-{
-    return QStandardPaths::writableLocation( QStandardPaths::ConfigLocation ) + QDir::separator() + "trader";
-}
-
-static inline const QString getCostFunctionCachePath()
-{
-    return getUniversalPath() + QDir::separator() + "cache";
-}
-
 static inline const QString getConfigPath()
 {
     return QStandardPaths::writableLocation( QStandardPaths::ConfigLocation );
 }
 
-static inline const QString getTraderPath( QString subpath = EXCHANGE_SUBPATH )
+static inline const QString getTraderPath()
 {
-    return getConfigPath() + QDir::separator() + subpath;
+    return getConfigPath() + QDir::separator() + "trader";
 }
 
-static inline const QString getOldLogsPath()
+static inline const QString getBittrexSettingsPath()
 {
-    return getTraderPath() + QDir::separator() + "logs_old";
+    return getTraderPath() + QDir::separator() + "bittrex.settings";
+}
+static inline const QString getBinanceSettingsPath()
+{
+    return getTraderPath() + QDir::separator() + "binance.settings";
+}
+static inline const QString getPoloniexSettingsPath()
+{
+    return getTraderPath() + QDir::separator() + "poloniex.settings";
 }
 
-static inline const QString getIPCPath( QString subpath = EXCHANGE_SUBPATH )
+static inline const QString getIPCPath()
 {
-    return getTraderPath( subpath ) + QDir::separator() + "trader.ipc";
-}
-
-static inline const QString getMarketSettingsPath()
-{
-    return getTraderPath() + QDir::separator() + "settings.txt";
+    return getTraderPath() + QDir::separator() + "trader.ipc";
 }
 
 static inline const QString getMarketStatsPath()
@@ -250,25 +227,31 @@ static inline const QString getMarketStatsPath()
     return getTraderPath() + QDir::separator() + "stats";
 }
 
+static inline const QString getCostFunctionCachePath()
+{
+    return getTraderPath() + QDir::separator() + "cache";
+}
+
+static inline const QString getOldLogsPath()
+{
+    return getTraderPath() + QDir::separator() + "logs_old";
+}
+
 static inline void ensurePath()
 {
     // get dir ~/.config/<trader_dir>
     QString trader_path = getTraderPath();
-    QString config_path = getConfigPath();
     QString oldlogs_path = getOldLogsPath();
-    QString universal_path = getUniversalPath();
     QString function_cache_path = getCostFunctionCachePath();
 
     // make sure ~/.config and trader_path exists (trader_path is a subdirectory of config_path)
     QDir dir;
-    bool ret0 = dir.exists( config_path ) || dir.mkdir( config_path );
-    bool ret1 = dir.exists( trader_path ) || dir.mkdir( trader_path );
-    bool ret2 = dir.exists( oldlogs_path ) || dir.mkdir( oldlogs_path );
-    bool ret3 = dir.exists( universal_path ) || dir.mkdir( universal_path );
-    bool ret4 = dir.exists( function_cache_path ) || dir.mkdir( function_cache_path );
+    bool ret0 = dir.exists( trader_path ) || dir.mkdir( trader_path );
+    bool ret1 = dir.exists( oldlogs_path ) || dir.mkdir( oldlogs_path );
+    bool ret2 = dir.exists( function_cache_path ) || dir.mkdir( function_cache_path );
 
     // if we failed, we have the wrong file permissions to continue
-    if ( !ret0 || !ret1 || !ret2 || !ret3 || !ret4 )
+    if ( !ret0 || !ret1 || !ret2 )
         qCritical() << "local error: could not open config path" << trader_path << "(check file permissions)";
 }
 
@@ -311,19 +294,6 @@ static inline void fillInColors( QString &s )
     s.replace( ">>>grn<<<", "\x1b[32m" );
     s.replace( ">>>none<<<", "\x1b[0m" );
 }
-
-
-static inline QString getOrderString( const QString &order_id )
-{
-    // for bittrex, shorten the id a bit by turning it into base64
-//#if defined(EXCHANGE_BITTREX)
-//    QByteArray b = QByteArray::fromHex( QString( order_id ).remove( QChar( '-' ) ).toUtf8() );
-//    return QString( b.toBase64( QByteArray::OmitTrailingEquals ) );
-//#else
-    return order_id;
-//#endif
-}
-
 
 static void messageOutput( QtMsgType type, const QMessageLogContext &context, const QString &msg )
 {

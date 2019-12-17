@@ -3,8 +3,6 @@
 
 #include "build-config.h"
 
-#if defined(EXCHANGE_BINANCE)
-
 #include <QObject>
 #include <QQueue>
 #include <QHash>
@@ -22,6 +20,8 @@ class QWebSocket;
 class BncREST : public BaseREST
 {
     Q_OBJECT
+
+    friend class CommandRunner;
 
 public:
     explicit BncREST( Engine *_engine );
@@ -72,9 +72,12 @@ private:
            ratelimit_minute{ 600 }, // weight limit
            ratelimit_day{ 100000 }; // orders limit
 
+    QNetworkAccessManager *nam{ nullptr };
+    QTimer *send_timer{ nullptr };
+    QTimer *orderbook_timer{ nullptr };
+    QTimer *ticker_timer{ nullptr };
     QTimer *exchangeinfo_timer{ nullptr };
     QWebSocket *wss{ nullptr };
 };
 
-#endif // EXCHANGE_BINANCE
 #endif // BNCREST_H

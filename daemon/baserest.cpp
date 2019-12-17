@@ -10,34 +10,11 @@
 #include <QTimer>
 #include <QThread>
 
-BaseREST::BaseREST( Engine *_engine, REST_OBJECT *_rest )
+BaseREST::BaseREST( Engine *_engine )
     : QObject( nullptr ),
-      rest( _rest ),
       engine( _engine )
 {
     kDebug() << "[BaseREST]";
-    nam = new QNetworkAccessManager();
-    connect( nam, &QNetworkAccessManager::finished, rest, &REST_OBJECT::onNamReply );
-
-    keystore.setKeys( _KEY, _SECRET );
-
-    // we use this to send the requests at a predictable rate
-    send_timer = new QTimer( this );
-    connect( send_timer, &QTimer::timeout, rest, &REST_OBJECT::sendNamQueue );
-    send_timer->setTimerType( Qt::CoarseTimer );
-    send_timer->start( TIMER_INTERVAL_NAM_SEND ); // minimum threshold 200 or so
-
-    // this timer requests the order book
-    orderbook_timer = new QTimer( this );
-    connect( orderbook_timer, &QTimer::timeout, rest, &REST_OBJECT::onCheckBotOrders );
-    orderbook_timer->setTimerType( Qt::VeryCoarseTimer );
-    orderbook_timer->start( TIMER_INTERVAL_ORDERBOOK );
-
-    // this timer reads the lo_sell and hi_buy prices for all coins
-    ticker_timer = new QTimer( this );
-    connect( ticker_timer, &QTimer::timeout, rest, &REST_OBJECT::onCheckTicker );
-    ticker_timer->setTimerType( Qt::VeryCoarseTimer );
-    ticker_timer->start( TIMER_INTERVAL_TICKER );
 
     // this timer checks for nam requests that have been queued too long
     timeout_timer = new QTimer( this );
@@ -65,11 +42,8 @@ BaseREST::~BaseREST()
     request_nonce = 0;
 
     // stop timers
-    send_timer->stop();
     timeout_timer->stop();
-    orderbook_timer->stop();
     diverge_converge_timer->stop();
-    ticker_timer->stop();
     spruce_timer->stop();
 
     // clear network replies
@@ -84,25 +58,14 @@ BaseREST::~BaseREST()
     while ( nam_queue.size() > 0 )
         delete nam_queue.takeFirst();
 
-    // force nam to close
-    nam->thread()->exit();
-    delete nam;
-    nam = nullptr;
-
-    delete send_timer;
     delete timeout_timer;
-    delete orderbook_timer;
     delete diverge_converge_timer;
-    delete ticker_timer;
     delete spruce_timer;
-    send_timer = nullptr;
+
     timeout_timer = nullptr;
-    orderbook_timer = nullptr;
     diverge_converge_timer = nullptr;
-    ticker_timer = nullptr;
     spruce_timer = nullptr;
 
-    stats = nullptr;
     engine = nullptr;
 
     kDebug() << "[BaseREST] done.";
@@ -125,16 +88,17 @@ void BaseREST::sendRequest( QString api_command, QString body, Position *pos, qu
     // append to packet queue
     nam_queue.append( delayed_request );
 
-    if ( !send_timer )
-        return;
+    // early send, disabled for now
+//    if ( !send_timer )
+//        return;
 
-    // if we didn't send a command lately, just trigger the timer and restart the interval
-    const qint64 current_time = QDateTime::currentMSecsSinceEpoch();
-    if ( last_request_sent_ms <= current_time - send_timer->interval() )
-    {
-        engine->getRest()->sendNamQueue();
-        send_timer->start();
-    }
+//    // if we didn't send a command lately, just trigger the timer and restart the interval
+//    const qint64 current_time = QDateTime::currentMSecsSinceEpoch();
+//    if ( last_request_sent_ms <= current_time - send_timer->interval() )
+//    {
+//        engine->sendNamQueue();
+//        send_timer->start();
+//    }
 }
 
 bool BaseREST::isKeyOrSecretUnset() const

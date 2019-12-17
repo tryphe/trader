@@ -3,8 +3,6 @@
 
 #include "build-config.h"
 
-#if defined(EXCHANGE_POLONIEX)
-
 #include <QObject>
 #include <QQueue>
 #include <QHash>
@@ -23,6 +21,8 @@ class QWebSocket;
 class PoloREST : public BaseREST
 {
     Q_OBJECT
+
+    friend class CommandRunner;
 
 public:
     explicit PoloREST( Engine *_engine );
@@ -80,10 +80,13 @@ private:
 
     qint64 poloniex_throttle_time{ 0 }; // when we should wait until to sent the next request
 
+    QNetworkAccessManager *nam{ nullptr };
+    QTimer *send_timer{ nullptr };
+    QTimer *orderbook_timer{ nullptr };
+    QTimer *ticker_timer{ nullptr };
     QTimer *fee_timer{ nullptr };
     QTimer *wss_timer{ nullptr };
     QWebSocket *wss{ nullptr };
 };
 
-#endif // EXCHANGE_POLONIEX
 #endif // POLOREST_H

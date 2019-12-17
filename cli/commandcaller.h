@@ -9,7 +9,7 @@ class CommandCaller : public QLocalSocket
     Q_OBJECT
 
 public:
-    explicit CommandCaller( QString exchange, QByteArray command, QObject *parent = nullptr );
+    explicit CommandCaller( const QByteArray &command, QObject *parent = nullptr );
 };
 
 #endif // COMMANDCALLER_H

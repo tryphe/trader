@@ -1,10 +1,7 @@
 #include "trexrest.h"
-
-#if defined(EXCHANGE_BITTREX)
-
 #include "position.h"
 #include "positionman.h"
-#include "stats.h"
+#include "alphatracker.h"
 #include "engine.h"
 
 #include <QTimer>
@@ -20,22 +17,63 @@
 #include <QDateTime>
 
 TrexREST::TrexREST( Engine *_engine )
-  : BaseREST( _engine, this )
+  : BaseREST( _engine )
 {
     kDebug() << "[TrexREST]";
+
+    nam = new QNetworkAccessManager();
+    connect( nam, &QNetworkAccessManager::finished, this, &TrexREST::onNamReply );
+
+    // we use this to send the requests at a predictable rate
+    send_timer = new QTimer( this );
+    connect( send_timer, &QTimer::timeout, this, &TrexREST::sendNamQueue );
+    send_timer->setTimerType( Qt::CoarseTimer );
+    send_timer->start( BITTREX_TIMER_INTERVAL_NAM_SEND ); // minimum threshold 200 or so
+
+    // this timer requests the order book
+    orderbook_timer = new QTimer( this );
+    connect( orderbook_timer, &QTimer::timeout, this, &TrexREST::onCheckBotOrders );
+    orderbook_timer->setTimerType( Qt::VeryCoarseTimer );
+    orderbook_timer->start( BITTREX_TIMER_INTERVAL_ORDERBOOK );
+
+    // this timer reads the lo_sell and hi_buy prices for all coins
+    ticker_timer = new QTimer( this );
+    connect( ticker_timer, &QTimer::timeout, this, &TrexREST::onCheckTicker );
+    ticker_timer->setTimerType( Qt::VeryCoarseTimer );
+    ticker_timer->start( BITTREX_TIMER_INTERVAL_TICKER );
 }
 
 TrexREST::~TrexREST()
 {
+    send_timer->stop();
+    orderbook_timer->stop();
+    ticker_timer->stop();
     order_history_timer->stop();
+
+    delete send_timer;
+    delete orderbook_timer;
+    delete ticker_timer;
     delete order_history_timer;
+    send_timer = nullptr;
+    orderbook_timer = nullptr;
+    ticker_timer = nullptr;
     order_history_timer = nullptr;
+
+    // force nam to close
+    nam->thread()->exit();
+    delete nam;
+    nam = nullptr;
 
     kDebug() << "[TrexREST] done.";
 }
 
 void TrexREST::init()
 {
+    engine->loadStats();
+    engine->loadSettings();
+
+    keystore.setKeys( BITTREX_KEY, BITTREX_SECRET );
+
     BaseREST::limit_commands_queued = 20; // stop checks if we are over this many commands queued
     BaseREST::limit_commands_queued_dc_check = 7; // exit dc check if we are over this many commands queued
     BaseREST::limit_commands_sent = 45; // stop checks if we are over this many commands sent
@@ -243,7 +281,7 @@ void TrexREST::sendBuySell( Position *const &pos, bool quiet )
 
     // serialize some request options into url format
     QUrlQuery query;
-    query.addQueryItem( "market", pos->market.toExchangeString() );
+    query.addQueryItem( "market", pos->market.toExchangeString( ENGINE_BITTREX ) );
     query.addQueryItem( "rate", pos->price );
     query.addQueryItem( "quantity", pos->quantity );
 
@@ -711,7 +749,7 @@ void TrexREST::parseGetOrder( const QJsonObject &order )
                                                                                      : SIDE_BUY;
 
             // TODO: FIX THIS (we don't know if it's a spruce order, but assume for now)
-            stats->updateStats( "getorder", market, order_id, side, "spruce", btc_amount_filled, price, btc_commission, true );
+            engine->updateStatsAndPrintFill( "getorder", market, order_id, side, "spruce", btc_amount_filled, price, btc_commission, true );
         }
 
         return;
@@ -840,5 +878,3 @@ void TrexREST::parseOrderHistory( const QJsonObject &obj )
     // process the orders
     engine->processFilledOrders( filled_orders, FILL_HISTORY );
 }
-
-#endif // EXCHANGE_BITTREX

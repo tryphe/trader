@@ -10,10 +10,15 @@
 #include <QObject>
 #include <QNetworkReply>
 
-class REST_OBJECT;
-class Stats;
+class CommandRunner;
+class CommandListener;
+class AlphaTracker;
 class PositionMan;
 class EngineSettings;
+
+class TrexREST;
+class BncREST;
+class PoloREST;
 
 class Engine : public QObject
 {
@@ -22,7 +27,7 @@ class Engine : public QObject
     friend class EngineTest;
 
 public:
-    explicit Engine();
+    explicit Engine( const quint8 _engine_type );
     ~Engine();
 
     Position *addPosition( QString market_input, quint8 side, QString buy_price , QString sell_price,
@@ -42,17 +47,16 @@ public:
     void saveStats();
     void loadStats();
 
-    Spruce &getSpruce() { return spruce; }
+    Spruce *getSpruce() { return spruce; }
     PositionMan *getPositionMan() const { return positions; }
     EngineSettings *getSettings() const { return settings; }
 
-    // utility functions
-    void setStats( Stats *_stats ) { stats = _stats; }
-    Stats *getStats() const { return stats; }
-    void printInternal();
+    QString getSettingsPath() const { return engine_type == ENGINE_BITTREX  ? Global::getBittrexSettingsPath() :
+                                             engine_type == ENGINE_BINANCE  ? Global::getBinanceSettingsPath() :
+                                             engine_type == ENGINE_POLONIEX ? Global::getPoloniexSettingsPath() :
+                                                                               QString(); }
 
-    void setRest( REST_OBJECT *_rest ) { rest = _rest; }
-    REST_OBJECT *getRest() const { return rest; }
+    void printInternal();
 
     void setMaintenanceTime( qint64 time ) { maintenance_time = time; }
     qint64 getMaintenanceTime() const { return maintenance_time; }
@@ -62,7 +66,6 @@ public:
     QHash<QString, MarketInfo> &getMarketInfoStructure() { return market_info; }
     MarketInfo &getMarketInfo( const QString &market ) { return market_info[ market ]; }
 
-    bool hasWSSInterface() const { return wss_interface; }
     void setTesting( bool testing ) { is_testing = testing; }
     bool isTesting() const { return is_testing; }
     void setVerbosity( int v ) { verbosity = v; }
@@ -73,7 +76,23 @@ public:
 
     void findBetterPrice( Position *const &pos );
 
+    void sendBuySell( Position *const &pos, bool quiet = false );
+    void sendCancel( const QString &order_number, Position *const &pos );
+    void sendNamQueue();
+    bool yieldToFlowControl();
+
+    void updateStatsAndPrintFill( const QString &fill_type, const Market &market, const QString &order_id, const quint8 side,
+                                  const QString &strategy_tag, const Coin &btc_amount, const Coin &price, const Coin &btc_commission,
+                                  bool partial_fill );
+
     QMultiMap<qint64/*time thresh*/,QString/*order_id*/> cancelled_orders_for_polling;
+
+    quint8 engine_type{ 0 };
+    TrexREST *rest_trex{ nullptr };
+    BncREST *rest_bnc{ nullptr };
+    PoloREST *rest_polo{ nullptr };
+    AlphaTracker *alpha{ nullptr };
+    Spruce *spruce{ nullptr };
 
 signals:
     void newEngineMessage( QString &str ); // new wss message
@@ -101,8 +120,6 @@ private:
     void fillNQ( const QString &order_id, qint8 fill_type, quint8 extra_data = 0 );
 
     QPair<Coin,Coin> getSpreadForMarket( const QString &market );
-
-    Spruce spruce;
     QHash<QString, MarketInfo> market_info;
     QHash<QString/*order_id*/, qint64/*seen_time*/> order_grace_times; // record "seen" time to allow for stray grace period
 
@@ -113,15 +130,12 @@ private:
     bool maintenance_triggered{ false };
     bool is_testing{ false };
     int verbosity{ 1 }; // 0 = none, 1 = normal, 2 = extra
-    bool wss_interface{ false };
 
     PositionMan *positions{ nullptr };
     EngineSettings *settings{ nullptr };
+
     QTimer *maintenance_timer{ nullptr };
     QTimer *autosave_timer{ nullptr };
-
-    REST_OBJECT *rest{ nullptr };
-    Stats *stats{ nullptr };
 };
 
 #endif // ENGINE_H

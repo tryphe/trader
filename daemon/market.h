@@ -18,7 +18,7 @@ public:
     bool isValid() const;
 
     operator QString() const; // obtain universal string
-    QString toExchangeString() const; // obtain exchange-specific string
+    QString toExchangeString( const quint8 engine_type ) const; // obtain exchange-specific string
 
     const QString &getBase() const { return base; }
     const QString &getQuote() const { return quote; }
@@ -88,12 +88,10 @@ struct MarketInfo
     // per-market settings
     Coin price_ticksize{ CoinAmount::SATOSHI }; // used to find new prices and pass binance filter PRICE_FILTER "tickSize"
 
-#if defined(EXCHANGE_BINANCE)
-    // used to pass filter PERCENT_PRICE
+    // Binance only - used to pass filter PERCENT_PRICE
     Coin price_min_mul{ 0.2 };
     Coin price_max_mul{ 5.0 };
     Coin quantity_ticksize{ CoinAmount::SATOSHI }; // used to pass filter LOT_SIZE "stepSize"
-#endif
 };
 
 #endif // MARKET_H

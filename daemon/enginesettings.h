@@ -6,10 +6,30 @@
 
 struct EngineSettings
 {
-    explicit EngineSettings() {}
+    explicit EngineSettings( const quint8 _engine_type )
+    {
+        if ( _engine_type == ENGINE_BITTREX )
+        {
+            fee = BITTREX_DEFAULT_FEERATE;
+            safety_delay_time = BITTREX_SAFETY_DELAY;
+            ticker_safety_delay_time = BITTREX_SAFETY_DELAY;
+        }
+        else if ( _engine_type == ENGINE_BINANCE )
+        {
+            fee = BINANCE_DEFAULT_FEERATE;
+            safety_delay_time = BINANCE_SAFETY_DELAY;
+            ticker_safety_delay_time = BINANCE_SAFETY_DELAY;
+        }
+        else if ( _engine_type == ENGINE_POLONIEX )
+        {
+            fee = POLONIEX_DEFAULT_FEERATE;
+            safety_delay_time = POLONIEX_SAFETY_DELAY;
+            ticker_safety_delay_time = POLONIEX_SAFETY_DELAY;
+        }
+    }
     ~EngineSettings() {}
 
-    Coin fee{ DEFAULT_FEERATE };
+    Coin fee;
 
     // global settings (probably shouldn't be modified)
     bool is_chatty{ false };
@@ -23,8 +43,8 @@ struct EngineSettings
     qint64 request_timeout{ 3 * 60000 }; // how long before we resend most requests
     qint64 cancel_timeout{ 5 * 60000 }; // how long before we resend a cancel request
     qint64 stray_grace_time_limit{ 10 * 60000 }; // how long before we cancel stray orders, if enabled
-    qint64 safety_delay_time{ SAFETY_DELAY }; // safety delay, should be more than your ping by a second or two
-    qint64 ticker_safety_delay_time{ SAFETY_DELAY }; // ^
+    qint64 safety_delay_time; // safety delay, should be more than your ping by a second or two
+    qint64 ticker_safety_delay_time; // ^
 };
 
 #endif // ENGINESETTINGS_H

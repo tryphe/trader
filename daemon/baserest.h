@@ -18,11 +18,10 @@ class Stats;
 class Engine;
 class QTimer;
 class Position;
-class REST_OBJECT;
 
 struct BaseREST : public QObject
 {
-    explicit BaseREST( Engine *_engine , REST_OBJECT *_rest);
+    explicit BaseREST( Engine *_engine );
     ~BaseREST();
 
     bool yieldToFlowControl() const;
@@ -59,18 +58,11 @@ struct BaseREST : public QObject
     qint64 orders_stale_trip_count{ 0 };
     qint64 books_stale_trip_count{ 0 };
 
-    QTimer *send_timer{ nullptr };
     QTimer *timeout_timer{ nullptr };
-    QTimer *orderbook_timer{ nullptr };
     QTimer *diverge_converge_timer{ nullptr };
-    QTimer *ticker_timer{ nullptr };
     QTimer *spruce_timer{ nullptr };
 
-    QNetworkAccessManager *nam{ nullptr };
-    REST_OBJECT *rest;
-    Stats *stats{ nullptr }; // note: initialization happens out of class
     Engine *engine{ nullptr };
 };
-
 
 #endif // BASEREST_H

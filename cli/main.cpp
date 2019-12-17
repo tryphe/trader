@@ -10,13 +10,14 @@ int main( int argc, char *argv[] )
 
     // read args
     QStringList args = QCoreApplication::arguments();
-    args.removeFirst(); // remove application name
+
+    // strip binary name
+    args.removeFirst();
 
     // form arguments for command caller
-    QString exchange = args.size() == 0 ? QLatin1String() : args.takeFirst();
     QString joined = args.join( QChar( ' ' ) );
 
-    CommandCaller c( exchange, joined.toLocal8Bit() );
+    CommandCaller c( joined.toLocal8Bit() );
 
     return 0;
 }

@@ -3,8 +3,6 @@
 
 #include "build-config.h"
 
-#if defined(EXCHANGE_BITTREX)
-
 #include <QObject>
 #include <QQueue>
 #include <QHash>
@@ -23,6 +21,8 @@ class QWebSocket;
 class TrexREST : public BaseREST
 {
     Q_OBJECT
+
+    friend class CommandRunner;
 
 public:
     explicit TrexREST( Engine *_engine );
@@ -61,8 +61,11 @@ public:
 private:
     qint64 order_history_update_time{ 0 };
 
+    QNetworkAccessManager *nam{ nullptr };
+    QTimer *send_timer{ nullptr };
+    QTimer *orderbook_timer{ nullptr };
+    QTimer *ticker_timer{ nullptr };
     QTimer *order_history_timer{ nullptr };
 };
 
-#endif // EXCHANGE_BITTREX
 #endif // TREXREST_H

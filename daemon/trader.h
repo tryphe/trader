@@ -10,9 +10,12 @@ class CommandListener;
 class FallbackListener;
 class WSSServer;
 
-class Stats;
+class AlphaTracker;
+class Spruce;
 class Engine;
-class REST_OBJECT;
+class TrexREST;
+class BncREST;
+class PoloREST;
 
 class Trader : public QObject
 {
@@ -23,17 +26,25 @@ public:
     ~Trader();
 
 public slots:
+    void handleCommand( QString &s );
     void handleExitSignal();
 
 private:
-    CommandRunner *runner{ nullptr };
-    CommandListener *listener{ nullptr };
-    FallbackListener *listener_fallback{ nullptr };
-    WSSServer *wss_server{ nullptr };
+    CommandListener *command_listener{ nullptr };
+    CommandRunner *command_runner_trex{ nullptr };
+    CommandRunner *command_runner_bnc{ nullptr };
+    CommandRunner *command_runner_polo{ nullptr };
 
-    Stats *stats{ nullptr };
-    Engine *engine{ nullptr };
-    REST_OBJECT *rest{ nullptr };
+    AlphaTracker *alpha{ nullptr };
+    Spruce *spruce{ nullptr };
+
+    Engine* engine_trex{ nullptr };
+    Engine* engine_bnc{ nullptr };
+    Engine* engine_polo{ nullptr };
+
+    TrexREST *rest_trex{ nullptr };
+    BncREST *rest_bnc{ nullptr };
+    PoloREST *rest_polo{ nullptr };
 };
 
 #endif // TREXTRADER_H

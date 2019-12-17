@@ -3,33 +3,22 @@
 
 #include <QCoreApplication>
 
-CommandCaller::CommandCaller( QString exchange, QByteArray command, QObject *parent )
+CommandCaller::CommandCaller( const QByteArray &command, QObject *parent )
     : QLocalSocket( parent )
 {
-    // make lowercase
-    exchange = exchange.toLower();
-
-    // parse the first argument as the daemon target
-    if ( exchange == "binance" ) exchange = BINANCE_SUBPATH;
-    else if ( exchange == "bittrex" ) exchange = BITTREX_SUBPATH;
-    else if ( exchange == "poloniex" ) exchange = POLONIEX_SUBPATH;
-    else
-    {
-        qDebug() << "error: an incorrect exchange was given, use `trader-cli <bittrex|poloniex|binance> <command>`";
-        return;
-    }
-
-    QString path = Global::getIPCPath( exchange );
-    QLocalSocket::connectToServer( path );
+    // open ipc
+    const QString ipc_path = Global::getIPCPath();
+    QLocalSocket::connectToServer( ipc_path );
     QLocalSocket::waitForConnected();
 
+    // send command
     if ( state() == QLocalSocket::ConnectedState )
     {
         QLocalSocket::write( command );
         QLocalSocket::flush();
         QLocalSocket::close();
     }
-    else
+    else // abort if we didn't connect
     {
         qDebug() << "error: failed to send command:" << QLocalSocket::errorString();
     }

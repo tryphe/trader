@@ -43,6 +43,8 @@ public:
     explicit Spruce();
     ~Spruce();
 
+    void clear();
+
     void setBaseCurrency( QString currency ) { base_currency = currency; }
     QString getBaseCurrency() const { return base_currency; }
     void setCurrencyWeight( QString currency, Coin weight );
@@ -66,6 +68,7 @@ public:
     void addStartNode( QString _currency, QString _quantity, QString _price );
     void addLiveNode( QString _currency, QString _price );
     void clearLiveNodes();
+    void clearStartNodes();
 
     bool calculateAmountToShortLong();
     Coin getQuantityToShortLongNow( const QString &market );
@@ -104,6 +107,13 @@ public:
 
     Coin getEquityNow( QString currency );
     Coin getLastCoeffForMarket( const QString &market ) const;
+
+    static inline Coin getUniversalMinOrderSize()
+    {
+        return std::max( Coin( BITTREX_MINIMUM_ORDER_SIZE ),
+                         std::max( Coin( BINANCE_MINIMUM_ORDER_SIZE ), Coin( POLONIEX_MINIMUM_ORDER_SIZE ) )
+                         );
+    }
 
 private:
     bool normalizeEquity();

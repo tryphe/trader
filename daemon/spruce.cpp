@@ -30,6 +30,27 @@ Spruce::~Spruce()
     clearLiveNodes();
 }
 
+void Spruce::clear()
+{
+    Spruce();
+
+    clearLiveNodes();
+    clearStartNodes();
+
+    m_currency_profile_u.clear();
+    m_currency_reserve.clear();
+    m_start_coeffs = m_relative_coeffs = RelativeCoeffs();
+    m_quantity_to_shortlong_map.clear();
+    original_quantity.clear();
+    quantity_already_shortlong.clear();
+    quantity_to_shortlong.clear();
+    base_currency = QString();
+    currency_weight.clear();
+    currency_weight_by_coin.clear();
+    m_last_coeffs.clear();
+    m_qtys.clear();
+}
+
 void Spruce::setCurrencyWeight( QString currency, Coin weight )
 {
     // clear by coin
@@ -111,6 +132,12 @@ void Spruce::clearLiveNodes()
         delete nodes_now.takeFirst();
 
     nodes_now_by_currency.clear();
+}
+
+void Spruce::clearStartNodes()
+{
+    while ( nodes_start.size() > 0 )
+        delete nodes_start.takeFirst();
 }
 
 bool Spruce::calculateAmountToShortLong()
@@ -277,7 +304,7 @@ Coin Spruce::getMarketSellMax( QString market ) const
 }
 Coin Spruce::getOrderSize( QString market ) const
 {
-    return market.isEmpty() ? m_order_size : std::max( m_order_size * getMarketWeight( market ), Coin( MINIMUM_ORDER_SIZE ) );
+    return market.isEmpty() ? m_order_size : std::max( m_order_size * getMarketWeight( market ), getUniversalMinOrderSize() );
 }
 
 Coin Spruce::getCurrencyPriceByMarket( Market market )
@@ -422,7 +449,7 @@ bool Spruce::equalizeDates()
     const Coin ticksize_leveraged = ticksize * m_leverage;
 
     // if we don't have enough to make the adjustment, abort
-    if ( hi_equity < MINIMUM_ORDER_SIZE )
+    if ( hi_equity < getUniversalMinOrderSize() )
     {
         kDebug() << "[Spruce] local warning: not enough equity to equalizeDates" << hi_equity;
         return false;

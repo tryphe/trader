@@ -1,7 +1,4 @@
 #include "polorest.h"
-
-#if defined(EXCHANGE_POLONIEX)
-
 #include "position.h"
 #include "positionman.h"
 #include "stats.h"
@@ -20,20 +17,56 @@
 #include <QWebSocket>
 
 PoloREST::PoloREST( Engine *_engine )
-  : BaseREST( _engine, this )
+  : BaseREST( _engine )
 {
     kDebug() << "[PoloREST]";
+
+    nam = new QNetworkAccessManager();
+    connect( nam, &QNetworkAccessManager::finished, this, &PoloREST::onNamReply );
+
+    // we use this to send the requests at a predictable rate
+    send_timer = new QTimer( this );
+    connect( send_timer, &QTimer::timeout, this, &PoloREST::sendNamQueue );
+    send_timer->setTimerType( Qt::CoarseTimer );
+    send_timer->start( POLONIEX_TIMER_INTERVAL_NAM_SEND ); // minimum threshold 200 or so
+
+    // this timer requests the order book
+    orderbook_timer = new QTimer( this );
+    connect( orderbook_timer, &QTimer::timeout, this, &PoloREST::onCheckBotOrders );
+    orderbook_timer->setTimerType( Qt::VeryCoarseTimer );
+    orderbook_timer->start( POLONIEX_TIMER_INTERVAL_ORDERBOOK );
+
+    // this timer reads the lo_sell and hi_buy prices for all coins
+    ticker_timer = new QTimer( this );
+    connect( ticker_timer, &QTimer::timeout, this, &PoloREST::onCheckTicker );
+    ticker_timer->setTimerType( Qt::VeryCoarseTimer );
+    ticker_timer->start( POLONIEX_TIMER_INTERVAL_TICKER );
 }
 
 PoloREST::~PoloREST()
 {
+    send_timer->stop();
+    orderbook_timer->stop();
+    ticker_timer->stop();
     fee_timer->stop();
     wss_timer->stop();
 
+    delete send_timer;
+    delete orderbook_timer;
+    delete ticker_timer;
     delete fee_timer;
     delete wss_timer;
+
+    send_timer = nullptr;
+    orderbook_timer = nullptr;
+    ticker_timer = nullptr;
     fee_timer = nullptr;
     wss_timer = nullptr;
+
+    // force nam to close
+    nam->thread()->exit();
+    delete nam;
+    nam = nullptr;
 
     // dispose of websocket
     if ( wss )
@@ -51,6 +84,8 @@ PoloREST::~PoloREST()
 
 void PoloREST::init()
 {
+    keystore.setKeys( POLONIEX_KEY, POLONIEX_SECRET );
+
     BaseREST::limit_commands_queued = 28; // stop checks if we are over this many commands queued
     BaseREST::limit_commands_queued_dc_check = 10; // exit dc check if we are over this many commands queued
     BaseREST::limit_commands_sent = 48; // stop checks if we are over this many commands sent
@@ -174,7 +209,7 @@ void PoloREST::sendBuySell( Position *const &pos, bool quiet )
 
     // serialize some request options into url format
     QUrlQuery query;
-    query.addQueryItem( "currencyPair", pos->market.toExchangeString() );
+    query.addQueryItem( "currencyPair", pos->market.toExchangeString( ENGINE_POLONIEX ) );
     query.addQueryItem( "rate", pos->price );
     query.addQueryItem( "amount", pos->quantity );
 
@@ -1216,5 +1251,3 @@ void PoloREST::wssTextMessageReceived( const QString &msg )
     // print unhandled message
     kDebug() << "unhandled wss:" << msg;
 }
-
-#endif // EXCHANGE_POLONIEX

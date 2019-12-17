@@ -677,11 +677,10 @@ void PositionMan::activate( Position * const &pos, const QString &order_number )
     else
     {
         // on binance, prepend market to orderid for uniqueness (don't remove this or you'll get collisions)
-        #if defined(EXCHANGE_BINANCE)
-        pos->order_number = pos->market.toExchangeString() + order_number;
-        #else
-        pos->order_number = order_number;
-        #endif
+        if ( engine->engine_type == ENGINE_BINANCE )
+            pos->order_number = pos->market.toExchangeString( ENGINE_BINANCE ) + order_number;
+        else
+            pos->order_number = order_number;
     }
 
     // print set order
@@ -689,14 +688,6 @@ void PositionMan::activate( Position * const &pos, const QString &order_number )
         kDebug() << QString( "%1 %2" )
                     .arg( "set", -15 )
                     .arg( pos->stringifyOrder() );
-
-    if ( engine->hasWSSInterface() )
-    {
-        QJsonArray ext_updates;
-        pos->jsonifyPositionSet( ext_updates );
-        QString msg = Global::jsonArrayToString( ext_updates );
-        emit engine->newEngineMessage( msg );
-    }
 
     // check if the order was queued for a cancel (manual or automatic) while it was queued
     if ( pos->is_cancelling &&
@@ -722,8 +713,24 @@ void PositionMan::remove( Position * const &pos )
     QQueue<QPair<QNetworkReply*,Request*>> deleted_queue;
 
     // check nam_sent_queue for requests over timeout
-    QHash<QNetworkReply*,Request*>::const_iterator begin = engine->getRest()->nam_queue_sent.begin(),
-                                                   end = engine->getRest()->nam_queue_sent.end();
+    QHash<QNetworkReply*,Request*>::const_iterator begin, end;
+
+    if ( engine->engine_type == ENGINE_BITTREX )
+    {
+        begin = engine->rest_trex->nam_queue_sent.begin();
+        end = engine->rest_trex->nam_queue_sent.end();
+    }
+    else if ( engine->engine_type == ENGINE_BINANCE )
+    {
+        begin = engine->rest_bnc->nam_queue_sent.begin();
+        end = engine->rest_bnc->nam_queue_sent.end();
+    }
+    else if ( engine->engine_type == ENGINE_POLONIEX )
+    {
+        begin = engine->rest_polo->nam_queue_sent.begin();
+        end = engine->rest_polo->nam_queue_sent.end();
+    }
+
     for ( QHash<QNetworkReply*,Request*>::const_iterator i = begin; i != end; i++ )
     {
         const Request *const &req = i.value();
@@ -740,7 +747,13 @@ void PositionMan::remove( Position * const &pos )
     while ( deleted_queue.size() > 0 )
     {
         QPair<QNetworkReply*,Request*> pair = deleted_queue.takeFirst();
-        engine->getRest()->deleteReply( pair.first, pair.second );
+
+        if ( engine->engine_type == ENGINE_BITTREX )
+            engine->rest_trex->deleteReply( pair.first, pair.second );
+        else if ( engine->engine_type == ENGINE_BINANCE )
+            engine->rest_bnc->deleteReply( pair.first, pair.second );
+        else if ( engine->engine_type == ENGINE_POLONIEX )
+            engine->rest_polo->deleteReply( pair.first, pair.second );
     }
 
     /// step 3: remove from maps/containers
@@ -860,7 +873,7 @@ void PositionMan::converge( QMap<QString, QVector<qint32> > &market_map, quint8 
         }
 
         // flow control
-        if ( engine->getRest()->yieldToFlowControl() || engine->getRest()->nam_queue.size() >= engine->getRest()->limit_commands_queued_dc_check )
+        if ( engine->yieldToFlowControl() )
             return;
     }
 }
@@ -898,7 +911,7 @@ void PositionMan::diverge( QMap<QString, QVector<qint32> > &market_map )
         cancel( pos, true, CANCELLING_FOR_DC );
 
         // flow control
-        if ( engine->getRest()->yieldToFlowControl() || engine->getRest()->nam_queue.size() >= engine->getRest()->limit_commands_queued_dc_check )
+        if ( engine->yieldToFlowControl() )
             return;
     }
 }
@@ -937,13 +950,12 @@ void PositionMan::cancelAll( QString market )
     is_running_cancelall = true;
     cancel_market_filter = market;
 
-#if defined(EXCHANGE_BITTREX)
-    engine->getRest()->sendRequest( TREX_COMMAND_GET_ORDERS );
-#elif defined(EXCHANGE_BINANCE)
-    engine->getRest()->sendRequest( BNC_COMMAND_GETORDERS, "", nullptr, 40 );
-#elif defined(EXCHANGE_POLONIEX)
-    engine->getRest()->sendRequest( POLO_COMMAND_GETORDERS, POLO_COMMAND_GETORDERS_ARGS );
-#endif
+    if ( engine->engine_type == ENGINE_BITTREX )
+        engine->rest_trex->sendRequest( TREX_COMMAND_GET_ORDERS );
+    else if ( engine->engine_type == ENGINE_BINANCE )
+        engine->rest_bnc->sendRequest( BNC_COMMAND_GETORDERS, "", nullptr, 40 );
+    else if ( engine->engine_type == ENGINE_POLONIEX )
+        engine->rest_polo->sendRequest( POLO_COMMAND_GETORDERS, POLO_COMMAND_GETORDERS_ARGS );
 }
 
 void PositionMan::cancelLocal( QString market )
@@ -1066,7 +1078,7 @@ void PositionMan::cancel( Position *const &pos, bool quiet, quint8 cancel_reason
     }
 
     // send request
-    engine->getRest()->sendCancel( pos->order_number, pos );
+    engine->sendCancel( pos->order_number, pos );
 }
 
 void PositionMan::cancelHighest( const QString &market )
@@ -1092,7 +1104,7 @@ void PositionMan::cancelLowest( const QString &market )
 void PositionMan::divergeConverge()
 {
     // flow control
-    if ( engine->getRest()->yieldToFlowControl() || engine->getRest()->nam_queue.size() >= engine->getRest()->limit_commands_queued_dc_check )
+    if ( engine->yieldToFlowControl() )
         return;
 
     QMap<QString/*market*/,qint32> market_hi_buy_idx; // calculate hi_buy position for each market
@@ -1256,7 +1268,7 @@ void PositionMan::checkBuySellCount()
                 buy_count--;
 
                 // flow control
-                if ( engine->getRest()->yieldToFlowControl() )
+                if ( engine->yieldToFlowControl() )
                     return;
             }
 
@@ -1278,7 +1290,7 @@ void PositionMan::checkBuySellCount()
             }
 
             // flow control
-            if ( engine->getRest()->yieldToFlowControl() )
+            if ( engine->yieldToFlowControl() )
                 return;
             ///
 
@@ -1291,7 +1303,7 @@ void PositionMan::checkBuySellCount()
                 sell_count--;
 
                 // flow control
-                if ( engine->getRest()->yieldToFlowControl() )
+                if ( engine->yieldToFlowControl() )
                     return;
             }
 
@@ -1313,7 +1325,7 @@ void PositionMan::checkBuySellCount()
             }
 
             // flow control
-            if ( engine->getRest()->yieldToFlowControl() )
+            if ( engine->yieldToFlowControl() )
                 return;
             ///
         }

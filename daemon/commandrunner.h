@@ -11,14 +11,16 @@
 #include <QMap>
 
 class Engine;
-class REST_OBJECT;
+class TrexREST;
+class BncREST;
+class PoloREST;
 class Stats;
 
 class CommandRunner : public QObject
 {
     Q_OBJECT
 public:
-    explicit CommandRunner( Engine *_e, REST_OBJECT *_rest, Stats *_stats, QObject *parent = nullptr );
+    explicit CommandRunner( const quint8 _engine_type, Engine *_e, void *_rest, QObject *parent = nullptr );
     ~CommandRunner();
 
 signals:
@@ -111,15 +113,13 @@ private:
     void command_setchatty( QStringList &args );
     void command_exit( QStringList &args );
 
-//#if defined(EXCHANGE_BITTREX)
-//    void command_sethistoryinterval( QStringList &args );
-//#endif
-
     QMap<QString, std::function<void(QStringList&)>> command_map;
 
-    Engine *engine;
-    REST_OBJECT *rest;
-    Stats *stats;
+    quint8 engine_type{ 0 };
+    Engine *engine{ nullptr };
+    TrexREST *rest_trex{ nullptr };
+    BncREST *rest_bnc{ nullptr };
+    PoloREST *rest_polo{ nullptr };
 };
 
 #endif // COMMANDRUNNER_H

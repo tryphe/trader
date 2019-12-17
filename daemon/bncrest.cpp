@@ -1,7 +1,4 @@
 #include "bncrest.h"
-
-#if defined(EXCHANGE_BINANCE)
-
 #include "stats.h"
 #include "engine.h"
 #include "position.h"
@@ -19,16 +16,53 @@
 #include <QtMath>
 
 BncREST::BncREST( Engine *_engine )
-  : BaseREST( _engine, this )
+  : BaseREST( _engine )
 {
     kDebug() << "[BncREST]";
+
+    nam = new QNetworkAccessManager();
+    connect( nam, &QNetworkAccessManager::finished, this, &BncREST::onNamReply );
+
+    // we use this to send the requests at a predictable rate
+    send_timer = new QTimer( this );
+    connect( send_timer, &QTimer::timeout, this, &BncREST::sendNamQueue );
+    send_timer->setTimerType( Qt::CoarseTimer );
+    send_timer->start( BINANCE_TIMER_INTERVAL_NAM_SEND ); // minimum threshold 200 or so
+
+    // this timer requests the order book
+    orderbook_timer = new QTimer( this );
+    connect( orderbook_timer, &QTimer::timeout, this, &BncREST::onCheckBotOrders );
+    orderbook_timer->setTimerType( Qt::VeryCoarseTimer );
+    orderbook_timer->start( BINANCE_TIMER_INTERVAL_ORDERBOOK );
+
+    // this timer reads the lo_sell and hi_buy prices for all coins
+    ticker_timer = new QTimer( this );
+    connect( ticker_timer, &QTimer::timeout, this, &BncREST::onCheckTicker );
+    ticker_timer->setTimerType( Qt::VeryCoarseTimer );
+    ticker_timer->start( BINANCE_TIMER_INTERVAL_TICKER );
 }
 
 BncREST::~BncREST()
 {
+    send_timer->stop();
+    orderbook_timer->stop();
+    ticker_timer->stop();
     exchangeinfo_timer->stop();
+
+    delete send_timer;
+    delete orderbook_timer;
+    delete ticker_timer;
     delete exchangeinfo_timer;
+
+    send_timer = nullptr;
+    orderbook_timer = nullptr;
+    ticker_timer = nullptr;
     exchangeinfo_timer = nullptr;
+
+    // force nam to close
+    nam->thread()->exit();
+    delete nam;
+    nam = nullptr;
 
     // dispose of websocket
     if ( wss )
@@ -46,6 +80,8 @@ BncREST::~BncREST()
 
 void BncREST::init()
 {
+    keystore.setKeys( BINANCE_KEY, BINANCE_SECRET );
+
     BaseREST::limit_commands_queued = 35; // stop checks if we are over this many commands queued
     BaseREST::limit_commands_queued_dc_check = 10; // exit dc check if we are over this many commands queued
     BaseREST::limit_commands_sent = 60; // stop checks if we are over this many commands sent
@@ -322,7 +358,7 @@ void BncREST::sendBuySell( Position * const &pos, bool quiet )
                     .arg( pos->stringifyOrderWithoutOrderID() );
 
     QUrlQuery query;
-    query.addQueryItem( "symbol", pos->market.toExchangeString() );
+    query.addQueryItem( "symbol", pos->market.toExchangeString( ENGINE_BINANCE ) );
     query.addQueryItem( "side", pos->sideStr() );
 
     // set taker/maker order
@@ -906,5 +942,3 @@ void BncREST::parseExchangeInfo( const QJsonObject &obj )
     if ( exchangeinfo_timer->interval() < exchangeinfo_interval )
         exchangeinfo_timer->setInterval( exchangeinfo_interval ); // 1 hour
 }
-
-#endif // EXCHANGE_BINANCE

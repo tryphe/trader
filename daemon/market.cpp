@@ -38,9 +38,12 @@ Market::operator QString() const
             .arg( quote );
 }
 
-QString Market::toExchangeString() const
+QString Market::toExchangeString( const quint8 engine_type ) const
 {
-    return QString( MARKET_STRING_TEMPLATE )
+    return QString( engine_type == ENGINE_BITTREX  ? BITTREX_MARKET_STRING_TEMPLATE :
+                    engine_type == ENGINE_BINANCE  ? BINANCE_MARKET_STRING_TEMPLATE :
+                    engine_type == ENGINE_POLONIEX ? POLONIEX_MARKET_STRING_TEMPLATE :
+                                                     QString() )
             .arg( base )
             .arg( quote );
 }

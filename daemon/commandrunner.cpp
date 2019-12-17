@@ -8,6 +8,7 @@
 #include "stats.h"
 #include "positionman.h"
 #include "market.h"
+#include "alphatracker.h"
 
 #include <functional>
 #include <QString>
@@ -15,12 +16,19 @@
 #include <QQueue>
 #include <QTimer>
 
-CommandRunner::CommandRunner( Engine *_e, REST_OBJECT *_rest, Stats *_stats, QObject *parent )
+CommandRunner::CommandRunner(const quint8 _engine_type, Engine *_e, void *_rest, QObject *parent )
     : QObject( parent ),
-      engine( _e ),
-      rest( _rest ),
-      stats( _stats )
+      engine( _e )
 {
+    engine_type = _engine_type;
+
+    if ( engine_type == ENGINE_BITTREX )
+        rest_trex = static_cast<TrexREST*>( _rest );
+    else if ( engine_type == ENGINE_BINANCE )
+        rest_bnc = static_cast<BncREST*>( _rest );
+    else if ( engine_type == ENGINE_POLONIEX )
+        rest_polo = static_cast<PoloREST*>( _rest );
+
     // map strings to functions
     using std::placeholders::_1;
     command_map.insert( "getbalances", std::bind( &CommandRunner::command_getbalances, this, _1 ) );
@@ -217,23 +225,22 @@ bool CommandRunner::checkArgs( const QStringList &args, qint32 expected_args_min
 
 void CommandRunner::command_getbalances( QStringList & )
 {
-#if defined(EXCHANGE_BITTREX)
-    rest->sendRequest( TREX_COMMAND_GET_BALANCES );
-#elif defined(EXCHANGE_BINANCE)
-    rest->sendRequest( BNC_COMMAND_GETBALANCES, "", nullptr, 5 );
-#elif defined(EXCHANGE_POLONIEX)
-    rest->sendRequest( POLO_COMMAND_GETBALANCES );
-#endif
+    if ( engine_type == ENGINE_BITTREX )
+        rest_trex->sendRequest( TREX_COMMAND_GET_BALANCES );
+    else if ( engine_type == ENGINE_BINANCE )
+        rest_bnc->sendRequest( BNC_COMMAND_GETBALANCES, "", nullptr, 5 );
+    else if ( engine_type == ENGINE_POLONIEX )
+        rest_polo->sendRequest( POLO_COMMAND_GETBALANCES );
 }
 
 void CommandRunner::command_getlastprices( QStringList & )
 {
-    stats->printLastPrices();
+    //stats->printLastPrices();
 }
 
 void CommandRunner::command_getbuyselltotal( QStringList & )
 {
-    stats->printBuySellTotal();
+    //stats->printBuySellTotal();
 }
 
 void CommandRunner::command_cancelall( QStringList &args )
@@ -258,17 +265,20 @@ void CommandRunner::command_cancellowest( QStringList &args )
 
 void CommandRunner::command_getorders( QStringList &args )
 {
-    stats->printOrders( Market( args.value( 1 ) ), false );
+    Q_UNUSED( args )
+    //stats->printOrders( Market( args.value( 1 ) ), false );
 }
 
 void CommandRunner::command_getpositions( QStringList &args )
 {
-    stats->printPositions( Market( args.value( 1 ) ) );
+    Q_UNUSED( args )
+    //stats->printPositions( Market( args.value( 1 ) ) );
 }
 
 void CommandRunner::command_getordersbyindex( QStringList &args )
 {
-    stats->printOrders( Market( args.value( 1 ) ), true );
+    Q_UNUSED( args )
+    //stats->printOrders( Market( args.value( 1 ) ), true );
 }
 
 void CommandRunner::command_setorder( QStringList &args )
@@ -379,49 +389,59 @@ void CommandRunner::command_shortindex( QStringList &args )
 
 void CommandRunner::command_setcancelthresh( QStringList &args )
 {
-    rest->market_cancel_thresh = args.value( 1 ).toInt();
-    kDebug() << "cancel thresh changed to" << rest->market_cancel_thresh;
+    qint32 &market_cancel_thresh = rest_trex->market_cancel_thresh;
+
+    if ( engine_type == ENGINE_BINANCE )
+        market_cancel_thresh = rest_bnc->market_cancel_thresh;
+    else if ( engine_type == ENGINE_POLONIEX )
+        market_cancel_thresh = rest_polo->market_cancel_thresh;
+
+    market_cancel_thresh = args.value( 1 ).toInt();
+
+    kDebug() << "cancel thresh changed to" << market_cancel_thresh;
 }
 
 void CommandRunner::command_setkeyandsecret( QStringList &args )
 {
+    Q_UNUSED( args )
     // [ exchange, key, secret ]
-    if ( !checkArgs( args, 2 ) ) return;
+//    if ( !checkArgs( args, 2 ) ) return;
 
-    QByteArray key = args.value( 1 ).toLocal8Bit();
-    QByteArray secret = args.value( 2 ).toLocal8Bit();
+//    QByteArray key = args.value( 1 ).toLocal8Bit();
+//    QByteArray secret = args.value( 2 ).toLocal8Bit();
 
-    rest->keystore.setKeys( key, secret );
-    kDebug() << "key and secret set.";
+//    rest->keystore.setKeys( key, secret );
+    kDebug() << "local error: please hardcode your keys.";
 }
 
 void CommandRunner::command_getdailyvolume( QStringList &args )
 {
     Q_UNUSED( args )
-    stats->printDailyVolumes();
+    //stats->printDailyVolumes();
 }
 
 void CommandRunner::command_getdailyfills( QStringList &args )
 {
     Q_UNUSED( args )
-    stats->printDailyFills();
+    //stats->printDailyFills();
 }
 
 void CommandRunner::command_getalpha( QStringList &args )
 {
     Q_UNUSED( args )
-    stats->alpha().printAlpha();
+    engine->alpha->printAlpha();
 }
 
 void CommandRunner::command_getdailymarketvolume( QStringList &args )
 {
     Q_UNUSED( args )
-    stats->printDailyMarketVolume();
+    //stats->printDailyMarketVolume();
 }
 
 void CommandRunner::command_getshortlong( QStringList &args )
 {
-    stats->printStrategyShortLong( Market( args.value( 1 ) ) );
+    Q_UNUSED( args )
+    //stats->printStrategyShortLong( Market( args.value( 1 ) ) );
 }
 
 void CommandRunner::command_gethibuylosell( QStringList &args )
@@ -499,20 +519,71 @@ void CommandRunner::command_setmarketsentiment( QStringList &args )
 
 void CommandRunner::command_setnaminterval( QStringList &args )
 {
-    rest->send_timer->setInterval( args.value( 1 ).toInt() );
-    kDebug() << "nam interval set to" << rest->send_timer->interval();
+    int new_interval = 0;
+
+    if ( engine_type == ENGINE_BITTREX )
+    {
+        rest_trex->send_timer->setInterval( args.value( 1 ).toInt() );
+        new_interval = rest_trex->send_timer->interval();
+    }
+    else if ( engine_type == ENGINE_BINANCE )
+    {
+        rest_bnc->send_timer->setInterval( args.value( 1 ).toInt() );
+        new_interval = rest_bnc->send_timer->interval();
+    }
+    else if ( engine_type == ENGINE_POLONIEX )
+    {
+        rest_polo->send_timer->setInterval( args.value( 1 ).toInt() );
+        new_interval = rest_polo->send_timer->interval();
+    }
+
+    kDebug() << "nam interval set to" << new_interval;
 }
 
 void CommandRunner::command_setbookinterval( QStringList &args )
 {
-    rest->orderbook_timer->setInterval( args.value( 1 ).toInt() );
-    kDebug() << "bot orderbook interval set to" << rest->orderbook_timer->interval();
+    int new_interval = 0;
+
+    if ( engine_type == ENGINE_BITTREX )
+    {
+        rest_trex->orderbook_timer->setInterval( args.value( 1 ).toInt() );
+        new_interval = rest_trex->orderbook_timer->interval();
+    }
+    else if ( engine_type == ENGINE_BINANCE )
+    {
+        rest_bnc->orderbook_timer->setInterval( args.value( 1 ).toInt() );
+        new_interval = rest_bnc->orderbook_timer->interval();
+    }
+    else if ( engine_type == ENGINE_POLONIEX )
+    {
+        rest_polo->orderbook_timer->setInterval( args.value( 1 ).toInt() );
+        new_interval = rest_polo->orderbook_timer->interval();
+    }
+
+    kDebug() << "bot orderbook interval set to" << new_interval;
 }
 
 void CommandRunner::command_settickerinterval( QStringList &args )
 {
-    rest->ticker_timer->setInterval( args.value( 1 ).toInt() );
-    kDebug() << "ticker_timer interval set to" << rest->ticker_timer->interval();
+    int new_interval = 0;
+
+    if ( engine_type == ENGINE_BITTREX )
+    {
+        rest_trex->ticker_timer->setInterval( args.value( 1 ).toInt() );
+        new_interval = rest_trex->ticker_timer->interval();
+    }
+    else if ( engine_type == ENGINE_BINANCE )
+    {
+        rest_bnc->ticker_timer->setInterval( args.value( 1 ).toInt() );
+        new_interval = rest_bnc->ticker_timer->interval();
+    }
+    else if ( engine_type == ENGINE_POLONIEX )
+    {
+        rest_polo->ticker_timer->setInterval( args.value( 1 ).toInt() );
+        new_interval = rest_polo->ticker_timer->interval();
+    }
+
+    kDebug() << "ticker_timer interval set to" << new_interval;
 }
 
 void CommandRunner::command_setgracetimelimit( QStringList &args )
@@ -523,14 +594,48 @@ void CommandRunner::command_setgracetimelimit( QStringList &args )
 
 void CommandRunner::command_setcheckinterval( QStringList &args )
 {
-    rest->timeout_timer->setInterval( args.value( 1 ).toInt() );
-    kDebug() << "timeout check interval set to" << rest->timeout_timer->interval();
+    int new_interval = 0;
+
+    if ( engine_type == ENGINE_BITTREX )
+    {
+        rest_trex->timeout_timer->setInterval( args.value( 1 ).toInt() );
+        new_interval = rest_trex->timeout_timer->interval();
+    }
+    else if ( engine_type == ENGINE_BINANCE )
+    {
+        rest_bnc->timeout_timer->setInterval( args.value( 1 ).toInt() );
+        new_interval = rest_bnc->timeout_timer->interval();
+    }
+    else if ( engine_type == ENGINE_POLONIEX )
+    {
+        rest_polo->timeout_timer->setInterval( args.value( 1 ).toInt() );
+        new_interval = rest_polo->timeout_timer->interval();
+    }
+
+    kDebug() << "timeout check interval set to" << new_interval;
 }
 
 void CommandRunner::command_setdcinterval( QStringList &args )
 {
-    rest->diverge_converge_timer->setInterval( args.value( 1 ).toInt() );
-    kDebug() << "diverge converge interval set to" << rest->diverge_converge_timer->interval();
+    int new_interval = 0;
+
+    if ( engine_type == ENGINE_BITTREX )
+    {
+        rest_trex->diverge_converge_timer->setInterval( args.value( 1 ).toInt() );
+        new_interval = rest_trex->diverge_converge_timer->interval();
+    }
+    else if ( engine_type == ENGINE_BINANCE )
+    {
+        rest_bnc->diverge_converge_timer->setInterval( args.value( 1 ).toInt() );
+        new_interval = rest_bnc->diverge_converge_timer->interval();
+    }
+    else if ( engine_type == ENGINE_POLONIEX )
+    {
+        rest_polo->diverge_converge_timer->setInterval( args.value( 1 ).toInt() );
+        new_interval = rest_polo->diverge_converge_timer->interval();
+    }
+
+    kDebug() << "diverge converge interval set to" << new_interval;
 }
 
 void CommandRunner::command_setclearstrayorders( QStringList &args )
@@ -565,8 +670,25 @@ void CommandRunner::command_setdcslippage( QStringList &args )
 
 void CommandRunner::command_setorderbookstaletolerance( QStringList &args )
 {
-    rest->orderbook_stale_tolerance = args.value( 1 ).toLongLong();
-    kDebug() << "orderbook_stale_tolerance set to" << rest->orderbook_stale_tolerance << "ms";
+    qlonglong new_tolerance = 0;
+
+    if ( engine_type == ENGINE_BITTREX )
+    {
+        rest_trex->orderbook_stale_tolerance = args.value( 1 ).toLongLong();
+        new_tolerance = rest_trex->orderbook_stale_tolerance;
+    }
+    else if ( engine_type == ENGINE_BINANCE )
+    {
+        rest_bnc->orderbook_stale_tolerance = args.value( 1 ).toLongLong();
+        new_tolerance = rest_bnc->orderbook_stale_tolerance;
+    }
+    else if ( engine_type == ENGINE_POLONIEX )
+    {
+        rest_polo->orderbook_stale_tolerance = args.value( 1 ).toLongLong();
+        new_tolerance = rest_polo->orderbook_stale_tolerance;
+    }
+
+    kDebug() << "orderbook_stale_tolerance set to" << new_tolerance << "ms";
 }
 
 void CommandRunner::command_setsafetydelaytime( QStringList &args )
@@ -583,32 +705,117 @@ void CommandRunner::command_settickersafetydelaytime( QStringList &args )
 
 void CommandRunner::command_setslippagestaletime( QStringList &args )
 {
-    rest->slippage_stale_time = args.value( 1 ).toLongLong();
-    kDebug() << "slippage_stale_time set to" << rest->slippage_stale_time << "ms";
+    qlonglong new_tolerance = 0;
+
+    if ( engine_type == ENGINE_BITTREX )
+    {
+        rest_trex->slippage_stale_time = args.value( 1 ).toLongLong();
+        new_tolerance = rest_trex->slippage_stale_time;
+    }
+    else if ( engine_type == ENGINE_BINANCE )
+    {
+        rest_bnc->slippage_stale_time = args.value( 1 ).toLongLong();
+        new_tolerance = rest_bnc->slippage_stale_time;
+    }
+    else if ( engine_type == ENGINE_POLONIEX )
+    {
+        rest_polo->slippage_stale_time = args.value( 1 ).toLongLong();
+        new_tolerance = rest_polo->slippage_stale_time;
+    }
+
+    kDebug() << "slippage_stale_time set to" << new_tolerance << "ms";
 }
 
 void CommandRunner::command_setqueuedcommandsmax( QStringList &args )
 {
-    rest->limit_commands_queued = args.value( 1 ).toInt();
-    kDebug() << "limit_commands_queued set to" << rest->limit_commands_queued;
+    int new_limit = 0;
+
+    if ( engine_type == ENGINE_BITTREX )
+    {
+        rest_trex->limit_commands_queued = args.value( 1 ).toInt();
+        new_limit = rest_trex->limit_commands_queued;
+    }
+    else if ( engine_type == ENGINE_BINANCE )
+    {
+        rest_bnc->limit_commands_queued = args.value( 1 ).toInt();
+        new_limit = rest_bnc->limit_commands_queued;
+    }
+    else if ( engine_type == ENGINE_POLONIEX )
+    {
+        rest_polo->limit_commands_queued = args.value( 1 ).toInt();
+        new_limit = rest_polo->limit_commands_queued;
+    }
+
+    kDebug() << "limit_commands_queued set to" << new_limit;
 }
 
 void CommandRunner::command_setqueuedcommandsmaxdc( QStringList &args )
 {
-    rest->limit_commands_queued_dc_check = args.value( 1 ).toInt();
-    kDebug() << "limit_commands_queued_dc_check set to" << rest->limit_commands_queued_dc_check;
+    int new_limit = 0;
+
+    if ( engine_type == ENGINE_BITTREX )
+    {
+        rest_trex->limit_commands_queued_dc_check = args.value( 1 ).toInt();
+        new_limit = rest_trex->limit_commands_queued_dc_check;
+    }
+    else if ( engine_type == ENGINE_BINANCE )
+    {
+        rest_bnc->limit_commands_queued_dc_check = args.value( 1 ).toInt();
+        new_limit = rest_bnc->limit_commands_queued_dc_check;
+    }
+    else if ( engine_type == ENGINE_POLONIEX )
+    {
+        rest_polo->limit_commands_queued_dc_check = args.value( 1 ).toInt();
+        new_limit = rest_polo->limit_commands_queued_dc_check;
+    }
+
+    kDebug() << "limit_commands_queued_dc_check set to" << new_limit;
 }
 
 void CommandRunner::command_setsentcommandsmax( QStringList &args )
 {
-    rest->limit_commands_sent = args.value( 1 ).toInt();
-    kDebug() << "sent commands max set to" << rest->limit_commands_sent;
+    int new_limit = 0;
+
+    if ( engine_type == ENGINE_BITTREX )
+    {
+        rest_trex->limit_commands_sent = args.value( 1 ).toInt();
+        new_limit = rest_trex->limit_commands_sent;
+    }
+    else if ( engine_type == ENGINE_BINANCE )
+    {
+        rest_bnc->limit_commands_sent = args.value( 1 ).toInt();
+        new_limit = rest_bnc->limit_commands_sent;
+    }
+    else if ( engine_type == ENGINE_POLONIEX )
+    {
+        rest_polo->limit_commands_sent = args.value( 1 ).toInt();
+        new_limit = rest_polo->limit_commands_sent;
+    }
+
+    kDebug() << "sent commands max set to" << new_limit;
 }
 
 void CommandRunner::command_settimeoutyield( QStringList &args )
 {
-    rest->limit_timeout_yield = args.value( 1 ).toInt();
-    kDebug() << "limit_timeout_yield set to" << rest->limit_timeout_yield;
+    int new_limit = 0;
+
+    if ( engine_type == ENGINE_BITTREX )
+    {
+        rest_trex->limit_timeout_yield = args.value( 1 ).toInt();
+        new_limit = rest_trex->limit_timeout_yield;
+    }
+    else if ( engine_type == ENGINE_BINANCE )
+    {
+        rest_bnc->limit_timeout_yield = args.value( 1 ).toInt();
+        new_limit = rest_bnc->limit_timeout_yield;
+    }
+    else if ( engine_type == ENGINE_POLONIEX )
+    {
+        rest_polo->limit_timeout_yield = args.value( 1 ).toInt();
+        new_limit = rest_polo->limit_timeout_yield;
+    }
+
+    kDebug() << "limit_timeout_yield set to" << new_limit;
 }
 
 void CommandRunner::command_setrequesttimeout( QStringList &args )
@@ -637,15 +844,15 @@ void CommandRunner::command_setsprucebasecurrency( QStringList &args )
 {
     if ( !checkArgs( args, 1 ) ) return;
 
-    engine->getSpruce().setBaseCurrency( args.value( 1 ) );
-    kDebug() << "spruce base currency is now" << engine->getSpruce().getBaseCurrency();
+    engine->getSpruce()->setBaseCurrency( args.value( 1 ) );
+    kDebug() << "spruce base currency is now" << engine->getSpruce()->getBaseCurrency();
 }
 
 void CommandRunner::command_setspruceweight( QStringList &args )
 {
     if ( !checkArgs( args, 2 ) ) return;
 
-    engine->getSpruce().setCurrencyWeight( args.value( 1 ),
+    engine->getSpruce()->setCurrencyWeight( args.value( 1 ),
                                       args.value( 2 ) );
     kDebug() << "spruce currency weight for" << args.value( 1 ) << "is" << args.value( 2 );
 }
@@ -654,7 +861,7 @@ void CommandRunner::command_setsprucestartnode( QStringList &args )
 {
     if ( !checkArgs( args, 3 ) ) return;
 
-    engine->getSpruce().addStartNode( args.value( 1 ),
+    engine->getSpruce()->addStartNode( args.value( 1 ),
                                  args.value( 2 ),
                                  args.value( 3 ) );
     kDebug() << "spruce added start node for" << args.value( 1 ) << args.value( 2 ) << args.value( 3 );
@@ -664,71 +871,71 @@ void CommandRunner::command_setspruceshortlongtotal( QStringList &args )
 {
     if ( !checkArgs( args, 2 ) ) return;
 
-    engine->getSpruce().addToShortLonged( Market( args.value( 1 ) ),
+    engine->getSpruce()->addToShortLonged( Market( args.value( 1 ) ),
                                      args.value( 2 ) );
     kDebug() << "spruce shortlong total for" << args.value( 1 ) << "is" << args.value( 2 );
 }
 
 void CommandRunner::command_setspruceleverage( QStringList &args )
 {
-    engine->getSpruce().setLeverage( args.value( 1 ) );
-    kDebug() << "spruce log leverage is" << engine->getSpruce().getLeverage();
+    engine->getSpruce()->setLeverage( args.value( 1 ) );
+    kDebug() << "spruce log leverage is" << engine->getSpruce()->getLeverage();
 }
 
 void CommandRunner::command_setspruceprofile( QStringList &args )
 {
-    engine->getSpruce().setProfileU( args.value( 1 ), args.value( 2 ) );
-    kDebug() << "spruce profile u for" << args.value( 1 ) << "is" << engine->getSpruce().getProfileU( args.value( 1 ) );
+    engine->getSpruce()->setProfileU( args.value( 1 ), args.value( 2 ) );
+    kDebug() << "spruce profile u for" << args.value( 1 ) << "is" << engine->getSpruce()->getProfileU( args.value( 1 ) );
 }
 
 void CommandRunner::command_setsprucereserve( QStringList &args )
 {
-    engine->getSpruce().setReserve( args.value( 1 ), args.value( 2 ) );
-    kDebug() << "spruce reserve for" << args.value( 1 ) << "is" << engine->getSpruce().getReserve( args.value( 1 ) );
+    engine->getSpruce()->setReserve( args.value( 1 ), args.value( 2 ) );
+    kDebug() << "spruce reserve for" << args.value( 1 ) << "is" << engine->getSpruce()->getReserve( args.value( 1 ) );
 }
 
 void CommandRunner::command_setspruceordergreed( QStringList &args )
 {
-    engine->getSpruce().setOrderGreed( args.value( 1 ) );
-    engine->getSpruce().setOrderRandomBuy( args.value( 2 ) );
-    engine->getSpruce().setOrderRandomSell( args.value( 3 ) );
+    engine->getSpruce()->setOrderGreed( args.value( 1 ) );
+    engine->getSpruce()->setOrderRandomBuy( args.value( 2 ) );
+    engine->getSpruce()->setOrderRandomSell( args.value( 3 ) );
     kDebug() << "spruce order greed is" << args.value( 1 ) << args.value( 2 ) << args.value( 3 );
 }
 
 void CommandRunner::command_setsprucelongmax( QStringList &args )
 {
-    engine->getSpruce().setLongMax( args.value( 1 ) );
-    kDebug() << "spruce longmax is" << engine->getSpruce().getLongMax();
+    engine->getSpruce()->setLongMax( args.value( 1 ) );
+    kDebug() << "spruce longmax is" << engine->getSpruce()->getLongMax();
 }
 
 void CommandRunner::command_setspruceshortmax( QStringList &args )
 {
-    engine->getSpruce().setShortMax( args.value( 1 ) );
-    kDebug() << "spruce shortmax is" << engine->getSpruce().getShortMax();
+    engine->getSpruce()->setShortMax( args.value( 1 ) );
+    kDebug() << "spruce shortmax is" << engine->getSpruce()->getShortMax();
 }
 
 void CommandRunner::command_setsprucemarketmax( QStringList &args )
 {
-    engine->getSpruce().setMarketBuyMax( args.value( 1 ) );
-    engine->getSpruce().setMarketSellMax( args.value( 2 ) );
-    kDebug() << "spruce marketmax is" << engine->getSpruce().getMarketBuyMax()
-                                      << engine->getSpruce().getMarketSellMax();
+    engine->getSpruce()->setMarketBuyMax( args.value( 1 ) );
+    engine->getSpruce()->setMarketSellMax( args.value( 2 ) );
+    kDebug() << "spruce marketmax is" << engine->getSpruce()->getMarketBuyMax()
+                                      << engine->getSpruce()->getMarketSellMax();
 }
 
 void CommandRunner::command_setspruceordersize( QStringList &args )
 {
-    engine->getSpruce().setOrderSize( args.value( 1 ) );
-    kDebug() << "spruce ordersize is" << engine->getSpruce().getOrderSize();
+    engine->getSpruce()->setOrderSize( args.value( 1 ) );
+    kDebug() << "spruce ordersize is" << engine->getSpruce()->getOrderSize();
 }
 
 void CommandRunner::command_setspruceordernice( QStringList &args )
 {
-    engine->getSpruce().setOrderNice( args.value( 1 ) );
-    engine->getSpruce().setOrderNiceSpreadPut( args.value( 2 ) );
-    engine->getSpruce().setOrderNiceZeroBound( args.value( 3 ) );
-    kDebug() << "spruce order nice is" << engine->getSpruce().getOrderNice()
-                                       << engine->getSpruce().getOrderNiceSpreadPut()
-                                       << engine->getSpruce().getOrderNiceZeroBound();
+    engine->getSpruce()->setOrderNice( args.value( 1 ) );
+    engine->getSpruce()->setOrderNiceSpreadPut( args.value( 2 ) );
+    engine->getSpruce()->setOrderNiceZeroBound( args.value( 3 ) );
+    kDebug() << "spruce order nice is" << engine->getSpruce()->getOrderNice()
+                                       << engine->getSpruce()->getOrderNiceSpreadPut()
+                                       << engine->getSpruce()->getOrderNiceZeroBound();
 }
 
 void CommandRunner::command_spruceup( QStringList & )
@@ -758,40 +965,33 @@ void CommandRunner::command_getconfig( QStringList &args )
 
     //kDebug() << "market info      " << engine->getMarketInfoStructure();
 
-#if defined(EXCHANGE_POLONIEX)
-//    kDebug() << "slippage_multipli" << rest->slippage_multiplier;
-#endif
-    kDebug() << "limit_commands_queued =" << rest->limit_commands_queued;
-    kDebug() << "limit_commands_queued_dc_check =" << rest->limit_commands_queued_dc_check;
-    kDebug() << "limit_commands_sent =" << rest->limit_commands_sent;
-    kDebug() << "limit_timeout_yield =" << rest->limit_timeout_yield;
-    kDebug() << "market_cancel_thresh =" << rest->market_cancel_thresh;
-    kDebug() << "request_timeout =" << engine->getSettings()->request_timeout;
-    kDebug() << "cancel_timeout =" << engine->getSettings()->cancel_timeout;
-    kDebug() << "should_clear_stray_orders =" << engine->getSettings()->should_clear_stray_orders;
-    kDebug() << "should_clear_stray_orders_all =" << engine->getSettings()->should_clear_stray_orders_all;
-    kDebug() << "should_slippage_be_calculated =" << engine->getSettings()->should_slippage_be_calculated;
-    kDebug() << "should_adjust_hibuy_losell =" << engine->getSettings()->should_adjust_hibuy_losell;
-    kDebug() << "should_adjust_hibuy_losell_debugmsgs_ticker =" << engine->getSettings()->should_adjust_hibuy_losell_debugmsgs_ticker;
-    kDebug() << "should_mitigate_blank_orderbook_flash =" << engine->getSettings()->should_mitigate_blank_orderbook_flash;
-    kDebug() << "should_dc_slippage_orders =" << engine->getSettings()->should_dc_slippage_orders;
-    kDebug() << "stray_grace_time_limit =" << engine->getSettings()->stray_grace_time_limit;
-    kDebug() << "safety_delay_time =" << engine->getSettings()->safety_delay_time;
-    kDebug() << "ticker_safety_delay_time =" << engine->getSettings()->ticker_safety_delay_time;
-    kDebug() << "slippage_stale_time =" << rest->slippage_stale_time;
-    kDebug() << "orderbook_stale_tolerance =" << rest->orderbook_stale_tolerance;
+//    kDebug() << "limit_commands_queued =" << rest->limit_commands_queued;
+//    kDebug() << "limit_commands_queued_dc_check =" << rest->limit_commands_queued_dc_check;
+//    kDebug() << "limit_commands_sent =" << rest->limit_commands_sent;
+//    kDebug() << "limit_timeout_yield =" << rest->limit_timeout_yield;
+//    kDebug() << "market_cancel_thresh =" << rest->market_cancel_thresh;
+//    kDebug() << "request_timeout =" << engine->getSettings()->request_timeout;
+//    kDebug() << "cancel_timeout =" << engine->getSettings()->cancel_timeout;
+//    kDebug() << "should_clear_stray_orders =" << engine->getSettings()->should_clear_stray_orders;
+//    kDebug() << "should_clear_stray_orders_all =" << engine->getSettings()->should_clear_stray_orders_all;
+//    kDebug() << "should_slippage_be_calculated =" << engine->getSettings()->should_slippage_be_calculated;
+//    kDebug() << "should_adjust_hibuy_losell =" << engine->getSettings()->should_adjust_hibuy_losell;
+//    kDebug() << "should_adjust_hibuy_losell_debugmsgs_ticker =" << engine->getSettings()->should_adjust_hibuy_losell_debugmsgs_ticker;
+//    kDebug() << "should_mitigate_blank_orderbook_flash =" << engine->getSettings()->should_mitigate_blank_orderbook_flash;
+//    kDebug() << "should_dc_slippage_orders =" << engine->getSettings()->should_dc_slippage_orders;
+//    kDebug() << "stray_grace_time_limit =" << engine->getSettings()->stray_grace_time_limit;
+//    kDebug() << "safety_delay_time =" << engine->getSettings()->safety_delay_time;
+//    kDebug() << "ticker_safety_delay_time =" << engine->getSettings()->ticker_safety_delay_time;
+//    kDebug() << "slippage_stale_time =" << rest->slippage_stale_time;
+//    kDebug() << "orderbook_stale_tolerance =" << rest->orderbook_stale_tolerance;
 
-    kDebug() << "nam interval =" << rest->send_timer->interval();
-    kDebug() << "orderbook update interval =" << rest->orderbook_timer->interval();
+//    kDebug() << "nam interval =" << rest->send_timer->interval();
+//    kDebug() << "orderbook update interval =" << rest->orderbook_timer->interval();
 
-#if defined(EXCHANGE_BITTREX)
-//    kDebug() << "order_history_timer interval =" << rest->order_history_timer->interval();
-#endif
-
-    kDebug() << "ticker interval =" << rest->ticker_timer->interval();
-    kDebug() << "timeout interval =" << rest->timeout_timer->interval();
-    kDebug() << "dc interval =" << rest->diverge_converge_timer->interval();
-    kDebug() << "is_chatty = " << engine->getSettings()->is_chatty;
+//    kDebug() << "ticker interval =" << rest->ticker_timer->interval();
+//    kDebug() << "timeout interval =" << rest->timeout_timer->interval();
+//    kDebug() << "dc interval =" << rest->diverge_converge_timer->interval();
+//    kDebug() << "is_chatty = " << engine->getSettings()->is_chatty;
 }
 
 void CommandRunner::command_getinternal( QStringList &args )
@@ -799,27 +999,18 @@ void CommandRunner::command_getinternal( QStringList &args )
     Q_UNUSED( args )
     engine->printInternal();
 
-    kDebug() << "nam_queue size:" << rest->nam_queue.size();
-    kDebug() << "nam_queue_sent size:" << rest->nam_queue_sent.size();
-    kDebug() << "orderbook_update_time:" << QDateTime::fromMSecsSinceEpoch( rest->orderbook_update_time ).toString();
-    kDebug() << "orderbook_update_request_time:" << QDateTime::fromMSecsSinceEpoch( rest->orderbook_update_request_time ).toString();
-    kDebug() << "orderbook_public_update_time:" << QDateTime::fromMSecsSinceEpoch( rest->orderbook_public_update_time ).toString();
-    kDebug() << "orderbook_public_update_request_time:" << QDateTime::fromMSecsSinceEpoch( rest->orderbook_public_update_request_time ).toString();
+//    kDebug() << "nam_queue size:" << rest->nam_queue.size();
+//    kDebug() << "nam_queue_sent size:" << rest->nam_queue_sent.size();
+//    kDebug() << "orderbook_update_time:" << QDateTime::fromMSecsSinceEpoch( rest->orderbook_update_time ).toString();
+//    kDebug() << "orderbook_update_request_time:" << QDateTime::fromMSecsSinceEpoch( rest->orderbook_update_request_time ).toString();
+//    kDebug() << "orderbook_public_update_time:" << QDateTime::fromMSecsSinceEpoch( rest->orderbook_public_update_time ).toString();
+//    kDebug() << "orderbook_public_update_request_time:" << QDateTime::fromMSecsSinceEpoch( rest->orderbook_public_update_request_time ).toString();
 
 
-    kDebug() << "avg response time:" << rest->avg_response_time.avgResponseTime();
-//    kDebug() << "wss_heartbeat_time:" << QDateTime::fromMSecsSinceEpoch( rest->wss_heartbeat_time ).toString();
-//    kDebug() << "wss_connect_try_time:" << QDateTime::fromMSecsSinceEpoch( rest->wss_connect_try_time ).toString();
-    kDebug() << "orders_stale_trip_count: " << rest->orders_stale_trip_count;
-    kDebug() << "books_stale_trip_count: " << rest->books_stale_trip_count;
-    kDebug() << "nonce:" << rest->request_nonce;
-#if defined(EXCHANGE_BINANCE)
-//    kDebug() << "ratelimit_second:" << rest->ratelimit_second;
-//    kDebug() << "ratelimit_minute:" << rest->ratelimit_minute;
-//    kDebug() << "ratelimit_day:" << rest->ratelimit_day;
-#elif defined(EXCHANGE_BITTREX)
-//    kDebug() << "order_history_update_time:" << QDateTime::fromMSecsSinceEpoch( rest->order_history_update_time ).toString();
-#endif
+//    kDebug() << "avg response time:" << rest->avg_response_time.avgResponseTime();
+//    kDebug() << "orders_stale_trip_count: " << rest->orders_stale_trip_count;
+//    kDebug() << "books_stale_trip_count: " << rest->books_stale_trip_count;
+//    kDebug() << "nonce:" << rest->request_nonce;
 
     kDebug() << Global::getBuildString();
 }
@@ -842,7 +1033,7 @@ void CommandRunner::command_setmaintenancetime( QStringList &args )
 void CommandRunner::command_clearallstats( QStringList &args )
 {
     Q_UNUSED( args )
-    stats->clearAll();
+    //stats->clearAll();
 }
 
 void CommandRunner::command_savemarket( QStringList &args )
@@ -864,7 +1055,8 @@ void CommandRunner::command_savestats( QStringList &args )
 
 void CommandRunner::command_sendcommand( QStringList &args )
 {
-    rest->sendRequest( args.value( 1 ), args.value( 2 ) );
+    Q_UNUSED( args )
+    //rest->sendRequest( args.value( 1 ), args.value( 2 ) );
 }
 
 void CommandRunner::command_setchatty( QStringList &args )
