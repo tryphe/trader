@@ -16,7 +16,8 @@ Features
  - [x] Uses GMP multi-precision integers. No [floating-point](https://en.wikipedia.org/wiki/Floating_point) instructions are used. [How can floats fail?](https://github.com/tryphe/trader/blob/master/daemon/coinamount_test.cpp#L12)
  - [x] Real-time slippage calculation which prevents local order collision and greatly reduces the frequency of exchange post-only mode collisions.
  - [x] Anti-mistake. Prevents taking a price 10% lower or higher from the current spread(also overridable), [and more](https://github.com/tryphe/trader/blob/master/daemon/engine.cpp#L87)!
- - [x] Ping-pong using fixed, user-generated positions. Also able to combine positions.
+ - [x] ~Ping-pong using fixed, user-generated positions. Also able to combine positions.~ (recently deprecated and broken)
+ - [x] Automatic ping-ping (wip)
  - [x] Because trades aren't made using a browser interface, coin theft by withdrawal through browser hijacking is impossible.
  - [x] Bittrex REST support.
  - [x] Binance REST support.
@@ -24,12 +25,10 @@ Features
 
 TODO
  ----
-  - [ ] Automatic ping-pong (wip)
-  - [ ] GUI (backburner)
-  - [ ] WSS notifications (backburner)
+  - [ ] Stats tracker for persistence. (wip)
   - [ ] Add more exchanges.
-  - [ ] Extensible API and querying system. (Note: CLI input and log output are the only interface at the moment)
-  - [ ] External stats tracker for stats persistence.
+  - [ ] GUI (abandoned)
+  - [ ] WSS notifications (abandoned)
 
 Dependencies: Compiling Qt and installing libgmp (unix/linux)
 ---------------------------------
@@ -73,9 +72,7 @@ Run `git pull` to pull the latest code, then repeat step 6 from the Compiling se
 
 Running the daemon
 ------------------
-1. Sessionize traderd so it stays running: `setsid ./traderd`
-
-Now you can access each daemon with a simple command, eg. Poloniex: `poloniex getbalances`
+Sessionize traderd so it stays running: `setsid ./traderd`
 
 Config directory
 ----------------
