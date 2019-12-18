@@ -68,8 +68,8 @@ static const QLatin1String BITTREX_MINIMUM_ORDER_SIZE       ( "0.00065000" );
 static const QLatin1String BITTREX_MARKET_STRING_TEMPLATE   ( "%1-%2" );
 static const QLatin1String BITTREX_EXCHANGE_STR             ( "Bittrex" );
 static const int BITTREX_TIMER_INTERVAL_NAM_SEND            ( 330 );
-static const int BITTREX_TIMER_INTERVAL_ORDERBOOK           ( 20000 );
-static const int BITTREX_TIMER_INTERVAL_TICKER              ( 10000 );
+static const int BITTREX_TIMER_INTERVAL_ORDERBOOK           ( 50000 );
+static const int BITTREX_TIMER_INTERVAL_TICKER              ( 15000 );
 static const int BITTREX_SAFETY_DELAY                       ( 8500 );
 
 static const QLatin1String TREX_REST_URL                    ( "https://bittrex.com/api/v1.1/" );
@@ -90,8 +90,8 @@ static const QLatin1String BINANCE_MINIMUM_ORDER_SIZE       ( "0.00105000" );
 static const QLatin1String BINANCE_MARKET_STRING_TEMPLATE   ( "%2%1" );
 static const QLatin1String BINANCE_EXCHANGE_STR             ( "Binance" );
 static const int BINANCE_TIMER_INTERVAL_NAM_SEND            ( 111 );
-static const int BINANCE_TIMER_INTERVAL_ORDERBOOK           ( 12000 );
-static const int BINANCE_TIMER_INTERVAL_TICKER              ( 10000 );
+static const int BINANCE_TIMER_INTERVAL_ORDERBOOK           ( 50000 );
+static const int BINANCE_TIMER_INTERVAL_TICKER              ( 15000 );
 static const int BINANCE_SAFETY_DELAY                       ( 2000 );
 
 static const QLatin1String BNC_URL                          ( "https://api.binance.com/api/v3/" );

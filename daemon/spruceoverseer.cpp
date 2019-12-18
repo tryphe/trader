@@ -22,13 +22,13 @@ SpruceOverseer::SpruceOverseer()
     spruce_timer = new QTimer( this );
     connect( spruce_timer, &QTimer::timeout, this, &SpruceOverseer::onSpruceUp );
     spruce_timer->setTimerType( Qt::VeryCoarseTimer );
-    spruce_timer->start( 2 * 6000 );
+    spruce_timer->start( 2 * 60000 );
 
     // autosave spruce settings
     autosave_timer = new QTimer( this );
     connect( autosave_timer, &QTimer::timeout, this, &SpruceOverseer::onSaveSpruceSettings );
     autosave_timer->setTimerType( Qt::VeryCoarseTimer );
-    autosave_timer->start( /*30 **/ 60000 );
+    autosave_timer->start( 30 * 60000 );
 }
 
 SpruceOverseer::~SpruceOverseer()
@@ -97,16 +97,13 @@ void SpruceOverseer::onSpruceUp()
             for ( QMap<QString,Coin>::const_iterator i = qty_to_shortlong_map.begin(); i != qty_to_shortlong_map.end(); i++ )
             {
                 const QString &market = i.key();
-                const QString exchange_market_key = QString( "%1%2" )
+                const QString exchange_market_key = QString( "%1-%2" )
                                                     .arg( e.key() )
                                                     .arg( market );
 
                 // get market allocation for this exchange and apply to qty_to_shortlong
                 const Coin market_allocation = spruce->getExchangeAllocation( exchange_market_key );
-                const Coin &qty_to_shortlong = i.value() * market_allocation;
-
-                kDebug() << "pre-qty_to_shortlong: " << i.value();
-                kDebug() << "post-qty_to_shortlong:" << qty_to_shortlong;
+                const Coin qty_to_shortlong = i.value() * market_allocation;
 
                 const Coin qty_to_shortlong_abs = qty_to_shortlong.abs();
                 const Coin amount_to_shortlong = spruce->getCurrencyPriceByMarket( market ) * qty_to_shortlong;
@@ -422,13 +419,13 @@ void SpruceOverseer::onSaveSpruceSettings()
         return;
 
     const QString trader_path = Global::getTraderPath();
-    const QString settings_path = trader_path + QDir::separator() + "spruce.settings.txt";
+    const QString settings_path = trader_path + QDir::separator() + "spruce.settings";
     const QString stats_path = trader_path + QDir::separator() + "stats";
 
     // backup settings file
     if ( QFile::exists( settings_path ) )
     {
-        QString new_settings_path = Global::getOldLogsPath() + QDir::separator() + "settings.txt." + QString::number( QDateTime::currentSecsSinceEpoch() );
+        QString new_settings_path = Global::getOldLogsPath() + QDir::separator() + "spruce.settings." + QString::number( QDateTime::currentSecsSinceEpoch() );
         kDebug() << "backing up spruce settings...";
 
         if ( QFile::copy( settings_path, new_settings_path ) )
@@ -503,7 +500,7 @@ void SpruceOverseer::runCancellors( const quint8 side )
                 }
             }
 
-            const QString exchange_market_key = QString( "%1%2" )
+            const QString exchange_market_key = QString( "%1-%2" )
                                                 .arg( e.key() )
                                                 .arg( market );
 
@@ -511,9 +508,6 @@ void SpruceOverseer::runCancellors( const quint8 side )
             const Coin market_allocation = spruce->getExchangeAllocation( exchange_market_key );
             const Coin amount_to_shortlong = spruce->getCurrencyPriceByMarket( market ) * spruce->getQuantityToShortLongNow( market )
                                              * market_allocation;
-
-            kDebug() << "cancel-pre-amount_to_shortlong: " << spruce->getCurrencyPriceByMarket( market ) * spruce->getQuantityToShortLongNow( market );
-            kDebug() << "cancel-post-amount_to_shortlong:" << amount_to_shortlong;
 
             const Coin order_size = spruce->getOrderSize( market );
             const Coin order_size_limit = order_size * spruce->getOrderNice();

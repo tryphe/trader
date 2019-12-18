@@ -123,6 +123,15 @@ Trader::Trader( QObject *parent )
         connect( engine_polo, &Engine::gotUserCommandChunk, command_runner_polo, &CommandRunner::runCommandChunk );
     }
 
+    // connect spruce_overseer to a command runner that isn't null
+    CommandRunner *command_runner = command_runner_trex != nullptr ? command_runner_trex :
+                                    command_runner_bnc != nullptr  ? command_runner_bnc :
+                                    command_runner_polo != nullptr ? command_runner_polo :
+                                                                     nullptr;
+
+    if ( command_runner )
+        connect( spruce_overseer, &SpruceOverseer::gotUserCommandChunk, command_runner, &CommandRunner::runCommandChunk );
+
     // open IPC command listener
     command_listener = new CommandListener();
     connect( command_listener, &CommandListener::gotDataChunk, this, &Trader::handleCommand );
