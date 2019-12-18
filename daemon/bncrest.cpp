@@ -855,7 +855,7 @@ void BncREST::parseTicker( const QJsonArray &info, qint64 request_time_sent_ms )
              bid_price.isGreaterThanZero() &&
              ask_price.isGreaterThanZero() )
         {
-            ticker_info.insert( market, TickerInfo( ask_price, bid_price ) );
+            ticker_info.insert( market, TickerInfo( bid_price, ask_price ) );
         }
     }
 

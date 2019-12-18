@@ -814,7 +814,7 @@ void TrexREST::parseOrderBook( const QJsonArray &info, qint64 request_time_sent_
              bid.isGreaterThanZero() &&
              ask.isGreaterThanZero() )
         {
-            ticker_info.insert( market, TickerInfo( ask, bid ) );
+            ticker_info.insert( market, TickerInfo( bid, ask ) );
         }
     }
 

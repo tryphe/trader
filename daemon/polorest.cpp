@@ -498,7 +498,7 @@ void PoloREST::parseOrderBook( const QJsonObject &info, qint64 request_time_sent
              lo_sell < CoinAmount::A_LOT )
         {
             QMap<QString, TickerInfo> ticker_info;
-            ticker_info.insert( market, TickerInfo( lo_sell, hi_buy ) );
+            ticker_info.insert( market, TickerInfo( hi_buy, lo_sell ) );
             engine->processTicker( ticker_info, request_time_sent_ms );
         }
     }
@@ -1243,7 +1243,7 @@ void PoloREST::wssTextMessageReceived( const QString &msg )
              ask.isGreaterThanZero() )
         {
             QMap<QString, TickerInfo> ticker_info;
-            ticker_info.insert( market, TickerInfo( ask, bid ) );
+            ticker_info.insert( market, TickerInfo( bid, ask ) );
             engine->processTicker( ticker_info );
         }
         return;
