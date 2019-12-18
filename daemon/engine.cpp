@@ -758,36 +758,36 @@ void Engine::processCancelledOrder( Position * const &pos )
     // pos must be valid!
 
     // we succeeded at resetting(cancelling) a slippage position, now put it back to the -same side- and at its original prices
-    if ( pos->is_slippage && pos->cancel_reason == CANCELLING_FOR_SLIPPAGE_RESET )
-    {
-        if ( pos->is_landmark )
-        {
-            addLandmarkPositionFor( pos );
-            positions->remove( pos );
-            return;
-        }
-        else
-        {
-            const PositionData &new_pos = market_info[ pos->market ].position_index.value( pos->market_indices.value( 0 ) );
+//    if ( pos->is_slippage && pos->cancel_reason == CANCELLING_FOR_SLIPPAGE_RESET )
+//    {
+//        if ( pos->is_landmark )
+//        {
+//            addLandmarkPositionFor( pos );
+//            positions->remove( pos );
+//            return;
+//        }
+//        else
+//        {
+//            const PositionData &new_pos = market_info[ pos->market ].position_index.value( pos->market_indices.value( 0 ) );
 
-            addPosition( pos->market, pos->side, new_pos.buy_price, new_pos.sell_price, new_pos.order_size, ACTIVE, "",
-                         pos->market_indices, false, true );
+//            addPosition( pos->market, pos->side, new_pos.buy_price, new_pos.sell_price, new_pos.order_size, ACTIVE, "",
+//                         pos->market_indices, false, true );
 
-            positions->remove( pos );
-            return;
-        }
-    }
+//            positions->remove( pos );
+//            return;
+//        }
+//    }
 
     if ( verbosity > 0 )
         kDebug() << QString( "%1 %2" )
                     .arg( "cancelled", -15 )
                     .arg( pos->stringifyOrder() );
 
-    // depending on the type of cancel, we should take some action
-    if ( pos->cancel_reason == CANCELLING_FOR_DC )
-        cancelOrderMeatDCOrder( pos );
-    else if ( pos->cancel_reason == CANCELLING_FOR_SHORTLONG )
-        flipPosition( pos );
+//    // depending on the type of cancel, we should take some action
+//    if ( pos->cancel_reason == CANCELLING_FOR_DC )
+//        cancelOrderMeatDCOrder( pos );
+//    else if ( pos->cancel_reason == CANCELLING_FOR_SHORTLONG )
+//        flipPosition( pos );
 
     // queue for polling later
     cancelled_orders_for_polling.insert( 0, pos->order_number );
