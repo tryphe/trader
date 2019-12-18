@@ -16,12 +16,12 @@
 #include <QThread>
 #include <QWebSocket>
 
-PoloREST::PoloREST( Engine *_engine )
+PoloREST::PoloREST( Engine *_engine , QNetworkAccessManager *_nam )
   : BaseREST( _engine )
 {
     kDebug() << "[PoloREST]";
 
-    nam = new QNetworkAccessManager();
+    nam = _nam;
     connect( nam, &QNetworkAccessManager::finished, this, &PoloREST::onNamReply );
 
     // we use this to send the requests at a predictable rate
@@ -85,6 +85,7 @@ PoloREST::~PoloREST()
 void PoloREST::init()
 {
     keystore.setKeys( POLONIEX_KEY, POLONIEX_SECRET );
+    engine->loadSettings();
 
     BaseREST::limit_commands_queued = 28; // stop checks if we are over this many commands queued
     BaseREST::limit_commands_queued_dc_check = 10; // exit dc check if we are over this many commands queued
@@ -626,7 +627,7 @@ void PoloREST::onNamReply( QNetworkReply *const &reply )
     if ( !nam_queue_sent.contains( reply ) )
     {
         //kDebug() << "local warning: found stray response with no request object";
-        reply->deleteLater();
+        //reply->deleteLater();
         return;
     }
 

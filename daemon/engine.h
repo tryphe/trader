@@ -5,11 +5,11 @@
 #include "position.h"
 #include "baserest.h"
 #include "coinamount.h"
-#include "spruce.h"
 
 #include <QObject>
 #include <QNetworkReply>
 
+class Spruce;
 class CommandRunner;
 class CommandListener;
 class AlphaTracker;
@@ -25,6 +25,7 @@ class Engine : public QObject
     Q_OBJECT
 
     friend class EngineTest;
+    friend class SpruceOverseer;
 
 public:
     explicit Engine( const quint8 _engine_type );
@@ -42,12 +43,8 @@ public:
     void processCancelledOrder( Position *const &pos );
 
     void saveMarket( QString market, qint32 num_orders = 15 );
-    void saveSettings();
     void loadSettings();
-    void saveStats();
-    void loadStats();
 
-    Spruce *getSpruce() { return spruce; }
     PositionMan *getPositionMan() const { return positions; }
     EngineSettings *getSettings() const { return settings; }
 
@@ -88,30 +85,26 @@ public:
     QMultiMap<qint64/*time thresh*/,QString/*order_id*/> cancelled_orders_for_polling;
 
     quint8 engine_type{ 0 };
+    Spruce *spruce{ nullptr };
     TrexREST *rest_trex{ nullptr };
     BncREST *rest_bnc{ nullptr };
     PoloREST *rest_polo{ nullptr };
     AlphaTracker *alpha{ nullptr };
-    Spruce *spruce{ nullptr };
 
 signals:
     void newEngineMessage( QString &str ); // new wss message
     void gotUserCommandChunk( QString &s ); // loaded settings file
+    void tickerUpdate( quint8 engine_type, const Market &market, const Coin &bid_price, const Coin &ask_price ); // for spruce overseer
 
 public Q_SLOTS:
     void onEngineMaintenance();
     void onCheckTimeouts();
-    void onSpruceUp();
     void handleUserMessage( const QString &str );
 
 private:
-    QPair<Coin,Coin> getSpruceSpread( const QString &market, quint8 side );
-    QPair<Coin,Coin> getSpruceSpreadLimit( const QString &market, quint8 side );
-
     // timer routines
     void cleanGraceTimes();
     void checkMaintenance();
-    void autoSaveSpruceSettings();
 
     void addLandmarkPositionFor( Position *const &pos );
     void flipPosition( Position *const &pos );
@@ -119,7 +112,6 @@ private:
     bool tryMoveOrder( Position *const &pos );
     void fillNQ( const QString &order_id, qint8 fill_type, quint8 extra_data = 0 );
 
-    QPair<Coin,Coin> getSpreadForMarket( const QString &market );
     QHash<QString, MarketInfo> market_info;
     QHash<QString/*order_id*/, qint64/*seen_time*/> order_grace_times; // record "seen" time to allow for stray grace period
 
@@ -135,7 +127,6 @@ private:
     EngineSettings *settings{ nullptr };
 
     QTimer *maintenance_timer{ nullptr };
-    QTimer *autosave_timer{ nullptr };
 };
 
 #endif // ENGINE_H

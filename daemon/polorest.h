@@ -25,7 +25,7 @@ class PoloREST : public BaseREST
     friend class CommandRunner;
 
 public:
-    explicit PoloREST( Engine *_engine );
+    explicit PoloREST( Engine *_engine, QNetworkAccessManager *_nam );
     ~PoloREST();
 
     void init();
@@ -80,7 +80,6 @@ private:
 
     qint64 poloniex_throttle_time{ 0 }; // when we should wait until to sent the next request
 
-    QNetworkAccessManager *nam{ nullptr };
     QTimer *send_timer{ nullptr };
     QTimer *orderbook_timer{ nullptr };
     QTimer *ticker_timer{ nullptr };

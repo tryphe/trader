@@ -24,7 +24,7 @@ class BncREST : public BaseREST
     friend class CommandRunner;
 
 public:
-    explicit BncREST( Engine *_engine );
+    explicit BncREST( Engine *_engine, QNetworkAccessManager *_nam );
     ~BncREST();
 
     void init();
@@ -38,7 +38,7 @@ public:
     void parseCancelOrder( Request *const &request, const QJsonObject &response );
     void parseOpenOrders( const QJsonArray &markets, qint64 request_time_sent_ms );
     void parseReturnBalances( const QJsonObject &obj );
-    void parseOrderBook( const QJsonArray &info, qint64 request_time_sent_ms );
+    void parseTicker( const QJsonArray &info, qint64 request_time_sent_ms );
     void parseExchangeInfo( const QJsonObject &obj );
     void wssSendJsonObj( const QJsonObject &obj );
 
@@ -56,6 +56,7 @@ public Q_SLOTS:
     void wssSendSubscriptions();
 
 private:
+    QMap<QString, QString> market_aliases;
     QMap<QString /*date MDY*/, qint32 /*num*/> daily_orders; // track daily orders sent
 
     qint64 wss_connect_try_time{ 0 },
@@ -72,7 +73,6 @@ private:
            ratelimit_minute{ 600 }, // weight limit
            ratelimit_day{ 100000 }; // orders limit
 
-    QNetworkAccessManager *nam{ nullptr };
     QTimer *send_timer{ nullptr };
     QTimer *orderbook_timer{ nullptr };
     QTimer *ticker_timer{ nullptr };

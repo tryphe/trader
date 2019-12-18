@@ -15,12 +15,12 @@
 #include <QWebSocket>
 #include <QtMath>
 
-BncREST::BncREST( Engine *_engine )
+BncREST::BncREST( Engine *_engine , QNetworkAccessManager *_nam )
   : BaseREST( _engine )
 {
     kDebug() << "[BncREST]";
 
-    nam = new QNetworkAccessManager();
+    nam = _nam;
     connect( nam, &QNetworkAccessManager::finished, this, &BncREST::onNamReply );
 
     // we use this to send the requests at a predictable rate
@@ -81,6 +81,7 @@ BncREST::~BncREST()
 void BncREST::init()
 {
     keystore.setKeys( BINANCE_KEY, BINANCE_SECRET );
+    engine->loadSettings();
 
     BaseREST::limit_commands_queued = 35; // stop checks if we are over this many commands queued
     BaseREST::limit_commands_queued_dc_check = 10; // exit dc check if we are over this many commands queued
@@ -101,8 +102,8 @@ void BncREST::init()
     exchangeinfo_timer->start( 60000 ); // 1 minute (turns to 1 hour after first parse)
 
     onCheckExchangeInfo();
-    onCheckTicker();
     onCheckBotOrders();
+    onCheckTicker();
 
 #ifdef EXTRA_NICE
     send_timer->setInterval( 400 );
@@ -419,7 +420,7 @@ void BncREST::onNamReply( QNetworkReply *const &reply )
     if ( !nam_queue_sent.contains( reply ) )
     {
         //kDebug() << "local warning: found stray response with no request object";
-        reply->deleteLater();
+        //reply->deleteLater();
         return;
     }
 
@@ -509,7 +510,7 @@ void BncREST::onNamReply( QNetworkReply *const &reply )
     }
     else if ( api_command == BNC_COMMAND_GETTICKER )
     {
-        parseOrderBook( body_arr, request->time_sent_ms );
+        parseTicker( body_arr, request->time_sent_ms );
     }
     else if ( api_command == BNC_COMMAND_GETEXCHANGEINFO )
     {
@@ -744,8 +745,13 @@ void BncREST::parseReturnBalances( const QJsonObject &obj )
 { // prints exchange balances
     Coin total_btc_value;
 
+    //kDebug() << obj;
+
     if ( !obj[ "balances" ].isArray() )
+    {
+        kDebug() << "api error: couldn't parse balances:" << obj;
         return;
+    }
 
     const QJsonArray &balances = obj[ "balances" ].toArray();
 
@@ -760,7 +766,7 @@ void BncREST::parseReturnBalances( const QJsonObject &obj )
         const QString &currency = stats.value( "asset" ).toString();
         const    Coin available = stats.value( "free" ).toString();
         const    Coin onOrders = stats.value( "locked" ).toString();
-        const    Coin total = available  + onOrders;
+        const    Coin total = available + onOrders;
 
         // skip zero balances
         if ( available.isZeroOrLess() &&
@@ -786,12 +792,16 @@ void BncREST::parseReturnBalances( const QJsonObject &obj )
     kDebug() << "total btc value:" << total_btc_value;
 }
 
-void BncREST::parseOrderBook( const QJsonArray &info, qint64 request_time_sent_ms )
+void BncREST::parseTicker( const QJsonArray &info, qint64 request_time_sent_ms )
 {
     //kDebug() << info;
 
     // check for data
     if ( info.isEmpty() )
+        return;
+
+    // if we don't have any market aliases loaded, skip for now (wait for getExchangeInfo)
+    if ( market_aliases.isEmpty() )
         return;
 
     const qint64 current_time = QDateTime::currentMSecsSinceEpoch();
@@ -820,9 +830,15 @@ void BncREST::parseOrderBook( const QJsonArray &info, qint64 request_time_sent_m
 
         // read object and key
         const QJsonObject &market_obj = (*i).toObject();
-        const QString &market = market_obj[ "symbol" ].toString();
+        const QString &market_dirty = market_obj[ "symbol" ].toString();
 
-        //kDebug() << market_obj;
+        if ( !market_aliases.contains( market_dirty ) )
+        {
+            kDebug() << "local warning: couldn't find market alias for binance market" << market_dirty;
+            continue;
+        }
+
+        const QString &market = market_aliases.value( market_dirty );
 
         if ( !market_obj.contains( "askPrice" ) ||
              !market_obj.contains( "bidPrice" ) )
@@ -885,7 +901,12 @@ void BncREST::parseExchangeInfo( const QJsonObject &obj )
             continue;
 
         const QJsonObject &symbol_info = (*i).toObject();
-        const QString &market = symbol_info[ "baseAsset" ].toString() + symbol_info[ "quoteAsset" ].toString();
+        const QString market = symbol_info[ "quoteAsset" ].toString() + QString( "_" ) + symbol_info[ "baseAsset" ].toString();
+        const QString market_alias = symbol_info[ "baseAsset" ].toString() + symbol_info[ "quoteAsset" ].toString();
+
+        // store the alias for this market later, because there's no separator
+        market_aliases.insert( market_alias, market );
+
         const QJsonArray &filters = symbol_info[ "filters" ].toArray();
 
         if ( market.isEmpty() || filters.isEmpty() )
@@ -938,7 +959,7 @@ void BncREST::parseExchangeInfo( const QJsonObject &obj )
     }
 
     // after we get a response, turn our timer interval up
-    static const qint32 exchangeinfo_interval = 60000 * 60;
+    static const qint32 exchangeinfo_interval = 60000 * 60; // 1 hour
     if ( exchangeinfo_timer->interval() < exchangeinfo_interval )
-        exchangeinfo_timer->setInterval( exchangeinfo_interval ); // 1 hour
+        exchangeinfo_timer->setInterval( exchangeinfo_interval );
 }

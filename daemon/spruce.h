@@ -50,6 +50,9 @@ public:
     void setCurrencyWeight( QString currency, Coin weight );
     Coin getMarketWeight( QString market ) const;
 
+    Coin getExchangeAllocation( const QString &exchange_market );
+    void setExchangeAllocation( const QString &exchange_market_key, const Coin allocation );
+
     void setOrderGreed( Coin ratio ) { m_order_greed = ratio; }
     void setOrderRandomBuy( Coin r ) { m_order_greed_buy_randomness = r; }
     void setOrderRandomSell( Coin r ) { m_order_greed_sell_randomness = r; }
@@ -135,6 +138,7 @@ private:
     QString base_currency;
     QMap<QString,Coin> currency_weight; // note: weights are >0 and <=1
     QMultiMap<Coin,QString> currency_weight_by_coin; // note: weights are >0 and <=1
+    QMap<QString, Coin> per_exchange_market_allocations; // note: market allocations are 0:1
     Coin m_order_greed, m_order_greed_buy_randomness, m_order_greed_sell_randomness, m_long_max, m_short_max, m_market_buy_max,
     m_market_sell_max, m_order_size, m_order_nice, m_order_nice_spreadput, m_order_nice_zerobound;
 

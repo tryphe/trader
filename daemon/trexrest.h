@@ -25,7 +25,7 @@ class TrexREST : public BaseREST
     friend class CommandRunner;
 
 public:
-    explicit TrexREST( Engine *_engine );
+    explicit TrexREST( Engine *_engine, QNetworkAccessManager *_nam );
     ~TrexREST();
 
     void init();
@@ -61,7 +61,6 @@ public:
 private:
     qint64 order_history_update_time{ 0 };
 
-    QNetworkAccessManager *nam{ nullptr };
     QTimer *send_timer{ nullptr };
     QTimer *orderbook_timer{ nullptr };
     QTimer *ticker_timer{ nullptr };

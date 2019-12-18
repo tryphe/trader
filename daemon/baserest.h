@@ -60,8 +60,8 @@ struct BaseREST : public QObject
 
     QTimer *timeout_timer{ nullptr };
     QTimer *diverge_converge_timer{ nullptr };
-    QTimer *spruce_timer{ nullptr };
 
+    QNetworkAccessManager *nam{ nullptr };
     Engine *engine{ nullptr };
 };
 

@@ -16,12 +16,12 @@
 #include <QDebug>
 #include <QDateTime>
 
-TrexREST::TrexREST( Engine *_engine )
+TrexREST::TrexREST( Engine *_engine, QNetworkAccessManager *_nam )
   : BaseREST( _engine )
 {
     kDebug() << "[TrexREST]";
 
-    nam = new QNetworkAccessManager();
+    nam = _nam;
     connect( nam, &QNetworkAccessManager::finished, this, &TrexREST::onNamReply );
 
     // we use this to send the requests at a predictable rate
@@ -69,10 +69,8 @@ TrexREST::~TrexREST()
 
 void TrexREST::init()
 {
-    engine->loadStats();
-    engine->loadSettings();
-
     keystore.setKeys( BITTREX_KEY, BITTREX_SECRET );
+    engine->loadSettings();
 
     BaseREST::limit_commands_queued = 20; // stop checks if we are over this many commands queued
     BaseREST::limit_commands_queued_dc_check = 7; // exit dc check if we are over this many commands queued
@@ -315,7 +313,7 @@ void TrexREST::onNamReply( QNetworkReply *const &reply )
     {
         // this will happen regularly for responses after a getorder
         //kDebug() << "local warning: found stray response with no request object";
-        reply->deleteLater();
+        //reply->deleteLater();
         return;
     }
 

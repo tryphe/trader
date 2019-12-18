@@ -8,10 +8,10 @@
 class CommandRunner;
 class CommandListener;
 class FallbackListener;
-class WSSServer;
 
 class AlphaTracker;
 class Spruce;
+class SpruceOverseer;
 class Engine;
 class TrexREST;
 class BncREST;
@@ -37,6 +37,7 @@ private:
 
     AlphaTracker *alpha{ nullptr };
     Spruce *spruce{ nullptr };
+    SpruceOverseer *spruce_overseer{ nullptr };
 
     Engine* engine_trex{ nullptr };
     Engine* engine_bnc{ nullptr };

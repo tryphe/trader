@@ -11,6 +11,8 @@
 #include <QMap>
 
 class Engine;
+class Spruce;
+class SpruceOverseer;
 class TrexREST;
 class BncREST;
 class PoloREST;
@@ -19,6 +21,9 @@ class Stats;
 class CommandRunner : public QObject
 {
     Q_OBJECT
+
+    friend class Trader;
+
 public:
     explicit CommandRunner( const quint8 _engine_type, Engine *_e, void *_rest, QObject *parent = nullptr );
     ~CommandRunner();
@@ -100,6 +105,7 @@ private:
     void command_setsprucemarketmax( QStringList &args );
     void command_setspruceordersize( QStringList &args );
     void command_setspruceordernice( QStringList &args );
+    void command_setspruceallocation( QStringList &args );
     void command_spruceup( QStringList &args );
 
     void command_getconfig( QStringList &args );
@@ -117,6 +123,7 @@ private:
 
     quint8 engine_type{ 0 };
     Engine *engine{ nullptr };
+    SpruceOverseer *spruce_overseer{ nullptr };
     TrexREST *rest_trex{ nullptr };
     BncREST *rest_bnc{ nullptr };
     PoloREST *rest_polo{ nullptr };

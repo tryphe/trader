@@ -9,6 +9,8 @@
 #include "positionman.h"
 #include "market.h"
 #include "alphatracker.h"
+#include "spruce.h"
+#include "spruceoverseer.h"
 
 #include <functional>
 #include <QString>
@@ -98,6 +100,7 @@ CommandRunner::CommandRunner(const quint8 _engine_type, Engine *_e, void *_rest,
     command_map.insert( "setsprucemarketmax", std::bind( &CommandRunner::command_setsprucemarketmax, this, _1 ) );
     command_map.insert( "setspruceordersize", std::bind( &CommandRunner::command_setspruceordersize, this, _1 ) );
     command_map.insert( "setspruceordernice", std::bind( &CommandRunner::command_setspruceordernice, this, _1 ) );
+    command_map.insert( "setspruceallocation", std::bind( &CommandRunner::command_setspruceallocation, this, _1 ) );
     command_map.insert( "getconfig", std::bind( &CommandRunner::command_getconfig, this, _1 ) );
     command_map.insert( "getinternal", std::bind( &CommandRunner::command_getinternal, this, _1 ) );
     command_map.insert( "setmaintenancetime", std::bind( &CommandRunner::command_setmaintenancetime, this, _1 ) );
@@ -112,7 +115,8 @@ CommandRunner::CommandRunner(const quint8 _engine_type, Engine *_e, void *_rest,
     command_map.insert( "stop", std::bind( &CommandRunner::command_exit, this, _1 ) );
     command_map.insert( "quit", std::bind( &CommandRunner::command_exit, this, _1 ) );
 
-    kDebug() << "[CommandRunner]";
+    kDebug() << QString( "[CommandRunner %1]" )
+                .arg( engine_type );
 }
 
 CommandRunner::~CommandRunner()
@@ -149,6 +153,9 @@ void CommandRunner::runCommandChunk( QString &s )
     if ( commands.isEmpty() )
         return;
 
+    const QString prefix = QString( "[CommandRunner %1]" )
+                            .arg( engine_type );
+
     // parse all commands
     while ( !commands.isEmpty() )
     {
@@ -160,26 +167,27 @@ void CommandRunner::runCommandChunk( QString &s )
         // if the command is unknown, print it until suppressed
         if ( !command_map.contains( cmd ) )
         {
-            kDebug() << "[CommandRunner] unknown command:" << cmd;
+            kDebug() << prefix << "unknown command:" << cmd;
             continue;
         }
 
         // do not leak key/secret into debug log
         if ( cmd.startsWith( "setkey" ) )
         {
-            kDebug() << "[CommandRunner] running setkey...";
+            kDebug() << prefix << "running setkey...";
         }
         // be nice to the log
         else if ( times > 10 )
         {
             times_called[ cmd ] = 0; // don't print any more lines for this command
-            kDebug() << QString( "[CommandRunner] running '%1' x%2" )
+            kDebug() << QString( "%1 running '%2' x%3" )
+                            .arg( prefix )
                             .arg( cmd )
                             .arg( times );
         }
         else if ( times > 0 )
         {
-            kDebug() << "[CommandRunner] running:" << args.join( QChar( ' ' ) );
+            kDebug() << prefix << "running:" << args.join( QChar( ' ' ) );
         }
 
         // if we set an order, increment positions_added
@@ -212,10 +220,14 @@ bool CommandRunner::checkArgs( const QStringList &args, qint32 expected_args_min
     if ( expected_args_max < 0 )
         expected_args_max = expected_args_min;
 
+    const QString prefix = QString( "[CommandRunner %1]" )
+                            .arg( engine_type );
+
     // check for expected arg count
     if ( args.size() < expected_args_min || args.size() > expected_args_max )
     {
-        kDebug() << QString( "[CommandRunner] not enough args (%1)" )
+        kDebug() << QString( "%1 not enough args (%2)" )
+                        .arg( prefix )
                         .arg( expected_args_min );
         return false;
     }
@@ -844,16 +856,15 @@ void CommandRunner::command_setsprucebasecurrency( QStringList &args )
 {
     if ( !checkArgs( args, 1 ) ) return;
 
-    engine->getSpruce()->setBaseCurrency( args.value( 1 ) );
-    kDebug() << "spruce base currency is now" << engine->getSpruce()->getBaseCurrency();
+    spruce_overseer->spruce->setBaseCurrency( args.value( 1 ) );
+    kDebug() << "spruce base currency is now" << spruce_overseer->spruce->getBaseCurrency();
 }
 
 void CommandRunner::command_setspruceweight( QStringList &args )
 {
     if ( !checkArgs( args, 2 ) ) return;
 
-    engine->getSpruce()->setCurrencyWeight( args.value( 1 ),
-                                      args.value( 2 ) );
+    spruce_overseer->spruce->setCurrencyWeight( args.value( 1 ), args.value( 2 ) );
     kDebug() << "spruce currency weight for" << args.value( 1 ) << "is" << args.value( 2 );
 }
 
@@ -861,9 +872,7 @@ void CommandRunner::command_setsprucestartnode( QStringList &args )
 {
     if ( !checkArgs( args, 3 ) ) return;
 
-    engine->getSpruce()->addStartNode( args.value( 1 ),
-                                 args.value( 2 ),
-                                 args.value( 3 ) );
+    spruce_overseer->spruce->addStartNode( args.value( 1 ), args.value( 2 ), args.value( 3 ) );
     kDebug() << "spruce added start node for" << args.value( 1 ) << args.value( 2 ) << args.value( 3 );
 }
 
@@ -871,76 +880,81 @@ void CommandRunner::command_setspruceshortlongtotal( QStringList &args )
 {
     if ( !checkArgs( args, 2 ) ) return;
 
-    engine->getSpruce()->addToShortLonged( Market( args.value( 1 ) ),
-                                     args.value( 2 ) );
+    spruce_overseer->spruce->addToShortLonged( Market( args.value( 1 ) ), args.value( 2 ) );
     kDebug() << "spruce shortlong total for" << args.value( 1 ) << "is" << args.value( 2 );
 }
 
 void CommandRunner::command_setspruceleverage( QStringList &args )
 {
-    engine->getSpruce()->setLeverage( args.value( 1 ) );
-    kDebug() << "spruce log leverage is" << engine->getSpruce()->getLeverage();
+    spruce_overseer->spruce->setLeverage( args.value( 1 ) );
+    kDebug() << "spruce log leverage is" << spruce_overseer->spruce->getLeverage();
 }
 
 void CommandRunner::command_setspruceprofile( QStringList &args )
 {
-    engine->getSpruce()->setProfileU( args.value( 1 ), args.value( 2 ) );
-    kDebug() << "spruce profile u for" << args.value( 1 ) << "is" << engine->getSpruce()->getProfileU( args.value( 1 ) );
+    spruce_overseer->spruce->setProfileU( args.value( 1 ), args.value( 2 ) );
+    kDebug() << "spruce profile u for" << args.value( 1 ) << "is" << spruce_overseer->spruce->getProfileU( args.value( 1 ) );
 }
 
 void CommandRunner::command_setsprucereserve( QStringList &args )
 {
-    engine->getSpruce()->setReserve( args.value( 1 ), args.value( 2 ) );
-    kDebug() << "spruce reserve for" << args.value( 1 ) << "is" << engine->getSpruce()->getReserve( args.value( 1 ) );
+    spruce_overseer->spruce->setReserve( args.value( 1 ), args.value( 2 ) );
+    kDebug() << "spruce reserve for" << args.value( 1 ) << "is" << spruce_overseer->spruce->getReserve( args.value( 1 ) );
 }
 
 void CommandRunner::command_setspruceordergreed( QStringList &args )
 {
-    engine->getSpruce()->setOrderGreed( args.value( 1 ) );
-    engine->getSpruce()->setOrderRandomBuy( args.value( 2 ) );
-    engine->getSpruce()->setOrderRandomSell( args.value( 3 ) );
+    spruce_overseer->spruce->setOrderGreed( args.value( 1 ) );
+    spruce_overseer->spruce->setOrderRandomBuy( args.value( 2 ) );
+    spruce_overseer->spruce->setOrderRandomSell( args.value( 3 ) );
     kDebug() << "spruce order greed is" << args.value( 1 ) << args.value( 2 ) << args.value( 3 );
 }
 
 void CommandRunner::command_setsprucelongmax( QStringList &args )
 {
-    engine->getSpruce()->setLongMax( args.value( 1 ) );
-    kDebug() << "spruce longmax is" << engine->getSpruce()->getLongMax();
+    spruce_overseer->spruce->setLongMax( args.value( 1 ) );
+    kDebug() << "spruce longmax is" << spruce_overseer->spruce->getLongMax();
 }
 
 void CommandRunner::command_setspruceshortmax( QStringList &args )
 {
-    engine->getSpruce()->setShortMax( args.value( 1 ) );
-    kDebug() << "spruce shortmax is" << engine->getSpruce()->getShortMax();
+    spruce_overseer->spruce->setShortMax( args.value( 1 ) );
+    kDebug() << "spruce shortmax is" << spruce_overseer->spruce->getShortMax();
 }
 
 void CommandRunner::command_setsprucemarketmax( QStringList &args )
 {
-    engine->getSpruce()->setMarketBuyMax( args.value( 1 ) );
-    engine->getSpruce()->setMarketSellMax( args.value( 2 ) );
-    kDebug() << "spruce marketmax is" << engine->getSpruce()->getMarketBuyMax()
-                                      << engine->getSpruce()->getMarketSellMax();
+    spruce_overseer->spruce->setMarketBuyMax( args.value( 1 ) );
+    spruce_overseer->spruce->setMarketSellMax( args.value( 2 ) );
+    kDebug() << "spruce marketmax is" << spruce_overseer->spruce->getMarketBuyMax()
+                                      << spruce_overseer->spruce->getMarketSellMax();
 }
 
 void CommandRunner::command_setspruceordersize( QStringList &args )
 {
-    engine->getSpruce()->setOrderSize( args.value( 1 ) );
-    kDebug() << "spruce ordersize is" << engine->getSpruce()->getOrderSize();
+    spruce_overseer->spruce->setOrderSize( args.value( 1 ) );
+    kDebug() << "spruce ordersize is" << spruce_overseer->spruce->getOrderSize();
 }
 
 void CommandRunner::command_setspruceordernice( QStringList &args )
 {
-    engine->getSpruce()->setOrderNice( args.value( 1 ) );
-    engine->getSpruce()->setOrderNiceSpreadPut( args.value( 2 ) );
-    engine->getSpruce()->setOrderNiceZeroBound( args.value( 3 ) );
-    kDebug() << "spruce order nice is" << engine->getSpruce()->getOrderNice()
-                                       << engine->getSpruce()->getOrderNiceSpreadPut()
-                                       << engine->getSpruce()->getOrderNiceZeroBound();
+    spruce_overseer->spruce->setOrderNice( args.value( 1 ) );
+    spruce_overseer->spruce->setOrderNiceSpreadPut( args.value( 2 ) );
+    spruce_overseer->spruce->setOrderNiceZeroBound( args.value( 3 ) );
+    kDebug() << "spruce order nice is" << spruce_overseer->spruce->getOrderNice()
+                                       << spruce_overseer->spruce->getOrderNiceSpreadPut()
+                                       << spruce_overseer->spruce->getOrderNiceZeroBound();
+}
+
+void CommandRunner::command_setspruceallocation( QStringList &args )
+{
+    spruce_overseer->spruce->setExchangeAllocation( args.value( 1 ),
+                                                    Coin( args.value( 2 ) ) );
 }
 
 void CommandRunner::command_spruceup( QStringList & )
 {
-    engine->onSpruceUp();
+    spruce_overseer->onSpruceUp();
 }
 
 void CommandRunner::command_getconfig( QStringList &args )
@@ -1044,13 +1058,13 @@ void CommandRunner::command_savemarket( QStringList &args )
 void CommandRunner::command_savesettings( QStringList &args )
 {
     Q_UNUSED( args )
-    engine->saveSettings();
+    spruce_overseer->saveSettings();
 }
 
 void CommandRunner::command_savestats( QStringList &args )
 {
     Q_UNUSED( args )
-    engine->saveStats();
+    spruce_overseer->saveStats();
 }
 
 void CommandRunner::command_sendcommand( QStringList &args )

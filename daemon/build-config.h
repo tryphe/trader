@@ -9,8 +9,8 @@
 //#define POLONIEX_ENABLED
 
 /// where to print logs
-#define PRINT_LOGS_TO_CONSOLE
-#define PRINT_LOGS_TO_FILE
+//#define PRINT_LOGS_TO_CONSOLE
+//#define PRINT_LOGS_TO_FILE
 #define PRINT_LOGS_TO_FILE_COLOR
 
 /// what to log
@@ -19,6 +19,6 @@
 //#define PRINT_DISABLED_SSL_CIPHERS
 
 /// build options
-#define EXTRA_NICE // be extra nice to the exchange api
+//#define EXTRA_NICE // be extra nice to the exchange api
 
 #endif // BUILDCONFIG_H

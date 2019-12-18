@@ -27,12 +27,6 @@ BaseREST::BaseREST( Engine *_engine )
     connect( diverge_converge_timer, &QTimer::timeout, engine->getPositionMan(), &PositionMan::divergeConverge );
     diverge_converge_timer->setTimerType( Qt::VeryCoarseTimer );
     diverge_converge_timer->start( 100000 );
-
-    // this timer does tit-for-tat
-    spruce_timer = new QTimer( this );
-    connect( spruce_timer, &QTimer::timeout, engine, &Engine::onSpruceUp );
-    spruce_timer->setTimerType( Qt::VeryCoarseTimer );
-    spruce_timer->start( 2 * 60000 );
 }
 
 BaseREST::~BaseREST()
@@ -44,7 +38,6 @@ BaseREST::~BaseREST()
     // stop timers
     timeout_timer->stop();
     diverge_converge_timer->stop();
-    spruce_timer->stop();
 
     // clear network replies
     for ( QHash<QNetworkReply*,Request*>::const_iterator i = nam_queue_sent.begin(); i != nam_queue_sent.end(); i++ )
@@ -60,11 +53,9 @@ BaseREST::~BaseREST()
 
     delete timeout_timer;
     delete diverge_converge_timer;
-    delete spruce_timer;
 
     timeout_timer = nullptr;
     diverge_converge_timer = nullptr;
-    spruce_timer = nullptr;
 
     engine = nullptr;
 

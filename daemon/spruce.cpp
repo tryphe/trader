@@ -81,6 +81,18 @@ Coin Spruce::getMarketWeight( QString market ) const
     return Coin();
 }
 
+Coin Spruce::getExchangeAllocation( const QString &exchange_market_key )
+{
+    return per_exchange_market_allocations.value( exchange_market_key );
+}
+
+void Spruce::setExchangeAllocation( const QString &exchange_market_key, const Coin allocation )
+{
+    per_exchange_market_allocations.insert( exchange_market_key, allocation );
+
+    kDebug() << "[Spruce] exchange allocation for" << exchange_market_key << ":" << allocation;
+}
+
 Coin Spruce::getOrderGreed( quint8 side )
 {
     // if greed is unset, just return m_order_greed
@@ -260,6 +272,14 @@ QString Spruce::getSaveState()
         ret += QString( "setsprucereserve %1 %2\n" )
                 .arg( currency )
                 .arg( reserve );
+    }
+
+    // save per-exchange allocations
+    for ( QMap<QString,Coin>::const_iterator i = per_exchange_market_allocations.begin(); i != per_exchange_market_allocations.end(); i++ )
+    {
+        ret += QString( "setspruceallocation %1 %2\n" )
+                .arg( i.key() )
+                .arg( i.value() );
     }
 
     // save market weights
