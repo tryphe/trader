@@ -105,12 +105,6 @@ void BncREST::init()
     onCheckBotOrders();
     onCheckTicker();
 
-#ifdef EXTRA_NICE
-    send_timer->setInterval( 400 );
-    orderbook_timer->setInterval( 20000 );
-    ticker_timer->setInterval( 30000 );
-#endif
-
     //sendRequest( "sign-get-order", "symbol=XMRBTC&orderId=53842" );
 }
 

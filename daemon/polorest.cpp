@@ -113,12 +113,6 @@ void PoloREST::init()
     wss_timer = new QTimer( this );
     connect( wss_timer, &QTimer::timeout, this, &PoloREST::wssCheckConnection );
     wss_timer->setTimerType( Qt::VeryCoarseTimer );
-
-#ifdef EXTRA_NICE
-    send_timer->setInterval( 400 );
-    orderbook_timer->setInterval( 20000 );
-    ticker_timer->setInterval( 30000 );
-#endif
 }
 
 bool PoloREST::yieldToLag() const

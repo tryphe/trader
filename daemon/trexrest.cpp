@@ -82,13 +82,7 @@ void TrexREST::init()
     order_history_timer = new QTimer( this );
     connect( order_history_timer, &QTimer::timeout, this, &TrexREST::onCheckOrderHistory );
     order_history_timer->setTimerType( Qt::VeryCoarseTimer );
-    order_history_timer->start( 3000 );
-
-#ifdef EXTRA_NICE
-    order_history_timer->setInterval( 50000 );
-    orderbook_timer->setInterval( 200000 );
-    ticker_timer->setInterval( 15000 );
-#endif
+    order_history_timer->start( BITTREX_TIMER_INTERVAL_ORDER_HISTORY );
 
     onCheckTicker();
     onCheckBotOrders();

@@ -68,7 +68,8 @@ static const QLatin1String BITTREX_MINIMUM_ORDER_SIZE       ( "0.00065000" );
 static const QLatin1String BITTREX_MARKET_STRING_TEMPLATE   ( "%1-%2" );
 static const QLatin1String BITTREX_EXCHANGE_STR             ( "Bittrex" );
 static const int BITTREX_TIMER_INTERVAL_NAM_SEND            ( 330 );
-static const int BITTREX_TIMER_INTERVAL_ORDERBOOK           ( 50000 );
+static const int BITTREX_TIMER_INTERVAL_ORDER_HISTORY       ( 60000 );
+static const int BITTREX_TIMER_INTERVAL_ORDERBOOK           ( 150000 );
 static const int BITTREX_TIMER_INTERVAL_TICKER              ( 15000 );
 static const int BITTREX_SAFETY_DELAY                       ( 8500 );
 
