@@ -394,7 +394,6 @@ void EngineTest::test( Engine *e )
     e->getMarketInfoStructure().clear(); // clear TEST_MARKET market from market settings
     e->positions->diverge_converge.clear(); // clear TEST_MARKET from dc market index
     e->positions->diverging_converging.clear(); // clear TEST_MARKET from dc market index
-    e->cancelled_orders_for_polling.clear();
 
     // clear TEST_MARKET market stats
     e->alpha->reset();
@@ -404,7 +403,6 @@ void EngineTest::test( Engine *e )
     assert( e->getMarketInfoStructure().size() == 0 );
     assert( e->positions->getDCCount() == 0 );
     assert( e->positions->diverging_converging.size() == 0 );
-    assert( e->cancelled_orders_for_polling.size() == 0 );
 
     // disable test mode
     e->setVerbosity( preserved_verbosity );

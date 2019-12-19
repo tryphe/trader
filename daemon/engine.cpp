@@ -790,9 +790,6 @@ void Engine::processCancelledOrder( Position * const &pos )
 //    else if ( pos->cancel_reason == CANCELLING_FOR_SHORTLONG )
 //        flipPosition( pos );
 
-    // queue for polling later
-    cancelled_orders_for_polling.insert( 0, pos->order_number );
-
     // delete position
     positions->remove( pos );
 }

@@ -105,24 +105,12 @@ void TrexREST::sendNamQueue()
 {
     // check for cancelled orders that we should poll for partial fills
     if ( nam_queue.isEmpty() &&
-         engine->cancelled_orders_for_polling.size() > 0 )
+         cancelled_orders_for_polling.size() > 0 )
     {
-        const qint64 current_time = QDateTime::currentMSecsSinceEpoch();
+        const QString order_number = cancelled_orders_for_polling.takeFirst();
 
-        for ( QMultiMap<qint64/*time thresh*/,QString/*order_id*/>::const_iterator i = engine->cancelled_orders_for_polling.begin();
-              i != engine->cancelled_orders_for_polling.end(); i++ )
-        {
-            const qint64 &time_thresh = i.key();
-            const QString &order_number = i.value();
-
-            // if we found one that meets our time threshold, queue that request and break
-            if ( current_time > time_thresh )
-            {
-                sendRequest( TREX_COMMAND_GET_ORDER, "uuid=" + order_number, nullptr );
-                engine->cancelled_orders_for_polling.remove( time_thresh, order_number );
-                break;
-            }
-        }
+        // queue one request
+        sendRequest( TREX_COMMAND_GET_ORDER, "uuid=" + order_number, nullptr );
     }
 
     // check for requests
@@ -377,6 +365,9 @@ void TrexREST::onNamReply( QNetworkReply *const &reply )
             // 2) cancel the impending converge
             // 3) reset the orders that got cancelled
 
+            // queue for polling later
+            cancelled_orders_for_polling += pos->order_number;
+
             // there are some errors that we don't handle yet, so we just go on with handling them as if everything is fine
             engine->processCancelledOrder( pos );
 
@@ -389,7 +380,7 @@ void TrexREST::onNamReply( QNetworkReply *const &reply )
         {
             // poll again after 1 minute
             const QString order_number = request->body.mid( 5 );
-            engine->cancelled_orders_for_polling.insert( QDateTime::currentMSecsSinceEpoch() + 60000, order_number );
+            cancelled_orders_for_polling += order_number;
 
             deleteReply( reply, request );
             return;
@@ -581,6 +572,9 @@ void TrexREST::parseCancelOrder( Request *const &request, const QJsonObject &res
         kDebug() << "successfully cancelled non-local order:" << response;
         return;
     }
+
+    // queue for polling later
+    cancelled_orders_for_polling += pos->order_number;
 
     engine->processCancelledOrder( pos );
 }

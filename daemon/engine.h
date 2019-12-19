@@ -82,8 +82,6 @@ public:
                                   const QString &strategy_tag, const Coin &btc_amount, const Coin &price, const Coin &btc_commission,
                                   bool partial_fill );
 
-    QMultiMap<qint64/*time thresh*/,QString/*order_id*/> cancelled_orders_for_polling;
-
     quint8 engine_type{ 0 };
     Spruce *spruce{ nullptr };
     TrexREST *rest_trex{ nullptr };
