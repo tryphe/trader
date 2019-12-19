@@ -429,7 +429,7 @@ void CommandRunner::command_setkeyandsecret( QStringList &args )
 void CommandRunner::command_getdailyvolume( QStringList &args )
 {
     Q_UNUSED( args )
-    //stats->printDailyVolumes();
+    engine->alpha->printDailyVolume();
 }
 
 void CommandRunner::command_getdailyfills( QStringList &args )

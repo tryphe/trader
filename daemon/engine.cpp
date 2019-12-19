@@ -373,8 +373,9 @@ void Engine::updateStatsAndPrintFill( const QString &fill_type, const Market &ma
     Coin final_btc_amount = btc_amount - btc_commission;
     Coin final_quantity = final_btc_amount / price;
 
-    // add stats changes to alpha tracker
-    alpha->addAlpha( market, side, final_btc_amount, price, partial_fill );
+    // add stats changes to alpha tracker (note: volume before commission is used)
+    alpha->addAlpha( market, side, btc_amount, price, partial_fill );
+    alpha->addDailyVolume( QDateTime::currentSecsSinceEpoch(), btc_amount );
 
     // add qty changes to spruce strat
     const Coin quantity_offset = ( side == SIDE_BUY ) ?  final_quantity

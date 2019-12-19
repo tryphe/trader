@@ -6,23 +6,25 @@ AlphaTracker::AlphaTracker()
 {
 }
 
-void AlphaTracker::addAlpha( const QString &market, const quint8 side, const Coin &btc_amount, const Coin &price, bool partial_fill )
+void AlphaTracker::reset()
+{
+    buys.clear();
+    sells.clear();
+    daily_volume_epoch_secs = 0;
+    daily_volume.clear();
+}
+
+void AlphaTracker::addAlpha( const QString &market, const quint8 side, const Coin &volume, const Coin &price, bool partial_fill )
 {
     QMap<QString,AlphaData> &map = side == SIDE_BUY ? buys : sells;
     AlphaData &d = map[ market ];
 
     // for each trade, v += volume, and vp += volume * price
-    d.v += btc_amount;
-    d.vp += btc_amount * price;
+    d.v += volume;
+    d.vp += volume * price;
 
     if ( !partial_fill )
         d.trades++;
-}
-
-void AlphaTracker::reset()
-{
-    buys.clear();
-    sells.clear();
 }
 
 Coin AlphaTracker::getAlpha( const QString &market ) const
@@ -68,6 +70,19 @@ quint64 AlphaTracker::getTrades( const QString &market ) const
     return buys.value( market ).trades + sells.value( market ).trades;
 }
 
+void AlphaTracker::addDailyVolume( const qint64 epoch_time_secs, const Coin &volume )
+{
+    quint32 days_offset = 0;
+
+    if ( daily_volume_epoch_secs == 0 )
+        daily_volume_epoch_secs = QDateTime::currentSecsSinceEpoch();
+    else // calculate how many days in from daily_volume_start epoch_time_secs is at
+        days_offset = ( epoch_time_secs - daily_volume_epoch_secs ) / 86400;
+
+    // add volume
+    daily_volume[ days_offset ] += volume;
+}
+
 void AlphaTracker::printAlpha() const
 {
     Coin total_volume, estimated_pl;
@@ -95,9 +110,23 @@ void AlphaTracker::printAlpha() const
     kDebug() << "estimated pl:" << estimated_pl;
 }
 
+void AlphaTracker::printDailyVolume() const
+{
+    for ( QMap<quint32, Coin>::const_iterator i = daily_volume.begin(); i != daily_volume.end(); i++ )
+    {
+        QDateTime iterative_date = QDateTime::fromSecsSinceEpoch( daily_volume_epoch_secs ).addDays( i.key() );
+
+        kDebug() << QString( "%1 | %2" )
+                    .arg( iterative_date.toString( "MM-dd-yyyy" ) )
+                    .arg( i.value() );
+    }
+}
+
 QString AlphaTracker::getSaveState() const
 {
     QString ret;
+
+    // save alpha data
     const QList<QString> keys = getMarkets();
     for ( QList<QString>::const_iterator i = keys.begin(); i != keys.end(); i++ )
     {
@@ -121,6 +150,22 @@ QString AlphaTracker::getSaveState() const
         }
     }
 
+    // save daily volume state
+    QString daily_volume_data;
+    for ( QMap<quint32, Coin>::const_iterator i = daily_volume.begin(); i != daily_volume.end(); i++ )
+    {
+        // if there's data, add a space
+        if ( daily_volume_data.size() > 0 )
+            daily_volume_data += QChar( ' ' );
+
+        daily_volume_data += i.value();
+    }
+
+    // pack data prepended with header and epoch
+    ret += QString( "dv %1 %2\n" )
+            .arg( daily_volume_epoch_secs )
+            .arg( daily_volume_data );
+
     return ret;
 }
 
@@ -133,20 +178,34 @@ void AlphaTracker::readSaveState( const QString &state )
         const QString &line = lines.value( i );
         QList<QString> args = line.split( QChar( ' ' ) );
 
-        if ( args.size() < 6 || args.value( 0 ) != "a" )
-            continue;
+        // read alpha data
+        if ( args.size() == 6 && args.value( 0 ) == "a" )
+        {
+            // read market and side
+            const QString &market = args.at( 1 );
+            quint8 side = args.at( 2 ).toUShort();
 
-        // read market and side
-        const QString &market = args.at( 1 );
-        quint8 side = args.at( 2 ).toUShort();
+            QMap<QString,AlphaData> &map = ( side == SIDE_BUY ) ? buys : sells;
+            AlphaData &d = map[ market ];
 
-        QMap<QString,AlphaData> &map = ( side == SIDE_BUY ) ? buys : sells;
-        AlphaData &d = map[ market ];
+            // read alpha values
+            d.v = args.at( 3 );
+            d.vp = args.at( 4 );
+            d.trades = args.at( 5 ).toULongLong();
+        }
+        // read daily volume data
+        else if ( args.size() > 2 && args.value( 0 ) == "dv" )
+        {
+            // read epoch secs
+            daily_volume_epoch_secs = args.at( 1 ).toLongLong();
 
-        // read alpha values
-        d.v = args.at( 3 );
-        d.vp = args.at( 4 );
-        d.trades = args.at( 5 ).toULongLong();
+            // read daily volume sequentially
+            for ( qint64 j = 2; j < args.size(); j++ )
+            {
+                daily_volume.insert( j -2, args.at( j ) );
+                kDebug() << "loaded daily volume for day" << j-2 << ":" << args.at( j );
+            }
+        }
     }
 }
 

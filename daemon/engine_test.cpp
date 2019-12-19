@@ -4,7 +4,7 @@
 #include "position.h"
 #include "positionman.h"
 #include "coinamount.h"
-#include "stats.h"
+#include "alphatracker.h"
 
 #include <algorithm>
 #include <assert.h>
@@ -397,7 +397,7 @@ void EngineTest::test( Engine *e )
     e->cancelled_orders_for_polling.clear();
 
     // clear TEST_MARKET market stats
-    //e->stats->clearAll();
+    e->alpha->reset();
 
     // make sure the engine was cleared of our test positions and markets
     assert( e->positions->queued().size() == 0 );
