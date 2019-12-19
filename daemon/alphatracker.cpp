@@ -201,10 +201,7 @@ void AlphaTracker::readSaveState( const QString &state )
 
             // read daily volume sequentially
             for ( qint64 j = 2; j < args.size(); j++ )
-            {
                 daily_volume.insert( j -2, args.at( j ) );
-                kDebug() << "loaded daily volume for day" << j-2 << ":" << args.at( j );
-            }
         }
     }
 }
