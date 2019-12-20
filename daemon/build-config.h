@@ -1,7 +1,7 @@
 #ifndef BUILDCONFIG_H
 #define BUILDCONFIG_H
 
-#define BUILD_VERSION "1.76j"
+#define BUILD_VERSION "1.76k"
 
 /// select your exchanges
 #define BITTREX_ENABLED
@@ -9,7 +9,7 @@
 //#define POLONIEX_ENABLED
 
 /// where to print logs
-#define PRINT_LOGS_TO_CONSOLE
+//#define PRINT_LOGS_TO_CONSOLE
 //#define PRINT_LOGS_TO_FILE
 #define PRINT_LOGS_TO_FILE_COLOR
 

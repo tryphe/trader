@@ -114,7 +114,7 @@ void AlphaTracker::printDailyVolume() const
 {
     for ( QMap<quint32, Coin>::const_iterator i = daily_volume.begin(); i != daily_volume.end(); i++ )
     {
-        QDateTime iterative_date = QDateTime::fromSecsSinceEpoch( daily_volume_epoch_secs ).addDays( i.key() );
+        const QDateTime iterative_date = QDateTime::fromSecsSinceEpoch( daily_volume_epoch_secs, Qt::UTC ).addDays( i.key() );
 
         kDebug() << QString( "%1 | %2" )
                     .arg( iterative_date.toString( "MM-dd-yyyy" ) )

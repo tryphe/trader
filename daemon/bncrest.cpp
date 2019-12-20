@@ -903,7 +903,7 @@ void BncREST::parseExchangeInfo( const QJsonObject &obj )
 
         const QJsonArray &filters = symbol_info[ "filters" ].toArray();
 
-        if ( market.isEmpty() || filters.isEmpty() )
+        if ( market_alias.isEmpty() || filters.isEmpty() )
             continue;
 
         // read market info
