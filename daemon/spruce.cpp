@@ -104,15 +104,15 @@ Coin Spruce::getOrderGreed( quint8 side )
     const Coin &randomness = side == SIDE_BUY ? m_order_greed_buy_randomness : m_order_greed_sell_randomness;
     const quint32 range = ( randomness / iter ).toUInt32();
 
-    // if the range is 0, return here to prevent a range of 0-1
+    // if the range is 0, return here to prevent a negative spread
     if ( range == 0 )
-        return 0;
+        return m_order_greed;
 
     const quint32 rand = QRandomGenerator::global()->generate() % ( range +1 );
     const Coin ret = m_order_greed - ( iter * rand );
 
-    // don't return negative greed value
-    return ret.isLessThanZero() ? Coin() : ret;
+    // don't return negative or zero greed value
+    return ret.isZeroOrLess() ? m_order_greed : ret;
 }
 
 void Spruce::addStartNode( QString _currency, QString _quantity, QString _price )
