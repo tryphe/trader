@@ -101,8 +101,8 @@ void BncREST::init()
     exchangeinfo_timer->setTimerType( Qt::VeryCoarseTimer );
     exchangeinfo_timer->start( 60000 ); // 1 minute (turns to 1 hour after first parse)
 
-    onCheckExchangeInfo();
     onCheckBotOrders();
+    onCheckExchangeInfo();
     onCheckTicker();
 
     //sendRequest( "sign-get-order", "symbol=XMRBTC&orderId=53842" );
@@ -405,7 +405,8 @@ bool BncREST::yieldToLag() const
     const qint64 time = QDateTime::currentMSecsSinceEpoch();
 
     // have we seen the orderbook update recently?
-    return ( orderbook_update_time < time - ( orderbook_timer->interval() *5 ) );
+    return ( orderbook_update_time != 0 &&
+             orderbook_update_time < time - ( orderbook_timer->interval() *5 ) );
 }
 
 void BncREST::onNamReply( QNetworkReply *const &reply )

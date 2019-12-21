@@ -84,8 +84,9 @@ void TrexREST::init()
     order_history_timer->setTimerType( Qt::VeryCoarseTimer );
     order_history_timer->start( BITTREX_TIMER_INTERVAL_ORDER_HISTORY );
 
-    onCheckTicker();
+    onCheckOrderHistory();
     onCheckBotOrders();
+    onCheckTicker();
 
 //    sendRequest( TREX_COMMAND_GET_ORDER, "uuid=38ea80", nullptr );
 
@@ -285,7 +286,8 @@ void TrexREST::sendCancel( const QString &order_id, Position * const &pos )
 bool TrexREST::yieldToLag() const
 {
     // have we seen the orderbook update recently?
-    return ( order_history_update_time < QDateTime::currentMSecsSinceEpoch() - ( order_history_timer->interval() *10 ) /* ~50s */ );
+    return ( order_history_update_time != 0 &&
+             order_history_update_time < QDateTime::currentMSecsSinceEpoch() - ( order_history_timer->interval() *10 ) /* ~50s */ );
 }
 
 void TrexREST::onNamReply( QNetworkReply *const &reply )
