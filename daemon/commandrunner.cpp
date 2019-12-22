@@ -272,10 +272,12 @@ void CommandRunner::command_getbuyselltotal( QStringList & )
         total_overall++;
     }
 
+    // print header
     // spacing:           10   5          5          5
     kDebug() << QString( "%1 | buys  | sells | total" )
                 .arg( QString(), MARKET_STRING_WIDTH ); // padding
 
+    // print each market with orders active
     for ( QMap<QString, qint32>::const_iterator i = total.begin(); i != total.end(); i++ )
     {
         const QString &market = i.key();
@@ -287,6 +289,7 @@ void CommandRunner::command_getbuyselltotal( QStringList & )
                     .arg( total.value( market ), -5 );
     }
 
+    // print total overall
     kDebug() << QString( "%1 | %2 | %3 | %4" )
                 .arg( QString(), -MARKET_STRING_WIDTH )
                 .arg( QString(), -5 )
