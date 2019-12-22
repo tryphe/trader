@@ -74,8 +74,8 @@ void AlphaTracker::addDailyVolume( const qint64 epoch_time_secs, const Coin &vol
 {
     quint32 days_offset = 0;
 
-    if ( daily_volume_epoch_secs == 0 )
-        daily_volume_epoch_secs = QDateTime::currentSecsSinceEpoch();
+    if ( daily_volume_epoch_secs == 0 ) // set the epoch secs to the current day at 00:00:00
+        daily_volume_epoch_secs = ( QDateTime::currentSecsSinceEpoch() / 86400 ) * 86400;
     else // calculate how many days in from daily_volume_start epoch_time_secs is at
         days_offset = ( epoch_time_secs - daily_volume_epoch_secs ) / 86400;
 
