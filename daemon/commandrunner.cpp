@@ -252,7 +252,46 @@ void CommandRunner::command_getlastprices( QStringList & )
 
 void CommandRunner::command_getbuyselltotal( QStringList & )
 {
-    //stats->printBuySellTotal();
+    QMap<QString /*market*/, qint32> buys, sells, total;
+    qint32 total_overall = 0;
+
+    // build indexes from active and queued positions
+    QSet<Position*>::const_iterator begin = engine->getPositionMan()->all().begin(),
+                                    end = engine->getPositionMan()->all().end();
+    for ( QSet<Position*>::const_iterator i = begin; i != end; i++ )
+    {
+        Position *const &pos = *i;
+
+        if ( pos->side == SIDE_BUY )
+            buys[ pos->market ]++;
+        else
+            sells[ pos->market ]++;
+
+        // save the total count
+        total[ pos->market ]++;
+        total_overall++;
+    }
+
+    // spacing:           10   5          5          5
+    kDebug() << QString( "%1 | buys  | sells | total" )
+                .arg( QString(), MARKET_STRING_WIDTH ); // padding
+
+    for ( QMap<QString, qint32>::const_iterator i = total.begin(); i != total.end(); i++ )
+    {
+        const QString &market = i.key();
+
+        kDebug() << QString( "%1 | >>>grn<<<%2>>>none<<< | >>>red<<<%3>>>none<<< | %4" )
+                    .arg( market, -MARKET_STRING_WIDTH )
+                    .arg( buys.value( market ), -5 )
+                    .arg( sells.value( market ), -5 )
+                    .arg( total.value( market ), -5 );
+    }
+
+    kDebug() << QString( "%1 | %2 | %3 | %4" )
+                .arg( QString(), -MARKET_STRING_WIDTH )
+                .arg( QString(), -5 )
+                .arg( QString(), -5 )
+                .arg( total_overall, -5 );
 }
 
 void CommandRunner::command_cancelall( QStringList &args )
