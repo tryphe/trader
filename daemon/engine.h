@@ -114,6 +114,8 @@ private:
 
     QDateTime start_time;
 
+    QVector<QString/*order_id*/> orders_for_polling;
+
     // primitives
     qint64 maintenance_time{ 0 };
     bool maintenance_triggered{ false };

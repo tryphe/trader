@@ -622,7 +622,16 @@ void Engine::processOpenOrders( QVector<QString> &order_numbers, QMultiHash<QStr
             filled_orders += pos;
         }
 
-        processFilledOrders( filled_orders, FILL_GETORDER );
+        // on binance, just call getorder
+        if ( engine_type == ENGINE_BINANCE )
+        {
+
+        }
+        // on other exchanges, process filled order
+        else
+        {
+            processFilledOrders( filled_orders, FILL_GETORDER );
+        }
     }
 }
 

@@ -59,8 +59,6 @@ public:
     void wssSendJsonObj( const QJsonObject &obj );
 
 private:
-    QVector<QString/*order_id*/> cancelled_orders_for_polling;
-
     qint64 order_history_update_time{ 0 };
 
     QTimer *send_timer{ nullptr };

@@ -106,9 +106,9 @@ void TrexREST::sendNamQueue()
 {
     // check for cancelled orders that we should poll for partial fills
     if ( nam_queue.isEmpty() &&
-         cancelled_orders_for_polling.size() > 0 )
+         engine->orders_for_polling.size() > 0 )
     {
-        const QString order_number = cancelled_orders_for_polling.takeFirst();
+        const QString order_number = engine->orders_for_polling.takeFirst();
 
         // queue one request
         sendRequest( TREX_COMMAND_GET_ORDER, "uuid=" + order_number, nullptr );
@@ -368,7 +368,7 @@ void TrexREST::onNamReply( QNetworkReply *const &reply )
             // 3) reset the orders that got cancelled
 
             // queue for polling later
-            cancelled_orders_for_polling += pos->order_number;
+            engine->orders_for_polling += pos->order_number;
 
             // there are some errors that we don't handle yet, so we just go on with handling them as if everything is fine
             engine->processCancelledOrder( pos );
@@ -382,7 +382,7 @@ void TrexREST::onNamReply( QNetworkReply *const &reply )
         {
             // poll again after 1 minute
             const QString order_number = request->body.mid( 5 );
-            cancelled_orders_for_polling += order_number;
+            engine->orders_for_polling += order_number;
 
             deleteReply( reply, request );
             return;
@@ -576,7 +576,7 @@ void TrexREST::parseCancelOrder( Request *const &request, const QJsonObject &res
     }
 
     // queue for polling later
-    cancelled_orders_for_polling += pos->order_number;
+    engine->orders_for_polling += pos->order_number;
 
     engine->processCancelledOrder( pos );
 }

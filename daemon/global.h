@@ -100,6 +100,7 @@ static const QLatin1String BNC_URL_WSS                      ( "wss://api.binance
 static const QLatin1String BNC_COMMAND_GETORDERS            ( "sign-get-openOrders" );
 static const QLatin1String BNC_COMMAND_BUYSELL              ( "sign-post-order" );
 static const QLatin1String BNC_COMMAND_CANCEL               ( "sign-delete-order" );
+static const QLatin1String BNC_COMMAND_GETORDER             ( "sign-get-order" );
 static const QLatin1String BNC_COMMAND_GETTICKER            ( "get-ticker/bookTicker" );
 static const QLatin1String BNC_COMMAND_GETEXCHANGEINFO      ( "get-v1-exchangeInfo" );
 static const QLatin1String BNC_COMMAND_GETBALANCES          ( "sign-get-account" );
