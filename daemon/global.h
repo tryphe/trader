@@ -133,17 +133,7 @@ static const QLatin1String POLO_COMMAND_GETBOOKS        ( "returnOrderBook" );
 static const QLatin1String POLO_COMMAND_GETBOOKS_ARGS   ( "currencyPair=all&depth=1" );
 static const QLatin1String POLO_COMMAND_GETFEE          ( "returnFeeInfo" );
 
-#include <QJsonArray>
-#include <QJsonDocument>
-
 namespace Global {
-
-static inline QString jsonArrayToString( QJsonArray &arr )
-{
-    QJsonDocument doc;
-    doc.setArray( arr );
-    return doc.toJson( QJsonDocument::Compact );
-}
 
 static inline const QString printVectorqint32( const QVector<qint32> &vec )
 {

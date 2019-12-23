@@ -97,7 +97,6 @@ signals:
 public Q_SLOTS:
     void onEngineMaintenance();
     void onCheckTimeouts();
-    void handleUserMessage( const QString &str );
 
 private:
     // timer routines

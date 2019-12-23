@@ -1467,34 +1467,6 @@ void Engine::onCheckTimeouts()
     }
 }
 
-void Engine::handleUserMessage( const QString &str )
-{
-    kDebug() << QString( "[Engine] got WSS command: %1" )
-                .arg( str );
-
-    // init current state
-    if ( str == "getstate" )
-    {
-        QJsonArray reply;
-
-        for( QHash<QString, MarketInfo>::const_iterator i = market_info.begin(); i != market_info.end(); i++ )
-        {
-            const QString &market = i.key();
-            const MarketInfo &info = i.value();
-
-            info.jsonifyTicker( reply, market );
-        }
-
-        for( QSet<Position*>::const_iterator i = positions->all().begin(); i != positions->all().end(); i++ )
-        {
-            (*i)->jsonifyPositionSet( reply );
-        }
-
-        QString msg = Global::jsonArrayToString( reply );
-        emit newEngineMessage( msg );
-    }
-}
-
 void Engine::setMarketSettings( QString market, qint32 order_min, qint32 order_max, qint32 order_dc, qint32 order_dc_nice,
                                 qint32 landmark_start, qint32 landmark_thresh, bool market_sentiment, qreal market_offset )
 {
