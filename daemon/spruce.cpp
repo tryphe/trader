@@ -20,6 +20,8 @@ Spruce::Spruce()
     m_market_buy_max = "0.20000000";
     m_market_sell_max = "0.20000000";
     m_leverage = CoinAmount::COIN;
+
+    m_agitator_last_tick = QDateTime::currentSecsSinceEpoch();
 }
 
 Spruce::~Spruce()
@@ -113,6 +115,44 @@ Coin Spruce::getOrderGreed( quint8 side )
 
     // don't return negative or zero greed value
     return ret.isZeroOrLess() ? m_order_greed : ret;
+}
+
+void Spruce::setAgitator( Coin start, Coin stop, Coin increment )
+{
+    m_leverage_start = start;
+    m_leverage_stop = stop;
+    m_leverage_increment = increment;
+}
+
+void Spruce::runAgitator()
+{
+    // check for hourly tick
+    if ( m_agitator_last_tick > QDateTime::currentSecsSinceEpoch() - 3600 )
+        return;
+
+    // refresh tick
+    m_agitator_last_tick = QDateTime::currentSecsSinceEpoch();
+
+    // check for valid variables
+    if ( m_leverage_start >= m_leverage_stop ||
+         m_leverage_start.isZeroOrLess() ||
+         m_leverage_stop.isZeroOrLess() ||
+         m_leverage_increment.isZero() )
+        return;
+
+    // if we're about to go over the stop, reverse polarity of increment
+    if ( m_leverage >= m_leverage_stop )
+        m_leverage_increment = -m_leverage_increment;
+
+    // if we're about to go under the start, reverse polarity of increment
+    if ( m_leverage <= m_leverage_start )
+        m_leverage_increment = -m_leverage_increment;
+
+    // agitate
+    const Coin old_leverage = m_leverage;
+    m_leverage += m_leverage_increment;
+
+    kDebug() << "[Spruce] agitator active, leverage" << old_leverage << "->" << m_leverage << ", increment" << m_leverage_increment;
 }
 
 void Spruce::addStartNode( QString _currency, QString _quantity, QString _price )
@@ -243,6 +283,11 @@ QString Spruce::getSaveState()
     ret += QString( "setspruceordernice %1 %2 %3\n" ).arg( m_order_nice )
                                                      .arg( m_order_nice_spreadput )
                                                      .arg( m_order_nice_zerobound );
+
+    // save agitator
+    ret += QString( "setspruceagitator %1 %2 %3\n" ).arg( m_leverage_start )
+                                                    .arg( m_leverage_stop )
+                                                    .arg( m_leverage_increment );
 
     // save profile u
     for ( QMap<QString,Coin>::const_iterator i = m_currency_profile_u.begin(); i != m_currency_profile_u.end(); i++ )

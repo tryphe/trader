@@ -68,6 +68,9 @@ public:
     void setOrderNiceZeroBound( Coin nice ) { m_order_nice_zerobound = nice; }
     Coin getOrderNiceZeroBound() const { return m_order_nice_zerobound; }
 
+    void setAgitator( Coin start, Coin stop, Coin increment );
+    void runAgitator();
+
     void addStartNode( QString _currency, QString _quantity, QString _price );
     void addLiveNode( QString _currency, QString _price );
     void clearLiveNodes();
@@ -148,6 +151,8 @@ private:
     QVector<QMap<QString/*currency*/,Coin>> m_qtys;
 
     Coin m_leverage;
+    Coin m_leverage_start, m_leverage_stop, m_leverage_increment; // agitator variables
+    qint64 m_agitator_last_tick{ 0 };
 };
 
 #endif // SPRUCE_H
