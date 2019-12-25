@@ -20,7 +20,7 @@ public:
     explicit SpruceOverseer();
     ~SpruceOverseer();
 
-    QString getSettingsPath() const { return Global::getTraderPath() + QDir::separator() + "spruce.settings"; }
+    static QString getSettingsPath() { return Global::getTraderPath() + QDir::separator() + "spruce.settings"; }
     void loadSettings();
     void saveSettings();
     void loadStats();
