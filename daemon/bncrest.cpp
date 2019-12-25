@@ -400,6 +400,24 @@ void BncREST::sendCancel( const QString &_order_id, Position *const &pos )
     }
 }
 
+void BncREST::sendGetOrder( const QString &_order_id, Position * const &pos )
+{
+    // extract market from orderid (binance only)
+    QString order_id = _order_id;
+    QString market;
+    while( order_id.size() > 0 && !order_id.at( 0 ).isDigit() )
+    {
+        market.append( order_id.left( 1 ) );
+        order_id.remove( 0, 1 );
+    }
+
+    QUrlQuery query;
+    query.addQueryItem( "symbol", market );
+    query.addQueryItem( "orderId", order_id );
+
+    sendRequest( BNC_COMMAND_GETORDER, query.toString(), pos, 1 );
+}
+
 bool BncREST::yieldToLag() const
 {
     const qint64 time = QDateTime::currentMSecsSinceEpoch();
@@ -660,12 +678,10 @@ void BncREST::parseCancelOrder( Request *const &request, const QJsonObject &resp
     }
 
     // cancel-n-fill
-    if ( error_unknown_order && // 3/12/2019 - looks like they changed the error to a more user-friendly string
-         ( pos->cancel_reason == CANCELLING_FOR_SLIPPAGE_RESET || // we were cancelling an order with slippage that was filled
-           pos->cancel_reason == CANCELLING_FOR_DC ) )
+    if ( error_unknown_order )
     {
         // single order fill
-        engine->processFilledOrders( QVector<Position*>() << pos, FILL_CANCEL );
+        sendGetOrder( pos->order_number, pos );
         return;
     }
 
@@ -675,6 +691,8 @@ void BncREST::parseCancelOrder( Request *const &request, const QJsonObject &resp
         kDebug() << "local error: cancel failed:" << response << "for pos" << pos->stringifyOrder();
         return;
     }
+
+    kDebug() << "successfully cancelled order:" << response;
 
     engine->processCancelledOrder( pos );
 }

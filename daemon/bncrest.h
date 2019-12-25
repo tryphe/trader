@@ -34,6 +34,7 @@ public:
     void sendNamRequest( Request *const &request );
     void sendBuySell( Position *const &pos, bool quiet = true );
     void sendCancel( const QString &_order_id, Position *const &pos = nullptr );
+    void sendGetOrder( const QString &_order_id, Position *const &pos = nullptr );
     void parseBuySell( Request *const &request, const QJsonObject &response );
     void parseCancelOrder( Request *const &request, const QJsonObject &response );
     void parseOpenOrders( const QJsonArray &markets, qint64 request_time_sent_ms );

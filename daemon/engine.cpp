@@ -618,20 +618,21 @@ void Engine::processOpenOrders( QVector<QString> &order_numbers, QMultiHash<QStr
             // check that the api request timestamp was at/after our request send time
             if ( pos->order_set_time >= request_time_sent_ms )
                 continue;
+
+            // on binance, just call getorder
+            if ( engine_type == ENGINE_BINANCE )
+            {
+                orders_for_polling += pos->order_number;
+            }
             // add orders to process
-            filled_orders += pos;
+            else
+            {
+                filled_orders += pos;
+            }
         }
 
-        // on binance, just call getorder
-        if ( engine_type == ENGINE_BINANCE )
-        {
-
-        }
         // on other exchanges, process filled order
-        else
-        {
-            processFilledOrders( filled_orders, FILL_GETORDER );
-        }
+        processFilledOrders( filled_orders, FILL_GETORDER );
     }
 }
 

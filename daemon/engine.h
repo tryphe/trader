@@ -82,6 +82,8 @@ public:
                                   const QString &strategy_tag, const Coin &btc_amount, const Coin &price, const Coin &btc_commission,
                                   bool partial_fill );
 
+    QVector<QString/*order_id*/> orders_for_polling;
+
     quint8 engine_type{ 0 };
     Spruce *spruce{ nullptr };
     TrexREST *rest_trex{ nullptr };
@@ -113,8 +115,6 @@ private:
     QHash<QString/*order_id*/, qint64/*seen_time*/> order_grace_times; // record "seen" time to allow for stray grace period
 
     QDateTime start_time;
-
-    QVector<QString/*order_id*/> orders_for_polling;
 
     // primitives
     qint64 maintenance_time{ 0 };
