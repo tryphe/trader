@@ -30,6 +30,7 @@ public:
     QSet<Position*> &active() { return positions_active; }
     QSet<Position*> &queued() { return positions_queued; }
     QSet<Position*> &all() { return positions_all; }
+    QVector<Position*> activeBySetTime() const;
 
     bool hasActivePositions() const;
     bool hasQueuedPositions() const;

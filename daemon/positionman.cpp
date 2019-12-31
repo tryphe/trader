@@ -26,6 +26,34 @@ PositionMan::~PositionMan()
         remove( *positions_all.begin() );
 }
 
+QVector<Position*> PositionMan::activeBySetTime() const
+{
+    QMultiMap<qint64, Position*> positions_by_time;
+
+    const QSet<Position*>::const_iterator begin_active = positions_active.begin(),
+                                          end_active = positions_active.end();
+    for ( QSet<Position*>::const_iterator i = begin_active; i != end_active; i++ )
+    {
+        Position *const &pos = *i;
+
+        positions_by_time.insert( pos->order_set_time, pos );
+    }
+
+    // return positions_by_time values from latest to soonest
+    QVector<Position*> ret;
+    const QMultiMap<qint64, Position*>::const_iterator begin = positions_by_time.begin(),
+                                                       end = positions_by_time.end();
+
+    for ( QMultiMap<qint64, Position*>::const_iterator i = end -1; i != begin -1; i-- )
+    {
+        Position *const &pos = *i;
+
+        ret += pos;
+    }
+
+    return ret;
+}
+
 bool PositionMan::hasActivePositions() const
 {
     return positions_active.size();

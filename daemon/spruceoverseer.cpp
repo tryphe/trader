@@ -471,10 +471,13 @@ void SpruceOverseer::runCancellors( const quint8 side )
     {
         Engine *engine = e.value();
 
+        // sort active positions by longest active first, shortest active last
+        const QVector<Position*> active_by_set_time = engine->positions->activeBySetTime();
+
         // look for spruce positions we should cancel on this side
-        const QSet<Position*>::const_iterator begin = engine->positions->active().begin(),
-                                              end = engine->positions->active().end();
-        for ( QSet<Position*>::const_iterator j = begin; j != end; j++ )
+        const QVector<Position*>::const_iterator begin = active_by_set_time.begin(),
+                                                 end = active_by_set_time.end();
+        for ( QVector<Position*>::const_iterator j = begin; j != end; j++ )
         {
             Position *const &pos = *j;
 
