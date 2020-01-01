@@ -57,6 +57,7 @@ public:
     void setOrderRandomBuy( Coin r ) { m_order_greed_buy_randomness = r; }
     void setOrderRandomSell( Coin r ) { m_order_greed_sell_randomness = r; }
     Coin getOrderGreed( quint8 side );
+    Coin getOrderGreed() { return m_order_greed; }
     Coin getOrderTrailingLimit( quint8 side ) { return m_order_greed - ( side == SIDE_BUY ? m_order_greed_buy_randomness : m_order_greed_sell_randomness ); }
 
     void setOrderNice( Coin nice ) { m_order_nice = nice; }

@@ -280,6 +280,7 @@ TickerInfo SpruceOverseer::getSpruceSpreadLimit( const QString &market, quint8 s
 
 TickerInfo SpruceOverseer::getSpreadForMarket( const QString &market )
 {
+    /// step 1: get combined spread between all exchanges
     TickerInfo ret;
 
     for ( QMap<quint8, Engine*>::const_iterator i = engine_map.begin(); i != engine_map.end(); i++ )
@@ -305,6 +306,28 @@ TickerInfo SpruceOverseer::getSpreadForMarket( const QString &market )
         if ( ret.ask_price.isZeroOrLess() || // ask doesn't exist yet
              ret.ask_price < info.lowest_sell ) // ask is lower than the exchange ask
             ret.ask_price = info.lowest_sell;
+    }
+
+    /// step 2: apply base greed value to spread
+    // get price ticksize
+    const Coin ticksize = getPriceTicksizeForMarket( market );
+
+    Coin &buy_price = ret.bid_price;
+    Coin &sell_price = ret.ask_price;
+
+    // ensure the spread is more profitable than base greed value
+    int j = 0;
+    const Coin greed = spruce->getOrderGreed();
+
+    // alternate between subtracting from sell side first to buy side first
+    const bool greed_vibrate_state = QRandomGenerator::global()->generate() % 2 == 0;
+
+    while ( buy_price > sell_price * greed )
+    {
+        if ( j++ % 2 == greed_vibrate_state ? 0 : 1 )
+            buy_price -= ticksize;
+        else
+            sell_price += ticksize;
     }
 
     return ret;
