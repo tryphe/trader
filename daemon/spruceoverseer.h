@@ -42,7 +42,7 @@ private:
 
     TickerInfo getSpruceSpread( const QString &market, quint8 side );
     TickerInfo getSpruceSpreadLimit( const QString &market, quint8 side );
-    TickerInfo getSpreadForMarket( const QString &market );
+    TickerInfo getSpreadForMarket( const QString &market, qint64 *j_ptr = nullptr /*optional inherited spread vibrator*/ );
     Coin getPriceTicksizeForMarket( const QString &market );
 
     QTimer *spruce_timer{ nullptr };

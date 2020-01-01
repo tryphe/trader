@@ -209,13 +209,14 @@ TickerInfo SpruceOverseer::getSpruceSpread( const QString &market, quint8 side )
     const Coin ticksize = getPriceTicksizeForMarket( market );
 
     // read combined spread from all exchanges
-    TickerInfo spread = getSpreadForMarket( market );
+    qint64 j = 0;
+    TickerInfo spread = getSpreadForMarket( market, &j );
 
     Coin &buy_price = spread.bid_price;
     Coin &sell_price = spread.ask_price;
 
     // ensure the spread is more profitable than fee*2
-    int j = 0;
+
     const Coin greed = spruce->getOrderGreed( side );
 
     // alternate between subtracting from sell side first to buy side first
@@ -240,15 +241,16 @@ TickerInfo SpruceOverseer::getSpruceSpreadLimit( const QString &market, quint8 s
     // get price ticksize
     const Coin ticksize = getPriceTicksizeForMarket( market );
 
+    qint64 j = 0;
+
     // read combined spread from all exchanges
-    const TickerInfo ticker = getSpreadForMarket( market );
+    const TickerInfo ticker = getSpreadForMarket( market, &j );
 
     // first, vibrate one way
     TickerInfo spread1 = TickerInfo( ticker.bid_price, ticker.ask_price );
     Coin &buy1_price = spread1.bid_price;
     Coin &sell1_price = spread1.ask_price;
 
-    int j = 0;
     while ( buy1_price > sell1_price * trailing_limit )
     {
         if ( j++ % 2 == 0 )
@@ -262,7 +264,7 @@ TickerInfo SpruceOverseer::getSpruceSpreadLimit( const QString &market, quint8 s
     Coin &buy2_price = spread2.bid_price;
     Coin &sell2_price = spread2.ask_price;
 
-    j = 1;
+    j++;
     while ( buy2_price > sell2_price * trailing_limit )
     {
         if ( j++ % 2 == 0 )
@@ -278,7 +280,7 @@ TickerInfo SpruceOverseer::getSpruceSpreadLimit( const QString &market, quint8 s
     return combined_spread;
 }
 
-TickerInfo SpruceOverseer::getSpreadForMarket( const QString &market )
+TickerInfo SpruceOverseer::getSpreadForMarket( const QString &market , qint64 *j_ptr )
 {
     /// step 1: get combined spread between all exchanges
     TickerInfo ret;
@@ -316,7 +318,7 @@ TickerInfo SpruceOverseer::getSpreadForMarket( const QString &market )
     Coin &sell_price = ret.ask_price;
 
     // ensure the spread is more profitable than base greed value
-    int j = 0;
+    qint64 j = 0;
     const Coin greed = spruce->getOrderGreed();
 
     // alternate between subtracting from sell side first to buy side first
@@ -329,6 +331,10 @@ TickerInfo SpruceOverseer::getSpreadForMarket( const QString &market )
         else
             sell_price += ticksize;
     }
+
+    // copy non-default j into passed pointer value
+    if ( j > 0 && j_ptr != nullptr )
+        *j_ptr = j;
 
     return ret;
 }
