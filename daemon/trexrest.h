@@ -1,8 +1,6 @@
 #ifndef TREXREST_H
 #define TREXREST_H
 
-#include "build-config.h"
-
 #include <QObject>
 #include <QQueue>
 #include <QHash>
@@ -12,7 +10,6 @@
 #include "position.h"
 #include "keystore.h"
 #include "baserest.h"
-
 
 class QNetworkReply;
 class QTimer;

@@ -59,11 +59,6 @@ TrexREST::~TrexREST()
     ticker_timer = nullptr;
     order_history_timer = nullptr;
 
-    // force nam to close
-    nam->thread()->exit();
-    delete nam;
-    nam = nullptr;
-
     kDebug() << "[TrexREST] done.";
 }
 

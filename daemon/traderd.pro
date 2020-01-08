@@ -35,6 +35,7 @@ SOURCES += main.cpp \
     trexrest.cpp \
     bncrest.cpp \
     polorest.cpp \
+    wavesrest.cpp \
     baserest.cpp \
     engine_test.cpp \
     coinamount.cpp \
@@ -61,6 +62,7 @@ HEADERS += build-config.h \
     stats.h \
     trexrest.h \
     bncrest.h \
+    wavesrest.h \
     polorest.h \
     keystore.h \
     engine_test.h \

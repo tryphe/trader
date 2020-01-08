@@ -5,6 +5,8 @@
 
 #include "global.h"
 
+class QNetworkAccessManager;
+
 class CommandRunner;
 class CommandListener;
 class FallbackListener;
@@ -16,6 +18,7 @@ class Engine;
 class TrexREST;
 class BncREST;
 class PoloREST;
+class WavesREST;
 
 class Trader : public QObject
 {
@@ -30,10 +33,13 @@ public slots:
     void handleExitSignal();
 
 private:
+    QNetworkAccessManager *nam;
+
     CommandListener *command_listener{ nullptr };
     CommandRunner *command_runner_trex{ nullptr };
     CommandRunner *command_runner_bnc{ nullptr };
     CommandRunner *command_runner_polo{ nullptr };
+    CommandRunner *command_runner_waves{ nullptr };
 
     AlphaTracker *alpha{ nullptr };
     Spruce *spruce{ nullptr };
@@ -42,10 +48,12 @@ private:
     Engine* engine_trex{ nullptr };
     Engine* engine_bnc{ nullptr };
     Engine* engine_polo{ nullptr };
+    Engine* engine_waves{ nullptr };
 
     TrexREST *rest_trex{ nullptr };
     BncREST *rest_bnc{ nullptr };
     PoloREST *rest_polo{ nullptr };
+    WavesREST *rest_waves{ nullptr };
 };
 
 #endif // TREXTRADER_H

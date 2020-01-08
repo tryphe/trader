@@ -1,10 +1,6 @@
 #include "position.h"
-#include "trexrest.h"
 #include "engine.h"
 #include "enginesettings.h"
-#include "bncrest.h"
-#include "polorest.h"
-#include "trexrest.h"
 #include "global.h"
 #include "market.h"
 

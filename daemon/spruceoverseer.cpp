@@ -13,8 +13,9 @@
 #include <QPair>
 #include <QRandomGenerator>
 
-SpruceOverseer::SpruceOverseer()
-    : QObject( nullptr )
+SpruceOverseer::SpruceOverseer( Spruce *_spruce )
+    : QObject( nullptr ),
+    spruce( _spruce )
 {
     kDebug() << "[SpruceOverseer]";
 
@@ -22,7 +23,7 @@ SpruceOverseer::SpruceOverseer()
     spruce_timer = new QTimer( this );
     connect( spruce_timer, &QTimer::timeout, this, &SpruceOverseer::onSpruceUp );
     spruce_timer->setTimerType( Qt::VeryCoarseTimer );
-    spruce_timer->start( 15 * 60000 );
+    spruce_timer->start( spruce->getIntervalMS() );
 
     // autosave spruce settings
     autosave_timer = new QTimer( this );

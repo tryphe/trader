@@ -17,7 +17,7 @@ class SpruceOverseer : public QObject
 {
     Q_OBJECT
 public:
-    explicit SpruceOverseer();
+    explicit SpruceOverseer( Spruce *_spruce );
     ~SpruceOverseer();
 
     static QString getSettingsPath() { return Global::getTraderPath() + QDir::separator() + "spruce.settings"; }

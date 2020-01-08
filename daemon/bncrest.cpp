@@ -59,11 +59,6 @@ BncREST::~BncREST()
     ticker_timer = nullptr;
     exchangeinfo_timer = nullptr;
 
-    // force nam to close
-    nam->thread()->exit();
-    delete nam;
-    nam = nullptr;
-
     // dispose of websocket
     if ( wss )
     {

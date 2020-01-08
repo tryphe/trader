@@ -19,6 +19,7 @@ class EngineSettings;
 class TrexREST;
 class BncREST;
 class PoloREST;
+class WavesREST;
 
 class Engine : public QObject
 {
@@ -89,6 +90,7 @@ public:
     TrexREST *rest_trex{ nullptr };
     BncREST *rest_bnc{ nullptr };
     PoloREST *rest_polo{ nullptr };
+    WavesREST *rest_waves{ nullptr };
     AlphaTracker *alpha{ nullptr };
 
 signals:

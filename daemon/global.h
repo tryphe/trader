@@ -21,6 +21,7 @@
 static const quint8 ENGINE_BITTREX                          ( 0 );
 static const quint8 ENGINE_BINANCE                          ( 1 );
 static const quint8 ENGINE_POLONIEX                         ( 2 );
+static const quint8 ENGINE_WAVES                            ( 3 );
 
 static const quint8 SIDE_BUY                                ( 1 );
 static const quint8 SIDE_SELL                               ( 2 );
@@ -133,6 +134,8 @@ static const QLatin1String POLO_COMMAND_CANCEL_ARGS     ( "orderNumber=" );
 static const QLatin1String POLO_COMMAND_GETBOOKS        ( "returnOrderBook" );
 static const QLatin1String POLO_COMMAND_GETBOOKS_ARGS   ( "currencyPair=all&depth=1" );
 static const QLatin1String POLO_COMMAND_GETFEE          ( "returnFeeInfo" );
+
+// waves symbols
 
 namespace Global {
 

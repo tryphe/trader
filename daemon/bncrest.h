@@ -1,8 +1,6 @@
 #ifndef BNCREST_H
 #define BNCREST_H
 
-#include "build-config.h"
-
 #include <QObject>
 #include <QQueue>
 #include <QHash>

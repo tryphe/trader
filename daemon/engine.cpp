@@ -3,6 +3,7 @@
 #include "trexrest.h"
 #include "bncrest.h"
 #include "polorest.h"
+#include "wavesrest.h"
 #include "stats.h"
 #include "positionman.h"
 #include "enginesettings.h"

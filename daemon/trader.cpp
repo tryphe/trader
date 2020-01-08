@@ -8,6 +8,7 @@
 #include "trexrest.h"
 #include "polorest.h"
 #include "bncrest.h"
+#include "wavesrest.h"
 #include "ssl_policy.h"
 #include "fallbacklistener.h"
 #include "commandlistener.h"
@@ -16,9 +17,6 @@
 #include "alphatracker.h"
 #include "spruce.h"
 #include "spruceoverseer.h"
-#include "trexrest.h"
-#include "bncrest.h"
-#include "polorest.h"
 
 #include <QByteArray>
 #include <QTimer>
@@ -32,7 +30,8 @@ Trader::Trader( QObject *parent )
 {
     bool bittrex = false,
          binance = false,
-         poloniex = false;
+         poloniex = false,
+         waves = false;
 
     // ssl hacks
     GlobalSsl::enableSecureSsl();
@@ -40,11 +39,10 @@ Trader::Trader( QObject *parent )
     // create spruce and spruceOverseer
     alpha = new AlphaTracker();
     spruce = new Spruce();
-    spruce_overseer = new SpruceOverseer();
+    spruce_overseer = new SpruceOverseer( spruce );
     spruce_overseer->alpha = alpha;
-    spruce_overseer->spruce = spruce;
 
-    QNetworkAccessManager *nam = new QNetworkAccessManager();
+    nam = new QNetworkAccessManager();
 
     // engine init
 #ifdef BITTREX_ENABLED
@@ -83,6 +81,18 @@ Trader::Trader( QObject *parent )
     poloniex = true;
 #endif
 
+#ifdef WAVES_ENABLED
+    engine_waves = new Engine( ENGINE_WAVES );
+    rest_waves = new WavesREST( engine_waves, nam );
+    engine_waves->rest_waves = rest_waves;
+    engine_waves->alpha = alpha;
+    engine_waves->spruce = spruce;
+
+    spruce_overseer->engine_map.insert( ENGINE_WAVES, engine_waves );
+
+    waves = true;
+#endif
+
     // runtime tests
     qint64 t0 = QDateTime::currentMSecsSinceEpoch();
 
@@ -93,6 +103,7 @@ Trader::Trader( QObject *parent )
     if ( bittrex  ) engine_test.test( engine_trex );
     if ( binance  ) engine_test.test( engine_bnc );
     if ( poloniex ) engine_test.test( engine_polo );
+    if ( waves )    engine_test.test( engine_waves );
 
     qint64 t1 = QDateTime::currentMSecsSinceEpoch();
     kDebug() << "[Trader] Tests passed in" << t1 - t0 << "ms.";
@@ -122,11 +133,19 @@ Trader::Trader( QObject *parent )
         connect( command_runner_polo, &CommandRunner::exitSignal, this, &Trader::handleExitSignal );
         connect( engine_polo, &Engine::gotUserCommandChunk, command_runner_polo, &CommandRunner::runCommandChunk );
     }
+    if ( waves )
+    {
+        command_runner_waves = new CommandRunner( ENGINE_WAVES, engine_waves, rest_waves );
+        command_runner_waves->spruce_overseer = spruce_overseer;
+        connect( command_runner_waves, &CommandRunner::exitSignal, this, &Trader::handleExitSignal );
+        connect( engine_waves, &Engine::gotUserCommandChunk, command_runner_waves, &CommandRunner::runCommandChunk );
+    }
 
     // connect spruce_overseer to a command runner that isn't null
-    CommandRunner *command_runner = command_runner_trex != nullptr ? command_runner_trex :
-                                    command_runner_bnc != nullptr  ? command_runner_bnc :
-                                    command_runner_polo != nullptr ? command_runner_polo :
+    CommandRunner *command_runner = command_runner_trex != nullptr  ? command_runner_trex :
+                                    command_runner_bnc != nullptr   ? command_runner_bnc :
+                                    command_runner_polo != nullptr  ? command_runner_polo :
+                                    command_runner_waves != nullptr ? command_runner_waves :
                                                                      nullptr;
 
     if ( command_runner )
@@ -144,6 +163,7 @@ Trader::Trader( QObject *parent )
     if ( bittrex )  rest_trex->init();
     if ( binance )  rest_bnc->init();
     if ( poloniex ) rest_polo->init();
+    if ( waves )    rest_waves->init();
 
     spruce_overseer->loadSettings();
     spruce_overseer->loadStats();
@@ -154,16 +174,24 @@ Trader::~Trader()
     delete engine_trex;
     delete engine_bnc;
     delete engine_polo;
+    delete engine_waves;
     delete rest_trex;
     delete rest_bnc;
     delete rest_polo;
+    delete rest_waves;
     delete command_runner_trex;
     delete command_runner_bnc;
     delete command_runner_polo;
+    delete command_runner_waves;
     delete command_listener;
     delete alpha;
 
     QCoreApplication::processEvents( QEventLoop::AllEvents, 10000 );
+
+    // force nam to close
+    nam->thread()->exit();
+    delete nam;
+    nam = nullptr;
 
     kDebug() << "[Trader] done.";
 }
@@ -186,6 +214,11 @@ void Trader::handleCommand( QString &s )
     {
         s = s.mid( 9 );
         command_runner_polo->runCommandChunk( s );
+    }
+    else if ( s.startsWith( QString( "waves " ), Qt::CaseInsensitive ) )
+    {
+        s = s.mid( 6 );
+        command_runner_waves->runCommandChunk( s );
     }
     else
     {

@@ -2,9 +2,6 @@
 #include "misctypes.h"
 #include "global.h"
 #include "engine.h"
-#include "bncrest.h"
-#include "trexrest.h"
-#include "polorest.h"
 #include "positionman.h"
 
 #include <QTimer>

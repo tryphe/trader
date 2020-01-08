@@ -4,6 +4,7 @@
 #include "enginesettings.h"
 #include "trexrest.h"
 #include "polorest.h"
+#include "wavesrest.h"
 #include "bncrest.h"
 #include "stats.h"
 #include "positionman.h"

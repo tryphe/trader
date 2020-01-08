@@ -7,6 +7,7 @@
 #define BITTREX_ENABLED
 #define BINANCE_ENABLED
 //#define POLONIEX_ENABLED
+#define WAVES_ENABLED
 
 /// where to print logs
 #define PRINT_LOGS_TO_CONSOLE

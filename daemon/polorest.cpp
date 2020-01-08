@@ -63,11 +63,6 @@ PoloREST::~PoloREST()
     fee_timer = nullptr;
     wss_timer = nullptr;
 
-    // force nam to close
-    nam->thread()->exit();
-    delete nam;
-    nam = nullptr;
-
     // dispose of websocket
     if ( wss )
     {

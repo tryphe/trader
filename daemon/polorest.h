@@ -1,8 +1,6 @@
 #ifndef POLOREST_H
 #define POLOREST_H
 
-#include "build-config.h"
-
 #include <QObject>
 #include <QQueue>
 #include <QHash>
