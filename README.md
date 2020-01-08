@@ -19,9 +19,13 @@ Features
  - [x] ~Ping-pong using fixed, user-generated positions. Also able to combine positions.~ (recently deprecated and broken)
  - [x] Automatic ping-ping (wip)
  - [x] Because trades aren't made using a browser interface, coin theft by withdrawal through browser hijacking is impossible.
- - [x] Bittrex REST support.
- - [x] Binance REST support.
+
+Exchanges
+---------
+ - [x] Bittrex REST support. (deprecated)
+ - [x] Binance REST support. (deprecated, partially broken)
  - [x] Poloniex REST and WSS feed support (deprecated)
+ - [ ] Waves support (wip)
 
 TODO
  ----
