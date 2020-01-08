@@ -23,7 +23,7 @@ SpruceOverseer::SpruceOverseer( Spruce *_spruce )
     spruce_timer = new QTimer( this );
     connect( spruce_timer, &QTimer::timeout, this, &SpruceOverseer::onSpruceUp );
     spruce_timer->setTimerType( Qt::VeryCoarseTimer );
-    spruce_timer->start( spruce->getIntervalMS() );
+    spruce_timer->start( spruce->getIntervalSecs() * 1000 );
 
     // autosave spruce settings
     autosave_timer = new QTimer( this );

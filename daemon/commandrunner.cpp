@@ -25,12 +25,10 @@ CommandRunner::CommandRunner(const quint8 _engine_type, Engine *_e, void *_rest,
 {
     engine_type = _engine_type;
 
-    if ( engine_type == ENGINE_BITTREX )
-        rest_trex = static_cast<TrexREST*>( _rest );
-    else if ( engine_type == ENGINE_BINANCE )
-        rest_bnc = static_cast<BncREST*>( _rest );
-    else if ( engine_type == ENGINE_POLONIEX )
-        rest_polo = static_cast<PoloREST*>( _rest );
+    if ( engine_type == ENGINE_BITTREX )       rest_trex = static_cast<TrexREST*>( _rest );
+    else if ( engine_type == ENGINE_BINANCE )  rest_bnc = static_cast<BncREST*>( _rest );
+    else if ( engine_type == ENGINE_POLONIEX ) rest_polo = static_cast<PoloREST*>( _rest );
+    else if ( engine_type == ENGINE_WAVES )    rest_waves = static_cast<WavesREST*>( _rest );
 
     // map strings to functions
     using std::placeholders::_1;
@@ -88,6 +86,7 @@ CommandRunner::CommandRunner(const quint8 _engine_type, Engine *_e, void *_rest,
     command_map.insert( "setrequesttimeout", std::bind( &CommandRunner::command_setrequesttimeout, this, _1 ) );
     command_map.insert( "setcanceltimeout", std::bind( &CommandRunner::command_setcanceltimeout, this, _1 ) );
     command_map.insert( "setslippagetimeout", std::bind( &CommandRunner::command_setslippagetimeout, this, _1 ) );
+    command_map.insert( "setspruceinterval", std::bind( &CommandRunner::command_setspruceinterval, this, _1 ) );
     command_map.insert( "setsprucebasecurrency", std::bind( &CommandRunner::command_setsprucebasecurrency, this, _1 ) );
     command_map.insert( "setspruceweight", std::bind( &CommandRunner::command_setspruceweight, this, _1 ) );
     command_map.insert( "setsprucestartnode", std::bind( &CommandRunner::command_setsprucestartnode, this, _1 ) );
@@ -894,6 +893,14 @@ void CommandRunner::command_setslippagetimeout( QStringList &args )
 
     engine->getMarketInfo( market ).slippage_timeout = args.value( 2 ).toInt();
     kDebug() << "slippage timeout for" << market << "is" << engine->getMarketInfo( market ).slippage_timeout;
+}
+
+void CommandRunner::command_setspruceinterval( QStringList &args )
+{
+    if ( !checkArgs( args, 1 ) ) return;
+
+    spruce_overseer->spruce->setIntervalSecs( args.value( 1 ).toLong() );
+    kDebug() << "spruce interval is now" << spruce_overseer->spruce->getIntervalSecs() << "seconds";
 }
 
 void CommandRunner::command_setsprucebasecurrency( QStringList &args )

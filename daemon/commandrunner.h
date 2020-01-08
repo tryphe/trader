@@ -1,8 +1,6 @@
 #ifndef COMMANDRUNNER_H
 #define COMMANDRUNNER_H
 
-#include "global.h"
-
 #include <functional>
 
 #include <QObject>
@@ -16,6 +14,7 @@ class SpruceOverseer;
 class TrexREST;
 class BncREST;
 class PoloREST;
+class WavesREST;
 class Stats;
 
 class CommandRunner : public QObject
@@ -42,7 +41,6 @@ private:
     void command_getbuyselltotal( QStringList &args );
     void command_cancelall( QStringList &args );
     void command_cancellocal( QStringList &args );
-    //void command_cancelorder( QStringList &args );
     void command_cancelhighest( QStringList &args );
     void command_cancellowest( QStringList &args );
     void command_getorders( QStringList &args );
@@ -92,6 +90,7 @@ private:
     void command_setrequesttimeout( QStringList &args );
     void command_setcanceltimeout( QStringList &args );
     void command_setslippagetimeout( QStringList &args );
+    void command_setspruceinterval( QStringList &args );
     void command_setsprucebasecurrency( QStringList &args );
     void command_setspruceweight( QStringList &args );
     void command_setsprucestartnode( QStringList &args );
@@ -128,6 +127,7 @@ private:
     TrexREST *rest_trex{ nullptr };
     BncREST *rest_bnc{ nullptr };
     PoloREST *rest_polo{ nullptr };
+    WavesREST *rest_waves{ nullptr };
 };
 
 #endif // COMMANDRUNNER_H

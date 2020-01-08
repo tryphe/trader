@@ -254,6 +254,9 @@ QString Spruce::getSaveState()
 {
     QString ret;
 
+    // save interval
+    ret += QString( "setspruceinterval %1\n" ).arg( m_interval_secs );
+
     // save base
     ret += QString( "setsprucebasecurrency %1\n" ).arg( base_currency.isEmpty() ? "disabled" : base_currency );
 

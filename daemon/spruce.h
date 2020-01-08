@@ -45,7 +45,8 @@ public:
 
     void clear();
 
-    qint64 getIntervalMS() const { return m_interval_ms; }
+    void setIntervalSecs( const qint64 secs ) { m_interval_secs = secs; }
+    qint64 getIntervalSecs() const { return m_interval_secs; }
 
     void setBaseCurrency( QString currency ) { base_currency = currency; }
     QString getBaseCurrency() const { return base_currency; }
@@ -158,8 +159,8 @@ private:
 
     Coin m_leverage;
     Coin m_leverage_start, m_leverage_stop, m_leverage_increment; // agitator variables
-    qint64 m_interval_ms{ 60000 * 2 };
-    qint64 m_agitator_last_tick{ 0 };
+    qint64 m_interval_secs{ 60 * 2 }; // 2min default
+    qint64 m_agitator_last_tick{ 0 }; // timestamp state for last agitator tick
 };
 
 #endif // SPRUCE_H
