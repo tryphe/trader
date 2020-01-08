@@ -637,8 +637,13 @@ void Engine::processOpenOrders( QVector<QString> &order_numbers, QMultiHash<QStr
     }
 }
 
-void Engine::processTicker( const QMap<QString, TickerInfo> &ticker_data, qint64 request_time_sent_ms )
+void Engine::processTicker( BaseREST *base_rest_module, const QMap<QString, TickerInfo> &ticker_data, qint64 request_time_sent_ms )
 {
+    const qint64 current_time = QDateTime::currentMSecsSinceEpoch();
+
+    // update ticker update time
+    base_rest_module->ticker_update_time = current_time;
+
     // store deleted positions, because we can't delete and iterate a hash<>
 
     for ( QMap<QString, TickerInfo>::const_iterator i = ticker_data.begin(); i != ticker_data.end(); i++ )
@@ -690,8 +695,6 @@ void Engine::processTicker( const QMap<QString, TickerInfo> &ticker_data, qint64
     if ( engine_type == ENGINE_POLONIEX ||
          engine_type == ENGINE_BINANCE )
     {
-        const qint64 current_time = QDateTime::currentMSecsSinceEpoch();
-
         QVector<Position*> filled_orders;
 
         // did we find bid == ask (we shouldn't have)

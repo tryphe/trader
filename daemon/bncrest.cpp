@@ -23,23 +23,7 @@ BncREST::BncREST( Engine *_engine , QNetworkAccessManager *_nam )
     nam = _nam;
     connect( nam, &QNetworkAccessManager::finished, this, &BncREST::onNamReply );
 
-    // we use this to send the requests at a predictable rate
-    send_timer = new QTimer( this );
-    connect( send_timer, &QTimer::timeout, this, &BncREST::sendNamQueue );
-    send_timer->setTimerType( Qt::CoarseTimer );
-    send_timer->start( BINANCE_TIMER_INTERVAL_NAM_SEND ); // minimum threshold 200 or so
-
-    // this timer requests the order book
-    orderbook_timer = new QTimer( this );
-    connect( orderbook_timer, &QTimer::timeout, this, &BncREST::onCheckBotOrders );
-    orderbook_timer->setTimerType( Qt::VeryCoarseTimer );
-    orderbook_timer->start( BINANCE_TIMER_INTERVAL_ORDERBOOK );
-
-    // this timer reads the lo_sell and hi_buy prices for all coins
-    ticker_timer = new QTimer( this );
-    connect( ticker_timer, &QTimer::timeout, this, &BncREST::onCheckTicker );
-    ticker_timer->setTimerType( Qt::VeryCoarseTimer );
-    ticker_timer->start( BINANCE_TIMER_INTERVAL_TICKER );
+    exchange_string = BINANCE_EXCHANGE_STR;
 }
 
 BncREST::~BncREST()
@@ -59,48 +43,50 @@ BncREST::~BncREST()
     ticker_timer = nullptr;
     exchangeinfo_timer = nullptr;
 
-    // dispose of websocket
-    if ( wss )
-    {
-        // disconnect wss so we don't call wssCheckConnection()
-        disconnect( wss, &QWebSocket::disconnected, this, &BncREST::wssCheckConnection );
-
-        wss->abort();
-        delete wss;
-        wss = nullptr;
-    }
-
     kDebug() << "[BncREST] done.";
 }
 
 void BncREST::init()
 {
-    keystore.setKeys( BINANCE_KEY, BINANCE_SECRET );
-    engine->loadSettings();
-
     BaseREST::limit_commands_queued = 35; // stop checks if we are over this many commands queued
     BaseREST::limit_commands_queued_dc_check = 10; // exit dc check if we are over this many commands queued
     BaseREST::limit_commands_sent = 60; // stop checks if we are over this many commands sent
     BaseREST::limit_timeout_yield = 12;
     BaseREST::market_cancel_thresh = 300; // limit for market order total for weighting cancels to be sent first
 
-    // create websocket
-//    wss = new QWebSocket();
-//    connect( wss, &QWebSocket::connected, this, &BncREST::wssConnected );
-//    connect( wss, &QWebSocket::disconnected, this, &BncREST::wssCheckConnection );
-//    connect( wss, &QWebSocket::textMessageReceived, this, &BncREST::wssTextMessageReceived );
+    // we use this to send the requests at a predictable rate
+    send_timer = new QTimer( this );
+    connect( send_timer, &QTimer::timeout, this, &BncREST::sendNamQueue );
+    send_timer->setTimerType( Qt::CoarseTimer );
+    send_timer->start( BINANCE_TIMER_INTERVAL_NAM_SEND ); // minimum threshold 200 or so
 
-    // this timer syncs the maker fee so we can estimate profit
+    // this timer reads the lo_sell and hi_buy prices for all coins
+    ticker_timer = new QTimer( this );
+    connect( ticker_timer, &QTimer::timeout, this, &BncREST::onCheckTicker );
+    ticker_timer->setTimerType( Qt::VeryCoarseTimer );
+    ticker_timer->start( BINANCE_TIMER_INTERVAL_TICKER );
+
+    // this timer sets the network rate, fee, price ticksizes, and quantity ticksizes
     exchangeinfo_timer = new QTimer( this );
     connect( exchangeinfo_timer, &QTimer::timeout, this, &BncREST::onCheckExchangeInfo );
     exchangeinfo_timer->setTimerType( Qt::VeryCoarseTimer );
     exchangeinfo_timer->start( 60000 ); // 1 minute (turns to 1 hour after first parse)
 
+#if !defined( BINANCE_TICKER_ONLY )
+    keystore.setKeys( BINANCE_KEY, BINANCE_SECRET );
+
+    // this timer requests the order book
+    orderbook_timer = new QTimer( this );
+    connect( orderbook_timer, &QTimer::timeout, this, &BncREST::onCheckBotOrders );
+    orderbook_timer->setTimerType( Qt::VeryCoarseTimer );
+    orderbook_timer->start( BINANCE_TIMER_INTERVAL_ORDERBOOK );
     onCheckBotOrders();
+#endif
+
     onCheckExchangeInfo();
     onCheckTicker();
 
-    //sendRequest( "sign-get-order", "symbol=XMRBTC&orderId=53842" );
+    engine->loadSettings();
 }
 
 void BncREST::sendNamQueue()
@@ -125,7 +111,7 @@ void BncREST::sendNamQueue()
     }
 
     // normalize ratelimit by our timer
-    const qint32 ratelimit_window = ratelimit_minute / ( 60000 / orderbook_timer->interval() );
+    const qint32 ratelimit_window = ratelimit_minute / ( 60000 / BINANCE_RATELIMIT_WINDOW );
     if ( binance_weight > ratelimit_window )
     {
         kDebug() << "local warning: hit ratelimit_window" << ratelimit_window;
@@ -295,9 +281,6 @@ void BncREST::sendNamRequest( Request *const &request )
 
         QUrl public_url( url_base + api_command );
 
-//        kDebug() << public_url.toString();
-//        kDebug() << query.toString();
-
         public_url.setQuery( query );
         nam_request.setUrl( public_url );
 
@@ -310,8 +293,6 @@ void BncREST::sendNamRequest( Request *const &request )
 
         QUrl public_url( BNC_URL + api_command );
 
-//        kDebug() << public_url.toString() << ":" << query_bytes;
-
         nam_request.setUrl( public_url );
         reply = nam->post( nam_request, query_bytes );
     }
@@ -321,9 +302,6 @@ void BncREST::sendNamRequest( Request *const &request )
         api_command.remove( 0, 7 ); // remove "delete-"
 
         QUrl public_url( BNC_URL + api_command );
-
-//        kDebug() << public_url.toString();
-//        kDebug() << query_bytes;
 
         nam_request.setUrl( public_url );
         reply = nam->sendCustomRequest( nam_request, "DELETE", query_bytes );
@@ -419,7 +397,7 @@ bool BncREST::yieldToLag() const
 
     // have we seen the orderbook update recently?
     return ( orderbook_update_time != 0 &&
-             orderbook_update_time < time - ( orderbook_timer->interval() *5 ) );
+             orderbook_update_time < time - ( BINANCE_TIMER_INTERVAL_ORDERBOOK *5 ) );
 }
 
 void BncREST::onNamReply( QNetworkReply *const &reply )
@@ -867,7 +845,7 @@ void BncREST::parseTicker( const QJsonArray &info, qint64 request_time_sent_ms )
         }
     }
 
-    engine->processTicker( ticker_info, request_time_sent_ms );
+    engine->processTicker( this, ticker_info, request_time_sent_ms );
 }
 
 void BncREST::parseExchangeInfo( const QJsonObject &obj )

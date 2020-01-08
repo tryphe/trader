@@ -111,10 +111,17 @@ Trader::Trader( QObject *parent )
     // print build info
     kDebug() << "[Trader] Startup success." << Global::getBuildString();
 
+    QVector<BaseREST*> rest_arr;
+    rest_arr += rest_trex;
+    rest_arr += rest_bnc;
+    rest_arr += rest_polo;
+    rest_arr += rest_waves;
+
     // create command runner
     if ( bittrex )
     {
         command_runner_trex = new CommandRunner( ENGINE_BITTREX, engine_trex, rest_trex );
+        command_runner_trex->rest_arr = rest_arr;
         command_runner_trex->spruce_overseer = spruce_overseer;
         connect( command_runner_trex, &CommandRunner::exitSignal, this, &Trader::handleExitSignal );
         connect( engine_trex, &Engine::gotUserCommandChunk, command_runner_trex, &CommandRunner::runCommandChunk );
@@ -122,6 +129,7 @@ Trader::Trader( QObject *parent )
     if ( binance )
     {
         command_runner_bnc = new CommandRunner( ENGINE_BINANCE, engine_bnc, rest_bnc );
+        command_runner_bnc->rest_arr = rest_arr;
         command_runner_bnc->spruce_overseer = spruce_overseer;
         connect( command_runner_bnc,  &CommandRunner::exitSignal, this, &Trader::handleExitSignal );
         connect( engine_bnc, &Engine::gotUserCommandChunk, command_runner_bnc, &CommandRunner::runCommandChunk );
@@ -129,6 +137,7 @@ Trader::Trader( QObject *parent )
     if ( poloniex )
     {
         command_runner_polo = new CommandRunner( ENGINE_POLONIEX, engine_polo, rest_polo );
+        command_runner_polo->rest_arr = rest_arr;
         command_runner_polo->spruce_overseer = spruce_overseer;
         connect( command_runner_polo, &CommandRunner::exitSignal, this, &Trader::handleExitSignal );
         connect( engine_polo, &Engine::gotUserCommandChunk, command_runner_polo, &CommandRunner::runCommandChunk );
@@ -136,6 +145,7 @@ Trader::Trader( QObject *parent )
     if ( waves )
     {
         command_runner_waves = new CommandRunner( ENGINE_WAVES, engine_waves, rest_waves );
+        command_runner_waves->rest_arr = rest_arr;
         command_runner_waves->spruce_overseer = spruce_overseer;
         connect( command_runner_waves, &CommandRunner::exitSignal, this, &Trader::handleExitSignal );
         connect( engine_waves, &Engine::gotUserCommandChunk, command_runner_waves, &CommandRunner::runCommandChunk );
@@ -160,10 +170,9 @@ Trader::Trader( QObject *parent )
 //    connect( listener_fallback, &FallbackListener::gotDataChunk, runner, &CommandRunner::runCommandChunk );
 
     // tests passed. start rest, load settings and stats, initialize api keys
-    if ( bittrex )  rest_trex->init();
-    if ( binance )  rest_bnc->init();
-    if ( poloniex ) rest_polo->init();
-    if ( waves )    rest_waves->init();
+    for ( int i = 0; i < rest_arr.size(); i++ )
+        if ( rest_arr.at( i ) != nullptr )
+            rest_arr.at( i )->init();
 
     spruce_overseer->loadSettings();
     spruce_overseer->loadStats();

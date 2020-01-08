@@ -24,23 +24,7 @@ TrexREST::TrexREST( Engine *_engine, QNetworkAccessManager *_nam )
     nam = _nam;
     connect( nam, &QNetworkAccessManager::finished, this, &TrexREST::onNamReply );
 
-    // we use this to send the requests at a predictable rate
-    send_timer = new QTimer( this );
-    connect( send_timer, &QTimer::timeout, this, &TrexREST::sendNamQueue );
-    send_timer->setTimerType( Qt::CoarseTimer );
-    send_timer->start( BITTREX_TIMER_INTERVAL_NAM_SEND ); // minimum threshold 200 or so
-
-    // this timer requests the order book
-    orderbook_timer = new QTimer( this );
-    connect( orderbook_timer, &QTimer::timeout, this, &TrexREST::onCheckBotOrders );
-    orderbook_timer->setTimerType( Qt::VeryCoarseTimer );
-    orderbook_timer->start( BITTREX_TIMER_INTERVAL_ORDERBOOK );
-
-    // this timer reads the lo_sell and hi_buy prices for all coins
-    ticker_timer = new QTimer( this );
-    connect( ticker_timer, &QTimer::timeout, this, &TrexREST::onCheckTicker );
-    ticker_timer->setTimerType( Qt::VeryCoarseTimer );
-    ticker_timer->start( BITTREX_TIMER_INTERVAL_TICKER );
+    exchange_string = BITTREX_EXCHANGE_STR;
 }
 
 TrexREST::~TrexREST()
@@ -64,14 +48,32 @@ TrexREST::~TrexREST()
 
 void TrexREST::init()
 {
-    keystore.setKeys( BITTREX_KEY, BITTREX_SECRET );
-    engine->loadSettings();
-
     BaseREST::limit_commands_queued = 20; // stop checks if we are over this many commands queued
     BaseREST::limit_commands_queued_dc_check = 7; // exit dc check if we are over this many commands queued
     BaseREST::limit_commands_sent = 45; // stop checks if we are over this many commands sent
     BaseREST::limit_timeout_yield = 6;
     BaseREST::market_cancel_thresh = 300; // limit for market order total for weighting cancels to be sent first
+
+    // we use this to send the requests at a predictable rate
+    send_timer = new QTimer( this );
+    connect( send_timer, &QTimer::timeout, this, &TrexREST::sendNamQueue );
+    send_timer->setTimerType( Qt::CoarseTimer );
+    send_timer->start( BITTREX_TIMER_INTERVAL_NAM_SEND ); // minimum threshold 200 or so
+
+    // this timer reads the lo_sell and hi_buy prices for all coins
+    ticker_timer = new QTimer( this );
+    connect( ticker_timer, &QTimer::timeout, this, &TrexREST::onCheckTicker );
+    ticker_timer->setTimerType( Qt::VeryCoarseTimer );
+    ticker_timer->start( BITTREX_TIMER_INTERVAL_TICKER );
+
+#if !defined( BITTREX_TICKER_ONLY )
+    keystore.setKeys( BITTREX_KEY, BITTREX_SECRET );
+
+    // this timer requests the order book
+    orderbook_timer = new QTimer( this );
+    connect( orderbook_timer, &QTimer::timeout, this, &TrexREST::onCheckBotOrders );
+    orderbook_timer->setTimerType( Qt::VeryCoarseTimer );
+    orderbook_timer->start( BITTREX_TIMER_INTERVAL_ORDERBOOK );
 
     // this timer requests the order book
     order_history_timer = new QTimer( this );
@@ -81,20 +83,11 @@ void TrexREST::init()
 
     onCheckOrderHistory();
     onCheckBotOrders();
+#endif
+
     onCheckTicker();
 
-//    sendRequest( TREX_COMMAND_GET_ORDER, "uuid=38ea80", nullptr );
-
-//    // test output
-//    const Coin commission = Coin( "0.000015" );
-//    const Coin price = Coin( "0.0001" );
-//    const Coin qty = Coin( "100");
-//    const Coin btc_amount = Coin( "0.01" );
-
-//    stats->updateStats( "getorder", "BTC_TEST", "be7a6806-965f-4e45-8f92-746150ee7e5c", SIDE_BUY, "spruce",
-//                        btc_amount, qty, price, commission, true );
-//    stats->updateStats( "getorder", "BTC_TEST", "b000000b-965f-4e45-8f92-746150ee7e5c", SIDE_SELL, "spruce",
-//                        btc_amount, qty, price, commission, true );
+    engine->loadSettings();
 }
 
 void TrexREST::sendNamQueue()
@@ -222,10 +215,13 @@ void TrexREST::sendNamRequest( Request *const &request )
     // inherit the body from the input structure
     QUrlQuery query = QUrlQuery( request->body );
 
-    const QString request_nonce_str = QString::number( current_time );
+    if ( !keystore.isKeyOrSecretEmpty() )
+    {
+        const QString request_nonce_str = QString::number( current_time );
 
-    query.addQueryItem( NONCE, request_nonce_str );
-    query.addQueryItem( TREX_APIKEY, QString( keystore.getKey() ) );
+        query.addQueryItem( NONCE, request_nonce_str );
+        query.addQueryItem( TREX_APIKEY, QString( keystore.getKey() ) );
+    }
 
     url.setQuery( query );
 
@@ -233,7 +229,8 @@ void TrexREST::sendNamRequest( Request *const &request )
     nam_request.setUrl( url );
 
     // add auth header
-    nam_request.setRawHeader( TREX_APISIGN, Global::getBittrexPoloSignature( nam_request.url().toString().toLocal8Bit(), keystore.getSecret() ) );
+    if ( !keystore.isKeyOrSecretEmpty() )
+        nam_request.setRawHeader( TREX_APISIGN, Global::getBittrexPoloSignature( nam_request.url().toString().toLocal8Bit(), keystore.getSecret() ) );
 
     // send REST message
     QNetworkReply *const &reply = nam->get( nam_request );
@@ -282,7 +279,7 @@ bool TrexREST::yieldToLag() const
 {
     // have we seen the orderbook update recently?
     return ( order_history_update_time != 0 &&
-             order_history_update_time < QDateTime::currentMSecsSinceEpoch() - ( order_history_timer->interval() *10 ) /* ~50s */ );
+             order_history_update_time < QDateTime::currentMSecsSinceEpoch() - ( BITTREX_TIMER_INTERVAL_ORDERBOOK *10 ) );
 }
 
 void TrexREST::onNamReply( QNetworkReply *const &reply )
@@ -803,7 +800,7 @@ void TrexREST::parseOrderBook( const QJsonArray &info, qint64 request_time_sent_
         }
     }
 
-    engine->processTicker( ticker_info, request_time_sent_ms );
+    engine->processTicker( this, ticker_info, request_time_sent_ms );
 }
 
 void TrexREST::parseOrderHistory( const QJsonObject &obj )

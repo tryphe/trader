@@ -24,23 +24,7 @@ PoloREST::PoloREST( Engine *_engine , QNetworkAccessManager *_nam )
     nam = _nam;
     connect( nam, &QNetworkAccessManager::finished, this, &PoloREST::onNamReply );
 
-    // we use this to send the requests at a predictable rate
-    send_timer = new QTimer( this );
-    connect( send_timer, &QTimer::timeout, this, &PoloREST::sendNamQueue );
-    send_timer->setTimerType( Qt::CoarseTimer );
-    send_timer->start( POLONIEX_TIMER_INTERVAL_NAM_SEND ); // minimum threshold 200 or so
-
-    // this timer requests the order book
-    orderbook_timer = new QTimer( this );
-    connect( orderbook_timer, &QTimer::timeout, this, &PoloREST::onCheckBotOrders );
-    orderbook_timer->setTimerType( Qt::VeryCoarseTimer );
-    orderbook_timer->start( POLONIEX_TIMER_INTERVAL_ORDERBOOK );
-
-    // this timer reads the lo_sell and hi_buy prices for all coins
-    ticker_timer = new QTimer( this );
-    connect( ticker_timer, &QTimer::timeout, this, &PoloREST::onCheckTicker );
-    ticker_timer->setTimerType( Qt::VeryCoarseTimer );
-    ticker_timer->start( POLONIEX_TIMER_INTERVAL_TICKER );
+    exchange_string = POLONIEX_EXCHANGE_STR;
 }
 
 PoloREST::~PoloREST()
@@ -79,9 +63,6 @@ PoloREST::~PoloREST()
 
 void PoloREST::init()
 {
-    keystore.setKeys( POLONIEX_KEY, POLONIEX_SECRET );
-    engine->loadSettings();
-
     BaseREST::limit_commands_queued = 28; // stop checks if we are over this many commands queued
     BaseREST::limit_commands_queued_dc_check = 10; // exit dc check if we are over this many commands queued
     BaseREST::limit_commands_sent = 48; // stop checks if we are over this many commands sent
@@ -91,11 +72,33 @@ void PoloREST::init()
     // setup currency ids
     setupCurrencyMap( currency_name_by_id );
 
+    // we use this to send the requests at a predictable rate
+    send_timer = new QTimer( this );
+    connect( send_timer, &QTimer::timeout, this, &PoloREST::sendNamQueue );
+    send_timer->setTimerType( Qt::CoarseTimer );
+    send_timer->start( POLONIEX_TIMER_INTERVAL_NAM_SEND ); // minimum threshold 200 or so
+
+    // this timer reads the lo_sell and hi_buy prices for all coins
+    ticker_timer = new QTimer( this );
+    connect( ticker_timer, &QTimer::timeout, this, &PoloREST::onCheckTicker );
+    ticker_timer->setTimerType( Qt::VeryCoarseTimer );
+    ticker_timer->start( POLONIEX_TIMER_INTERVAL_TICKER );
+
+    // if we are running a ticker only build, don't set keys, don't get wss feed, and don't query books and fees
+#if !defined( POLONIEX_TICKER_ONLY )
+    keystore.setKeys( POLONIEX_KEY, POLONIEX_SECRET );
+
     // create websocket
     wss = new QWebSocket();
     connect( wss, &QWebSocket::connected, this, &PoloREST::wssConnected );
     connect( wss, &QWebSocket::disconnected, this, &PoloREST::wssCheckConnection );
     connect( wss, &QWebSocket::textMessageReceived, this, &PoloREST::wssTextMessageReceived );
+
+    // this timer requests the order book
+    orderbook_timer = new QTimer( this );
+    connect( orderbook_timer, &QTimer::timeout, this, &PoloREST::onCheckBotOrders );
+    orderbook_timer->setTimerType( Qt::VeryCoarseTimer );
+    orderbook_timer->start( POLONIEX_TIMER_INTERVAL_ORDERBOOK );
 
     // this timer syncs the maker fee so we can estimate profit
     fee_timer = new QTimer( this );
@@ -108,6 +111,11 @@ void PoloREST::init()
     wss_timer = new QTimer( this );
     connect( wss_timer, &QTimer::timeout, this, &PoloREST::wssCheckConnection );
     wss_timer->setTimerType( Qt::VeryCoarseTimer );
+#endif
+
+    onCheckTicker();
+
+    engine->loadSettings();
 }
 
 bool PoloREST::yieldToLag() const
@@ -115,7 +123,8 @@ bool PoloREST::yieldToLag() const
     const qint64 time = QDateTime::currentMSecsSinceEpoch();
 
     // have we seen the orderbook update recently?
-    return ( orderbook_update_time < time - ( orderbook_timer->interval() *5 ) );
+    return ( orderbook_update_time != 0 &&
+             orderbook_update_time < time - ( POLONIEX_TIMER_INTERVAL_ORDERBOOK *5 ) );
 }
 
 void PoloREST::sendNamRequest( Request *const &request )
@@ -145,15 +154,23 @@ void PoloREST::sendNamRequest( Request *const &request )
     if ( !query.hasQueryItem( COMMAND ) )
         query.addQueryItem( COMMAND, api_command );
 
-    query.addQueryItem( NONCE, QString::number( ++request_nonce ) );
+    // don't set nonce unless api key is set
+    if ( !keystore.isKeyOrSecretEmpty() )
+        query.addQueryItem( NONCE, QString::number( ++request_nonce ) );
 
     // form nam request and body
     QNetworkRequest nam_request;
     const QByteArray query_bytes = query.toString().toLocal8Bit();
 
-    nam_request.setRawHeader( CONTENT_TYPE, CONTENT_TYPE_ARGS ); // add content header
-    nam_request.setRawHeader( KEY, keystore.getKey() ); // add key header
-    nam_request.setRawHeader( SIGN, Global::getBittrexPoloSignature( query_bytes, keystore.getSecret() ) ); // add signature header
+    // add content header
+    nam_request.setRawHeader( CONTENT_TYPE, CONTENT_TYPE_ARGS );
+
+    // incase we have POLONIEX_TICKER_ONLY enabled, don't sign a ticker request blank
+    if ( request->api_command != POLO_COMMAND_GETBOOKS )
+    {
+        nam_request.setRawHeader( KEY, keystore.getKey() ); // add key header
+        nam_request.setRawHeader( SIGN, Global::getBittrexPoloSignature( query_bytes, keystore.getSecret() ) ); // add signature header
+    }
 
     // add to sent queue so we can check if it timed out
     request->time_sent_ms = current_time;
@@ -488,7 +505,7 @@ void PoloREST::parseOrderBook( const QJsonObject &info, qint64 request_time_sent
         {
             QMap<QString, TickerInfo> ticker_info;
             ticker_info.insert( market, TickerInfo( hi_buy, lo_sell ) );
-            engine->processTicker( ticker_info, request_time_sent_ms );
+            engine->processTicker( this, ticker_info, request_time_sent_ms );
         }
     }
 }
@@ -947,7 +964,7 @@ void PoloREST::wssSendJsonObj( const QJsonObject &obj )
     wss->sendTextMessage( data_str );
 }
 
-void PoloREST::setupCurrencyMap(QMap<qint32, QString> &m )
+void PoloREST::setupCurrencyMap( QMap<qint32, QString> &m )
 {
     // dumped from https://poloniex.com/support/api/
 
@@ -1233,7 +1250,7 @@ void PoloREST::wssTextMessageReceived( const QString &msg )
         {
             QMap<QString, TickerInfo> ticker_info;
             ticker_info.insert( market, TickerInfo( bid, ask ) );
-            engine->processTicker( ticker_info );
+            engine->processTicker( this, ticker_info );
         }
         return;
     }

@@ -63,6 +63,10 @@ static const int           PRICE_WIDTH                      ( 17 );
 static const int           ORDER_STRING_SIZE                ( 22 );
 static const QLatin1String DEFAULT_MARKET_STRING_TEMPLATE   ( "%1_%2" );
 
+static const QLatin1String COLOR_RED                        ( ">>>red<<<" );
+static const QLatin1String COLOR_GREEN                      ( ">>>grn<<<" );
+static const QLatin1String COLOR_NONE                       ( ">>>none<<<" );
+
 // trex symbols
 static const QLatin1String BITTREX_DEFAULT_FEERATE          ( "0.0015" );
 static const QLatin1String BITTREX_MINIMUM_ORDER_SIZE       ( "0.00065000" );
@@ -71,7 +75,7 @@ static const QLatin1String BITTREX_EXCHANGE_STR             ( "Bittrex" );
 static const int BITTREX_TIMER_INTERVAL_NAM_SEND            ( 330 );
 static const int BITTREX_TIMER_INTERVAL_ORDER_HISTORY       ( 60000 );
 static const int BITTREX_TIMER_INTERVAL_ORDERBOOK           ( 150000 );
-static const int BITTREX_TIMER_INTERVAL_TICKER              ( 15000 );
+static const int BITTREX_TIMER_INTERVAL_TICKER              ( 30000 );
 static const int BITTREX_SAFETY_DELAY                       ( 8500 );
 
 static const QLatin1String TREX_REST_URL                    ( "https://bittrex.com/api/v1.1/" );
@@ -93,8 +97,9 @@ static const QLatin1String BINANCE_MARKET_STRING_TEMPLATE   ( "%2%1" );
 static const QLatin1String BINANCE_EXCHANGE_STR             ( "Binance" );
 static const int BINANCE_TIMER_INTERVAL_NAM_SEND            ( 111 );
 static const int BINANCE_TIMER_INTERVAL_ORDERBOOK           ( 50000 );
-static const int BINANCE_TIMER_INTERVAL_TICKER              ( 15000 );
+static const int BINANCE_TIMER_INTERVAL_TICKER              ( 30000 );
 static const int BINANCE_SAFETY_DELAY                       ( 2000 );
+static const int BINANCE_RATELIMIT_WINDOW                   ( 60000 );
 
 static const QLatin1String BNC_URL                          ( "https://api.binance.com/api/v3/" );
 static const QLatin1String BNC_URL_WSS                      ( "wss://api.binance.com" );
@@ -116,26 +121,31 @@ static const QLatin1String POLONIEX_MINIMUM_ORDER_SIZE      ( "0.00011000" );
 static const QLatin1String POLONIEX_MARKET_STRING_TEMPLATE  ( "%1_%2" );
 static const QLatin1String POLONIEX_EXCHANGE_STR            ( "Poloniex" );
 static const int POLONIEX_TIMER_INTERVAL_NAM_SEND           ( 200 );
-static const int POLONIEX_TIMER_INTERVAL_ORDERBOOK          ( 5000 );
-static const int POLONIEX_TIMER_INTERVAL_TICKER             ( 10000 );
+static const int POLONIEX_TIMER_INTERVAL_ORDERBOOK          ( 50000 );
+static const int POLONIEX_TIMER_INTERVAL_TICKER             ( 30000 );
 static const int POLONIEX_SAFETY_DELAY                      ( 2000 );
 
-static const QLatin1String POLO_URL_TRADE               ( "https://poloniex.com/tradingApi" );
-static const QLatin1String POLO_URL_PUBLIC              ( "https://poloniex.com/public" );
-static const QLatin1String POLO_URL_PRIVATE             ( "https://poloniex.com/private" );
-static const QLatin1String POLO_URL_WSS                 ( "wss://api2.poloniex.com/" );
+static const QLatin1String POLO_URL_TRADE                   ( "https://poloniex.com/tradingApi" );
+static const QLatin1String POLO_URL_PUBLIC                  ( "https://poloniex.com/public" );
+static const QLatin1String POLO_URL_PRIVATE                 ( "https://poloniex.com/private" );
+static const QLatin1String POLO_URL_WSS                     ( "wss://api2.poloniex.com/" );
 
-static const QLatin1String POLO_COMMAND_GETCHARTDATA    ( "returnChartData" );
-static const QLatin1String POLO_COMMAND_GETBALANCES     ( "returnCompleteBalances" );
-static const QLatin1String POLO_COMMAND_GETORDERS       ( "returnOpenOrders" );
-static const QLatin1String POLO_COMMAND_GETORDERS_ARGS  ( "currencyPair=all" );
-static const QLatin1String POLO_COMMAND_CANCEL          ( "cancelOrder" );
-static const QLatin1String POLO_COMMAND_CANCEL_ARGS     ( "orderNumber=" );
-static const QLatin1String POLO_COMMAND_GETBOOKS        ( "returnOrderBook" );
-static const QLatin1String POLO_COMMAND_GETBOOKS_ARGS   ( "currencyPair=all&depth=1" );
-static const QLatin1String POLO_COMMAND_GETFEE          ( "returnFeeInfo" );
+static const QLatin1String POLO_COMMAND_GETCHARTDATA        ( "returnChartData" );
+static const QLatin1String POLO_COMMAND_GETBALANCES         ( "returnCompleteBalances" );
+static const QLatin1String POLO_COMMAND_GETORDERS           ( "returnOpenOrders" );
+static const QLatin1String POLO_COMMAND_GETORDERS_ARGS      ( "currencyPair=all" );
+static const QLatin1String POLO_COMMAND_CANCEL              ( "cancelOrder" );
+static const QLatin1String POLO_COMMAND_CANCEL_ARGS         ( "orderNumber=" );
+static const QLatin1String POLO_COMMAND_GETBOOKS            ( "returnOrderBook" );
+static const QLatin1String POLO_COMMAND_GETBOOKS_ARGS       ( "currencyPair=all&depth=1" );
+static const QLatin1String POLO_COMMAND_GETFEE              ( "returnFeeInfo" );
 
 // waves symbols
+static const QLatin1String Waves_EXCHANGE_STR               ( "Waves" );
+static const QLatin1String WAVES_MATCHER_URL                ( "https://matcher.waves.exchange/matcher/" );
+static const QLatin1String WAVES_DATA_URL                   ( "http://marketdata.wavesplatform.com/api/" );
+static const int WAVES_TIMER_INTERVAL_NAM_SEND              ( 100 );
+static const int WAVES_TIMER_INTERVAL_TICKER                ( 30000 );
 
 namespace Global {
 

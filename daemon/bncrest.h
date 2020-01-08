@@ -76,7 +76,6 @@ private:
     QTimer *orderbook_timer{ nullptr };
     QTimer *ticker_timer{ nullptr };
     QTimer *exchangeinfo_timer{ nullptr };
-    QWebSocket *wss{ nullptr };
 };
 
 #endif // BNCREST_H

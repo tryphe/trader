@@ -11,6 +11,7 @@
 class Engine;
 class Spruce;
 class SpruceOverseer;
+class BaseREST;
 class TrexREST;
 class BncREST;
 class PoloREST;
@@ -108,6 +109,7 @@ private:
     void command_setspruceagitator( QStringList &args );
     void command_spruceup( QStringList &args );
 
+    void command_getstatus( QStringList &args );
     void command_getconfig( QStringList &args );
     void command_getinternal( QStringList &args );
     void command_setmaintenancetime( QStringList &args );
@@ -121,6 +123,8 @@ private:
 
     QMap<QString, std::function<void(QStringList&)>> command_map;
 
+    QVector<BaseREST*> rest_arr;
+
     quint8 engine_type{ 0 };
     Engine *engine{ nullptr };
     SpruceOverseer *spruce_overseer{ nullptr };
@@ -128,6 +132,7 @@ private:
     BncREST *rest_bnc{ nullptr };
     PoloREST *rest_polo{ nullptr };
     WavesREST *rest_waves{ nullptr };
+
 };
 
 #endif // COMMANDRUNNER_H

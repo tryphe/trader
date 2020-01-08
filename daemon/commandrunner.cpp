@@ -102,6 +102,7 @@ CommandRunner::CommandRunner(const quint8 _engine_type, Engine *_e, void *_rest,
     command_map.insert( "setspruceordernice", std::bind( &CommandRunner::command_setspruceordernice, this, _1 ) );
     command_map.insert( "setspruceallocation", std::bind( &CommandRunner::command_setspruceallocation, this, _1 ) );
     command_map.insert( "setspruceagitator", std::bind( &CommandRunner::command_setspruceagitator, this, _1 ) );
+    command_map.insert( "getstatus", std::bind( &CommandRunner::command_getstatus, this, _1 ) );
     command_map.insert( "getconfig", std::bind( &CommandRunner::command_getconfig, this, _1 ) );
     command_map.insert( "getinternal", std::bind( &CommandRunner::command_getinternal, this, _1 ) );
     command_map.insert( "setmaintenancetime", std::bind( &CommandRunner::command_setmaintenancetime, this, _1 ) );
@@ -1014,6 +1015,31 @@ void CommandRunner::command_setspruceagitator( QStringList &args )
 void CommandRunner::command_spruceup( QStringList & )
 {
     spruce_overseer->onSpruceUp();
+}
+
+void CommandRunner::command_getstatus( QStringList &args )
+{
+    const qint64 current_time = QDateTime::currentMSecsSinceEpoch();
+    const qint64 time_thresh = current_time -
+                              ( BITTREX_TIMER_INTERVAL_TICKER +
+                                BINANCE_TIMER_INTERVAL_TICKER +
+                                POLONIEX_TIMER_INTERVAL_TICKER );
+
+    QString ticker_status;
+
+    for ( int i = 0; i < rest_arr.size(); i++ )
+    {
+        if ( rest_arr.at( i ) != nullptr )
+            ticker_status += QString( "%1%2%3 | " )
+                             .arg( rest_arr.at( i )->ticker_update_time > time_thresh ? COLOR_GREEN : COLOR_RED )
+                             .arg( rest_arr.at( i )->exchange_string )
+                             .arg( COLOR_NONE );
+    }
+
+    if ( ticker_status.size() > 0 )
+        ticker_status.chop( 3 );
+
+    kDebug() << ticker_status;
 }
 
 void CommandRunner::command_getconfig( QStringList &args )
