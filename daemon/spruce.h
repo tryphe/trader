@@ -115,6 +115,8 @@ public:
     Coin getEquityNow( QString currency );
     Coin getLastCoeffForMarket( const QString &market ) const;
 
+    bool getOrderDuplicity() const { return order_duplicity; }
+
     static inline Coin getUniversalMinOrderSize()
     {
         return std::max( Coin( BITTREX_MINIMUM_ORDER_SIZE ),
@@ -145,6 +147,7 @@ private:
     QMap<QString, Coin> per_exchange_market_allocations; // note: market allocations are 0:1
     Coin m_order_greed, m_order_greed_buy_randomness, m_order_greed_sell_randomness, m_long_max, m_short_max, m_market_buy_max,
     m_market_sell_max, m_order_size, m_order_nice, m_order_nice_spreadput, m_order_nice_zerobound;
+    bool order_duplicity{ false }; // todo: make a command to set this to true (good volume strat)
 
     QList<Node*> nodes_start, nodes_now;
     QMap<QString,Node*> nodes_now_by_currency;

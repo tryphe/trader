@@ -22,13 +22,13 @@ SpruceOverseer::SpruceOverseer()
     spruce_timer = new QTimer( this );
     connect( spruce_timer, &QTimer::timeout, this, &SpruceOverseer::onSpruceUp );
     spruce_timer->setTimerType( Qt::VeryCoarseTimer );
-    spruce_timer->start( 2 * 60000 );
+    spruce_timer->start( 15 * 60000 );
 
     // autosave spruce settings
     autosave_timer = new QTimer( this );
     connect( autosave_timer, &QTimer::timeout, this, &SpruceOverseer::onSaveSpruceSettings );
     autosave_timer->setTimerType( Qt::VeryCoarseTimer );
-    autosave_timer->start( 30 * 60000 );
+    autosave_timer->start( spruce_timer->interval() *4 );
 }
 
 SpruceOverseer::~SpruceOverseer()
@@ -168,14 +168,6 @@ void SpruceOverseer::onSpruceUp()
                     continue;
                 }
 
-                kDebug() << QString( "[Spruce %1] %2 | coeff %3 | qty-to-shortlong %4 | amt-to-shortlong %5 | on-order %6" )
-                               .arg( side == SIDE_BUY ? "buys " : "sells" )
-                               .arg( market, MARKET_STRING_WIDTH )
-                               .arg( spruce->getLastCoeffForMarket( market ), 12 )
-                               .arg( qty_to_shortlong, 20 )
-                               .arg( amount_to_shortlong, 13 )
-                               .arg( spruce_active_for_side, 12 );
-
                 // cancel conflicting spruce positions
                 for ( QSet<Position*>::const_iterator j = engine->positions->all().begin(); j != engine->positions->all().end(); j++ )
                 {
@@ -195,9 +187,19 @@ void SpruceOverseer::onSpruceUp()
                     }
                 }
 
-                // queue the order quietly
+                kDebug() << QString( "[Spruce %1] %2 | coeff %3 | qty-to-shortlong %4 | amt-to-shortlong %5 | on-order %6" )
+                               .arg( side == SIDE_BUY ? "buys " : "sells" )
+                               .arg( market, MARKET_STRING_WIDTH )
+                               .arg( spruce->getLastCoeffForMarket( market ), 12 )
+                               .arg( qty_to_shortlong, 20 )
+                               .arg( amount_to_shortlong, 13 )
+                               .arg( spruce_active_for_side, 12 );
+
+                // queue the order if we aren't paper trading
+#if !defined(PAPER_TRADE)
                 engine->addPosition( market, is_buy ? SIDE_BUY : SIDE_SELL, buy_price, sell_price, order_size,
                                      "onetime-spruce", "spruce", QVector<qint32>(), false, true );
+#endif
             }
         }
     }
@@ -308,6 +310,14 @@ TickerInfo SpruceOverseer::getSpreadForMarket( const QString &market , qint64 *j
         if ( ret.ask_price.isZeroOrLess() || // ask doesn't exist yet
              ret.ask_price < info.lowest_sell ) // ask is lower than the exchange ask
             ret.ask_price = info.lowest_sell;
+    }
+
+    if ( !spruce->getOrderDuplicity() )
+    {
+        Coin midprice = ( ret.ask_price + ret.bid_price ) / 2;
+        ret.bid_price = midprice;
+        ret.ask_price = midprice;
+        return ret;
     }
 
     /// step 2: apply base greed value to spread

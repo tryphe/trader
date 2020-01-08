@@ -1,7 +1,7 @@
 #ifndef BUILDCONFIG_H
 #define BUILDCONFIG_H
 
-#define BUILD_VERSION "1.76r"
+#define BUILD_VERSION "1.76s"
 
 /// select your exchanges
 #define BITTREX_ENABLED
@@ -9,9 +9,12 @@
 //#define POLONIEX_ENABLED
 
 /// where to print logs
-//#define PRINT_LOGS_TO_CONSOLE
+#define PRINT_LOGS_TO_CONSOLE
 //#define PRINT_LOGS_TO_FILE
 #define PRINT_LOGS_TO_FILE_COLOR
+
+/// to make trades with the strategy, comment this out
+#define PAPER_TRADE
 
 /// what to log
 //#define PRINT_LOGS_WITH_FUNCTION_NAMES
