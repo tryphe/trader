@@ -28,18 +28,12 @@ BncREST::BncREST( Engine *_engine , QNetworkAccessManager *_nam )
 
 BncREST::~BncREST()
 {
-    send_timer->stop();
-    orderbook_timer->stop();
     exchangeinfo_timer->stop();
     ratelimit_timer->stop();
 
-    delete send_timer;
-    delete orderbook_timer;
     delete exchangeinfo_timer;
     delete ratelimit_timer;
 
-    send_timer = nullptr;
-    orderbook_timer = nullptr;
     exchangeinfo_timer = nullptr;
     ratelimit_timer = nullptr;
 
@@ -54,10 +48,7 @@ void BncREST::init()
     BaseREST::limit_timeout_yield = 12;
     BaseREST::market_cancel_thresh = 300; // limit for market order total for weighting cancels to be sent first
 
-    // we use this to send the requests at a predictable rate
-    send_timer = new QTimer( this );
     connect( send_timer, &QTimer::timeout, this, &BncREST::sendNamQueue );
-    send_timer->setTimerType( Qt::CoarseTimer );
     send_timer->start( BINANCE_TIMER_INTERVAL_NAM_SEND ); // minimum threshold 200 or so
 
     connect( ticker_timer, &QTimer::timeout, this, &BncREST::onCheckTicker );
@@ -78,10 +69,7 @@ void BncREST::init()
 #if !defined( BINANCE_TICKER_ONLY )
     keystore.setKeys( BINANCE_KEY, BINANCE_SECRET );
 
-    // this timer requests the order book
-    orderbook_timer = new QTimer( this );
     connect( orderbook_timer, &QTimer::timeout, this, &BncREST::onCheckBotOrders );
-    orderbook_timer->setTimerType( Qt::VeryCoarseTimer );
     orderbook_timer->start( BINANCE_TIMER_INTERVAL_ORDERBOOK );
     onCheckBotOrders();
 #endif

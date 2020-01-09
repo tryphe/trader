@@ -62,6 +62,8 @@ struct BaseREST : public QObject
     qint64 orders_stale_trip_count{ 0 };
     qint64 books_stale_trip_count{ 0 };
 
+    QTimer *send_timer{ nullptr };
+    QTimer *orderbook_timer{ nullptr };
     QTimer *ticker_timer{ nullptr };
     QTimer *timeout_timer{ nullptr };
     QTimer *diverge_converge_timer{ nullptr };

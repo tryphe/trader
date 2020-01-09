@@ -73,8 +73,6 @@ private:
            ratelimit_minute{ 600 }, // weight limit
            ratelimit_day{ 100000 }; // orders limit
 
-    QTimer *send_timer{ nullptr };
-    QTimer *orderbook_timer{ nullptr };
     QTimer *exchangeinfo_timer{ nullptr };
     QTimer *ratelimit_timer{ nullptr };
 };

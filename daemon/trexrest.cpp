@@ -29,15 +29,9 @@ TrexREST::TrexREST( Engine *_engine, QNetworkAccessManager *_nam )
 
 TrexREST::~TrexREST()
 {
-    send_timer->stop();
-    orderbook_timer->stop();
     order_history_timer->stop();
 
-    delete send_timer;
-    delete orderbook_timer;
     delete order_history_timer;
-    send_timer = nullptr;
-    orderbook_timer = nullptr;
     order_history_timer = nullptr;
 
     kDebug() << "[TrexREST] done.";
@@ -52,9 +46,7 @@ void TrexREST::init()
     BaseREST::market_cancel_thresh = 300; // limit for market order total for weighting cancels to be sent first
 
     // we use this to send the requests at a predictable rate
-    send_timer = new QTimer( this );
     connect( send_timer, &QTimer::timeout, this, &TrexREST::sendNamQueue );
-    send_timer->setTimerType( Qt::CoarseTimer );
     send_timer->start( BITTREX_TIMER_INTERVAL_NAM_SEND ); // minimum threshold 200 or so
 
     connect( ticker_timer, &QTimer::timeout, this, &TrexREST::onCheckTicker );
@@ -64,9 +56,7 @@ void TrexREST::init()
     keystore.setKeys( BITTREX_KEY, BITTREX_SECRET );
 
     // this timer requests the order book
-    orderbook_timer = new QTimer( this );
     connect( orderbook_timer, &QTimer::timeout, this, &TrexREST::onCheckBotOrders );
-    orderbook_timer->setTimerType( Qt::VeryCoarseTimer );
     orderbook_timer->start( BITTREX_TIMER_INTERVAL_ORDERBOOK );
 
     // this timer requests the order book

@@ -78,8 +78,6 @@ private:
 
     qint64 poloniex_throttle_time{ 0 }; // when we should wait until to sent the next request
 
-    QTimer *send_timer{ nullptr };
-    QTimer *orderbook_timer{ nullptr };
     QTimer *fee_timer{ nullptr };
     QTimer *wss_timer{ nullptr };
     QWebSocket *wss{ nullptr };

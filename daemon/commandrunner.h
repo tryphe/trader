@@ -129,10 +129,6 @@ private:
     quint8 engine_type{ 0 };
     Engine *engine{ nullptr };
     SpruceOverseer *spruce_overseer{ nullptr };
-    TrexREST *rest_trex{ nullptr };
-    BncREST *rest_bnc{ nullptr };
-    PoloREST *rest_polo{ nullptr };
-    WavesREST *rest_waves{ nullptr };
 };
 
 #endif // COMMANDRUNNER_H

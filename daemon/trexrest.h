@@ -58,8 +58,6 @@ public:
 private:
     qint64 order_history_update_time{ 0 };
 
-    QTimer *send_timer{ nullptr };
-    QTimer *orderbook_timer{ nullptr };
     QTimer *order_history_timer{ nullptr };
 };
 

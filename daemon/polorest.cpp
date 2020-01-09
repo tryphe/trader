@@ -29,18 +29,12 @@ PoloREST::PoloREST( Engine *_engine , QNetworkAccessManager *_nam )
 
 PoloREST::~PoloREST()
 {
-    send_timer->stop();
-    orderbook_timer->stop();
     fee_timer->stop();
     wss_timer->stop();
 
-    delete send_timer;
-    delete orderbook_timer;
     delete fee_timer;
     delete wss_timer;
 
-    send_timer = nullptr;
-    orderbook_timer = nullptr;
     fee_timer = nullptr;
     wss_timer = nullptr;
 
@@ -70,9 +64,7 @@ void PoloREST::init()
     setupCurrencyMap( currency_name_by_id );
 
     // we use this to send the requests at a predictable rate
-    send_timer = new QTimer( this );
     connect( send_timer, &QTimer::timeout, this, &PoloREST::sendNamQueue );
-    send_timer->setTimerType( Qt::CoarseTimer );
     send_timer->start( POLONIEX_TIMER_INTERVAL_NAM_SEND ); // minimum threshold 200 or so
 
     connect( ticker_timer, &QTimer::timeout, this, &PoloREST::onCheckTicker );
@@ -89,9 +81,7 @@ void PoloREST::init()
     connect( wss, &QWebSocket::textMessageReceived, this, &PoloREST::wssTextMessageReceived );
 
     // this timer requests the order book
-    orderbook_timer = new QTimer( this );
     connect( orderbook_timer, &QTimer::timeout, this, &PoloREST::onCheckBotOrders );
-    orderbook_timer->setTimerType( Qt::VeryCoarseTimer );
     orderbook_timer->start( POLONIEX_TIMER_INTERVAL_ORDERBOOK );
 
     // this timer syncs the maker fee so we can estimate profit

@@ -31,8 +31,7 @@ public Q_SLOTS:
     void onCheckTicker();
 
 private:
-    QTimer *send_timer{ nullptr };
-    QTimer *orderbook_timer{ nullptr };
+
 };
 
 #endif // WAVESREST_H

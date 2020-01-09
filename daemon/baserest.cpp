@@ -13,6 +13,10 @@ BaseREST::BaseREST( Engine *_engine )
 {
     kDebug() << "[BaseREST]";
 
+    // we use this to send the requests at a predictable rate
+    send_timer = new QTimer( this );
+    send_timer->setTimerType( Qt::CoarseTimer );
+
     // this timer checks for nam requests that have been queued too long
     timeout_timer = new QTimer( this );
     connect( timeout_timer, &QTimer::timeout, engine, &Engine::onCheckTimeouts );
@@ -28,6 +32,10 @@ BaseREST::BaseREST( Engine *_engine )
     // this timer reads the lo_sell and hi_buy prices for all coins
     ticker_timer = new QTimer( this );
     ticker_timer->setTimerType( Qt::VeryCoarseTimer );
+
+    // this timer requests the order book
+    orderbook_timer = new QTimer( this );
+    orderbook_timer->setTimerType( Qt::VeryCoarseTimer );
 }
 
 BaseREST::~BaseREST()
@@ -37,6 +45,8 @@ BaseREST::~BaseREST()
     request_nonce = 0;
 
     // stop timers
+    send_timer->stop();
+    orderbook_timer->stop();
     timeout_timer->stop();
     diverge_converge_timer->stop();
     ticker_timer->stop();
@@ -53,10 +63,14 @@ BaseREST::~BaseREST()
     while ( nam_queue.size() > 0 )
         delete nam_queue.takeFirst();
 
+    delete send_timer;
+    delete orderbook_timer;
     delete timeout_timer;
     delete diverge_converge_timer;
     delete ticker_timer;
 
+    send_timer = nullptr;
+    orderbook_timer = nullptr;
     timeout_timer = nullptr;
     diverge_converge_timer = nullptr;
     ticker_timer = nullptr;

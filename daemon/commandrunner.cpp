@@ -25,11 +25,6 @@ CommandRunner::CommandRunner(const quint8 _engine_type, Engine *_e, void *_rest,
 {
     engine_type = _engine_type;
 
-    if ( engine_type == ENGINE_BITTREX )       rest_trex = static_cast<TrexREST*>( _rest );
-    else if ( engine_type == ENGINE_BINANCE )  rest_bnc = static_cast<BncREST*>( _rest );
-    else if ( engine_type == ENGINE_POLONIEX ) rest_polo = static_cast<PoloREST*>( _rest );
-    else if ( engine_type == ENGINE_WAVES )    rest_waves = static_cast<WavesREST*>( _rest );
-
     // map strings to functions
     using std::placeholders::_1;
     command_map.insert( "getbalances", std::bind( &CommandRunner::command_getbalances, this, _1 ) );
@@ -241,11 +236,11 @@ bool CommandRunner::checkArgs( const QStringList &args, qint32 expected_args_min
 void CommandRunner::command_getbalances( QStringList & )
 {
     if ( engine_type == ENGINE_BITTREX )
-        rest_trex->sendRequest( TREX_COMMAND_GET_BALANCES );
+        rest_arr.at( ENGINE_BITTREX )->sendRequest( TREX_COMMAND_GET_BALANCES );
     else if ( engine_type == ENGINE_BINANCE )
-        rest_bnc->sendRequest( BNC_COMMAND_GETBALANCES, "", nullptr, 5 );
+        rest_arr.at( ENGINE_BINANCE )->sendRequest( BNC_COMMAND_GETBALANCES, "", nullptr, 5 );
     else if ( engine_type == ENGINE_POLONIEX )
-        rest_polo->sendRequest( POLO_COMMAND_GETBALANCES );
+        rest_arr.at( ENGINE_POLONIEX )->sendRequest( POLO_COMMAND_GETBALANCES );
 }
 
 void CommandRunner::command_getlastprices( QStringList & )
@@ -446,16 +441,8 @@ void CommandRunner::command_shortindex( QStringList &args )
 
 void CommandRunner::command_setcancelthresh( QStringList &args )
 {
-    qint32 &market_cancel_thresh = rest_trex->market_cancel_thresh;
-
-    if ( engine_type == ENGINE_BINANCE )
-        market_cancel_thresh = rest_bnc->market_cancel_thresh;
-    else if ( engine_type == ENGINE_POLONIEX )
-        market_cancel_thresh = rest_polo->market_cancel_thresh;
-
-    market_cancel_thresh = args.value( 1 ).toInt();
-
-    kDebug() << "cancel thresh changed to" << market_cancel_thresh;
+    rest_arr.at( engine_type )->market_cancel_thresh = args.value( 1 ).toInt();
+    kDebug() << "cancel thresh changed to" << rest_arr.at( engine_type )->market_cancel_thresh;
 }
 
 void CommandRunner::command_setkeyandsecret( QStringList &args )
@@ -576,112 +563,88 @@ void CommandRunner::command_setmarketsentiment( QStringList &args )
 
 void CommandRunner::command_setnaminterval( QStringList &args )
 {
-    int new_interval = 0;
+    if ( !checkArgs( args, 1 ) ) return;
 
-    if ( engine_type == ENGINE_BITTREX )
-    {
-        rest_trex->send_timer->setInterval( args.value( 1 ).toInt() );
-        new_interval = rest_trex->send_timer->interval();
-    }
-    else if ( engine_type == ENGINE_BINANCE )
-    {
-        rest_bnc->send_timer->setInterval( args.value( 1 ).toInt() );
-        new_interval = rest_bnc->send_timer->interval();
-    }
-    else if ( engine_type == ENGINE_POLONIEX )
-    {
-        rest_polo->send_timer->setInterval( args.value( 1 ).toInt() );
-        new_interval = rest_polo->send_timer->interval();
-    }
-
-    kDebug() << "nam interval set to" << new_interval;
+    rest_arr.at( engine_type )->send_timer->setInterval( args.value( 1 ).toInt() );
+    kDebug() << "nam interval set to" << rest_arr.at( engine_type )->send_timer->interval();
 }
 
 void CommandRunner::command_setbookinterval( QStringList &args )
 {
-    int new_interval = 0;
+    if ( !checkArgs( args, 1 ) ) return;
 
-    if ( engine_type == ENGINE_BITTREX )
-    {
-        rest_trex->orderbook_timer->setInterval( args.value( 1 ).toInt() );
-        new_interval = rest_trex->orderbook_timer->interval();
-    }
-    else if ( engine_type == ENGINE_BINANCE )
-    {
-        rest_bnc->orderbook_timer->setInterval( args.value( 1 ).toInt() );
-        new_interval = rest_bnc->orderbook_timer->interval();
-    }
-    else if ( engine_type == ENGINE_POLONIEX )
-    {
-        rest_polo->orderbook_timer->setInterval( args.value( 1 ).toInt() );
-        new_interval = rest_polo->orderbook_timer->interval();
-    }
-
-    kDebug() << "bot orderbook interval set to" << new_interval;
+    rest_arr.at( engine_type )->orderbook_timer->setInterval( args.value( 1 ).toInt() );
+    kDebug() << "nam interval set to" << rest_arr.at( engine_type )->orderbook_timer->interval();
 }
 
 void CommandRunner::command_settickerinterval( QStringList &args )
 {
-    int new_interval = 0;
+    if ( !checkArgs( args, 1 ) ) return;
 
     rest_arr.at( engine_type )->ticker_timer->setInterval( args.value( 1 ).toInt() );
-    new_interval = rest_arr.at( engine_type )->ticker_timer->interval();
-
-    kDebug() << "ticker_timer interval set to" << new_interval;
+    kDebug() << "nam interval set to" << rest_arr.at( engine_type )->ticker_timer->interval();
 }
 
 void CommandRunner::command_setgracetimelimit( QStringList &args )
 {
+    if ( !checkArgs( args, 1 ) ) return;
+
     engine->getSettings()->stray_grace_time_limit = args.value( 1 ).toLong();
     kDebug() << "stray_grace_time_limit set to" << engine->getSettings()->stray_grace_time_limit;
 }
 
 void CommandRunner::command_setcheckinterval( QStringList &args )
 {
-    int new_interval = 0;
+    if ( !checkArgs( args, 1 ) ) return;
 
     rest_arr.at( engine_type )->timeout_timer->setInterval( args.value( 1 ).toInt() );
-    new_interval = rest_arr.at( engine_type )->timeout_timer->interval();
-
-    kDebug() << "timeout check interval set to" << new_interval;
+    kDebug() << "nam interval set to" << rest_arr.at( engine_type )->timeout_timer->interval();
 }
 
 void CommandRunner::command_setdcinterval( QStringList &args )
 {
-    int new_interval = 0;
+    if ( !checkArgs( args, 1 ) ) return;
 
     rest_arr.at( engine_type )->diverge_converge_timer->setInterval( args.value( 1 ).toInt() );
-    new_interval = rest_arr.at( engine_type )->diverge_converge_timer->interval();
-
-    kDebug() << "diverge converge interval set to" << new_interval;
+    kDebug() << "nam interval set to" << rest_arr.at( engine_type )->diverge_converge_timer->interval();
 }
 
 void CommandRunner::command_setclearstrayorders( QStringList &args )
 {
+    if ( !checkArgs( args, 1 ) ) return;
+
     engine->getSettings()->should_clear_stray_orders = args.value( 1 ) == "true" ? true : false;
     kDebug() << "should_clear_stray_orders set to" << engine->getSettings()->should_clear_stray_orders;
 }
 
 void CommandRunner::command_setclearstrayordersall( QStringList &args )
 {
+    if ( !checkArgs( args, 1 ) ) return;
+
     engine->getSettings()->should_clear_stray_orders_all = args.value( 1 ) == "true" ? true : false;
     kDebug() << "should_clear_stray_orders_all set to" << engine->getSettings()->should_clear_stray_orders_all;
 }
 
 void CommandRunner::command_setslippagecalculated( QStringList &args )
 {
+    if ( !checkArgs( args, 1 ) ) return;
+
     engine->getSettings()->should_slippage_be_calculated = args.value( 1 ) == "true" ? true : false;
     kDebug() << "should_slippage_be_calculated set to" << engine->getSettings()->should_slippage_be_calculated;
 }
 
 void CommandRunner::command_setadjustbuysell( QStringList &args )
 {
+    if ( !checkArgs( args, 1 ) ) return;
+
     engine->getSettings()->should_adjust_hibuy_losell = args.value( 1 ) == "true" ? true : false;
     kDebug() << "should_adjust_hibuy_losell set to" << engine->getSettings()->should_adjust_hibuy_losell;
 }
 
 void CommandRunner::command_setdcslippage( QStringList &args )
 {
+    if ( !checkArgs( args, 1 ) ) return;
+
     engine->getSettings()->should_dc_slippage_orders = args.value( 1 ) == "true" ? true : false;
     kDebug() << "should_dc_slippage_orders set to" << engine->getSettings()->should_dc_slippage_orders;
 }
@@ -710,62 +673,56 @@ void CommandRunner::command_settickersafetydelaytime( QStringList &args )
 
 void CommandRunner::command_setslippagestaletime( QStringList &args )
 {
-    qlonglong new_tolerance = 0;
+    if ( !checkArgs( args, 1 ) ) return;
 
     rest_arr.at( engine_type )->slippage_stale_time = args.value( 1 ).toLongLong();
-    new_tolerance = rest_arr.at( engine_type )->slippage_stale_time;
-
-    kDebug() << "slippage_stale_time set to" << new_tolerance << "ms";
+    kDebug() << "slippage_stale_time set to" << rest_arr.at( engine_type )->slippage_stale_time << "ms";
 }
 
 void CommandRunner::command_setqueuedcommandsmax( QStringList &args )
 {
-    int new_limit = 0;
+    if ( !checkArgs( args, 1 ) ) return;
 
     rest_arr.at( engine_type )->limit_commands_queued = args.value( 1 ).toInt();
-    new_limit = rest_arr.at( engine_type )->limit_commands_queued;
-
-    kDebug() << "limit_commands_queued set to" << new_limit;
+    kDebug() << "limit_commands_queued set to" << rest_arr.at( engine_type )->limit_commands_queued;
 }
 
 void CommandRunner::command_setqueuedcommandsmaxdc( QStringList &args )
 {
-    int new_limit = 0;
+    if ( !checkArgs( args, 1 ) ) return;
 
     rest_arr.at( engine_type )->limit_commands_queued_dc_check = args.value( 1 ).toInt();
-    new_limit = rest_arr.at( engine_type )->limit_commands_queued_dc_check;
-
-    kDebug() << "limit_commands_queued_dc_check set to" << new_limit;
+    kDebug() << "limit_commands_queued_dc_check set to" << rest_arr.at( engine_type )->limit_commands_queued_dc_check;
 }
 
 void CommandRunner::command_setsentcommandsmax( QStringList &args )
 {
-    int new_limit = 0;
+    if ( !checkArgs( args, 1 ) ) return;
 
     rest_arr.at( engine_type )->limit_commands_sent = args.value( 1 ).toInt();
-    new_limit = rest_arr.at( engine_type )->limit_commands_sent;
-
-    kDebug() << "sent commands max set to" << new_limit;
+    kDebug() << "sent commands max set to" << rest_arr.at( engine_type )->limit_commands_sent;
 }
 
 void CommandRunner::command_settimeoutyield( QStringList &args )
 {
-    int new_limit = 0;
+    if ( !checkArgs( args, 1 ) ) return;
 
     rest_arr.at( engine_type )->limit_timeout_yield = args.value( 1 ).toInt();
-    new_limit = rest_arr.at( engine_type )->limit_timeout_yield;
-
-    kDebug() << "limit_timeout_yield set to" << new_limit;
+    kDebug() << "limit_timeout_yield set to" << rest_arr.at( engine_type )->limit_timeout_yield;
 }
 
 void CommandRunner::command_setrequesttimeout( QStringList &args )
 {
+    if ( !checkArgs( args, 1 ) ) return;
+
     engine->getSettings()->request_timeout = args.value( 1 ).toLong();
     kDebug() << "request timeout is" << engine->getSettings()->request_timeout;
 }
 
 void CommandRunner::command_setcanceltimeout( QStringList &args )
 {
+    if ( !checkArgs( args, 1 ) ) return;
+
     engine->getSettings()->cancel_timeout = args.value( 1 ).toLong();
     kDebug() << "cancel timeout is" << engine->getSettings()->cancel_timeout;
 }
@@ -788,6 +745,7 @@ void CommandRunner::command_setspruceinterval( QStringList &args )
 
     spruce_overseer->spruce->setIntervalSecs( secs );
     spruce_overseer->spruce_timer->setInterval( secs *1000 );
+    spruce_overseer->autosave_timer->setInterval( spruce_overseer->spruce_timer->interval() *4 );
     kDebug() << "spruce interval is now" << spruce_overseer->spruce->getIntervalSecs() << "seconds";
 }
 
