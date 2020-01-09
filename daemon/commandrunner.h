@@ -107,6 +107,7 @@ private:
     void command_setspruceordernice( QStringList &args );
     void command_setspruceallocation( QStringList &args );
     void command_setspruceagitator( QStringList &args );
+    void command_setspruceduplicity( QStringList &args );
     void command_spruceup( QStringList &args );
 
     void command_getstatus( QStringList &args );

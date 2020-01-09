@@ -313,7 +313,19 @@ TickerInfo SpruceOverseer::getSpreadForMarket( const QString &market , qint64 *j
             ret.ask_price = info.lowest_sell;
     }
 
-    if ( !spruce->getOrderDuplicity() )
+    // if duplicity is on, leave everything normal
+    if ( spruce->getOrderDuplicity() )
+    {
+        // if taker-mode is also on, run divide-conquer on reversed spread, since we are bidding at
+        // the ask price, etc.
+        if ( spruce->getTakerMode() )
+        {
+            Coin tmp = ret.ask_price;
+            ret.ask_price = ret.bid_price;
+            ret.bid_price = tmp;
+        }
+    }
+    else // if order duplicity is off, run divide-conquer on the price at the center of the spread
     {
         Coin midprice = ( ret.ask_price + ret.bid_price ) / 2;
         ret.bid_price = midprice;

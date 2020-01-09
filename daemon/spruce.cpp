@@ -292,6 +292,10 @@ QString Spruce::getSaveState()
                                                     .arg( m_leverage_stop )
                                                     .arg( m_leverage_increment );
 
+    // save order duplicity settings
+    ret += QString( "setspruceduplicity %1 %2\n" ).arg( order_duplicity ? "true" : "false" )
+                                                  .arg( taker_mode ? "true" : "false" );
+
     // save profile u
     for ( QMap<QString,Coin>::const_iterator i = m_currency_profile_u.begin(); i != m_currency_profile_u.end(); i++ )
     {
