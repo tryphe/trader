@@ -901,7 +901,10 @@ void CommandRunner::command_setspruceinterval( QStringList &args )
 {
     if ( !checkArgs( args, 1 ) ) return;
 
-    spruce_overseer->spruce->setIntervalSecs( args.value( 1 ).toLong() );
+    const long secs = args.value( 1 ).toLong();
+
+    spruce_overseer->spruce->setIntervalSecs( secs );
+    spruce_overseer->spruce_timer->setInterval( secs *1000 );
     kDebug() << "spruce interval is now" << spruce_overseer->spruce->getIntervalSecs() << "seconds";
 }
 

@@ -133,7 +133,6 @@ private:
     BncREST *rest_bnc{ nullptr };
     PoloREST *rest_polo{ nullptr };
     WavesREST *rest_waves{ nullptr };
-
 };
 
 #endif // COMMANDRUNNER_H

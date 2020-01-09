@@ -16,6 +16,9 @@ class QTimer;
 class SpruceOverseer : public QObject
 {
     Q_OBJECT
+
+    friend class CommandRunner;
+
 public:
     explicit SpruceOverseer( Spruce *_spruce );
     ~SpruceOverseer();
