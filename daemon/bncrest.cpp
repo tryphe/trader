@@ -32,16 +32,19 @@ BncREST::~BncREST()
     orderbook_timer->stop();
     ticker_timer->stop();
     exchangeinfo_timer->stop();
+    ratelimit_timer->stop();
 
     delete send_timer;
     delete orderbook_timer;
     delete ticker_timer;
     delete exchangeinfo_timer;
+    delete ratelimit_timer;
 
     send_timer = nullptr;
     orderbook_timer = nullptr;
     ticker_timer = nullptr;
     exchangeinfo_timer = nullptr;
+    ratelimit_timer = nullptr;
 
     kDebug() << "[BncREST] done.";
 }
@@ -71,6 +74,12 @@ void BncREST::init()
     connect( exchangeinfo_timer, &QTimer::timeout, this, &BncREST::onCheckExchangeInfo );
     exchangeinfo_timer->setTimerType( Qt::VeryCoarseTimer );
     exchangeinfo_timer->start( 60000 ); // 1 minute (turns to 1 hour after first parse)
+
+    // this timer sets the network rate, fee, price ticksizes, and quantity ticksizes
+    ratelimit_timer = new QTimer( this );
+    connect( exchangeinfo_timer, &QTimer::timeout, this, &BncREST::onCheckRateLimit );
+    ratelimit_timer->setTimerType( Qt::VeryCoarseTimer );
+    ratelimit_timer->start( BINANCE_RATELIMIT_WINDOW ); // window is 1 minute
 
 #if !defined( BINANCE_TICKER_ONLY )
     keystore.setKeys( BINANCE_KEY, BINANCE_SECRET );
@@ -111,7 +120,7 @@ void BncREST::sendNamQueue()
     }
 
     // normalize ratelimit by our timer
-    const qint32 ratelimit_window = ratelimit_minute / ( 60000 / BINANCE_RATELIMIT_WINDOW );
+    const qint32 ratelimit_window = ratelimit_minute;
     if ( binance_weight > ratelimit_window )
     {
         kDebug() << "local warning: hit ratelimit_window" << ratelimit_window;
@@ -526,8 +535,6 @@ void BncREST::onNamReply( QNetworkReply *const &reply )
 
 void BncREST::onCheckBotOrders()
 {
-    binance_weight = 0;
-
     // return on unset key/secret, or if we already queued this command
     if ( isKeyOrSecretUnset() || isCommandQueued( BNC_COMMAND_GETORDERS ) || isCommandSent( BNC_COMMAND_GETORDERS, 10 ) )
         return;
@@ -554,6 +561,11 @@ void BncREST::onCheckExchangeInfo()
         return;
 
     sendRequest( BNC_COMMAND_GETEXCHANGEINFO, "", nullptr, 1 );
+}
+
+void BncREST::onCheckRateLimit()
+{ // happens every minute
+    binance_weight = 0;
 }
 
 void BncREST::wssConnected()

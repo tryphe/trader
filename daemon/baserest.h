@@ -24,6 +24,8 @@ struct BaseREST : public QObject
     explicit BaseREST( Engine *_engine );
     ~BaseREST();
 
+    virtual void init() {}
+
     bool yieldToFlowControl() const;
 
     void sendRequest( QString api_command, QString body = QLatin1String(), Position *pos = nullptr, quint16 weight = 0 );
@@ -39,11 +41,13 @@ struct BaseREST : public QObject
 
     KeyStore keystore;
     AvgResponseTime avg_response_time;
+    QString exchange_string;
 
     qint64 request_nonce{ 0 }; // nonce (except for trex which uses time atm)
     qint64 last_request_sent_ms{ 0 }; // last nam request time
 
-    qint64 orderbook_update_time{ QDateTime::currentMSecsSinceEpoch() }; // most recent trade time
+    qint64 ticker_update_time{ 0 }; // last ticker reply
+    qint64 orderbook_update_time{ 0 }; // most recent trade time
     qint64 orderbook_update_request_time{ 0 };
     qint64 orderbook_public_update_time{ 0 };
     qint64 orderbook_public_update_request_time{ 0 };

@@ -45,6 +45,7 @@ public Q_SLOTS:
     void sendNamQueue();
     void onNamReply( QNetworkReply *const &reply );
 
+    void onCheckRateLimit();
     void onCheckBotOrders();
     void onCheckTicker();
     void onCheckExchangeInfo();
@@ -76,6 +77,7 @@ private:
     QTimer *orderbook_timer{ nullptr };
     QTimer *ticker_timer{ nullptr };
     QTimer *exchangeinfo_timer{ nullptr };
+    QTimer *ratelimit_timer{ nullptr };
 };
 
 #endif // BNCREST_H

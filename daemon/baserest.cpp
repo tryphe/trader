@@ -75,18 +75,6 @@ void BaseREST::sendRequest( QString api_command, QString body, Position *pos, qu
 
     // append to packet queue
     nam_queue.append( delayed_request );
-
-    // early send, disabled for now
-//    if ( !send_timer )
-//        return;
-
-//    // if we didn't send a command lately, just trigger the timer and restart the interval
-//    const qint64 current_time = QDateTime::currentMSecsSinceEpoch();
-//    if ( last_request_sent_ms <= current_time - send_timer->interval() )
-//    {
-//        engine->sendNamQueue();
-//        send_timer->start();
-//    }
 }
 
 bool BaseREST::isKeyOrSecretUnset() const
