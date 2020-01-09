@@ -60,7 +60,6 @@ private:
 
     QTimer *send_timer{ nullptr };
     QTimer *orderbook_timer{ nullptr };
-    QTimer *ticker_timer{ nullptr };
     QTimer *order_history_timer{ nullptr };
 };
 

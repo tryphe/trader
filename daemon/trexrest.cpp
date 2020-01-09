@@ -31,16 +31,13 @@ TrexREST::~TrexREST()
 {
     send_timer->stop();
     orderbook_timer->stop();
-    ticker_timer->stop();
     order_history_timer->stop();
 
     delete send_timer;
     delete orderbook_timer;
-    delete ticker_timer;
     delete order_history_timer;
     send_timer = nullptr;
     orderbook_timer = nullptr;
-    ticker_timer = nullptr;
     order_history_timer = nullptr;
 
     kDebug() << "[TrexREST] done.";
@@ -60,10 +57,7 @@ void TrexREST::init()
     send_timer->setTimerType( Qt::CoarseTimer );
     send_timer->start( BITTREX_TIMER_INTERVAL_NAM_SEND ); // minimum threshold 200 or so
 
-    // this timer reads the lo_sell and hi_buy prices for all coins
-    ticker_timer = new QTimer( this );
     connect( ticker_timer, &QTimer::timeout, this, &TrexREST::onCheckTicker );
-    ticker_timer->setTimerType( Qt::VeryCoarseTimer );
     ticker_timer->start( BITTREX_TIMER_INTERVAL_TICKER );
 
 #if !defined( BITTREX_TICKER_ONLY )

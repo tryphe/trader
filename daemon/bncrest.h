@@ -75,7 +75,6 @@ private:
 
     QTimer *send_timer{ nullptr };
     QTimer *orderbook_timer{ nullptr };
-    QTimer *ticker_timer{ nullptr };
     QTimer *exchangeinfo_timer{ nullptr };
     QTimer *ratelimit_timer{ nullptr };
 };

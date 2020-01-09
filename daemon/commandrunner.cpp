@@ -624,21 +624,8 @@ void CommandRunner::command_settickerinterval( QStringList &args )
 {
     int new_interval = 0;
 
-    if ( engine_type == ENGINE_BITTREX )
-    {
-        rest_trex->ticker_timer->setInterval( args.value( 1 ).toInt() );
-        new_interval = rest_trex->ticker_timer->interval();
-    }
-    else if ( engine_type == ENGINE_BINANCE )
-    {
-        rest_bnc->ticker_timer->setInterval( args.value( 1 ).toInt() );
-        new_interval = rest_bnc->ticker_timer->interval();
-    }
-    else if ( engine_type == ENGINE_POLONIEX )
-    {
-        rest_polo->ticker_timer->setInterval( args.value( 1 ).toInt() );
-        new_interval = rest_polo->ticker_timer->interval();
-    }
+    rest_arr.at( engine_type )->ticker_timer->setInterval( args.value( 1 ).toInt() );
+    new_interval = rest_arr.at( engine_type )->ticker_timer->interval();
 
     kDebug() << "ticker_timer interval set to" << new_interval;
 }
@@ -653,21 +640,8 @@ void CommandRunner::command_setcheckinterval( QStringList &args )
 {
     int new_interval = 0;
 
-    if ( engine_type == ENGINE_BITTREX )
-    {
-        rest_trex->timeout_timer->setInterval( args.value( 1 ).toInt() );
-        new_interval = rest_trex->timeout_timer->interval();
-    }
-    else if ( engine_type == ENGINE_BINANCE )
-    {
-        rest_bnc->timeout_timer->setInterval( args.value( 1 ).toInt() );
-        new_interval = rest_bnc->timeout_timer->interval();
-    }
-    else if ( engine_type == ENGINE_POLONIEX )
-    {
-        rest_polo->timeout_timer->setInterval( args.value( 1 ).toInt() );
-        new_interval = rest_polo->timeout_timer->interval();
-    }
+    rest_arr.at( engine_type )->timeout_timer->setInterval( args.value( 1 ).toInt() );
+    new_interval = rest_arr.at( engine_type )->timeout_timer->interval();
 
     kDebug() << "timeout check interval set to" << new_interval;
 }
@@ -676,21 +650,8 @@ void CommandRunner::command_setdcinterval( QStringList &args )
 {
     int new_interval = 0;
 
-    if ( engine_type == ENGINE_BITTREX )
-    {
-        rest_trex->diverge_converge_timer->setInterval( args.value( 1 ).toInt() );
-        new_interval = rest_trex->diverge_converge_timer->interval();
-    }
-    else if ( engine_type == ENGINE_BINANCE )
-    {
-        rest_bnc->diverge_converge_timer->setInterval( args.value( 1 ).toInt() );
-        new_interval = rest_bnc->diverge_converge_timer->interval();
-    }
-    else if ( engine_type == ENGINE_POLONIEX )
-    {
-        rest_polo->diverge_converge_timer->setInterval( args.value( 1 ).toInt() );
-        new_interval = rest_polo->diverge_converge_timer->interval();
-    }
+    rest_arr.at( engine_type )->diverge_converge_timer->setInterval( args.value( 1 ).toInt() );
+    new_interval = rest_arr.at( engine_type )->diverge_converge_timer->interval();
 
     kDebug() << "diverge converge interval set to" << new_interval;
 }
@@ -729,21 +690,8 @@ void CommandRunner::command_setorderbookstaletolerance( QStringList &args )
 {
     qlonglong new_tolerance = 0;
 
-    if ( engine_type == ENGINE_BITTREX )
-    {
-        rest_trex->orderbook_stale_tolerance = args.value( 1 ).toLongLong();
-        new_tolerance = rest_trex->orderbook_stale_tolerance;
-    }
-    else if ( engine_type == ENGINE_BINANCE )
-    {
-        rest_bnc->orderbook_stale_tolerance = args.value( 1 ).toLongLong();
-        new_tolerance = rest_bnc->orderbook_stale_tolerance;
-    }
-    else if ( engine_type == ENGINE_POLONIEX )
-    {
-        rest_polo->orderbook_stale_tolerance = args.value( 1 ).toLongLong();
-        new_tolerance = rest_polo->orderbook_stale_tolerance;
-    }
+    rest_arr.at( engine_type )->orderbook_stale_tolerance = args.value( 1 ).toLongLong();
+    new_tolerance = rest_arr.at( engine_type )->orderbook_stale_tolerance;
 
     kDebug() << "orderbook_stale_tolerance set to" << new_tolerance << "ms";
 }
@@ -764,21 +712,8 @@ void CommandRunner::command_setslippagestaletime( QStringList &args )
 {
     qlonglong new_tolerance = 0;
 
-    if ( engine_type == ENGINE_BITTREX )
-    {
-        rest_trex->slippage_stale_time = args.value( 1 ).toLongLong();
-        new_tolerance = rest_trex->slippage_stale_time;
-    }
-    else if ( engine_type == ENGINE_BINANCE )
-    {
-        rest_bnc->slippage_stale_time = args.value( 1 ).toLongLong();
-        new_tolerance = rest_bnc->slippage_stale_time;
-    }
-    else if ( engine_type == ENGINE_POLONIEX )
-    {
-        rest_polo->slippage_stale_time = args.value( 1 ).toLongLong();
-        new_tolerance = rest_polo->slippage_stale_time;
-    }
+    rest_arr.at( engine_type )->slippage_stale_time = args.value( 1 ).toLongLong();
+    new_tolerance = rest_arr.at( engine_type )->slippage_stale_time;
 
     kDebug() << "slippage_stale_time set to" << new_tolerance << "ms";
 }
@@ -787,21 +722,8 @@ void CommandRunner::command_setqueuedcommandsmax( QStringList &args )
 {
     int new_limit = 0;
 
-    if ( engine_type == ENGINE_BITTREX )
-    {
-        rest_trex->limit_commands_queued = args.value( 1 ).toInt();
-        new_limit = rest_trex->limit_commands_queued;
-    }
-    else if ( engine_type == ENGINE_BINANCE )
-    {
-        rest_bnc->limit_commands_queued = args.value( 1 ).toInt();
-        new_limit = rest_bnc->limit_commands_queued;
-    }
-    else if ( engine_type == ENGINE_POLONIEX )
-    {
-        rest_polo->limit_commands_queued = args.value( 1 ).toInt();
-        new_limit = rest_polo->limit_commands_queued;
-    }
+    rest_arr.at( engine_type )->limit_commands_queued = args.value( 1 ).toInt();
+    new_limit = rest_arr.at( engine_type )->limit_commands_queued;
 
     kDebug() << "limit_commands_queued set to" << new_limit;
 }
@@ -810,21 +732,8 @@ void CommandRunner::command_setqueuedcommandsmaxdc( QStringList &args )
 {
     int new_limit = 0;
 
-    if ( engine_type == ENGINE_BITTREX )
-    {
-        rest_trex->limit_commands_queued_dc_check = args.value( 1 ).toInt();
-        new_limit = rest_trex->limit_commands_queued_dc_check;
-    }
-    else if ( engine_type == ENGINE_BINANCE )
-    {
-        rest_bnc->limit_commands_queued_dc_check = args.value( 1 ).toInt();
-        new_limit = rest_bnc->limit_commands_queued_dc_check;
-    }
-    else if ( engine_type == ENGINE_POLONIEX )
-    {
-        rest_polo->limit_commands_queued_dc_check = args.value( 1 ).toInt();
-        new_limit = rest_polo->limit_commands_queued_dc_check;
-    }
+    rest_arr.at( engine_type )->limit_commands_queued_dc_check = args.value( 1 ).toInt();
+    new_limit = rest_arr.at( engine_type )->limit_commands_queued_dc_check;
 
     kDebug() << "limit_commands_queued_dc_check set to" << new_limit;
 }
@@ -833,21 +742,8 @@ void CommandRunner::command_setsentcommandsmax( QStringList &args )
 {
     int new_limit = 0;
 
-    if ( engine_type == ENGINE_BITTREX )
-    {
-        rest_trex->limit_commands_sent = args.value( 1 ).toInt();
-        new_limit = rest_trex->limit_commands_sent;
-    }
-    else if ( engine_type == ENGINE_BINANCE )
-    {
-        rest_bnc->limit_commands_sent = args.value( 1 ).toInt();
-        new_limit = rest_bnc->limit_commands_sent;
-    }
-    else if ( engine_type == ENGINE_POLONIEX )
-    {
-        rest_polo->limit_commands_sent = args.value( 1 ).toInt();
-        new_limit = rest_polo->limit_commands_sent;
-    }
+    rest_arr.at( engine_type )->limit_commands_sent = args.value( 1 ).toInt();
+    new_limit = rest_arr.at( engine_type )->limit_commands_sent;
 
     kDebug() << "sent commands max set to" << new_limit;
 }
@@ -856,21 +752,8 @@ void CommandRunner::command_settimeoutyield( QStringList &args )
 {
     int new_limit = 0;
 
-    if ( engine_type == ENGINE_BITTREX )
-    {
-        rest_trex->limit_timeout_yield = args.value( 1 ).toInt();
-        new_limit = rest_trex->limit_timeout_yield;
-    }
-    else if ( engine_type == ENGINE_BINANCE )
-    {
-        rest_bnc->limit_timeout_yield = args.value( 1 ).toInt();
-        new_limit = rest_bnc->limit_timeout_yield;
-    }
-    else if ( engine_type == ENGINE_POLONIEX )
-    {
-        rest_polo->limit_timeout_yield = args.value( 1 ).toInt();
-        new_limit = rest_polo->limit_timeout_yield;
-    }
+    rest_arr.at( engine_type )->limit_timeout_yield = args.value( 1 ).toInt();
+    new_limit = rest_arr.at( engine_type )->limit_timeout_yield;
 
     kDebug() << "limit_timeout_yield set to" << new_limit;
 }

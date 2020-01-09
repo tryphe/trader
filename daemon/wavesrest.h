@@ -33,7 +33,6 @@ public Q_SLOTS:
 private:
     QTimer *send_timer{ nullptr };
     QTimer *orderbook_timer{ nullptr };
-    QTimer *ticker_timer{ nullptr };
 };
 
 #endif // WAVESREST_H

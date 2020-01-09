@@ -24,6 +24,10 @@ BaseREST::BaseREST( Engine *_engine )
     connect( diverge_converge_timer, &QTimer::timeout, engine->getPositionMan(), &PositionMan::divergeConverge );
     diverge_converge_timer->setTimerType( Qt::VeryCoarseTimer );
     diverge_converge_timer->start( 100000 );
+
+    // this timer reads the lo_sell and hi_buy prices for all coins
+    ticker_timer = new QTimer( this );
+    ticker_timer->setTimerType( Qt::VeryCoarseTimer );
 }
 
 BaseREST::~BaseREST()
@@ -35,6 +39,7 @@ BaseREST::~BaseREST()
     // stop timers
     timeout_timer->stop();
     diverge_converge_timer->stop();
+    ticker_timer->stop();
 
     // clear network replies
     for ( QHash<QNetworkReply*,Request*>::const_iterator i = nam_queue_sent.begin(); i != nam_queue_sent.end(); i++ )
@@ -50,9 +55,11 @@ BaseREST::~BaseREST()
 
     delete timeout_timer;
     delete diverge_converge_timer;
+    delete ticker_timer;
 
     timeout_timer = nullptr;
     diverge_converge_timer = nullptr;
+    ticker_timer = nullptr;
 
     engine = nullptr;
 

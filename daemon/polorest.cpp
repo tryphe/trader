@@ -31,19 +31,16 @@ PoloREST::~PoloREST()
 {
     send_timer->stop();
     orderbook_timer->stop();
-    ticker_timer->stop();
     fee_timer->stop();
     wss_timer->stop();
 
     delete send_timer;
     delete orderbook_timer;
-    delete ticker_timer;
     delete fee_timer;
     delete wss_timer;
 
     send_timer = nullptr;
     orderbook_timer = nullptr;
-    ticker_timer = nullptr;
     fee_timer = nullptr;
     wss_timer = nullptr;
 
@@ -78,10 +75,7 @@ void PoloREST::init()
     send_timer->setTimerType( Qt::CoarseTimer );
     send_timer->start( POLONIEX_TIMER_INTERVAL_NAM_SEND ); // minimum threshold 200 or so
 
-    // this timer reads the lo_sell and hi_buy prices for all coins
-    ticker_timer = new QTimer( this );
     connect( ticker_timer, &QTimer::timeout, this, &PoloREST::onCheckTicker );
-    ticker_timer->setTimerType( Qt::VeryCoarseTimer );
     ticker_timer->start( POLONIEX_TIMER_INTERVAL_TICKER );
 
     // if we are running a ticker only build, don't set keys, don't get wss feed, and don't query books and fees

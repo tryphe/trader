@@ -80,7 +80,6 @@ private:
 
     QTimer *send_timer{ nullptr };
     QTimer *orderbook_timer{ nullptr };
-    QTimer *ticker_timer{ nullptr };
     QTimer *fee_timer{ nullptr };
     QTimer *wss_timer{ nullptr };
     QWebSocket *wss{ nullptr };

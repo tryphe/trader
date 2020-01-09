@@ -30,19 +30,16 @@ BncREST::~BncREST()
 {
     send_timer->stop();
     orderbook_timer->stop();
-    ticker_timer->stop();
     exchangeinfo_timer->stop();
     ratelimit_timer->stop();
 
     delete send_timer;
     delete orderbook_timer;
-    delete ticker_timer;
     delete exchangeinfo_timer;
     delete ratelimit_timer;
 
     send_timer = nullptr;
     orderbook_timer = nullptr;
-    ticker_timer = nullptr;
     exchangeinfo_timer = nullptr;
     ratelimit_timer = nullptr;
 
@@ -63,10 +60,7 @@ void BncREST::init()
     send_timer->setTimerType( Qt::CoarseTimer );
     send_timer->start( BINANCE_TIMER_INTERVAL_NAM_SEND ); // minimum threshold 200 or so
 
-    // this timer reads the lo_sell and hi_buy prices for all coins
-    ticker_timer = new QTimer( this );
     connect( ticker_timer, &QTimer::timeout, this, &BncREST::onCheckTicker );
-    ticker_timer->setTimerType( Qt::VeryCoarseTimer );
     ticker_timer->start( BINANCE_TIMER_INTERVAL_TICKER );
 
     // this timer sets the network rate, fee, price ticksizes, and quantity ticksizes
