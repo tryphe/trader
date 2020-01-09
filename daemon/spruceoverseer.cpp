@@ -188,9 +188,10 @@ void SpruceOverseer::onSpruceUp()
                     }
                 }
 
-                kDebug() << QString( "[Spruce %1] %2 | coeff %3 | qty-to-shortlong %4 | amt-to-shortlong %5 | on-order %6" )
+                kDebug() << QString( "[Spruce %1] %2 @ %3 | coeff %4 | qty %5 | amt %6 | on-order %7" )
                                .arg( side == SIDE_BUY ? "buys " : "sells" )
                                .arg( market, MARKET_STRING_WIDTH )
+                               .arg( side == SIDE_BUY ? spread.bid_price : spread.ask_price )
                                .arg( spruce->getLastCoeffForMarket( market ), 12 )
                                .arg( qty_to_shortlong, 20 )
                                .arg( amount_to_shortlong, 13 )
@@ -313,26 +314,6 @@ TickerInfo SpruceOverseer::getSpreadForMarket( const QString &market , qint64 *j
             ret.ask_price = info.lowest_sell;
     }
 
-    // if duplicity is on, leave everything normal
-    if ( spruce->getOrderDuplicity() )
-    {
-        // if taker-mode is also on, run divide-conquer on reversed spread, since we are bidding at
-        // the ask price, etc.
-        if ( spruce->getTakerMode() )
-        {
-            Coin tmp = ret.ask_price;
-            ret.ask_price = ret.bid_price;
-            ret.bid_price = tmp;
-        }
-    }
-    else // if order duplicity is off, run divide-conquer on the price at the center of the spread
-    {
-        Coin midprice = ( ret.ask_price + ret.bid_price ) / 2;
-        ret.bid_price = midprice;
-        ret.ask_price = midprice;
-        return ret;
-    }
-
     /// step 2: apply base greed value to spread
     // get price ticksize
     const Coin ticksize = getPriceTicksizeForMarket( market );
@@ -358,6 +339,25 @@ TickerInfo SpruceOverseer::getSpreadForMarket( const QString &market , qint64 *j
     // copy non-default j into passed pointer value
     if ( j > 0 && j_ptr != nullptr )
         *j_ptr = j;
+
+    // if duplicity is on, leave everything normal
+    if ( spruce->getOrderDuplicity() )
+    {
+        // if taker-mode is also on, run divide-conquer on reversed spread, since we are bidding at
+        // the ask price, etc.
+        if ( spruce->getTakerMode() )
+        {
+            Coin tmp = ret.ask_price;
+            ret.ask_price = ret.bid_price;
+            ret.bid_price = tmp;
+        }
+    }
+    else // if order duplicity is off, run divide-conquer on the price at the center of the spread
+    {
+        Coin midprice = ( ret.ask_price + ret.bid_price ) / 2;
+        ret.bid_price = midprice;
+        ret.ask_price = midprice;
+    }
 
     return ret;
 }
