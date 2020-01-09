@@ -66,9 +66,8 @@ Compiling
         - or: Copy the example keydefs file: `cp daemon/keydefs.h.example daemon/keydefs.h` then paste your keys in with your favorite editor.
         - or: (*non-hardcoded keys*): Create `keydefs.h` using the example file above, but leave the keys blank or as-is during compile. Then, each time you run the binary, modify the bulk input file `<config-directory>/in.txt`, adding this line: `setkeyandsecret <key> <secret>`.
  5. Run qmake: `~/localqt/Qt-5.13.1-minimal/bin/qmake`
- 6. Compile (choose one):
-        - (scripted build) Run `./build-all.sh`. This will build the CLI and all exchange targets using `make -j`.
-        - (manual build) First, run `./generate_certs.sh` to generate x509 certs and an auth token (for websockets). Then run `make -j` or similar to build the exchange selected in `daemon/build-config.h` and the CLI.
+ 6. Compile: `make -j`, or `make -jn` where `n` is the number of simultaneous makes.
+
 
 Updating
 --------
