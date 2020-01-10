@@ -216,6 +216,9 @@ TickerInfo SpruceOverseer::getSpruceSpread( const QString &market, quint8 side )
     qint64 j = 0;
     TickerInfo spread = getSpreadForMarket( market, &j );
 
+    if ( spruce->getOrderDuplicity() && spruce->getTakerMode() )
+        return spread;
+
     Coin &buy_price = spread.bid_price;
     Coin &sell_price = spread.ask_price;
 
