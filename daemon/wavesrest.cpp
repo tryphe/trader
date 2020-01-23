@@ -165,6 +165,7 @@ void WavesREST::onNamReply( QNetworkReply * const &reply )
 
     const bool is_array = body_json.isArray();
     const bool is_object = body_json.isObject();
+    bool is_json_invalid = false;
 
     // cache result array/object
     if ( is_array )
@@ -181,7 +182,13 @@ void WavesREST::onNamReply( QNetworkReply * const &reply )
     // print unknown reply
     if ( !is_array && !is_object )
     {
-        kDebug() << "unknown nam reply for" << path << ":" << data;
+        const bool contains_html = data.contains( QByteArray( "<html" ) ) || data.contains( QByteArray( "<HTML" ) );
+
+        // reduce size of cloudflare errors
+        if ( contains_html )
+            data = QByteArray( "<html error>" );
+
+        kDebug() << "local warning: unknown nam reply for" << path << ":" << data;
     }
     // handle matcher info response
     else if ( api_command == WAVES_COMMAND_GET_MARKET_DATA )
