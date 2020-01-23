@@ -29,10 +29,12 @@ TrexREST::TrexREST( Engine *_engine, QNetworkAccessManager *_nam )
 
 TrexREST::~TrexREST()
 {
+#if !defined( BITTREX_TICKER_ONLY )
     order_history_timer->stop();
 
     delete order_history_timer;
     order_history_timer = nullptr;
+#endif
 
     kDebug() << "[TrexREST] done.";
 }
@@ -270,12 +272,7 @@ void TrexREST::onNamReply( QNetworkReply *const &reply )
 {
     // don't process a reply we aren't tracking
     if ( !nam_queue_sent.contains( reply ) )
-    {
-        // this will happen regularly for responses after a getorder
-        //kDebug() << "local warning: found stray response with no request object";
-        //reply->deleteLater();
         return;
-    }
 
     QString path = reply->url().path();
     QByteArray data = reply->readAll();

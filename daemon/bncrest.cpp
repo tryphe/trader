@@ -395,11 +395,7 @@ void BncREST::onNamReply( QNetworkReply *const &reply )
 {
     // don't process a reply we aren't tracking
     if ( !nam_queue_sent.contains( reply ) )
-    {
-        //kDebug() << "local warning: found stray response with no request object";
-        //reply->deleteLater();
         return;
-    }
 
     QByteArray data = reply->readAll();
 

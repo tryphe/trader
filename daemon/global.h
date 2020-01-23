@@ -142,10 +142,15 @@ static const QLatin1String POLO_COMMAND_GETFEE              ( "returnFeeInfo" );
 
 // waves symbols
 static const QLatin1String Waves_EXCHANGE_STR               ( "Waves" );
-static const QLatin1String WAVES_MATCHER_URL                ( "https://matcher.waves.exchange/matcher/" );
+static const QLatin1String WAVES_MATCHER_URL                ( "https://matcher.waves.exchange/" );
 static const QLatin1String WAVES_DATA_URL                   ( "http://marketdata.wavesplatform.com/api/" );
-static const int WAVES_TIMER_INTERVAL_NAM_SEND              ( 100 );
-static const int WAVES_TIMER_INTERVAL_TICKER                ( 30000 );
+static const int WAVES_TIMER_INTERVAL_NAM_SEND              ( 150 );
+static const int WAVES_TIMER_INTERVAL_MARKET_DATA           ( 60000 * 60 );
+static const int WAVES_TIMER_INTERVAL_TICKER                ( 3000 );
+
+static const QLatin1String WAVES_COMMAND_GET_MARKET_DATA    ( "get-matcher/orderbook" );
+static const QLatin1String WAVES_COMMAND_GET_BOOK_DATA      ( "get-matcher/orderbook/%1/%2" );
+
 
 namespace Global {
 

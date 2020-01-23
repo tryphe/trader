@@ -29,6 +29,7 @@ PoloREST::PoloREST( Engine *_engine , QNetworkAccessManager *_nam )
 
 PoloREST::~PoloREST()
 {
+#if !defined( POLONIEX_TICKER_ONLY )
     fee_timer->stop();
     wss_timer->stop();
 
@@ -37,6 +38,7 @@ PoloREST::~PoloREST()
 
     fee_timer = nullptr;
     wss_timer = nullptr;
+#endif
 
     // dispose of websocket
     if ( wss )
@@ -615,11 +617,7 @@ void PoloREST::onNamReply( QNetworkReply *const &reply )
 {
     // don't process a reply we aren't tracking
     if ( !nam_queue_sent.contains( reply ) )
-    {
-        //kDebug() << "local warning: found stray response with no request object";
-        //reply->deleteLater();
         return;
-    }
 
     QByteArray data = reply->readAll();
     //kDebug() << data;
