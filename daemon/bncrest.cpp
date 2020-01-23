@@ -472,9 +472,6 @@ void BncREST::onNamReply( QNetworkReply *const &reply )
         kDebug() << QString( "nam error for %1: %2" )
                     .arg( api_command )
                     .arg( QString::fromLocal8Bit( data ) );
-
-        deleteReply( reply, request );
-        return;
     }
 
     if ( api_command == BNC_COMMAND_GETORDERS )
