@@ -338,7 +338,7 @@ int Coin::toInt() const
     // check for valid int
     if ( !ok )
     {
-        kDebug() << "[Spruce] local error: couldn't read decimal out of" << str;
+        kDebug() << "[Coin] local error: couldn't read decimal out of" << str;
         return 0;
     }
 
@@ -359,7 +359,7 @@ quint32 Coin::toUInt32() const
     // check for valid int
     if ( !ok )
     {
-        kDebug() << "[Spruce] local error: couldn't read decimal out of" << str;
+        kDebug() << "[Coin] local error: couldn't read decimal out of" << str;
         return 0;
     }
 
