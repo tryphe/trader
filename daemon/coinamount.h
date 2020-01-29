@@ -61,6 +61,8 @@ public:
     int toInt() const;
     quint32 toUInt32() const;
 
+    qint64 toIntSatoshis();
+
     void applyRatio( qreal r );
     Coin ratio( qreal r ) const;
 

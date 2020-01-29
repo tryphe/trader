@@ -338,7 +338,7 @@ int Coin::toInt() const
     // check for valid int
     if ( !ok )
     {
-        kDebug() << "[Coin] local error: couldn't read decimal out of" << str;
+        kDebug() << "[Coin] local error: couldn't read integer out of" << str;
         return 0;
     }
 
@@ -359,7 +359,28 @@ quint32 Coin::toUInt32() const
     // check for valid int
     if ( !ok )
     {
-        kDebug() << "[Coin] local error: couldn't read decimal out of" << str;
+        kDebug() << "[Coin] local error: couldn't read integer out of" << str;
+        return 0;
+    }
+
+    return ret;
+}
+
+qint64 Coin::toIntSatoshis()
+{
+    QString str = toString( CoinAmount::satoshi_decimals );
+
+    // remove decimal
+    str.remove( str.size() - ( CoinAmount::satoshi_decimals +1 ), 1 );
+
+    // convert to int
+    bool ok = false;
+    const qint64 ret = str.toLongLong( &ok );
+
+    // check for valid int
+    if ( !ok )
+    {
+        kDebug() << "[Coin] local error: couldn't read integer out of" << str;
         return 0;
     }
 

@@ -405,6 +405,14 @@ void CoinAmountTest::test()
     assert( Coin("17").toUInt32() == quint32(17) );
     assert( Coin("4294967296").toUInt32() == quint32(4294967296) );
 
+    // Coin::toIntSatoshis()
+    assert( Coin("0").toIntSatoshis() == qint64(0) );
+    assert( Coin("1").toIntSatoshis() == qint64(100000000) );
+    assert( Coin("-1").toIntSatoshis() == qint64(-100000000) );
+    assert( Coin("10000").toIntSatoshis() == qint64(1000000000000) );
+    assert( Coin("0.00000001").toIntSatoshis() == qint64(1) );
+    assert( Coin("0.00000100").toIntSatoshis() == qint64(100) );
+
     // run a test that confirms different magnitudes of strings and coin are the same value
     QString test_str = "1";
     Coin test_coin = CoinAmount::COIN;
