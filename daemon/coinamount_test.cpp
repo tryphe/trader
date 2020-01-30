@@ -231,6 +231,7 @@ void CoinAmountTest::test()
     assert( Coin( "0-0" ) == Coin() );
     assert( Coin( "    0.01" ) == Coin( "0.01" ) ); // tolerate spaces outside
     assert( Coin( "0.01  " ) == Coin( "0.01" ) );
+    assert( Coin( "   0.01   " ) == Coin( "0.01" ) );
     assert( Coin( "0. 01" ) == Coin() ); // don't tolerate spaces inside
 
     // Coin::operator *( const QString &s )

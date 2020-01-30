@@ -109,7 +109,8 @@ static inline void toSatoshiFormat( QString &s, int decimals = satoshi_decimals 
     }
     while ( sz0 > 0 && s.at( sz0 -1 ).isSpace() )
     {
-        s.remove( sz0-- -1, 1 );
+        sz0--;
+        s.chop( 1 );
     }
 
     // filter not 0-9 '.' or '-'
