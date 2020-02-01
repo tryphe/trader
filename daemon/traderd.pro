@@ -41,9 +41,12 @@ SOURCES += main.cpp \
     coinamount.cpp \
     coinamount_test.cpp \
     wavesutil.cpp \
+    wavesutil_test.cpp \
     wavesaccount.cpp \
+    wavesaccount_test.cpp \
     ../libbase58/base58.c \
     ../qbase58/qbase58.cpp \
+    ../qbase58/qbase58_test.cpp \
     ../blake2b/sse/blake2b.c \
     ../libcurve25519-donna/nacl_sha512/hash.c \
     ../libcurve25519-donna/nacl_sha512/blocks.c \
@@ -122,9 +125,12 @@ HEADERS += build-config.h \
     ssl_policy.h \
     coinamount_test.h \
     wavesutil.h \
+    wavesutil_test.h \
     wavesaccount.h \
+    wavesaccount_test.h
     ../libbase58/libbase58.h \
     ../qbase58/qbase58.h \
+    ../qbase58/qbase58_test.h \
     ../blake2b/sse/blake2.h \
     ../libcurve25519-donna/nacl_includes/crypto_uint32.h \
     ../libcurve25519-donna/nacl_includes/crypto_int32.h \

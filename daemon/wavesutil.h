@@ -14,8 +14,6 @@ namespace WavesUtil
     void clampPrivateKey( QByteArray &key );
 
     QByteArray getAssetBytes( const QString &asset );
-
-    void test();
 }
 
 #endif // WAVESUTIL_H

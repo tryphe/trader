@@ -17,9 +17,9 @@
 #include "alphatracker.h"
 #include "spruce.h"
 #include "spruceoverseer.h"
-#include "wavesutil.h"
-#include "wavesaccount.h"
-#include "../qbase58/qbase58.h"
+#include "wavesutil_test.h"
+#include "wavesaccount_test.h"
+#include "../qbase58/qbase58_test.h"
 
 #include <QByteArray>
 #include <QTimer>
@@ -99,9 +99,14 @@ Trader::Trader( QObject *parent )
     // runtime tests
     qint64 t0 = QDateTime::currentMSecsSinceEpoch();
 
-    QBase58::test();
-    WavesUtil::test();
-    WavesAccount::test();
+    QBase58Test qbase58_test;
+    qbase58_test.test();
+
+    WavesUtilTest wavesutil_test;
+    wavesutil_test.test();
+
+    WavesAccountTest wavesaccount_test;
+    wavesaccount_test.test();
 
     CoinAmountTest coin_test;
     coin_test.test();

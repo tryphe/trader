@@ -7,8 +7,6 @@ namespace QBase58
 {
     QByteArray encode( const QByteArray &in );
     QByteArray decode( const QByteArray &in );
-
-    void test();
 }
 
 #endif // QBASE58_H

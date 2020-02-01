@@ -3,7 +3,8 @@
 
 class Engine;
 
-struct EngineTest {
+struct EngineTest
+{
     void test( Engine *e );
 };
 

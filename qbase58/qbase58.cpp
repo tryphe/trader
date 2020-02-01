@@ -48,12 +48,3 @@ QByteArray QBase58::decode( const QByteArray &in )
 
     return out;
 }
-
-void QBase58::test()
-{
-    const QByteArray encoded = "CMLwxbMZJMztyTJ6Zkos66cgU7DybfFJfyJtTVpme54t";
-    const QByteArray decoded = QByteArray::fromHex( "a8a6ba2678d1983ad78cfd1aff049367a91c4274b46674ea51d99fc4a3f3c159" );
-
-    assert( decode( encoded ) == decoded );
-    assert( encode( decoded ) == encoded );
-}

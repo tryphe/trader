@@ -46,8 +46,6 @@ public:
     QByteArray createOrderId( const QByteArray &order_bytes ) const;
     QByteArray createOrderBody( Position *const &pos, const qint64 epoch_now, const qint64 epoch_expiration, bool random_sign_bytes = true ) const;
 
-    static void test();
-
 private:
     QByteArray private_key, public_key, matcher_public_key;
 
