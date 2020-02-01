@@ -1056,6 +1056,8 @@ void PositionMan::cancel( Position *const &pos, bool quiet, quint8 cancel_reason
         return;
     }
 
+    pos->is_cancelling = true;
+
     // set cancel reason (override if neccesary to change reason)
     pos->cancel_reason = cancel_reason;
 
@@ -1076,9 +1078,7 @@ void PositionMan::cancel( Position *const &pos, bool quiet, quint8 cancel_reason
     if ( isQueued( pos ) )
     {
         // let the order timeout if it doesn't have an orderid, but only after it gets set
-        pos->is_cancelling = true;
         pos->order_cancel_time = 1; // set cancel time >0 to trip the next timeout check
-        //kDebug() << "local warning: trying to cancel order, but order is in flight";
         return;
     }
 
