@@ -29,6 +29,7 @@ Exchanges
 
 TODO
  ----
+  - [ ] Create readme and documentation for new strategy
   - [ ] Stats tracker for persistence. (wip)
   - [ ] Add more exchanges.
   - [ ] GUI (abandoned)
