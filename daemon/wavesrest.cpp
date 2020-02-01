@@ -438,7 +438,7 @@ void WavesREST::parseOrderStatus( const QJsonObject &info, Request *const &reque
 
     Position *const &pos = request->pos;
     const QString &order_status = info.value( "status" ).toString();
-    const Coin filled_amount = CoinAmount::SATOSHI * info.value( "filledAmount" ).toInt();
+    const Coin filled_quantity = CoinAmount::SATOSHI * info.value( "filledAmount" ).toInt();
     const Coin filled_fee = CoinAmount::SATOSHI * info.value( "filledFee" ).toInt();
 
     //kDebug() << "order status" << order_id << ":" << order_status;
@@ -451,14 +451,11 @@ void WavesREST::parseOrderStatus( const QJsonObject &info, Request *const &reque
     // we cancelled the order out but it got filled or cancelled
     else if ( order_status == "PartiallyFilled" || order_status == "Cancelled" )
     {
-        const qint64 filled_amount_64 = info.value( "filledAmount" ).toInt();
-
-        if ( filled_amount_64 > 0 )
+        if ( filled_quantity.isGreaterThanZero() )
         {
-            const Coin filled_amount = CoinAmount::SATOSHI * filled_amount_64;
-            //kDebug() << "partially filled order amount:" << filled_amount;
+            kDebug() << "partially filled order quantity:" << pos->market << filled_quantity;
 
-            engine->updateStatsAndPrintFill( "getorder", pos->market, pos->order_number, pos->side, "spruce", filled_amount, pos->price, Coin(), true );
+            engine->updateStatsAndPrintFill( "getorder", pos->market, pos->order_number, pos->side, "spruce", Coin(), filled_quantity, pos->price, Coin(), true );
         }
 
         // if it was cancelled, remove it from pending status orders

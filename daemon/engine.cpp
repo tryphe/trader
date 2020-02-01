@@ -350,7 +350,7 @@ void Engine::fillNQ( const QString &order_id, qint8 fill_type , quint8 extra_dat
 
     // update stats and print
     // note: btc_commission is set in rest->parseOrderHistory
-    updateStatsAndPrintFill( fill_str, pos->market, pos->order_number, pos->side, pos->strategy_tag, pos->btc_amount, pos->price, pos->btc_commission, false );
+    updateStatsAndPrintFill( fill_str, pos->market, pos->order_number, pos->side, pos->strategy_tag, pos->btc_amount, Coin(), pos->price, pos->btc_commission, false );
 
     // set the next position
     flipPosition( pos );
@@ -367,20 +367,26 @@ void Engine::fillNQ( const QString &order_id, qint8 fill_type , quint8 extra_dat
 }
 
 void Engine::updateStatsAndPrintFill( const QString &fill_type, const Market &market, const QString &order_id, const quint8 side,
-                                      const QString &strategy_tag, const Coin &btc_amount, const Coin &price, const Coin &btc_commission,
-                                      bool partial_fill )
+                                      const QString &strategy_tag, Coin btc_amount, Coin quantity, const Coin &price,
+                                      const Coin &btc_commission, bool partial_fill )
 {
-    // negate commission from final qty
-    Coin final_btc_amount = btc_amount - btc_commission;
-    Coin final_quantity = final_btc_amount / price;
+    // one of these values should be zero, unless the exchange supplies both?
+    if ( btc_amount.isZero() )
+        btc_amount = quantity * price;
+    else if ( quantity.isZero() )
+        quantity = btc_amount / price;
+
+    // negate commission from final qty and calculate final amounts
+    btc_amount = btc_amount - btc_commission;
+    quantity = btc_amount / price;
 
     // add stats changes to alpha tracker (note: volume before commission is used)
     alpha->addAlpha( market, side, btc_amount, price, partial_fill );
     alpha->addDailyVolume( QDateTime::currentSecsSinceEpoch(), btc_amount );
 
     // add qty changes to spruce strat
-    const Coin quantity_offset = ( side == SIDE_BUY ) ?  final_quantity
-                                                      : -final_quantity;
+    const Coin quantity_offset = ( side == SIDE_BUY ) ?  quantity
+                                                      : -quantity;
 
     if ( strategy_tag == "spruce" )
         spruce->addToShortLonged( market, quantity_offset );
@@ -399,7 +405,7 @@ void Engine::updateStatsAndPrintFill( const QString &fill_type, const Market &ma
                     .arg( market, MARKET_STRING_WIDTH )
                     .arg( btc_amount, PRICE_WIDTH )
                     .arg( btc_commission + ")", -PRICE_WIDTH -1 )
-                    .arg( final_quantity + ")", -PRICE_WIDTH -1 )
+                    .arg( quantity + ")", -PRICE_WIDTH -1 )
                     .arg( price, -PRICE_WIDTH )
                     .arg( order_id );
     }
