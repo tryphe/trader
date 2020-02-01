@@ -211,15 +211,13 @@ QByteArray WavesAccount::createOrderBytes( Position * const &pos, const qint64 e
     order_id_v2 += pos->side == SIDE_SELL ? WavesUtil::SELL : WavesUtil::BUY;
 
     QDataStream order_id_v2_stream( &order_id_v2, QIODevice::WriteOnly );
-    order_id_v2_stream.device()->seek( 100 );
+    order_id_v2_stream.device()->seek( order_id_v2.size() );
 
     order_id_v2_stream << pos->price.toIntSatoshis(); // price = 1000000
     order_id_v2_stream << pos->quantity.toIntSatoshis(); // amount = 9700000
     order_id_v2_stream << epoch_now; // order set time +1 minute
     order_id_v2_stream << epoch_expiration; // expiration time
     order_id_v2_stream << 300000LL; // matcher fee = 300000
-
-    assert( order_id_v2.size() == 140 );
 
     return order_id_v2;
 }

@@ -33,7 +33,7 @@ Position::Position( QString _market, quint8 _side, QString _buy_price, QString _
     max_age_minutes = 0;
     strategy_tag = _strategy_tag;
 
-    if ( engine && is_landmark && market_indices.size() > 1 )
+    if ( engine != nullptr && is_landmark && market_indices.size() > 1 )
     {
         // ordersize stuff
         QMap<int, Coin> ordersize_weights;
@@ -119,7 +119,8 @@ Position::Position( QString _market, quint8 _side, QString _buy_price, QString _
     }
 
     // truncate order by exchange tick size
-    if ( engine->engine_type == ENGINE_BINANCE )
+    if ( engine != nullptr &&
+         ( engine->engine_type == ENGINE_BINANCE || engine->engine_type == ENGINE_WAVES ) )
     {
         const Coin &ticksize = !engine ? CoinAmount::SATOSHI : engine->getMarketInfo( market ).price_ticksize;
         buy_price.truncateByTicksize( ticksize );
@@ -164,7 +165,8 @@ void Position::calculateQuantity()
     quantity = btc_amount / price;
 
     // truncate quantity by price ticksize
-    if ( engine->engine_type == ENGINE_BINANCE )
+    if ( engine != nullptr &&
+         ( engine->engine_type == ENGINE_BINANCE || engine->engine_type == ENGINE_WAVES ) )
     {
         // TODO: maybe we should truncate by quantity_ticksize instead?
         const Coin &ticksize = !engine ? CoinAmount::SATOSHI : engine->getMarketInfo( market ).price_ticksize;
@@ -218,7 +220,7 @@ void Position::applyOffset()
     qreal offset;
     bool sentiment;
 
-    if ( engine )
+    if ( engine != nullptr )
     {
         MarketInfo &market_info = engine->getMarketInfo( market );
         offset = market_info.market_offset;

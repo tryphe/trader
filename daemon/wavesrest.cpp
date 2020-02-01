@@ -3,6 +3,8 @@
 #include "positionman.h"
 #include "alphatracker.h"
 #include "engine.h"
+#include "wavesaccount.h"
+#include "wavesutil.h"
 
 #include <QTimer>
 #include <QNetworkAccessManager>
@@ -39,43 +41,10 @@ WavesREST::~WavesREST()
 
 void WavesREST::init()
 {
-    const QString ALIAS_USD =   "Ft8X1v1LTa1ABafufpaCWyVj8KkaxUWE6xBhW6sNFJck",
-                  ALIAS_USDN =  "DG2xFkPdDwKUoBkzGAhQtLpSGzfXLiCYPEzeKH2Ad24p",
-                  ALIAS_EUR =   "Gtb1WRznfchDnTh37ezoDTJ4wcoKaRsKqKjJjy7nm2zU",
-                  ALIAS_CNY =   "DEJbZipbKQjwEiRjx2AqQFucrj5CZ3rAc4ZvFM8nAsoA",
-                  ALIAS_TRY =   "2mX5DzVKWrAJw8iwdJnV2qtoeVG9h5nTDpTqC1wb1WEN",
-                  ALIAS_BTC =   "8LQW8f7P5d5PZM7GtZEBgaqRPGSzS3DfPuiXrURJ4AJS",
-                  ALIAS_WAVES = "WAVES",
-                  ALIAS_ETH =   "474jTeYx2r2Va35794tCScAXWJG9hU2HcgxzMowaZUnu",
-                  ALIAS_BCH =   "zMFqXuoyrn5w17PFurTqxB7GsS71fp9dfk6XFwxbPCy",
-                  ALIAS_BSV =   "62LyMjcr2DtiyF5yVXFhoQ2q414VPPJXjsNYp72SuDCH",
-                  ALIAS_LTC =   "HZk1mbfuJpmxU1Fs4AX5MWLVYtctsNcg6e2C6VKqK8zk",
-                  ALIAS_DASH =  "B3uGHFRpSUuGEDWjqB9LWWxafQj8VTvpMucEyoxzws5H",
-                  ALIAS_XMR =   "5WvPKSJXzVE2orvbkJ8wsQmmQKqTv9sGBPksV4adViw3",
-                  ALIAS_ZEC =   "BrjUWjndUanm5VsJkbUip8VRYy6LWJePtxya3FNv4TQa";
-
-    asset_by_alias.insert( ALIAS_USD, "USD" );
-    asset_by_alias.insert( ALIAS_USDN, "USDN" );
-    asset_by_alias.insert( ALIAS_EUR, "EUR" );
-    asset_by_alias.insert( ALIAS_CNY, "CNY" );
-    asset_by_alias.insert( ALIAS_TRY, "TRY" );
-    asset_by_alias.insert( ALIAS_BTC, "BTC" );
-    asset_by_alias.insert( ALIAS_WAVES, "WAVES" );
-    asset_by_alias.insert( ALIAS_ETH, "ETH" );
-    asset_by_alias.insert( ALIAS_BCH, "BCH" );
-    asset_by_alias.insert( ALIAS_BSV, "BSV" );
-    asset_by_alias.insert( ALIAS_LTC, "LTC" );
-    asset_by_alias.insert( ALIAS_DASH, "DASH" );
-    asset_by_alias.insert( ALIAS_XMR, "XMR" );
-    asset_by_alias.insert( ALIAS_ZEC, "ZEC" );
-
-    // add all of the aliases above into price_assets (they are all price assets)
-    for ( QMap<QString,QString>::const_iterator i = asset_by_alias.begin(); i != asset_by_alias.end(); i++ )
-        price_assets += i.key();
-
-    // duplicate the above map into reverse access map alias_by_asset
-    for ( QMap<QString,QString>::const_iterator i = asset_by_alias.begin(); i != asset_by_alias.end(); i++ )
-        alias_by_asset.insert( i.value(), i.key() );
+    // init asset maps
+    account.initAssetMaps();
+    // set matcher public key
+    account.setMatcherPublicKeyB58( "9cpfKN9suPNvfeUNphzxXMjcnn974eme8ZhWUjaktzU5" );
 
     // we use this to send the requests at a predictable rate
     connect( send_timer, &QTimer::timeout, this, &WavesREST::sendNamQueue );
@@ -90,7 +59,17 @@ void WavesREST::init()
     connect( ticker_timer, &QTimer::timeout, this, &WavesREST::onCheckTicker );
     ticker_timer->start( WAVES_TIMER_INTERVAL_TICKER );
 
+#if !defined( WAVES_TICKER_ONLY )
+    account.setPrivateKeyB58( WAVES_SECRET );
+
+    connect( orderbook_timer, &QTimer::timeout, this, &WavesREST::onCheckBotOrders );
+    orderbook_timer->start( WAVES_TIMER_INTERVAL_CHECK_NEXT_ORDER );
+    onCheckBotOrders();
+#endif
+
     onCheckMarketData();
+
+    // sendRequest( WAVES_COMMAND_POST_ORDER_NEW, "{\"amount\":9700000,\"assetPair\":{\"amountAsset\":\"WAVES\",\"priceAsset\":\"8LQW8f7P5d5PZM7GtZEBgaqRPGSzS3DfPuiXrURJ4AJS\"},\"expiration\":1583050061708,\"id\":\"7CrdLzhytNurjrbouN4jXM7xCvVYHTfcYpfgnJuE7QRM\",\"matcherFee\":300000,\"matcherPublicKey\":\"9cpfKN9suPNvfeUNphzxXMjcnn974eme8ZhWUjaktzU5\",\"orderType\":\"sell\",\"price\":1000000,\"proofs\":[\"2ikLEBEGFEW5F5ZfWnNTv8wqvSMhN1x6fZJFQ9FU66cL5EQbi53nidJGHd8kdzutSEtR4PxE7jhjk8mVuWmPMLGs\"],\"senderPublicKey\":\"27YM9icwd6TwfZD3KEJpYsj7rLwPAShJdYXrCt8QRo6L\",\"timestamp\":1580544581708,\"version\":2}" );
 }
 
 void WavesREST::sendNamQueue()
@@ -110,10 +89,16 @@ void WavesREST::sendNamRequest( Request * const &request )
     const qint64 current_time = QDateTime::currentMSecsSinceEpoch();
     QString api_command = request->api_command;
 
+    // remove request tag
+    api_command.remove( 0, 3 );
+
     const bool is_get = api_command.startsWith( "get-" );
+    const bool is_post = api_command.startsWith( "post-" );
 
     if ( is_get )
         api_command.remove( 0, 4 );
+    else if ( is_post )
+        api_command.remove( 0, 5 );
 
     // add to sent queue so we can check if it timed out
     request->time_sent_ms = current_time;
@@ -124,8 +109,10 @@ void WavesREST::sendNamRequest( Request * const &request )
     QUrl url = QUrl( base_url_str + api_command );
 
     // inherit the body from the input structure and add it to the url
-    const QUrlQuery query = QUrlQuery( request->body );
-    url.setQuery( query );
+//    const QUrlQuery query = QUrlQuery( request->body );
+//    url.setQuery( query );
+
+//    kDebug() << query.toString();
 
     // create the request
     QNetworkRequest nam_request;
@@ -133,9 +120,11 @@ void WavesREST::sendNamRequest( Request * const &request )
 
     // add http json accept header
     nam_request.setRawHeader( "Accept", "application/json" );
+    nam_request.setRawHeader( "Content-Type", "application/json;charset=UTF-8" );
 
     // send REST message
-    QNetworkReply *const &reply = is_get? nam->get( nam_request ) :
+    QNetworkReply *const &reply = is_get  ? nam->get( nam_request ) :
+                                  is_post ? nam->post( nam_request, request->body.toLocal8Bit() ) :
                                           nullptr;
 
     if ( !reply )
@@ -147,6 +136,43 @@ void WavesREST::sendNamRequest( Request * const &request )
     nam_queue_sent.insert( reply, request );
     nam_queue.removeOne( request );
     last_request_sent_ms = current_time;
+}
+
+void WavesREST::getOrderStatus( Position * const &pos )
+{
+    sendRequest( QString( WAVES_COMMAND_GET_ORDER_STATUS )
+                  .arg( account.getAliasByAsset( pos->market.getQuote() ) )
+                  .arg( account.getAliasByAsset( pos->market.getBase() ) )
+                  .arg( pos->order_number ), "", pos );
+}
+
+void WavesREST::sendCancel( const QString &order_id, Position * const &pos )
+{
+    const QByteArray body = account.createCancelBody( pos->order_number.toLatin1() );
+
+    const QString command = QString( WAVES_COMMAND_POST_ORDER_CANCEL )
+                             .arg( account.getAliasByAsset( pos->market.getQuote() ) )
+                             .arg( account.getAliasByAsset( pos->market.getBase() ) );
+
+    //kDebug() << "sending cancel request:" << command << body;
+    sendRequest( command, body, pos );
+}
+
+void WavesREST::sendBuySell( Position * const &pos, bool quiet )
+{
+    Q_UNUSED( quiet );
+
+    const qint64 current_time = QDateTime::currentMSecsSinceEpoch();
+    const QByteArray body = account.createOrderBody( pos,
+                                                     current_time + 60000,
+                                                     current_time + ( 60000LL * 60LL * 24LL * 29LL ) );
+
+    if ( !quiet )
+        kDebug() << QString( "queued          %1" )
+                    .arg( pos->stringifyOrderWithoutOrderID() );
+
+    //kDebug() << "sending new order request:" << body;
+    sendRequest( WAVES_COMMAND_POST_ORDER_NEW, body, pos );
 }
 
 void WavesREST::onNamReply( QNetworkReply * const &reply )
@@ -165,7 +191,6 @@ void WavesREST::onNamReply( QNetworkReply * const &reply )
 
     const bool is_array = body_json.isArray();
     const bool is_object = body_json.isObject();
-    bool is_json_invalid = false;
 
     // cache result array/object
     if ( is_array )
@@ -188,17 +213,38 @@ void WavesREST::onNamReply( QNetworkReply * const &reply )
         if ( contains_html )
             data = QByteArray( "<html error>" );
 
-        kDebug() << "local warning: unknown nam reply for" << path << ":" << data;
+        kDebug() << "local warning: nam reply got html reponse for" << path << ":" << data;
     }
     // handle matcher info response
-    else if ( api_command == WAVES_COMMAND_GET_MARKET_DATA )
+    else if ( api_command.startsWith( "md" ) )
     {
         parseMarketData( result_obj );
     }
     // handle order depth response
-    else if ( api_command.startsWith( WAVES_COMMAND_GET_MARKET_DATA ) )
+    else if ( api_command.startsWith( "bd" ) )
     {
         parseOrderBookData( result_obj );
+    }
+    // handle order status response
+    else if ( api_command.startsWith( "os" ) )
+    {
+        parseOrderStatus( result_obj,
+                          api_command.mid( api_command.lastIndexOf( QChar( '/' ) ) +1 ), // extract order id
+                          request );
+    }
+    // handle order cancel response
+    else if ( api_command.startsWith( "oc" ) )
+    {
+        parseCancelOrder( result_obj, request );
+    }
+    // handle order new response
+    else if ( api_command.startsWith( "on" ) )
+    {
+        parseNewOrder( result_obj, request );
+    }
+    else
+    {
+        kDebug() << "local warning: nam reply of unknown command for" << path << ":" << data;
     }
 
     deleteReply( reply, request );
@@ -226,8 +272,8 @@ void WavesREST::onCheckTicker()
 
     Market market = tracked_markets.value( next_ticker_index_to_query );
 
-    QString price_alias = alias_by_asset.value( market.getBase() );
-    QString amount_alias = alias_by_asset.value( market.getQuote() );
+    const QString price_alias = account.getAliasByAsset( market.getBase() );
+    const QString amount_alias = account.getAliasByAsset( market.getQuote() );
 
     const QString ticker_url = QString( WAVES_COMMAND_GET_BOOK_DATA )
                                 .arg( amount_alias )
@@ -241,7 +287,33 @@ void WavesREST::onCheckTicker()
 
 void WavesREST::onCheckBotOrders()
 {
+    /// step 1: query one active order
+    // check for empty positions
+    if ( engine->getPositionMan()->active().size() > 0 )
+    {
+        // TODO: fix this crappy shit
+        QList<Position*> pos_list = engine->getPositionMan()->active().toList();
 
+        if ( ++last_index_checked >= pos_list.size() )
+            last_index_checked = 0;
+
+        //kDebug() << "checking order" << order_to_check->order_number;
+
+        Position *order_to_check = pos_list.value( last_index_checked );
+        getOrderStatus( order_to_check );
+    }
+
+    /// step 2: query cancelling orders
+
+    // check for empty cancelling query orders
+    if ( cancelling_orders_to_query.size() == 0 )
+        return;
+
+    if ( ++last_cancelling_index_checked >= cancelling_orders_to_query.size() )
+        last_cancelling_index_checked = 0;
+
+    Position *order_to_check = cancelling_orders_to_query.value( last_cancelling_index_checked );
+    getOrderStatus( order_to_check );
 }
 
 void WavesREST::parseMarketData( const QJsonObject &info )
@@ -279,15 +351,15 @@ void WavesREST::parseMarketData( const QJsonObject &info )
         }
 
         // check if the price and amount currencies are hardcoded in, otherwise skip
-        if ( !price_assets.contains( price_asset_alias ) ||
-             !price_assets.contains( amount_asset_alias ) )
+        if ( !account.getPriceAssets().contains( price_asset_alias ) ||
+             !account.getPriceAssets().contains( amount_asset_alias ) )
             continue;
 
 //        kDebug() << "amount_asset_name: " << amount_asset_alias
 //                 << "price_asset_name:  " << price_asset_alias;
 
-        Market market = Market( asset_by_alias.value( price_asset_alias ),
-                                asset_by_alias.value( amount_asset_alias ) );
+        Market market = Market( account.getAssetByAlias( price_asset_alias ),
+                                account.getAssetByAlias( amount_asset_alias ) );
 
         tracked_markets += market;
 
@@ -331,8 +403,8 @@ void WavesREST::parseOrderBookData( const QJsonObject &info )
     const QString &amount_asset = market_info.value( "amountAsset" ).toString();
     const QString &price_asset = market_info.value( "priceAsset" ).toString();
 
-    Market market = Market( asset_by_alias.value( price_asset ),
-                            asset_by_alias.value( amount_asset ) );
+    Market market = Market( account.getAssetByAlias( price_asset ),
+                            account.getAssetByAlias( amount_asset ) );
 
     QMap<QString, TickerInfo> ticker_info;
     ticker_info.insert( market, TickerInfo( bid_price, ask_price ) );
@@ -340,4 +412,118 @@ void WavesREST::parseOrderBookData( const QJsonObject &info )
     // kDebug() << market << ":" << bid_price << ask_price;
 
     engine->processTicker( this, ticker_info );
+}
+
+void WavesREST::parseOrderStatus( const QJsonObject &info, const QString &order_id, Request *const &request )
+{
+    if ( !info.contains( "status" ) )
+    {
+        kDebug() << "nam reply warning: caught bad order status data:" << info;
+        return;
+    }
+
+    // check if we have a position recorded for this request
+    if ( !request->pos )
+    {
+        kDebug() << "local waves error: found response for order status, but postion is null" << info;
+        return;
+    }
+
+    // check that the position is locally active
+    // (this goes off routinely because we only remove the order from querying when getstatus is called)
+    if ( !engine->getPositionMan()->isActive( request->pos ) )
+    {
+        //kDebug() << "local waves warning: found response for order status, but position is not active for order_id" << order_id << info;
+        cancelling_orders_to_query.removeOne( request->pos );
+        return;
+    }
+
+    Position *const &pos = request->pos;
+    const QString &order_status = info.value( "status" ).toString();
+    const Coin filled_amount = CoinAmount::SATOSHI * info.value( "filledAmount" ).toInt();
+    const Coin filled_fee = CoinAmount::SATOSHI * info.value( "filledFee" ).toInt();
+
+    //kDebug() << "order status" << order_id << ":" << order_status;
+
+    if ( order_status == "Filled" )
+    {
+        // do single order fill
+        engine->processFilledOrders( QVector<Position*>() << pos, FILL_GETORDER );
+    }
+    // we cancelled the order out but it got filled or cancelled
+    else if ( order_status == "PartiallyFilled" || order_status == "Cancelled" )
+    {
+        const qint64 filled_amount_64 = info.value( "filledAmount" ).toInt();
+
+        if ( filled_amount_64 > 0 )
+        {
+            const Coin filled_amount = CoinAmount::SATOSHI * filled_amount_64;
+            //kDebug() << "partially filled order amount:" << filled_amount;
+
+            engine->updateStatsAndPrintFill( "getorder", pos->market, pos->order_number, pos->side, "spruce", filled_amount, pos->price, Coin(), true );
+        }
+
+        // if it was cancelled, remove it from pending status orders
+        cancelling_orders_to_query.removeOne( pos );
+
+        engine->processCancelledOrder( pos );
+    }
+}
+
+void WavesREST::parseCancelOrder( const QJsonObject &info, Request *const &request )
+{
+    const QString &order_id = info.value( "orderId" ).toString();
+    const QString &status = info.value( "status" ).toString();
+
+    // if it wasn't cancelled say something
+    if ( status != "OrderCanceled" )
+    {
+        kDebug() << "local waves warning: unknown cancel reply status:" << status << ":" << info;
+        return;
+    }
+
+    Position *const &pos = request->pos;
+
+    // prevent unsafe access
+    if ( !pos || !engine->getPositionMan()->isActive( pos ) )
+    {
+        kDebug() << "successfully cancelled non-local order:" << info;
+        return;
+    }
+
+    // queue getstatus command
+    cancelling_orders_to_query += pos;
+}
+
+void WavesREST::parseNewOrder( const QJsonObject &info, Request *const &request )
+{
+    // check if we have a position recorded for this request
+    if ( !request->pos )
+    {
+        kDebug() << "local waves error: found response for queued position, but postion is null" << info;
+        return;
+    }
+
+    // check that the position is queued and not set
+    if ( !engine->getPositionMan()->isQueued( request->pos ) )
+    {
+        kDebug() << "local waves warning: position from response not found in positions_queued" << info;
+        return;
+    }
+
+    // check for bad or missing fields
+    if ( !info.contains( "success" ) ||
+         !info.value( "success" ).toBool() ||
+         !info.contains( "message" ) ||
+         !info.value( "message" ).toObject().contains( "id" ) )
+    {
+        kDebug() << "local waves error: failed to set new order:" << info;
+        return;
+    }
+
+    Position *const &pos = request->pos;
+    const QString &order_id = info.value( "message" ).toObject().value( "id" ).toString();
+
+    // active pos
+    engine->getPositionMan()->activate( pos, order_id );
 }

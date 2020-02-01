@@ -7,6 +7,7 @@
 #include "position.h"
 #include "keystore.h"
 #include "baserest.h"
+#include "wavesaccount.h"
 
 class QNetworkReply;
 class QTimer;
@@ -25,6 +26,11 @@ public:
 
     void sendNamRequest( Request *const &request );
 
+    void getOrderStatus( Position * const &pos );
+
+    void sendCancel( const QString &order_id, Position * const &pos );
+    void sendBuySell( Position * const &pos, bool quiet = true );
+
 public Q_SLOTS:
     void sendNamQueue();
     void onNamReply( QNetworkReply *const &reply );
@@ -36,12 +42,20 @@ public Q_SLOTS:
 private:
     void parseMarketData( const QJsonObject &info );
     void parseOrderBookData( const QJsonObject &info );
+    void parseOrderStatus( const QJsonObject &info, const QString &order_id, Request *const &request );
+    void parseCancelOrder( const QJsonObject &info, Request *const &request );
+    void parseNewOrder( const QJsonObject &info, Request *const &request );
 
-    QMap<QString,QString> asset_by_alias, alias_by_asset;
-    QStringList price_assets, tracked_markets;
+    WavesAccount account;
+
+    QStringList tracked_markets;
+
+    QVector<Position*> cancelling_orders_to_query;
 
     bool initial_ticker_update_done{ false };
     qint32 next_ticker_index_to_query{ 0 };
+    qint32 last_index_checked{ 0 };
+    qint32 last_cancelling_index_checked{ 0 };
     QTimer *market_data_timer{ nullptr };
 };
 

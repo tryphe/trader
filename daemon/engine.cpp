@@ -773,36 +773,36 @@ void Engine::processCancelledOrder( Position * const &pos )
     // pos must be valid!
 
     // we succeeded at resetting(cancelling) a slippage position, now put it back to the -same side- and at its original prices
-//    if ( pos->is_slippage && pos->cancel_reason == CANCELLING_FOR_SLIPPAGE_RESET )
-//    {
-//        if ( pos->is_landmark )
-//        {
-//            addLandmarkPositionFor( pos );
-//            positions->remove( pos );
-//            return;
-//        }
-//        else
-//        {
-//            const PositionData &new_pos = market_info[ pos->market ].position_index.value( pos->market_indices.value( 0 ) );
+    if ( pos->is_slippage && pos->cancel_reason == CANCELLING_FOR_SLIPPAGE_RESET )
+    {
+        if ( pos->is_landmark )
+        {
+            addLandmarkPositionFor( pos );
+            positions->remove( pos );
+            return;
+        }
+        else
+        {
+            const PositionData &new_pos = market_info[ pos->market ].position_index.value( pos->market_indices.value( 0 ) );
 
-//            addPosition( pos->market, pos->side, new_pos.buy_price, new_pos.sell_price, new_pos.order_size, ACTIVE, "",
-//                         pos->market_indices, false, true );
+            addPosition( pos->market, pos->side, new_pos.buy_price, new_pos.sell_price, new_pos.order_size, ACTIVE, "",
+                         pos->market_indices, false, true );
 
-//            positions->remove( pos );
-//            return;
-//        }
-//    }
+            positions->remove( pos );
+            return;
+        }
+    }
 
     if ( verbosity > 0 )
         kDebug() << QString( "%1 %2" )
                     .arg( "cancelled", -15 )
                     .arg( pos->stringifyOrder() );
 
-//    // depending on the type of cancel, we should take some action
-//    if ( pos->cancel_reason == CANCELLING_FOR_DC )
-//        cancelOrderMeatDCOrder( pos );
-//    else if ( pos->cancel_reason == CANCELLING_FOR_SHORTLONG )
-//        flipPosition( pos );
+    // depending on the type of cancel, we should take some action
+    if ( pos->cancel_reason == CANCELLING_FOR_DC )
+        cancelOrderMeatDCOrder( pos );
+    else if ( pos->cancel_reason == CANCELLING_FOR_SHORTLONG )
+        flipPosition( pos );
 
     // delete position
     positions->remove( pos );
@@ -1019,7 +1019,7 @@ void Engine::loadSettings()
 
     if ( !loadfile.open( QIODevice::ReadOnly | QIODevice::Text ) )
     {
-        kDebug() << "local error: couldn't load optional engine settings file" << path;
+        kDebug() << "local warning: couldn't load optional engine settings file" << path;
         return;
     }
 
@@ -1269,6 +1269,8 @@ void Engine::sendBuySell( Position * const &pos , bool quiet )
         rest_bnc->sendBuySell( pos, quiet );
     else if ( engine_type == ENGINE_POLONIEX )
         rest_polo->sendBuySell( pos, quiet );
+    else if ( engine_type == ENGINE_WAVES )
+        rest_waves->sendBuySell( pos, quiet );
 }
 
 void Engine::sendCancel( const QString &order_number, Position * const &pos )
@@ -1279,16 +1281,8 @@ void Engine::sendCancel( const QString &order_number, Position * const &pos )
         rest_bnc->sendCancel( order_number, pos );
     else if ( engine_type == ENGINE_POLONIEX )
         rest_polo->sendCancel( order_number, pos );
-}
-
-void Engine::sendNamQueue()
-{
-    if ( engine_type == ENGINE_BITTREX )
-        rest_trex->sendNamQueue();
-    else if ( engine_type == ENGINE_BINANCE )
-        rest_bnc->sendNamQueue();
-    else if ( engine_type == ENGINE_POLONIEX )
-        rest_polo->sendNamQueue();
+    else if ( engine_type == ENGINE_WAVES )
+        rest_waves->sendCancel( order_number, pos );
 }
 
 bool Engine::yieldToFlowControl()
