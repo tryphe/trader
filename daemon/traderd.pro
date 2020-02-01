@@ -127,7 +127,7 @@ HEADERS += build-config.h \
     wavesutil.h \
     wavesutil_test.h \
     wavesaccount.h \
-    wavesaccount_test.h
+    wavesaccount_test.h \
     ../libbase58/libbase58.h \
     ../qbase58/qbase58.h \
     ../qbase58/qbase58_test.h \

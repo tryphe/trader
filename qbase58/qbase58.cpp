@@ -5,12 +5,10 @@
 #include <QByteArray>
 #include <QDebug>
 
-static const int MAX_BASE58_LEN = 512;
-
 QByteArray QBase58::encode( const QByteArray &in )
 {
     QByteArray out;
-    out.resize( MAX_BASE58_LEN );
+    out.resize( in.size() *2 ); // note: surely there is something better than size*2, but it's better than static
     size_t out_size = out.size();
 
     const bool result = b58enc( out.data(), &out_size, in.data(), in.size() );
@@ -31,7 +29,7 @@ QByteArray QBase58::encode( const QByteArray &in )
 QByteArray QBase58::decode( const QByteArray &in )
 {
     QByteArray out;
-    out.resize( MAX_BASE58_LEN );
+    out.resize( in.size() *2 );
     size_t out_size = out.size();
 
     const bool result = b58tobin( out.data(), &out_size, in.data(), in.size() );
@@ -44,7 +42,7 @@ QByteArray QBase58::decode( const QByteArray &in )
 
     // shrink the buffer to get rid of the preceeding bytes
     if ( out_size < (size_t) out.size() )
-        out.remove( 0, MAX_BASE58_LEN - out_size );
+        out.remove( 0, ( in.size() *2 ) - out_size );
 
     return out;
 }
