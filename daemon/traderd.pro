@@ -39,7 +39,58 @@ SOURCES += main.cpp \
     baserest.cpp \
     engine_test.cpp \
     coinamount.cpp \
-    coinamount_test.cpp
+    coinamount_test.cpp \
+    wavesutil.cpp \
+    wavesaccount.cpp \
+    ../libbase58/base58.c \
+    ../qbase58/qbase58.cpp \
+    ../blake2b/sse/blake2b.c \
+    ../libcurve25519-donna/nacl_sha512/hash.c \
+    ../libcurve25519-donna/nacl_sha512/blocks.c \
+    ../libcurve25519-donna/additions/keygen.c \
+    ../libcurve25519-donna/additions/curve_sigs.c \
+    ../libcurve25519-donna/additions/compare.c \
+    ../libcurve25519-donna/additions/fe_montx_to_edy.c \
+    ../libcurve25519-donna/additions/open_modified.c \
+    ../libcurve25519-donna/additions/sign_modified.c \
+    ../libcurve25519-donna/additions/ge_p3_to_montx.c \
+    ../libcurve25519-donna/additions/zeroize.c \
+    ../libcurve25519-donna/ge_scalarmult_base.c \
+    ../libcurve25519-donna/fe_0.c \
+    ../libcurve25519-donna/fe_1.c \
+    ../libcurve25519-donna/fe_add.c \
+    ../libcurve25519-donna/fe_invert.c \
+    ../libcurve25519-donna/fe_isnegative.c \
+    ../libcurve25519-donna/fe_isnonzero.c \
+    ../libcurve25519-donna/fe_sub.c \
+    ../libcurve25519-donna/fe_sq.c \
+    ../libcurve25519-donna/fe_sq2.c \
+    ../libcurve25519-donna/fe_frombytes.c \
+    ../libcurve25519-donna/fe_pow22523.c \
+    ../libcurve25519-donna/fe_mul.c \
+    ../libcurve25519-donna/fe_tobytes.c \
+    ../libcurve25519-donna/fe_cmov.c \
+    ../libcurve25519-donna/fe_copy.c \
+    ../libcurve25519-donna/fe_neg.c \
+    ../libcurve25519-donna/ge_add.c \
+    ../libcurve25519-donna/ge_p3_0.c \
+    ../libcurve25519-donna/ge_frombytes.c \
+    ../libcurve25519-donna/ge_tobytes.c \
+    ../libcurve25519-donna/ge_p3_tobytes.c \
+    ../libcurve25519-donna/ge_precomp_0.c \
+    ../libcurve25519-donna/ge_p2_dbl.c \
+    ../libcurve25519-donna/ge_p3_dbl.c \
+    ../libcurve25519-donna/ge_p2_0.c \
+    ../libcurve25519-donna/ge_p1p1_to_p2.c \
+    ../libcurve25519-donna/ge_p1p1_to_p3.c \
+    ../libcurve25519-donna/ge_p3_to_p2.c \
+    ../libcurve25519-donna/ge_p3_to_cached.c \
+    ../libcurve25519-donna/ge_double_scalarmult.c \
+    ../libcurve25519-donna/ge_madd.c \
+    ../libcurve25519-donna/ge_msub.c \
+    ../libcurve25519-donna/ge_sub.c \
+    ../libcurve25519-donna/sc_reduce.c \
+    ../libcurve25519-donna/sc_muladd.c
 
 HEADERS += build-config.h \
     alphatracker.h \
@@ -69,8 +120,16 @@ HEADERS += build-config.h \
     baserest.h \
     misctypes.h \
     ssl_policy.h \
-    coinamount_test.h
-
-RESOURCES += \
-    ../res/resources.server.qrc
-
+    coinamount_test.h \
+    wavesutil.h \
+    wavesaccount.h \
+    ../libbase58/libbase58.h \
+    ../qbase58/qbase58.h \
+    ../blake2b/sse/blake2.h \
+    ../libcurve25519-donna/nacl_includes/crypto_uint32.h \
+    ../libcurve25519-donna/nacl_includes/crypto_int32.h \
+    ../libcurve25519-donna/fe.h \
+    ../libcurve25519-donna/ge.h \
+    ../libcurve25519-donna/additions/crypto_additions.h \
+    ../libcurve25519-donna/additions/keygen.h \
+    ../libcurve25519-donna/additions/curve_sigs.h
