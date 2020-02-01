@@ -202,24 +202,24 @@ QByteArray WavesAccount::createOrderBytes( Position * const &pos, const qint64 e
         return QByteArray();
     }
 
-    QByteArray order_id_v2;
-    order_id_v2 += 0x02; // version byte
-    order_id_v2 += publicKey();
-    order_id_v2 += matcher_public_key;
-    order_id_v2 += WavesUtil::getAssetBytes( alias_by_asset.value( pos->market.getQuote() ) );
-    order_id_v2 += WavesUtil::getAssetBytes( alias_by_asset.value( pos->market.getBase() ) );
-    order_id_v2 += pos->side == SIDE_SELL ? WavesUtil::SELL : WavesUtil::BUY;
+    QByteArray order_v2;
+    order_v2 += 0x02; // version byte
+    order_v2 += publicKey();
+    order_v2 += matcher_public_key;
+    order_v2 += WavesUtil::getAssetBytes( alias_by_asset.value( pos->market.getQuote() ) );
+    order_v2 += WavesUtil::getAssetBytes( alias_by_asset.value( pos->market.getBase() ) );
+    order_v2 += pos->side == SIDE_SELL ? WavesUtil::SELL : WavesUtil::BUY;
 
-    QDataStream order_id_v2_stream( &order_id_v2, QIODevice::WriteOnly );
-    order_id_v2_stream.device()->seek( order_id_v2.size() );
+    QDataStream order_v2_stream( &order_v2, QIODevice::WriteOnly );
+    order_v2_stream.device()->seek( order_v2.size() );
 
-    order_id_v2_stream << pos->price.toIntSatoshis(); // price = 1000000
-    order_id_v2_stream << pos->quantity.toIntSatoshis(); // amount = 9700000
-    order_id_v2_stream << epoch_now; // order set time +1 minute
-    order_id_v2_stream << epoch_expiration; // expiration time
-    order_id_v2_stream << 300000LL; // matcher fee = 300000
+    order_v2_stream << pos->price.toIntSatoshis(); // price = 1000000
+    order_v2_stream << pos->quantity.toIntSatoshis(); // amount = 9700000
+    order_v2_stream << epoch_now; // order set time +1 minute
+    order_v2_stream << epoch_expiration; // expiration time
+    order_v2_stream << 300000LL; // matcher fee = 300000
 
-    return order_id_v2;
+    return order_v2;
 }
 
 QByteArray WavesAccount::createOrderId( const QByteArray &order_bytes ) const
