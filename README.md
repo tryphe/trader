@@ -25,7 +25,7 @@ Exchanges
  - [x] Bittrex REST support. (deprecated)
  - [x] Binance REST support. (deprecated, partially broken)
  - [x] Poloniex REST and WSS feed support (deprecated)
- - [ ] Waves support (wip)
+ - [x] Waves support
 
 TODO
  ----
