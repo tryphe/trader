@@ -13,5 +13,8 @@
 #define BINANCE_KEY "AJSDF45abc123..."
 #define BINANCE_SECRET "AJSD56abc123..."
 
+// put your waves private key here
+#define WAVES_SECRET "base58key"
+
 #endif // KEYDEFS_H
 
