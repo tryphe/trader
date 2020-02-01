@@ -1,7 +1,7 @@
 #ifndef BUILDCONFIG_H
 #define BUILDCONFIG_H
 
-#define BUILD_VERSION "1.76u"
+#define BUILD_VERSION "1.77"
 
 /// select your exchanges
 #define BITTREX_ENABLED
@@ -13,6 +13,7 @@
 #define BITTREX_TICKER_ONLY
 #define BINANCE_TICKER_ONLY
 #define POLONIEX_TICKER_ONLY
+//#define WAVES_TICKER_ONLY
 
 /// where to print logs
 #define PRINT_LOGS_TO_CONSOLE
