@@ -4,8 +4,8 @@
 
 #include <vector>
 
-#include <QDebug>
 #include <QByteArray>
+#include <QString>
 #include <QCryptographicHash>
 
 QByteArray WavesUtil::hashBlake2b( const QByteArray &in )
