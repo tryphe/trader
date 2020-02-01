@@ -28,7 +28,7 @@ public:
 
     void getOrderStatus( Position * const &pos );
 
-    void sendCancel( const QString &order_id, Position * const &pos );
+    void sendCancel( Position * const &pos );
     void sendBuySell( Position * const &pos, bool quiet = true );
 
 public Q_SLOTS:
@@ -42,7 +42,7 @@ public Q_SLOTS:
 private:
     void parseMarketData( const QJsonObject &info );
     void parseOrderBookData( const QJsonObject &info );
-    void parseOrderStatus( const QJsonObject &info, const QString &order_id, Request *const &request );
+    void parseOrderStatus( const QJsonObject &info, Request *const &request );
     void parseCancelOrder( const QJsonObject &info, Request *const &request );
     void parseNewOrder( const QJsonObject &info, Request *const &request );
 

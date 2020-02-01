@@ -238,7 +238,6 @@ QByteArray WavesAccount::createOrderBody( Position * const &pos, const qint64 ep
     }
 
     // note: 29d expiration == + ( 60000LL * 60LL * 24LL * 29LL )
-    const qint64 current_time = QDateTime::currentMSecsSinceEpoch();
     const QByteArray order_bytes_v2 = createOrderBytes( pos, epoch_now, epoch_expiration );
     const QByteArray order_id_v2_b58 = createOrderId( order_bytes_v2 );
     QByteArray signature;

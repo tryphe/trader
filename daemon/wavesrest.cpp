@@ -146,7 +146,7 @@ void WavesREST::getOrderStatus( Position * const &pos )
                   .arg( pos->order_number ), "", pos );
 }
 
-void WavesREST::sendCancel( const QString &order_id, Position * const &pos )
+void WavesREST::sendCancel( Position * const &pos )
 {
     const QByteArray body = account.createCancelBody( pos->order_number.toLatin1() );
 
@@ -228,9 +228,7 @@ void WavesREST::onNamReply( QNetworkReply * const &reply )
     // handle order status response
     else if ( api_command.startsWith( "os" ) )
     {
-        parseOrderStatus( result_obj,
-                          api_command.mid( api_command.lastIndexOf( QChar( '/' ) ) +1 ), // extract order id
-                          request );
+        parseOrderStatus( result_obj, request );
     }
     // handle order cancel response
     else if ( api_command.startsWith( "oc" ) )
@@ -414,7 +412,7 @@ void WavesREST::parseOrderBookData( const QJsonObject &info )
     engine->processTicker( this, ticker_info );
 }
 
-void WavesREST::parseOrderStatus( const QJsonObject &info, const QString &order_id, Request *const &request )
+void WavesREST::parseOrderStatus( const QJsonObject &info, Request *const &request )
 {
     if ( !info.contains( "status" ) )
     {

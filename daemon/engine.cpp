@@ -1282,7 +1282,7 @@ void Engine::sendCancel( const QString &order_number, Position * const &pos )
     else if ( engine_type == ENGINE_POLONIEX )
         rest_polo->sendCancel( order_number, pos );
     else if ( engine_type == ENGINE_WAVES )
-        rest_waves->sendCancel( order_number, pos );
+        rest_waves->sendCancel( pos );
 }
 
 bool Engine::yieldToFlowControl()
