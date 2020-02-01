@@ -476,7 +476,8 @@ void WavesREST::parseCancelOrder( const QJsonObject &info, Request *const &reque
     const QString &status = info.value( "status" ).toString();
 
     // if it wasn't cancelled say something
-    if ( status != "OrderCanceled" )
+    if ( status != "OrderCanceled" &&
+         status != "OrderCancelRejected" )
     {
         kDebug() << "local waves warning: unknown cancel reply status:" << status << ":" << info;
         return;
