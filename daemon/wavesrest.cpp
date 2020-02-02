@@ -325,7 +325,13 @@ void WavesREST::onCheckBotOrders()
         last_cancelling_index_checked = 0;
 
     Position *order_to_check = cancelling_orders_to_query.value( last_cancelling_index_checked );
-    getOrderStatus( order_to_check );
+
+    // prevent bad access, check if address is still alive
+    if ( engine->getPositionMan()->isValid( order_to_check ) )
+        getOrderStatus( order_to_check );
+    // if it's not valid, remove it from the query list
+    else
+        cancelling_orders_to_query.removeAt( last_cancelling_index_checked );
 }
 
 void WavesREST::parseMarketData( const QJsonObject &info )
