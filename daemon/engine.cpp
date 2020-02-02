@@ -240,7 +240,7 @@ Position *Engine::addPosition( QString market_input, quint8 side, QString buy_pr
         int timeout = type.mid( read_from, type.size() - read_from ).toInt( &ok );
 
         if ( ok && timeout > 0 )
-            pos->max_age_minutes = timeout;
+            pos->max_age_epoch = QDateTime::currentMSecsSinceEpoch() + ( timeout * timeout );
     }
 
     // if it's not a taker order, enable local post-only mode
@@ -1472,8 +1472,8 @@ void Engine::onCheckTimeouts()
         // search for one-time order with age > max_age_minutes
         if ( pos->is_onetime &&
              pos->order_set_time > 0 &&
-             pos->max_age_minutes > 0 &&
-             current_time > pos->order_set_time + ( 60000 * pos->max_age_minutes ) )
+             pos->max_age_epoch > 0 &&
+             current_time >= pos->max_age_epoch )
         {
             // the order has reached max age
             positions->cancel( pos, false, CANCELLING_FOR_MAX_AGE );

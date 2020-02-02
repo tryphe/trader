@@ -30,7 +30,7 @@ Position::Position( QString _market, quint8 _side, QString _buy_price, QString _
     is_taker = false;
     is_spruce = false;
     price_reset_count = 0;
-    max_age_minutes = 0;
+    max_age_epoch = 0;
     strategy_tag = _strategy_tag;
 
     if ( engine != nullptr && is_landmark && market_indices.size() > 1 )

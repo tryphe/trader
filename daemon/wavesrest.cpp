@@ -170,9 +170,16 @@ void WavesREST::sendBuySell( Position * const &pos, bool quiet )
     Q_UNUSED( quiet );
 
     const qint64 current_time = QDateTime::currentMSecsSinceEpoch();
-    const QByteArray body = account.createOrderBody( pos,
-                                                     current_time + 60000,
-                                                     current_time + ( 60000LL * 60LL * 24LL * 29LL ) );
+    const qint64 now = current_time + 60000;
+    const qint64 future_29d = current_time + ( 60000LL * 60LL * 24LL * 29LL );
+    const qint64 future_28d = current_time + ( 60000LL * 60LL * 24LL * 28LL );
+
+    // create order body for expiration in 29 days
+    const QByteArray body = account.createOrderBody( pos, now, future_29d );
+
+    // if the order is already set to expire, keep that time, otherwise set to cancel in 28 days
+    if ( pos->max_age_epoch == 0 )
+        pos->max_age_epoch = future_28d;
 
     if ( !quiet )
         kDebug() << QString( "queued          %1" )
