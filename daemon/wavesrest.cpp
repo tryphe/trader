@@ -523,10 +523,9 @@ void WavesREST::parseNewOrder( const QJsonObject &info, Request *const &request 
     // check for bad or missing fields
     if ( !info.contains( "success" ) ||
          !info.value( "success" ).toBool() ||
-         !info.contains( "message" ) ||
          !info.value( "message" ).toObject().contains( "id" ) )
     {
-        kDebug() << "local waves error: failed to set new order:" << info;
+        kDebug() << "local waves error: failed to set new order:" << info.value( "message" ).toString();
         return;
     }
 
