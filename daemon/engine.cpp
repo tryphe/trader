@@ -63,7 +63,7 @@ Position *Engine::addPosition( QString market_input, quint8 side, QString buy_pr
                                bool landmark, bool quiet )
 {
     // don't add a position on an exchange without a key and secret
-    if ( !rest_arr.value( engine_type )->isKeyOrSecretUnset() )
+    if ( rest_arr.value( engine_type )->isKeyOrSecretUnset() )
     {
         kDebug() << "local error: tried to add a new position on exchange" << engine_type << "but key or secret is unset";
         return nullptr;

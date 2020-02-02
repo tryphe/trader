@@ -92,33 +92,6 @@ Trader::Trader( QObject *parent )
     waves = true;
 #endif
 
-    // runtime tests
-    qint64 t0 = QDateTime::currentMSecsSinceEpoch();
-
-    QBase58Test qbase58_test;
-    qbase58_test.test();
-
-    WavesUtilTest wavesutil_test;
-    wavesutil_test.test();
-
-    WavesAccountTest wavesaccount_test;
-    wavesaccount_test.test();
-
-    CoinAmountTest coin_test;
-    coin_test.test();
-
-    EngineTest engine_test;
-    if ( bittrex  ) engine_test.test( engine_trex );
-    if ( binance  ) engine_test.test( engine_bnc );
-    if ( poloniex ) engine_test.test( engine_polo );
-    if ( waves )    engine_test.test( engine_waves );
-
-    qint64 t1 = QDateTime::currentMSecsSinceEpoch();
-    kDebug() << "[Trader] Tests passed in" << t1 - t0 << "ms.";
-
-    // print build info
-    kDebug() << "[Trader] Startup success." << Global::getBuildString();
-
     QVector<BaseREST*> rest_arr;
     rest_arr += rest_trex;
     rest_arr += rest_bnc;
@@ -162,6 +135,34 @@ Trader::Trader( QObject *parent )
         connect( command_runner_waves, &CommandRunner::exitSignal, this, &Trader::handleExitSignal );
         connect( engine_waves, &Engine::gotUserCommandChunk, command_runner_waves, &CommandRunner::runCommandChunk );
     }
+
+    // runtime tests
+    qint64 t0 = QDateTime::currentMSecsSinceEpoch();
+
+    QBase58Test qbase58_test;
+    qbase58_test.test();
+
+    WavesUtilTest wavesutil_test;
+    wavesutil_test.test();
+
+    WavesAccountTest wavesaccount_test;
+    wavesaccount_test.test();
+
+    CoinAmountTest coin_test;
+    coin_test.test();
+
+    EngineTest engine_test;
+    if ( bittrex  ) engine_test.test( engine_trex );
+    if ( binance  ) engine_test.test( engine_bnc );
+    if ( poloniex ) engine_test.test( engine_polo );
+    if ( waves )    engine_test.test( engine_waves );
+
+    qint64 t1 = QDateTime::currentMSecsSinceEpoch();
+    kDebug() << "[Trader] Tests passed in" << t1 - t0 << "ms.";
+
+    // print build info
+    kDebug() << "[Trader] Startup success." << Global::getBuildString();
+
 
     // connect spruce_overseer to a command runner that isn't null
     CommandRunner *command_runner = command_runner_trex != nullptr  ? command_runner_trex :

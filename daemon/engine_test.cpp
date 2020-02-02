@@ -14,6 +14,8 @@
 
 void EngineTest::test( Engine *e )
 {
+    e->rest_arr.value( e->engine_type )->keystore.setKeys( "a", "b" );
+
     const QString TEST_MARKET = "TEST_1";
 
     // Market::operator QString()
@@ -407,4 +409,6 @@ void EngineTest::test( Engine *e )
     // disable test mode
     e->setVerbosity( preserved_verbosity );
     e->setTesting( false );
+
+    e->rest_arr.value( e->engine_type )->keystore.setKeys( "", "" );
 }
