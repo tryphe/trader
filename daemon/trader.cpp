@@ -51,7 +51,6 @@ Trader::Trader( QObject *parent )
 #ifdef BITTREX_ENABLED
     engine_trex = new Engine( ENGINE_BITTREX );
     rest_trex = new TrexREST( engine_trex, nam );
-    engine_trex->rest_trex = rest_trex;
     engine_trex->alpha = alpha;
     engine_trex->spruce = spruce;
 
@@ -63,7 +62,6 @@ Trader::Trader( QObject *parent )
 #ifdef BINANCE_ENABLED
     engine_bnc = new Engine( ENGINE_BINANCE );
     rest_bnc = new BncREST( engine_bnc, nam );
-    engine_bnc->rest_bnc = rest_bnc;
     engine_bnc->alpha = alpha;
     engine_bnc->spruce = spruce;
 
@@ -75,7 +73,6 @@ Trader::Trader( QObject *parent )
 #ifdef POLONIEX_ENABLED
     engine_polo = new Engine( ENGINE_POLONIEX );
     rest_polo = new PoloREST( engine_polo, nam );
-    engine_polo->rest_polo = rest_polo;
     engine_polo->alpha = alpha;
     engine_polo->spruce = spruce;
 
@@ -87,7 +84,6 @@ Trader::Trader( QObject *parent )
 #ifdef WAVES_ENABLED
     engine_waves = new Engine( ENGINE_WAVES );
     rest_waves = new WavesREST( engine_waves, nam );
-    engine_waves->rest_waves = rest_waves;
     engine_waves->alpha = alpha;
     engine_waves->spruce = spruce;
 
@@ -132,6 +128,7 @@ Trader::Trader( QObject *parent )
     // create command runner
     if ( bittrex )
     {
+        engine_trex->rest_arr = rest_arr;
         command_runner_trex = new CommandRunner( ENGINE_BITTREX, engine_trex, rest_trex );
         command_runner_trex->rest_arr = rest_arr;
         command_runner_trex->spruce_overseer = spruce_overseer;
@@ -140,6 +137,7 @@ Trader::Trader( QObject *parent )
     }
     if ( binance )
     {
+        engine_bnc->rest_arr = rest_arr;
         command_runner_bnc = new CommandRunner( ENGINE_BINANCE, engine_bnc, rest_bnc );
         command_runner_bnc->rest_arr = rest_arr;
         command_runner_bnc->spruce_overseer = spruce_overseer;
@@ -148,6 +146,7 @@ Trader::Trader( QObject *parent )
     }
     if ( poloniex )
     {
+        engine_polo->rest_arr = rest_arr;
         command_runner_polo = new CommandRunner( ENGINE_POLONIEX, engine_polo, rest_polo );
         command_runner_polo->rest_arr = rest_arr;
         command_runner_polo->spruce_overseer = spruce_overseer;
@@ -156,6 +155,7 @@ Trader::Trader( QObject *parent )
     }
     if ( waves )
     {
+        engine_waves->rest_arr = rest_arr;
         command_runner_waves = new CommandRunner( ENGINE_WAVES, engine_waves, rest_waves );
         command_runner_waves->rest_arr = rest_arr;
         command_runner_waves->spruce_overseer = spruce_overseer;

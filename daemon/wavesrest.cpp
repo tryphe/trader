@@ -62,6 +62,9 @@ void WavesREST::init()
 #if !defined( WAVES_TICKER_ONLY )
     account.setPrivateKeyB58( WAVES_SECRET );
 
+    // when ticker mode is disabled, set dummy keys so BaseREST::isKeyOrSecretUnset() returns a sane value
+    keystore.setKeys( "dummy", "dummy" );
+
     connect( orderbook_timer, &QTimer::timeout, this, &WavesREST::onCheckBotOrders );
     orderbook_timer->start( WAVES_TIMER_INTERVAL_CHECK_NEXT_ORDER );
     onCheckBotOrders();

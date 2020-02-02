@@ -744,21 +744,8 @@ void PositionMan::remove( Position * const &pos )
     // check nam_sent_queue for requests over timeout
     QHash<QNetworkReply*,Request*>::const_iterator begin, end;
 
-    if ( engine->engine_type == ENGINE_BITTREX )
-    {
-        begin = engine->rest_trex->nam_queue_sent.begin();
-        end = engine->rest_trex->nam_queue_sent.end();
-    }
-    else if ( engine->engine_type == ENGINE_BINANCE )
-    {
-        begin = engine->rest_bnc->nam_queue_sent.begin();
-        end = engine->rest_bnc->nam_queue_sent.end();
-    }
-    else if ( engine->engine_type == ENGINE_POLONIEX )
-    {
-        begin = engine->rest_polo->nam_queue_sent.begin();
-        end = engine->rest_polo->nam_queue_sent.end();
-    }
+    begin = engine->rest_arr.value( engine->engine_type )->nam_queue_sent.begin();
+    end = engine->rest_arr.value( engine->engine_type )->nam_queue_sent.end();
 
     for ( QHash<QNetworkReply*,Request*>::const_iterator i = begin; i != end; i++ )
     {
@@ -777,12 +764,7 @@ void PositionMan::remove( Position * const &pos )
     {
         QPair<QNetworkReply*,Request*> pair = deleted_queue.takeFirst();
 
-        if ( engine->engine_type == ENGINE_BITTREX )
-            engine->rest_trex->deleteReply( pair.first, pair.second );
-        else if ( engine->engine_type == ENGINE_BINANCE )
-            engine->rest_bnc->deleteReply( pair.first, pair.second );
-        else if ( engine->engine_type == ENGINE_POLONIEX )
-            engine->rest_polo->deleteReply( pair.first, pair.second );
+        engine->rest_arr.value( engine->engine_type )->deleteReply( pair.first, pair.second );
     }
 
     /// step 3: remove from maps/containers
@@ -980,11 +962,11 @@ void PositionMan::cancelAll( QString market )
     cancel_market_filter = market;
 
     if ( engine->engine_type == ENGINE_BITTREX )
-        engine->rest_trex->sendRequest( TREX_COMMAND_GET_ORDERS );
+        engine->rest_arr.value( ENGINE_BITTREX )->sendRequest( TREX_COMMAND_GET_ORDERS );
     else if ( engine->engine_type == ENGINE_BINANCE )
-        engine->rest_bnc->sendRequest( BNC_COMMAND_GETORDERS, "", nullptr, 40 );
+        engine->rest_arr.value( ENGINE_BINANCE )->sendRequest( BNC_COMMAND_GETORDERS, "", nullptr, 40 );
     else if ( engine->engine_type == ENGINE_POLONIEX )
-        engine->rest_polo->sendRequest( POLO_COMMAND_GETORDERS, POLO_COMMAND_GETORDERS_ARGS );
+        engine->rest_arr.value( ENGINE_POLONIEX )->sendRequest( POLO_COMMAND_GETORDERS, POLO_COMMAND_GETORDERS_ARGS );
 }
 
 void PositionMan::cancelLocal( QString market )

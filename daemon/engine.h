@@ -86,10 +86,7 @@ public:
 
     quint8 engine_type{ 0 };
     Spruce *spruce{ nullptr };
-    TrexREST *rest_trex{ nullptr };
-    BncREST *rest_bnc{ nullptr };
-    PoloREST *rest_polo{ nullptr };
-    WavesREST *rest_waves{ nullptr };
+    QVector<BaseREST*> rest_arr;
     AlphaTracker *alpha{ nullptr };
 
 signals:

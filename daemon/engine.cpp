@@ -62,6 +62,13 @@ Position *Engine::addPosition( QString market_input, quint8 side, QString buy_pr
                                QString order_size, QString type, QString strategy_tag, QVector<qint32> indices,
                                bool landmark, bool quiet )
 {
+    // don't add a position on an exchange without a key and secret
+    if ( !rest_arr.value( engine_type )->isKeyOrSecretUnset() )
+    {
+        kDebug() << "local error: tried to add a new position on exchange" << engine_type << "but key or secret is unset";
+        return nullptr;
+    }
+
     // convert to universal market format <base>_<quote>
     Market market = Market( market_input );
     if ( !market.isValid() )
@@ -357,10 +364,8 @@ void Engine::fillNQ( const QString &order_id, qint8 fill_type , quint8 extra_dat
 
     // on trex, remove any 'getorder's in queue related to this uuid, to prevent spam
     // if testing, don't access rest because it's null
-    if ( engine_type == ENGINE_BITTREX && !is_testing )
-    {
-        rest_trex->removeRequest( TREX_COMMAND_GET_ORDER, QString( "uuid=%1" ).arg( order_id ) ); // note: uses pos*
-    }
+    if ( !is_testing && engine_type == ENGINE_BITTREX )
+        rest_arr.value( ENGINE_BITTREX )->removeRequest( TREX_COMMAND_GET_ORDER, QString( "uuid=%1" ).arg( order_id ) ); // note: uses pos*
 
     // delete
     positions->remove( pos );
@@ -694,7 +699,7 @@ void Engine::processTicker( BaseREST *base_rest_module, const QMap<QString, Tick
     if ( engine_type == ENGINE_POLONIEX )
     {
         // if we read the ticker from anywhere and the websocket account feed is active, prevent it from filling positions (websocket feed is instant for fill notifications anyways)
-        if ( rest_polo->getWSS1000State() )
+        if ( reinterpret_cast<PoloREST*>( rest_arr.value( ENGINE_POLONIEX ) )->getWSS1000State() )
             return;
     }
 
@@ -1146,7 +1151,7 @@ void Engine::findBetterPrice( Position *const &pos )
     }
     else if ( engine_type == ENGINE_POLONIEX )
     {
-        const qreal slippage_mul = rest_polo->getSlippageMul( market );
+        const qreal slippage_mul = reinterpret_cast<PoloREST*>( rest_arr.value( ENGINE_POLONIEX ) )->getSlippageMul( market );
 
         if ( is_buy ) ticksize = pos->buy_price.ratio( slippage_mul ) + CoinAmount::SATOSHI;
         else          ticksize = pos->sell_price.ratio( slippage_mul ) + CoinAmount::SATOSHI;
@@ -1270,32 +1275,32 @@ void Engine::findBetterPrice( Position *const &pos )
 void Engine::sendBuySell( Position * const &pos , bool quiet )
 {
     if ( engine_type == ENGINE_BITTREX )
-        rest_trex->sendBuySell( pos, quiet );
+        reinterpret_cast<TrexREST*>( rest_arr.value( ENGINE_BITTREX ) )->sendBuySell( pos, quiet );
     else if ( engine_type == ENGINE_BINANCE )
-        rest_bnc->sendBuySell( pos, quiet );
+        reinterpret_cast<BncREST*>( rest_arr.value( ENGINE_BINANCE ) )->sendBuySell( pos, quiet );
     else if ( engine_type == ENGINE_POLONIEX )
-        rest_polo->sendBuySell( pos, quiet );
+        reinterpret_cast<PoloREST*>( rest_arr.value( ENGINE_POLONIEX ) )->sendBuySell( pos, quiet );
     else if ( engine_type == ENGINE_WAVES )
-        rest_waves->sendBuySell( pos, quiet );
+        reinterpret_cast<WavesREST*>( rest_arr.value( ENGINE_WAVES ) )->sendBuySell( pos, quiet );
 }
 
 void Engine::sendCancel( const QString &order_number, Position * const &pos )
 {
     if ( engine_type == ENGINE_BITTREX )
-        rest_trex->sendCancel( order_number, pos );
+        reinterpret_cast<TrexREST*>( rest_arr.value( ENGINE_BITTREX ) )->sendCancel( order_number, pos );
     else if ( engine_type == ENGINE_BINANCE )
-        rest_bnc->sendCancel( order_number, pos );
+        reinterpret_cast<BncREST*>( rest_arr.value( ENGINE_BINANCE ) )->sendCancel( order_number, pos );
     else if ( engine_type == ENGINE_POLONIEX )
-        rest_polo->sendCancel( order_number, pos );
+        reinterpret_cast<PoloREST*>( rest_arr.value( ENGINE_POLONIEX ) )->sendCancel( order_number, pos );
     else if ( engine_type == ENGINE_WAVES )
-        rest_waves->sendCancel( pos );
+        reinterpret_cast<WavesREST*>( rest_arr.value( ENGINE_WAVES ) )->sendCancel( pos );
 }
 
 bool Engine::yieldToFlowControl()
 {
-    return engine_type == ENGINE_BITTREX  ? rest_trex->yieldToFlowControl() :
-           engine_type == ENGINE_BINANCE  ? rest_bnc->yieldToFlowControl() :
-           engine_type == ENGINE_POLONIEX ? rest_polo->yieldToFlowControl() :
+    return engine_type == ENGINE_BITTREX  ? rest_arr.value( ENGINE_BITTREX  )->yieldToFlowControl() :
+           engine_type == ENGINE_BINANCE  ? rest_arr.value( ENGINE_BINANCE  )->yieldToFlowControl() :
+           engine_type == ENGINE_POLONIEX ? rest_arr.value( ENGINE_POLONIEX )->yieldToFlowControl() :
                                            false;
 }
 
