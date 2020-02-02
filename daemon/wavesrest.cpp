@@ -89,6 +89,16 @@ void WavesREST::sendNamRequest( Request * const &request )
     const qint64 current_time = QDateTime::currentMSecsSinceEpoch();
     QString api_command = request->api_command;
 
+    // set the order request time for new order
+    if ( api_command.startsWith( "on" ) )
+        request->pos->order_request_time = current_time;
+    // set cancel time properly
+    else if ( api_command.startsWith( "oc" ) )
+        request->pos->order_cancel_time = current_time;
+
+    // add to sent queue so we can check if it timed out
+    request->time_sent_ms = current_time;
+
     // remove request tag
     api_command.remove( 0, 3 );
 
@@ -99,9 +109,6 @@ void WavesREST::sendNamRequest( Request * const &request )
         api_command.remove( 0, 4 );
     else if ( is_post )
         api_command.remove( 0, 5 );
-
-    // add to sent queue so we can check if it timed out
-    request->time_sent_ms = current_time;
 
     const QLatin1String &base_url_str = WAVES_MATCHER_URL;
 
@@ -453,8 +460,7 @@ void WavesREST::parseOrderStatus( const QJsonObject &info, Request *const &reque
     {
         if ( filled_quantity.isGreaterThanZero() )
         {
-            kDebug() << "partially filled order quantity:" << pos->market << filled_quantity;
-
+            //kDebug() << "partially filled order quantity:" << pos->market << filled_quantity;
             engine->updateStatsAndPrintFill( "getorder", pos->market, pos->order_number, pos->side, "spruce", Coin(), filled_quantity, pos->price, Coin(), true );
         }
 
