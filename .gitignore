@@ -1,7 +1,4 @@
 traderd
-traderd-bittrex
-traderd-poloniex
-traderd-binance
 trader-cli
 
 Makefile*
@@ -14,7 +11,3 @@ cli/trader-cli_plugin_import.cpp
 
 daemon/keydefs.h
 daemon/keydefs_mine.h
-
-res/x509.cert
-res/x509.key
-res/session.token
