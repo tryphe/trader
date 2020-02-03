@@ -16,15 +16,16 @@
 #include <functional>
 #include <QString>
 #include <QMap>
+#include <QVector>
 #include <QQueue>
 #include <QTimer>
 
-CommandRunner::CommandRunner(const quint8 _engine_type, Engine *_e, void *_rest, QObject *parent )
+CommandRunner::CommandRunner( const quint8 _engine_type, Engine *_e, QVector<BaseREST*> _rest_arr, QObject *parent )
     : QObject( parent ),
+      rest_arr( _rest_arr ),
+      engine_type( _engine_type ),
       engine( _e )
 {
-    engine_type = _engine_type;
-
     // map strings to functions
     using std::placeholders::_1;
     command_map.insert( "getbalances", std::bind( &CommandRunner::command_getbalances, this, _1 ) );
@@ -898,6 +899,8 @@ void CommandRunner::command_spruceup( QStringList & )
 
 void CommandRunner::command_getstatus( QStringList &args )
 {
+    Q_UNUSED( args )
+
     const qint64 current_time = QDateTime::currentMSecsSinceEpoch();
     const qint64 time_thresh = current_time -
                               ( BITTREX_TIMER_INTERVAL_TICKER +

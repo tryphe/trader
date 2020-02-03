@@ -102,8 +102,7 @@ Trader::Trader( QObject *parent )
     if ( bittrex )
     {
         engine_trex->rest_arr = rest_arr;
-        command_runner_trex = new CommandRunner( ENGINE_BITTREX, engine_trex, rest_trex );
-        command_runner_trex->rest_arr = rest_arr;
+        command_runner_trex = new CommandRunner( ENGINE_BITTREX, engine_trex, rest_arr );
         command_runner_trex->spruce_overseer = spruce_overseer;
         connect( command_runner_trex, &CommandRunner::exitSignal, this, &Trader::handleExitSignal );
         connect( engine_trex, &Engine::gotUserCommandChunk, command_runner_trex, &CommandRunner::runCommandChunk );
@@ -111,8 +110,7 @@ Trader::Trader( QObject *parent )
     if ( binance )
     {
         engine_bnc->rest_arr = rest_arr;
-        command_runner_bnc = new CommandRunner( ENGINE_BINANCE, engine_bnc, rest_bnc );
-        command_runner_bnc->rest_arr = rest_arr;
+        command_runner_bnc = new CommandRunner( ENGINE_BINANCE, engine_bnc, rest_arr );
         command_runner_bnc->spruce_overseer = spruce_overseer;
         connect( command_runner_bnc,  &CommandRunner::exitSignal, this, &Trader::handleExitSignal );
         connect( engine_bnc, &Engine::gotUserCommandChunk, command_runner_bnc, &CommandRunner::runCommandChunk );
@@ -120,8 +118,7 @@ Trader::Trader( QObject *parent )
     if ( poloniex )
     {
         engine_polo->rest_arr = rest_arr;
-        command_runner_polo = new CommandRunner( ENGINE_POLONIEX, engine_polo, rest_polo );
-        command_runner_polo->rest_arr = rest_arr;
+        command_runner_polo = new CommandRunner( ENGINE_POLONIEX, engine_polo, rest_arr );
         command_runner_polo->spruce_overseer = spruce_overseer;
         connect( command_runner_polo, &CommandRunner::exitSignal, this, &Trader::handleExitSignal );
         connect( engine_polo, &Engine::gotUserCommandChunk, command_runner_polo, &CommandRunner::runCommandChunk );
@@ -129,8 +126,7 @@ Trader::Trader( QObject *parent )
     if ( waves )
     {
         engine_waves->rest_arr = rest_arr;
-        command_runner_waves = new CommandRunner( ENGINE_WAVES, engine_waves, rest_waves );
-        command_runner_waves->rest_arr = rest_arr;
+        command_runner_waves = new CommandRunner( ENGINE_WAVES, engine_waves, rest_arr );
         command_runner_waves->spruce_overseer = spruce_overseer;
         connect( command_runner_waves, &CommandRunner::exitSignal, this, &Trader::handleExitSignal );
         connect( engine_waves, &Engine::gotUserCommandChunk, command_runner_waves, &CommandRunner::runCommandChunk );

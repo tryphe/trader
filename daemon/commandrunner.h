@@ -6,6 +6,7 @@
 #include <QObject>
 #include <QString>
 #include <QStringList>
+#include <QVector>
 #include <QMap>
 
 class Engine;
@@ -25,7 +26,7 @@ class CommandRunner : public QObject
     friend class Trader;
 
 public:
-    explicit CommandRunner( const quint8 _engine_type, Engine *_e, void *_rest, QObject *parent = nullptr );
+    explicit CommandRunner( const quint8 _engine_type, Engine *_e, QVector<BaseREST *> _rest_arr, QObject *parent = nullptr );
     ~CommandRunner();
 
 signals:
@@ -125,8 +126,8 @@ private:
     QMap<QString, std::function<void(QStringList&)>> command_map;
 
     QVector<BaseREST*> rest_arr;
-
     quint8 engine_type{ 0 };
+
     Engine *engine{ nullptr };
     SpruceOverseer *spruce_overseer{ nullptr };
 };
