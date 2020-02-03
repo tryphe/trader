@@ -189,7 +189,8 @@ void SpruceOverseer::onSpruceUp()
                     }
                 }
 
-                kDebug() << QString( "[Spruce %1] %2 @ %3 | coeff %4 | qty %5 | amt %6 | on-order %7" )
+                kDebug() << QString( "[%1 %2] %3 @ %4 | coeff %5 | qty %6 | amt %7 | on-order %8" )
+                               .arg( strategy, -6 )
                                .arg( side == SIDE_BUY ? "buys " : "sells" )
                                .arg( market, MARKET_STRING_WIDTH )
                                .arg( side == SIDE_BUY ? spread.bid_price : spread.ask_price )
