@@ -170,8 +170,6 @@ void WavesREST::sendCancel( Position * const &pos )
 
 void WavesREST::sendBuySell( Position * const &pos, bool quiet )
 {
-    Q_UNUSED( quiet );
-
     const qint64 current_time = QDateTime::currentMSecsSinceEpoch();
     const qint64 now = current_time + 60000;
     const qint64 future_29d = current_time + ( 60000LL * 60LL * 24LL * 29LL );
