@@ -124,9 +124,9 @@ Coin PositionMan::getActiveSpruceEquityTotal( const QString &market, quint8 side
         Position *const &pos = *i;
 
         if (  pos->is_cancelling ||
-             !pos->is_spruce ||
               pos->side != side ||
-              pos->market != market )
+              pos->market != market ||
+             !pos->strategy_tag.contains( "spruce" ) )
             continue;
 
         ret += pos->btc_amount;
@@ -143,9 +143,9 @@ Coin PositionMan::getActiveSpruceOrdersOffset( const QString &market, quint8 sid
         Position *const &pos = *i;
 
         if (  pos->is_cancelling ||
-             !pos->is_spruce ||
               pos->side != side ||
-              pos->market != market )
+              pos->market != market ||
+             !pos->strategy_tag.contains( "spruce" ) )
             continue;
 
         if ( pos->side == SIDE_BUY ) ret += pos->btc_amount;
@@ -447,9 +447,8 @@ Position *PositionMan::getLowestSpruceBuy( const QString &market ) const
         Position *const &pos = *i;
         if (  pos->side != SIDE_BUY ||          // buys only
               pos->is_cancelling ||             // must not be cancelling
-             !pos->is_spruce ||
-              pos->market != market             // check market filter
-              )
+              pos->market != market ||          // check market filter
+             !pos->strategy_tag.contains( "spruce" ) )
             continue;
 
         if ( pos->buy_price < lo_buy ) // position index is greater than our incrementor
@@ -472,9 +471,8 @@ Position *PositionMan::getHighestSpruceSell( const QString &market ) const
         Position *const &pos = *i;
         if (  pos->side != SIDE_SELL ||         // sells only
               pos->is_cancelling ||             // must not be cancelling
-             !pos->is_spruce ||
-              pos->market != market             // check market filter
-              )
+              pos->market != market ||          // check market filter
+             !pos->strategy_tag.contains( "spruce" ) )
             continue;
 
         if ( pos->sell_price > hi_sell ) // position index is less than our incrementor

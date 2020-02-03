@@ -97,7 +97,6 @@ Position *Engine::addPosition( QString market_input, quint8 side, QString buy_pr
     parse.clear(); // cleanup
 
     const bool is_onetime = type.startsWith( "onetime" );
-    const bool is_spruce = type.contains( "-spruce" );
     const bool is_taker = type.contains( "-taker" );
     const bool is_ghost = type == GHOST;
     const bool is_active = type == ACTIVE;
@@ -239,7 +238,6 @@ Position *Engine::addPosition( QString market_input, quint8 side, QString buy_pr
 
     pos->is_onetime = is_onetime;
     pos->is_taker = is_taker;
-    pos->is_spruce = is_spruce;
 
     // allow one-time orders to set a timeout
     if ( is_onetime && type.contains( "-timeout" ) )

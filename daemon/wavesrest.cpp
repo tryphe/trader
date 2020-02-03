@@ -475,7 +475,7 @@ void WavesREST::parseOrderStatus( const QJsonObject &info, Request *const &reque
         if ( filled_quantity.isGreaterThanZero() )
         {
             //kDebug() << "partially filled order quantity:" << pos->market << filled_quantity;
-            engine->updateStatsAndPrintFill( "getorder", pos->market, pos->order_number, pos->side, "spruce", Coin(), filled_quantity, pos->price, Coin(), true );
+            engine->updateStatsAndPrintFill( "getorder", pos->market, pos->order_number, pos->side, pos->strategy_tag, Coin(), filled_quantity, pos->price, Coin(), true );
         }
 
         // if it was cancelled, remove it from pending status orders
@@ -508,7 +508,8 @@ void WavesREST::parseCancelOrder( const QJsonObject &info, Request *const &reque
     }
 
     // queue getstatus command
-    cancelling_orders_to_query += pos;
+    if ( !cancelling_orders_to_query.contains( pos ) )
+        cancelling_orders_to_query += pos;
 }
 
 void WavesREST::parseNewOrder( const QJsonObject &info, Request *const &request )

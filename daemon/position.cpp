@@ -28,7 +28,6 @@ Position::Position( QString _market, quint8 _side, QString _buy_price, QString _
     is_new_hilo_order = false;
     is_onetime = false;
     is_taker = false;
-    is_spruce = false;
     price_reset_count = 0;
     max_age_epoch = 0;
     strategy_tag = _strategy_tag;

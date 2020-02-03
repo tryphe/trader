@@ -54,6 +54,7 @@ void SpruceOverseer::onSpruceUp()
 
     const Coin long_max = spruce->getLongMax();
     const Coin short_max = spruce->getShortMax();
+    const QString strategy = "spruce";
 
     // one pass each for buys and sells
     for ( quint8 side = SIDE_BUY; side < SIDE_SELL +1; side++ )
@@ -92,7 +93,7 @@ void SpruceOverseer::onSpruceUp()
                         .arg( spruce->startCoeffs().hi_coeff );
 
         // run cancellors for all markets, just for this side
-        runCancellors( side );
+        runCancellors( side, strategy );
 
         for ( QMap<quint8, Engine*>::const_iterator e = engine_map.begin(); e != engine_map.end(); e++ )
         {
@@ -174,10 +175,10 @@ void SpruceOverseer::onSpruceUp()
                 {
                     Position *const &pos = *j;
 
-                    if ( !pos->is_spruce ||
-                          pos->is_cancelling ||
-                          pos->order_set_time == 0 ||
-                          pos->market != market )
+                    if ( pos->is_cancelling ||
+                         pos->order_set_time == 0 ||
+                         pos->market != market ||
+                         pos->strategy_tag == strategy )
                         continue;
 
                     if ( (  is_buy && pos->side == SIDE_SELL && buy_price  >= pos->sell_price.ratio( 0.9945 ) ) ||
@@ -200,7 +201,7 @@ void SpruceOverseer::onSpruceUp()
                 // queue the order if we aren't paper trading
 #if !defined(PAPER_TRADE)
                 engine->addPosition( market, is_buy ? SIDE_BUY : SIDE_SELL, buy_price, sell_price, order_size,
-                                     "onetime-spruce", "spruce", QVector<qint32>(), false, true );
+                                     "onetime", strategy, QVector<qint32>(), false, true );
 #endif
             }
         }
@@ -515,7 +516,7 @@ void SpruceOverseer::onSaveSpruceSettings()
     }
 }
 
-void SpruceOverseer::runCancellors( const quint8 side )
+void SpruceOverseer::runCancellors( const quint8 side, const QString &strategy )
 {
     // because price is atomic, incorporate a limit for trailing price cancellor 1 for each market.
     // 1 = cancelling pace matches the pace of setting orders, 2 = double the pace
@@ -537,10 +538,10 @@ void SpruceOverseer::runCancellors( const quint8 side )
             Position *const &pos = *j;
 
             // search for stale spruce order for the side we are setting
-            if ( !pos->is_spruce ||
-                  pos->is_cancelling ||
-                  pos->order_set_time == 0 ||
-                  side != pos->side )
+            if ( pos->is_cancelling ||
+                 pos->order_set_time == 0 ||
+                 side != pos->side ||
+                 strategy != pos->strategy_tag )
                 continue;
 
             // get possible spread price vibration limits for new spruce order on this side

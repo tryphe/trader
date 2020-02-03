@@ -41,7 +41,7 @@ public Q_SLOTS:
     void onSaveSpruceSettings();
 
 private:
-    void runCancellors( const quint8 side );
+    void runCancellors( const quint8 side, const QString &strategy );
 
     TickerInfo getSpruceSpread( const QString &market, quint8 side );
     TickerInfo getSpruceSpreadLimit( const QString &market, quint8 side );
