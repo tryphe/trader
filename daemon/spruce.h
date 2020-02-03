@@ -124,9 +124,8 @@ public:
 
     static inline Coin getUniversalMinOrderSize()
     {
-        return std::max( Coin( BITTREX_MINIMUM_ORDER_SIZE ),
-                         std::max( Coin( BINANCE_MINIMUM_ORDER_SIZE ), Coin( POLONIEX_MINIMUM_ORDER_SIZE ) )
-                         );
+        return std::max( std::max( Coin( WAVES_MINIMUM_ORDER_SIZE ), Coin( BITTREX_MINIMUM_ORDER_SIZE ) ),
+                         std::max( Coin( BINANCE_MINIMUM_ORDER_SIZE ), Coin( POLONIEX_MINIMUM_ORDER_SIZE ) ) );
     }
 
 private:
