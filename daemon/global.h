@@ -141,7 +141,8 @@ static const QLatin1String POLO_COMMAND_GETBOOKS_ARGS       ( "currencyPair=all&
 static const QLatin1String POLO_COMMAND_GETFEE              ( "returnFeeInfo" );
 
 // waves symbols
-static const QLatin1String Waves_EXCHANGE_STR               ( "Waves" );
+static const QLatin1String WAVES_MINIMUM_ORDER_SIZE         ( "0.00100000" );
+static const QLatin1String WAVES_EXCHANGE_STR               ( "Waves" );
 static const QLatin1String WAVES_MATCHER_URL                ( "https://matcher.waves.exchange/" );
 static const int WAVES_TIMER_INTERVAL_NAM_SEND              ( 150 );
 static const int WAVES_TIMER_INTERVAL_MARKET_DATA           ( 60000 * 60 );

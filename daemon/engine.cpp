@@ -210,7 +210,9 @@ Position *Engine::addPosition( QString market_input, quint8 side, QString buy_pr
     const Coin minimum_order_size = engine_type == ENGINE_BITTREX  ? Coin( BITTREX_MINIMUM_ORDER_SIZE ) :
                                     engine_type == ENGINE_BINANCE  ? Coin( BINANCE_MINIMUM_ORDER_SIZE ) :
                                     engine_type == ENGINE_POLONIEX ? Coin( POLONIEX_MINIMUM_ORDER_SIZE ) :
+                                    engine_type == ENGINE_WAVES    ? Coin( WAVES_MINIMUM_ORDER_SIZE ) :
                                                                     Coin();
+
     if ( pos->btc_amount < Coin( minimum_order_size ) - CoinAmount::SATOSHI )
     {
         kDebug() << "local warning: failed to set order: size" << pos->btc_amount << "is under the minimum size" << minimum_order_size;

@@ -26,7 +26,7 @@ WavesREST::WavesREST( Engine *_engine, QNetworkAccessManager *_nam )
     nam = _nam;
     connect( nam, &QNetworkAccessManager::finished, this, &WavesREST::onNamReply );
 
-    exchange_string = Waves_EXCHANGE_STR;
+    exchange_string = WAVES_EXCHANGE_STR;
 }
 
 WavesREST::~WavesREST()
