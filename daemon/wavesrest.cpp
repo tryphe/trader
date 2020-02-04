@@ -199,6 +199,18 @@ void WavesREST::sendCancel( Position * const &pos )
     sendRequest( command, body, pos );
 }
 
+void WavesREST::sendCancelNonLocal( const QString &order_id, const QString &amount_asset_alias, const QString &price_asset_alias )
+{
+    const QByteArray body = account.createCancelBody( order_id.toLocal8Bit() );
+
+    const QString command = QString( WAVES_COMMAND_POST_ORDER_CANCEL )
+                             .arg( amount_asset_alias )
+                             .arg( price_asset_alias );
+
+    kDebug() << "local" << engine->engine_type << "info: sending manual cancel request for order_id" << order_id;
+    sendRequest( command, body );
+}
+
 void WavesREST::sendBuySell( Position * const &pos, bool quiet )
 {
     const qint64 current_time = QDateTime::currentMSecsSinceEpoch();
@@ -556,7 +568,26 @@ void WavesREST::parseNewOrder( const QJsonObject &info, Request *const &request 
     // check that the position is queued and not set
     if ( !engine->getPositionMan()->isQueued( request->pos ) )
     {
-        kDebug() << "local waves warning: position from response not found in positions_queued" << info;
+        // extract our message
+        const QJsonObject &message = info.value( "message" ).toObject();
+
+        // if fields are valid, we receieved a response for a position that no longer exists. cancel it.
+        if ( message.contains( "id" ) &&
+             message.contains( "amountAsset" ) &&
+             message.contains( "priceAsset" ) )
+        {
+            const QString &order_id = message.value( "id" ).toString();
+            const QString &amount_asset_alias = message.value( "amountAsset" ).toString();
+            const QString &price_asset_alias = message.value( "priceAsset" ).toString();
+
+            kDebug() << "local waves warning: cancelling new position from response not found in positions_queued" << order_id << amount_asset_alias << price_asset_alias;
+
+            // send cancel request
+            sendCancelNonLocal( order_id, amount_asset_alias, price_asset_alias );
+        }
+        else
+            kDebug() << "local waves error: got response for new position without message object" << info;
+
         return;
     }
 

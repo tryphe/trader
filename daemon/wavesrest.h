@@ -26,10 +26,11 @@ public:
 
     void sendNamRequest( Request *const &request );
 
-    void getOrderStatus( Position * const &pos );
+    void getOrderStatus( Position *const &pos );
 
-    void sendCancel( Position * const &pos );
-    void sendBuySell( Position * const &pos, bool quiet = true );
+    void sendCancel( Position *const &pos );
+    void sendCancelNonLocal( const QString &order_id , const QString &amount_asset_alias, const QString &price_asset_alias );
+    void sendBuySell( Position *const &pos, bool quiet = true );
 
 public Q_SLOTS:
     void sendNamQueue();
