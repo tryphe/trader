@@ -80,12 +80,16 @@ void WavesREST::init()
 
 void WavesREST::sendNamQueue()
 {
-    // check for requests
-    if ( nam_queue.isEmpty() )
-        return;
-
     // stop sending commands if server is unresponsive
     if ( yieldToServer() )
+        return;
+
+    // optimistically query cancelling/cancelled orders
+    if ( nam_queue.isEmpty() )
+        onCheckCancelledOrders();
+
+    // check for no requests
+    if ( nam_queue.isEmpty() )
         return;
 
     // go through requests
@@ -331,9 +335,10 @@ void WavesREST::onCheckBotOrders()
         Position *order_to_check = pos_list.value( last_index_checked );
         getOrderStatus( order_to_check );
     }
+}
 
-    /// step 2: query cancelling orders
-
+void WavesREST::onCheckCancelledOrders()
+{
     // check for empty cancelling query orders
     if ( cancelling_orders_to_query.size() == 0 )
         return;
