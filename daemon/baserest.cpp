@@ -86,6 +86,26 @@ bool BaseREST::yieldToFlowControl() const
              nam_queue_sent.size() >= limit_commands_sent );
 }
 
+bool BaseREST::yieldToServer( bool verbose ) const
+{
+    // stop sending commands if server is unresponsive
+    if ( nam_queue_sent.size() > limit_commands_sent )
+    {
+        // print something every 2 mins
+        static qint64 last_print_time = 0;
+        const qint64 current_time = QDateTime::currentMSecsSinceEpoch();
+        if ( verbose && last_print_time < current_time - 120000 )
+        {
+            kDebug() << "local" << engine->engine_type << "info: nam_queue_sent > limit_commands_sent, waiting.";
+            last_print_time = current_time;
+        }
+
+        return true;
+    }
+
+    return false;
+}
+
 void BaseREST::sendRequest( QString api_command, QString body, Position *pos, quint16 weight )
 {
     Request *delayed_request = new Request();
@@ -110,24 +130,24 @@ bool BaseREST::isKeyOrSecretUnset() const
     return false;
 }
 
-bool BaseREST::isCommandQueued( const QString &api_command ) const
+bool BaseREST::isCommandQueued( const QString &api_command_prefix ) const
 {
     // check for getopenorders request in nam_queue
     for ( QQueue<Request*>::const_iterator i = nam_queue.begin(); i != nam_queue.end(); i++ )
-        if ( (*i)->api_command == api_command )
+        if ( (*i)->api_command.startsWith( api_command_prefix ) )
             return true;
 
     return false;
 }
 
-bool BaseREST::isCommandSent( const QString &api_command, qint32 min_times ) const
+bool BaseREST::isCommandSent( const QString &api_command_prefix, qint32 min_times ) const
 {
     qint32 times = 0;
 
     // check for getopenorders request in nam_queue
     for ( QHash<QNetworkReply*,Request*>::const_iterator i = nam_queue_sent.begin(); i != nam_queue_sent.end(); i++ )
     {
-        if ( i.value()->api_command == api_command )
+        if ( (*i)->api_command.startsWith( api_command_prefix ) )
             times++;
     }
 

@@ -1301,7 +1301,8 @@ bool Engine::yieldToFlowControl()
     return engine_type == ENGINE_BITTREX  ? rest_arr.value( ENGINE_BITTREX  )->yieldToFlowControl() :
            engine_type == ENGINE_BINANCE  ? rest_arr.value( ENGINE_BINANCE  )->yieldToFlowControl() :
            engine_type == ENGINE_POLONIEX ? rest_arr.value( ENGINE_POLONIEX )->yieldToFlowControl() :
-                                           false;
+           engine_type == ENGINE_WAVES    ? rest_arr.value( ENGINE_WAVES    )->yieldToFlowControl() :
+                                            false;
 }
 
 void Engine::onEngineMaintenance()

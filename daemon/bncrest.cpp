@@ -87,19 +87,8 @@ void BncREST::sendNamQueue()
         return;
 
     // stop sending commands if server is unresponsive
-    if ( nam_queue_sent.size() > limit_commands_sent )
-    {
-        // print something every minute
-        static qint64 last_print_time = 0;
-        qint64 current_time = QDateTime::currentMSecsSinceEpoch();
-        if ( last_print_time < current_time - 60000 )
-        {
-            kDebug() << "local info: nam_queue_sent.size > limit_commands_sent, waiting.";
-            last_print_time = current_time;
-        }
-
+    if ( yieldToServer() )
         return;
-    }
 
     // normalize ratelimit by our timer
     const qint32 ratelimit_window = ratelimit_minute;

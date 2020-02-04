@@ -27,12 +27,13 @@ struct BaseREST : public QObject
     virtual void init() {}
 
     bool yieldToFlowControl() const;
+    bool yieldToServer( bool verbose = true ) const;
 
     void sendRequest( QString api_command, QString body = QLatin1String(), Position *pos = nullptr, quint16 weight = 0 );
 
     bool isKeyOrSecretUnset() const;
-    bool isCommandQueued( const QString &api_command ) const;
-    bool isCommandSent( const QString &api_command, qint32 min_times = 1 ) const;
+    bool isCommandQueued( const QString &api_command_prefix ) const;
+    bool isCommandSent( const QString &api_command_prefix, qint32 min_times = 1 ) const;
     void removeRequest( const QString &api_command, const QString &body );
     void deleteReply( QNetworkReply *const &reply, Request *const &request );
 

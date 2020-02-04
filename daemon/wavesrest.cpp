@@ -41,6 +41,9 @@ WavesREST::~WavesREST()
 
 void WavesREST::init()
 {
+    BaseREST::limit_commands_queued = 30; // stop checks if we are over this many commands queued
+    BaseREST::limit_commands_sent = 15; // stop checks if we are over this many commands sent
+
     // init asset maps
     account.initAssetMaps();
     // set matcher public key
@@ -81,10 +84,23 @@ void WavesREST::sendNamQueue()
     if ( nam_queue.isEmpty() )
         return;
 
-    // TODO: add rate/alive checking here
+    // stop sending commands if server is unresponsive
+    if ( yieldToServer() )
+        return;
 
-    // send the next request
-    sendNamRequest( nam_queue.first() );
+    // go through requests
+    for ( QQueue<Request*>::const_iterator i = nam_queue.begin(); i != nam_queue.end(); i++ )
+    {
+        Request *const &request = *i;
+
+        // if 2 or more new order commands are in flight, wait for them
+        if ( request->api_command.startsWith( "on-" ) && isCommandSent( "on-", 2 ) )
+            continue;
+
+        sendNamRequest( request );
+        // the request is added to sent_nam_queue and thus not deleted until the response is met
+        return;
+    }
 }
 
 void WavesREST::sendNamRequest( Request * const &request )
