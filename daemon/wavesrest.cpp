@@ -99,7 +99,18 @@ void WavesREST::sendNamQueue()
 
         // if 2 or more new order commands are in flight, wait for them
         if ( request->api_command.startsWith( "on-" ) && isCommandSent( "on-", 2 ) )
+        {
+            // print something every 2 mins
+            static qint64 last_print_time = 0;
+            const qint64 current_time = QDateTime::currentMSecsSinceEpoch();
+            if ( last_print_time < current_time - 120000 )
+            {
+                kDebug() << "local" << engine->engine_type << "info: too many new orders in flight, waiting.";
+                last_print_time = current_time;
+            }
+
             continue;
+        }
 
         sendNamRequest( request );
         // the request is added to sent_nam_queue and thus not deleted until the response is met
