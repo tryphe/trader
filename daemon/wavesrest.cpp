@@ -72,7 +72,6 @@ void WavesREST::init()
 
     connect( orderbook_timer, &QTimer::timeout, this, &WavesREST::onCheckBotOrders );
     orderbook_timer->start( WAVES_TIMER_INTERVAL_CHECK_NEXT_ORDER );
-    onCheckBotOrders();
 #endif
 
     onCheckMarketData();
@@ -510,25 +509,25 @@ void WavesREST::parseOrderStatus( const QJsonObject &info, Request *const &reque
 
     //kDebug() << "order status" << order_id << ":" << order_status;
 
+    // remove it from pending status orders
+    if ( pos->is_cancelling )
+        cancelling_orders_to_query.removeOne( pos );
+
     if ( order_status == "Filled" )
     {
         // do single order fill
         engine->processFilledOrders( QVector<Position*>() << pos, FILL_GETORDER );
     }
     // we cancelled the order out but it got filled or cancelled
-    else if ( order_status == "PartiallyFilled" || order_status == "Cancelled" )
+    else if ( order_status == "Cancelled" )
     {
+        // order might be partially filled in this state
         if ( filled_quantity.isGreaterThanZero() )
-        {
-            //kDebug() << "partially filled order quantity:" << pos->market << filled_quantity;
             engine->updateStatsAndPrintFill( "getorder", pos->market, pos->order_number, pos->side, pos->strategy_tag, Coin(), filled_quantity, pos->price, Coin(), true );
-        }
-
-        // if it was cancelled, remove it from pending status orders
-        cancelling_orders_to_query.removeOne( pos );
 
         engine->processCancelledOrder( pos );
     }
+    // if partially filled, wait for complete fill or cancel
 }
 
 void WavesREST::parseCancelOrder( const QJsonObject &info, Request *const &request )
