@@ -1427,7 +1427,7 @@ void Engine::onCheckTimeouts()
         // make sure the order hasn't been set and the request is stale
         if ( pos->order_set_time == 0 &&
              pos->order_request_time > 0 &&
-             pos->order_request_time + settings->request_timeout < current_time )
+             pos->order_request_time + settings->order_timeout < current_time )
         {
             kDebug() << "order timeout detected, resending" << pos->stringifyOrder();
 

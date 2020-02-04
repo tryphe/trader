@@ -716,8 +716,8 @@ void CommandRunner::command_setrequesttimeout( QStringList &args )
 {
     if ( !checkArgs( args, 1 ) ) return;
 
-    engine->getSettings()->request_timeout = args.value( 1 ).toLong();
-    kDebug() << "request timeout is" << engine->getSettings()->request_timeout;
+    engine->getSettings()->order_timeout = args.value( 1 ).toLong();
+    kDebug() << "order timeout is" << engine->getSettings()->order_timeout;
 }
 
 void CommandRunner::command_setcanceltimeout( QStringList &args )
@@ -951,7 +951,7 @@ void CommandRunner::command_getconfig( QStringList &args )
 //    kDebug() << "limit_commands_sent =" << rest->limit_commands_sent;
 //    kDebug() << "limit_timeout_yield =" << rest->limit_timeout_yield;
 //    kDebug() << "market_cancel_thresh =" << rest->market_cancel_thresh;
-//    kDebug() << "request_timeout =" << engine->getSettings()->request_timeout;
+//    kDebug() << "order_timeout =" << engine->getSettings()->order_timeout;
 //    kDebug() << "cancel_timeout =" << engine->getSettings()->cancel_timeout;
 //    kDebug() << "should_clear_stray_orders =" << engine->getSettings()->should_clear_stray_orders;
 //    kDebug() << "should_clear_stray_orders_all =" << engine->getSettings()->should_clear_stray_orders_all;
@@ -980,13 +980,12 @@ void CommandRunner::command_getinternal( QStringList &args )
     Q_UNUSED( args )
     engine->printInternal();
 
-//    kDebug() << "nam_queue size:" << rest->nam_queue.size();
-//    kDebug() << "nam_queue_sent size:" << rest->nam_queue_sent.size();
-//    kDebug() << "orderbook_update_time:" << QDateTime::fromMSecsSinceEpoch( rest->orderbook_update_time ).toString();
+    kDebug() << "nam_queue size:" << rest_arr.value( engine_type )->nam_queue.size();
+    kDebug() << "nam_queue_sent size:" << rest_arr.value( engine_type )->nam_queue_sent.size();
+    kDebug() << "orderbook_update_time:" << QDateTime::fromMSecsSinceEpoch( rest_arr.value( engine_type )->orderbook_update_time ).toString();
 //    kDebug() << "orderbook_update_request_time:" << QDateTime::fromMSecsSinceEpoch( rest->orderbook_update_request_time ).toString();
 //    kDebug() << "orderbook_public_update_time:" << QDateTime::fromMSecsSinceEpoch( rest->orderbook_public_update_time ).toString();
 //    kDebug() << "orderbook_public_update_request_time:" << QDateTime::fromMSecsSinceEpoch( rest->orderbook_public_update_request_time ).toString();
-
 
 //    kDebug() << "avg response time:" << rest->avg_response_time.avgResponseTime();
 //    kDebug() << "orders_stale_trip_count: " << rest->orders_stale_trip_count;
