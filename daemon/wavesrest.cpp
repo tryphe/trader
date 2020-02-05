@@ -314,6 +314,9 @@ void WavesREST::onCheckMarketData()
 
 void WavesREST::onCheckTicker()
 {
+    if ( yieldToFlowControl() )
+        return;
+
     // if the next index to query is bad, reset it
     if ( next_ticker_index_to_query >= tracked_markets.size() )
         next_ticker_index_to_query = 0;
@@ -344,6 +347,9 @@ void WavesREST::onCheckTicker()
 
 void WavesREST::onCheckBotOrders()
 {
+    if ( yieldToFlowControl() )
+        return;
+
     /// step 1: query one active order
     // check for empty positions
     if ( engine->getPositionMan()->active().size() > 0 )
@@ -363,6 +369,9 @@ void WavesREST::onCheckBotOrders()
 
 void WavesREST::onCheckCancelledOrders()
 {
+    if ( yieldToFlowControl() )
+        return;
+
     // check for empty cancelling query orders
     if ( cancelling_orders_to_query.size() == 0 )
         return;
