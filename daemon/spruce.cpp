@@ -110,7 +110,7 @@ Coin Spruce::getOrderGreed( quint8 side )
     if ( range == 0 )
         return m_order_greed;
 
-    const quint32 rand = QRandomGenerator::global()->generate() % ( range +1 );
+    const quint32 rand = Global::getSecureRandomRange32( 0, range );
     const Coin ret = m_order_greed - ( iter * rand );
 
     // don't return negative or zero greed value

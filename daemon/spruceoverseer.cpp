@@ -229,7 +229,7 @@ TickerInfo SpruceOverseer::getSpruceSpread( const QString &market, quint8 side )
     const Coin greed = spruce->getOrderGreed( side );
 
     // alternate between subtracting from sell side first to buy side first
-    const bool greed_vibrate_state = QRandomGenerator::global()->generate() % 2 == 0;
+    const bool greed_vibrate_state = Global::getSecureRandomRange32( 0, 1 ) == 0;
 
     while ( buy_price > sell_price * greed )
     {
@@ -331,7 +331,7 @@ TickerInfo SpruceOverseer::getSpreadForMarket( const QString &market , qint64 *j
     const Coin greed = spruce->getOrderGreed();
 
     // alternate between subtracting from sell side first to buy side first
-    const bool greed_vibrate_state = QRandomGenerator::global()->generate() % 2 == 0;
+    const bool greed_vibrate_state = Global::getSecureRandomRange32( 0, 1 ) == 0;
 
     while ( buy_price > sell_price * greed )
     {
