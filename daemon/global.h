@@ -159,18 +159,25 @@ static const QLatin1String WAVES_COMMAND_POST_ORDER_NEW     ( "on-post-matcher/o
 
 namespace Global {
 
-static inline quint32 getSecureRandomRange32( const quint32 min, const quint32 max )
+static inline quint32 getSecureRandomRange32( quint32 min, const quint32 max )
 {
-    // note: with a max 32bit input, diff^2 is 64 bits max
-    const quint64 diff = max - min;
-    const quint64 bound = 0xFFFFFFFFFFFFFFFF / diff * diff;
-    quint64 rand;
+    static const quint32 max_val = 0xFFFFFFFF;
 
+    if ( min > max )
+        min = max;
+
+    if ( min == max )
+        return min;
+
+    const quint32 diff = max - min +1;
+    const quint32 remainder = max % diff;
+
+    quint32 rand;
     do
     {
-        rand = QRandomGenerator::global()->generate64();
+        rand = QRandomGenerator::global()->generate();
     }
-    while ( rand >= bound );
+    while ( rand >= max_val - remainder );
 
     return min + ( rand % diff );
 }
