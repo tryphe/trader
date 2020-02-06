@@ -131,9 +131,13 @@ void SpruceOverseer::onSpruceUp()
                 // put prices at spread if pending amount to shortlong is greater than size * order_nice_spreadput
                 if ( amount_to_shortlong_abs - spruce_active_for_side > order_size_unscaled * spruce->getOrderNiceSpreadPut() )
                 {
-                    const TickerInfo live_spread = getSpreadForMarket( market );
-                    spread.bid_price = live_spread.bid_price;
-                    spread.ask_price = live_spread.ask_price;
+                    // incorporate percentage chance of putting order at spread
+                    if ( Global::getSecureRandomRange32( 1, 100 ) <= spruce->getOrderNiceSpreadPutPctChance() )
+                    {
+                        const TickerInfo live_spread = getSpreadForMarket( market );
+                        spread.bid_price = live_spread.bid_price;
+                        spread.ask_price = live_spread.ask_price;
+                    }
                 }
                 const Coin &buy_price = spread.bid_price;
                 const Coin &sell_price = spread.ask_price;

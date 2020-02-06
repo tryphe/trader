@@ -852,14 +852,17 @@ void CommandRunner::command_setspruceordersize( QStringList &args )
 
 void CommandRunner::command_setspruceordernice( QStringList &args )
 {
-    if ( !checkArgs( args, 3 ) ) return;
+    if ( !checkArgs( args, 4 ) ) return;
 
     spruce_overseer->spruce->setOrderNice( args.value( 1 ) );
-    spruce_overseer->spruce->setOrderNiceSpreadPut( args.value( 2 ) );
-    spruce_overseer->spruce->setOrderNiceZeroBound( args.value( 3 ) );
+    spruce_overseer->spruce->setOrderNiceZeroBound( args.value( 2 ) );
+    spruce_overseer->spruce->setOrderNiceSpreadPut( args.value( 3 ) );
+    spruce_overseer->spruce->setOrderNiceSpreadPutPctChance( args.value( 4 ).toUInt() );
+
     kDebug() << "spruce order nice is" << spruce_overseer->spruce->getOrderNice()
+                                       << spruce_overseer->spruce->getOrderNiceZeroBound()
                                        << spruce_overseer->spruce->getOrderNiceSpreadPut()
-                                       << spruce_overseer->spruce->getOrderNiceZeroBound();
+                                       << spruce_overseer->spruce->getOrderNiceSpreadPutPctChance();
 }
 
 void CommandRunner::command_setspruceallocation( QStringList &args )

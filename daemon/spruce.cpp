@@ -10,7 +10,7 @@ Spruce::Spruce()
     /// user settings
     m_order_size = "0.00500000";
     m_order_nice = "2";
-    m_order_nice_spreadput = "30";
+    m_order_nice_spreadput_bound = "30";
     m_order_nice_zerobound = "0";
     m_order_greed = "0.99"; // keep our spread at least 1-x% apart
     m_order_greed_buy_randomness = m_order_greed_sell_randomness = "0.005"; // randomly subtract tenths of a pct from greed up to this amount
@@ -283,9 +283,10 @@ QString Spruce::getSaveState()
     ret += QString( "setspruceordersize %1\n" ).arg( m_order_size );
 
     // save order size
-    ret += QString( "setspruceordernice %1 %2 %3\n" ).arg( m_order_nice )
-                                                     .arg( m_order_nice_spreadput )
-                                                     .arg( m_order_nice_zerobound );
+    ret += QString( "setspruceordernice %1 %2 %3 %4\n" ).arg( m_order_nice )
+                                                     .arg( m_order_nice_zerobound )
+                                                     .arg( m_order_nice_spreadput_bound )
+                                                     .arg( m_order_nice_spreadput_pct_chance );
 
     // save agitator
     ret += QString( "setspruceagitator %1 %2 %3\n" ).arg( m_leverage_start )

@@ -66,11 +66,14 @@ public:
     void setOrderNice( Coin nice ) { m_order_nice = nice; }
     Coin getOrderNice() const { return m_order_nice; }
 
-    void setOrderNiceSpreadPut( Coin nice ) { m_order_nice_spreadput = nice.isZeroOrLess() ? m_order_nice_spreadput : nice; }
-    Coin getOrderNiceSpreadPut() const { return m_order_nice_spreadput; }
-
     void setOrderNiceZeroBound( Coin nice ) { m_order_nice_zerobound = nice; }
     Coin getOrderNiceZeroBound() const { return m_order_nice_zerobound; }
+
+    void setOrderNiceSpreadPut( Coin nice ) { m_order_nice_spreadput_bound = nice.isZeroOrLess() ? m_order_nice_spreadput_bound : nice; }
+    Coin getOrderNiceSpreadPut() const { return m_order_nice_spreadput_bound; }
+
+    void setOrderNiceSpreadPutPctChance( const quint32 pct_chance ) { m_order_nice_spreadput_pct_chance = std::min( pct_chance, quint32( 100 ) ); }
+    quint32 getOrderNiceSpreadPutPctChance() const { return m_order_nice_spreadput_pct_chance; }
 
     void setAgitator( Coin start, Coin stop, Coin increment );
     void runAgitator();
@@ -150,7 +153,8 @@ private:
     QMultiMap<Coin,QString> currency_weight_by_coin; // note: weights are >0 and <=1
     QMap<QString, Coin> per_exchange_market_allocations; // note: market allocations are 0:1
     Coin m_order_greed, m_order_greed_buy_randomness, m_order_greed_sell_randomness, m_long_max, m_short_max, m_market_buy_max,
-    m_market_sell_max, m_order_size, m_order_nice, m_order_nice_spreadput, m_order_nice_zerobound;
+    m_market_sell_max, m_order_size, m_order_nice, m_order_nice_zerobound, m_order_nice_spreadput_bound;
+    quint32 m_order_nice_spreadput_pct_chance{ 0 };
 
     QList<Node*> nodes_start, nodes_now;
     QMap<QString,Node*> nodes_now_by_currency;
