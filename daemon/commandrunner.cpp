@@ -746,7 +746,7 @@ void CommandRunner::command_setspruceinterval( QStringList &args )
 
     spruce_overseer->spruce->setIntervalSecs( secs );
     spruce_overseer->spruce_timer->setInterval( secs *1000 );
-    spruce_overseer->autosave_timer->setInterval( spruce_overseer->spruce_timer->interval() *4 );
+    spruce_overseer->autosave_timer->setInterval( std::min( spruce_overseer->spruce_timer->interval() * 40, 60000 * 60 ));
     kDebug() << "spruce interval is now" << spruce_overseer->spruce->getIntervalSecs() << "seconds";
 }
 
