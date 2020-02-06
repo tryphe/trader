@@ -12,6 +12,7 @@
 #include <QFile>
 #include <QDir>
 #include <QCryptographicHash>
+#include <QRandomGenerator>
 #include <QMessageAuthenticationCode>
 #include <QSslSocket>
 
@@ -157,6 +158,22 @@ static const QLatin1String WAVES_COMMAND_POST_ORDER_CANCEL  ( "oc-post-matcher/o
 static const QLatin1String WAVES_COMMAND_POST_ORDER_NEW     ( "on-post-matcher/orderbook" );
 
 namespace Global {
+
+static inline quint32 getSecureRandomRange32( const quint32 min, const quint32 max )
+{
+    // note: with a max 32bit input, diff^2 is 64 bits max
+    const quint64 diff = max - min;
+    const quint64 bound = 0xFFFFFFFFFFFFFFFF / diff * diff;
+    quint64 rand;
+
+    do
+    {
+        rand = QRandomGenerator::global()->generate64();
+    }
+    while ( rand >= bound );
+
+    return min + ( rand % diff );
+}
 
 static inline const QString printVectorqint32( const QVector<qint32> &vec )
 {
