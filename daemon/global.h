@@ -159,14 +159,11 @@ static const QLatin1String WAVES_COMMAND_POST_ORDER_NEW     ( "on-post-matcher/o
 
 namespace Global {
 
-static inline quint32 getSecureRandomRange32( quint32 min, const quint32 max )
+static inline quint32 getSecureRandomRange32( const quint32 min, const quint32 max )
 {
     static const quint32 max_val = 0xFFFFFFFF;
 
-    if ( min > max )
-        min = max;
-
-    if ( min == max )
+    if ( min >= max )
         return min;
 
     const quint32 diff = max - min +1;
