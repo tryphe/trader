@@ -546,13 +546,11 @@ void WavesREST::parseOrderStatus( const QJsonObject &info, Request *const &reque
 
 void WavesREST::parseCancelOrder( const QJsonObject &info, Request *const &request )
 {
-    const QString &order_id = info.value( "orderId" ).toString();
     const QString &status = info.value( "status" ).toString();
 
     // if it wasn't cancelled say something
-    if ( order_id.isEmpty() ||
-         ( status != "OrderCanceled" &&
-           status != "OrderCancelRejected" ) )
+    if ( status != "OrderCanceled" &&
+         status != "OrderCancelRejected" )
     {
         kDebug() << "local waves warning: bad cancel reply status:" << status << "info:" << info;
         return;
