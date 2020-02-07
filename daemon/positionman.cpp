@@ -439,6 +439,7 @@ Position *PositionMan::getHighestPingPong( const QString &market ) const
 
 Position *PositionMan::getLowestSpruceBuy( const QString &market ) const
 {
+    // TODO: nothing uses this now, maybe add mode to switch between getLowestSpruce/HighestSpruce and getRandomSpruce?
     Position *ret = nullptr;
     Coin lo_buy = CoinAmount::A_LOT;
 
@@ -463,6 +464,7 @@ Position *PositionMan::getLowestSpruceBuy( const QString &market ) const
 
 Position *PositionMan::getHighestSpruceSell( const QString &market ) const
 {
+    // TODO: nothing uses this now, maybe add mode to switch between getLowestSpruce/HighestSpruce and getRandomSpruce?
     Position *ret = nullptr;
     Coin hi_sell = -1;
 
@@ -483,6 +485,53 @@ Position *PositionMan::getHighestSpruceSell( const QString &market ) const
     }
 
     return ret;
+}
+
+Position *PositionMan::getRandomSprucePosition( const QString &market, const quint8 side )
+{
+    quint32 qualifying_pos_count = 0;
+
+    QSet<Position*>::const_iterator i;
+    for ( i = positions_active.begin(); i != positions_active.end(); i++ )
+    {
+        Position *const &pos = *i;
+        if (  pos->side != side ||         // orders matching our side only
+              pos->is_cancelling ||        // must not be cancelling
+              pos->market != market ||     // check market filter
+             !pos->strategy_tag.contains( "spruce" ) )
+            continue;
+
+        qualifying_pos_count++;
+    }
+
+    // if there are no qualifying positions, exit here
+    if ( qualifying_pos_count == 0 )
+        return nullptr;
+
+    // choose an index from range 0 to qualifying_pos_count
+    const quint32 index_chosen = Global::getSecureRandomRange32( 0, qualifying_pos_count );
+
+    // seek to index_chosen using incrementor i_idx
+    quint32 i_idx = 0;
+    for ( i = positions_active.begin(); i != positions_active.end(); i++ )
+    {
+        Position *const &pos = *i;
+        if (  pos->side != side ||         // orders matching our side only
+              pos->is_cancelling ||        // must not be cancelling
+              pos->market != market ||     // check market filter
+             !pos->strategy_tag.contains( "spruce" ) )
+            continue;
+
+        // if we're on the one that we chose, return it
+        if ( i_idx == index_chosen )
+            return pos;
+        // increment if not
+        else
+            i_idx++;
+    }
+
+    // we should never get here
+    return nullptr;
 }
 
 qint32 PositionMan::getLowestPingPongIndex( const QString &market ) const

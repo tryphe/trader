@@ -598,9 +598,8 @@ void SpruceOverseer::runCancellors( const quint8 side, const QString &strategy )
                  ( pos->side == SIDE_SELL && amount_to_shortlong.isGreaterThanZero() &&
                    amount_to_shortlong + spruce_offset < -order_size_limit - zero_bound_tolerance ) )
             {
-                // if it's a buy, we should cancel the lowest price. if it's a sell, cancel the highest price.
-                Position *const &pos_to_cancel = pos->side == SIDE_BUY ? engine->positions->getLowestSpruceBuy( market ) :
-                                                                         engine->positions->getHighestSpruceSell( market );
+                // cancel a random order on that side
+                Position *const &pos_to_cancel = engine->positions->getRandomSprucePosition( market, side );                                                         engine->positions->getHighestSpruceSell( market );
 
                 // check badptr just incase, but should be impossible to get here
                 if ( !pos_to_cancel )
