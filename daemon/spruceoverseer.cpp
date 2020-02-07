@@ -556,8 +556,9 @@ void SpruceOverseer::runCancellors( const quint8 side, const QString &strategy )
             const Coin &sell_price_limit = spread_limit.ask_price;
 
             /// cancellor 1: look for prices that are trailing the spread too far
-            if ( buy_price_limit.isGreaterThanZero() && sell_price_limit.isGreaterThanZero() &&
-                 ( pos->price < buy_price_limit || pos->price > sell_price_limit ) )
+            if ( buy_price_limit.isGreaterThanZero() && sell_price_limit.isGreaterThanZero() && // ticker is valid
+                 ( ( pos->price < buy_price_limit && pos->side == SIDE_BUY ) ||
+                   ( pos->price > sell_price_limit && pos->side == SIDE_SELL ) ) )
             {
                 // limit cancellor 1 to trigger CANCELLOR1_LIMIT times, per market, per side, per spruce tick
                 if ( ++cancellor1_current[ market ] <= CANCELLOR1_LIMIT )
