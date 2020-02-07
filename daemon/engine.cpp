@@ -786,11 +786,14 @@ void Engine::processCancelledOrder( Position * const &pos )
     // we succeeded at resetting(cancelling) a slippage position, now put it back to the -same side- and at its original prices
     if ( pos->is_slippage && pos->cancel_reason == CANCELLING_FOR_SLIPPAGE_RESET )
     {
-        if ( pos->is_landmark )
+        if ( pos->strategy_tag.startsWith( "spruce" ) )
+        {
+            addPosition( pos->market, pos->side, pos->buy_price_original, pos->sell_price_original, pos->original_size, "onetime", pos->strategy_tag,
+                         QVector<qint32>(), false, true );
+        }
+        else if ( pos->is_landmark )
         {
             addLandmarkPositionFor( pos );
-            positions->remove( pos );
-            return;
         }
         else
         {
@@ -798,9 +801,6 @@ void Engine::processCancelledOrder( Position * const &pos )
 
             addPosition( pos->market, pos->side, new_pos.buy_price, new_pos.sell_price, new_pos.order_size, ACTIVE, "",
                          pos->market_indices, false, true );
-
-            positions->remove( pos );
-            return;
         }
     }
 
