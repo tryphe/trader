@@ -614,9 +614,9 @@ void SpruceOverseer::runCancellors( const quint8 side, const QString &strategy )
 
             /// cancellor 4: look for active amount > amount_to_shortlong + order_size_limit
             if ( ( pos->side == SIDE_BUY  && amount_to_shortlong.isZeroOrLess() &&
-                   -active_amount < amount_to_shortlong - order_size_limit ) ||
+                   -active_amount < amount_to_shortlong - order_size_limit - zero_bound_tolerance ) ||
                  ( pos->side == SIDE_SELL && amount_to_shortlong.isGreaterThanZero() &&
-                    active_amount > amount_to_shortlong + order_size_limit ) )
+                    active_amount > amount_to_shortlong + order_size_limit + zero_bound_tolerance ) )
             {
                 engine->positions->cancel( pos, false, CANCELLING_FOR_SPRUCE_4 );
                 continue;
