@@ -579,10 +579,11 @@ void SpruceOverseer::runCancellors( const quint8 side, const QString &strategy )
 
             const Coin order_size = spruce->getOrderSize( market );
             const Coin order_size_limit = order_size * spruce->getOrderNice();
+            const Coin zero_bound_tolerance = order_size * spruce->getOrderNiceZeroBound();
 
             /// cancellor 2: if the order is active but our rating is the opposite polarity, cancel it
-            if ( ( amount_to_shortlong >  order_size * spruce->getOrderNiceZeroBound() && pos->side == SIDE_BUY  ) ||
-                 ( amount_to_shortlong < -order_size * spruce->getOrderNiceZeroBound() && pos->side == SIDE_SELL ) )
+            if ( ( amount_to_shortlong >  zero_bound_tolerance && pos->side == SIDE_BUY  ) ||
+                 ( amount_to_shortlong < -zero_bound_tolerance && pos->side == SIDE_SELL ) )
             {
                 engine->positions->cancel( pos, false, CANCELLING_FOR_SPRUCE_2 );
                 continue;
@@ -593,9 +594,9 @@ void SpruceOverseer::runCancellors( const quint8 side, const QString &strategy )
 
             /// cancellor 3: look for spruce active <> what we should short/long
             if ( ( pos->side == SIDE_BUY  && amount_to_shortlong.isZeroOrLess() &&
-                   amount_to_shortlong + spruce_offset >  order_size_limit ) ||
+                   amount_to_shortlong + spruce_offset >  order_size_limit + zero_bound_tolerance ) ||
                  ( pos->side == SIDE_SELL && amount_to_shortlong.isGreaterThanZero() &&
-                   amount_to_shortlong + spruce_offset < -order_size_limit ) )
+                   amount_to_shortlong + spruce_offset < -order_size_limit - zero_bound_tolerance ) )
             {
                 // if it's a buy, we should cancel the lowest price. if it's a sell, cancel the highest price.
                 Position *const &pos_to_cancel = pos->side == SIDE_BUY ? engine->positions->getLowestSpruceBuy( market ) :
