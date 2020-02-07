@@ -784,6 +784,7 @@ void BncREST::parseTicker( const QJsonArray &info, qint64 request_time_sent_ms )
 
     // iterate through each market object
     QMap<QString, TickerInfo> ticker_info;
+    QVector<QString> market_aliases_not_found;
 
     for ( QJsonArray::const_iterator i = info.begin(); i != info.end(); i++ )
     {
@@ -796,7 +797,7 @@ void BncREST::parseTicker( const QJsonArray &info, qint64 request_time_sent_ms )
 
         if ( !market_aliases.contains( market_dirty ) )
         {
-            kDebug() << "local warning: couldn't find market alias for binance market" << market_dirty;
+            market_aliases_not_found += market_dirty;
             continue;
         }
 
@@ -819,6 +820,12 @@ void BncREST::parseTicker( const QJsonArray &info, qint64 request_time_sent_ms )
         {
             ticker_info.insert( market, TickerInfo( bid_price, ask_price ) );
         }
+    }
+
+    if ( market_aliases_not_found.size() > 0 )
+    {
+        kDebug() << "local warning: couldn't find market alias for binance markets" << market_aliases_not_found;
+        onCheckExchangeInfo(); // read markets again
     }
 
     engine->processTicker( this, ticker_info, request_time_sent_ms );
