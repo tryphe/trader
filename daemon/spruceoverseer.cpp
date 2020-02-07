@@ -129,7 +129,7 @@ void SpruceOverseer::onSpruceUp()
                 TickerInfo spread = getSpruceSpread( market, side );
 
                 // put prices at spread if pending amount to shortlong is greater than size * order_nice_spreadput
-                if ( amount_to_shortlong_abs - spruce_active_for_side > order_size_unscaled * spruce->getOrderNiceSpreadPut() )
+                if ( amount_to_shortlong_abs > order_size_unscaled * spruce->getOrderNiceSpreadPut() )
                 {
                     // incorporate percentage chance of putting order at spread
                     if ( Global::getSecureRandomRange32( 1, 100 ) <= spruce->getOrderNiceSpreadPutPctChance() )
