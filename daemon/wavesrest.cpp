@@ -87,7 +87,7 @@ void WavesREST::sendNamQueue()
 
     // optimistically query cancelling/cancelled orders
     if ( nam_queue.isEmpty() )
-        onCheckCancelledOrders();
+        onCheckCancellingOrders();
 
     // check for no requests
     if ( nam_queue.isEmpty() )
@@ -367,7 +367,7 @@ void WavesREST::onCheckBotOrders()
     }
 }
 
-void WavesREST::onCheckCancelledOrders()
+void WavesREST::onCheckCancellingOrders()
 {
     if ( yieldToFlowControl() )
         return;

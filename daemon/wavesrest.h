@@ -39,7 +39,7 @@ public Q_SLOTS:
     void onCheckMarketData();
     void onCheckTicker();
     void onCheckBotOrders();
-    void onCheckCancelledOrders();
+    void onCheckCancellingOrders();
 
 private:
     void parseMarketData( const QJsonObject &info );
