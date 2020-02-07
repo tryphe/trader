@@ -314,7 +314,12 @@ void WavesREST::onCheckMarketData()
 
 void WavesREST::onCheckTicker()
 {
-    if ( yieldToFlowControl() )
+    checkTicker();
+}
+
+void WavesREST::checkTicker( bool ignore_flow_control )
+{
+    if ( !ignore_flow_control && yieldToFlowControl() )
         return;
 
     // if the next index to query is bad, reset it
@@ -445,7 +450,7 @@ void WavesREST::parseMarketData( const QJsonObject &info )
     if ( !initial_ticker_update_done )
     {
         for ( int i = 0; i < tracked_markets.size(); i++ )
-            onCheckTicker();
+            checkTicker( true ); // check ticker, ignore flow control = true
 
         initial_ticker_update_done = true;
     }
