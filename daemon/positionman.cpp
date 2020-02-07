@@ -508,8 +508,8 @@ Position *PositionMan::getRandomSprucePosition( const QString &market, const qui
     if ( qualifying_pos_count == 0 )
         return nullptr;
 
-    // choose an index from range 0 to qualifying_pos_count
-    const quint32 index_chosen = Global::getSecureRandomRange32( 0, qualifying_pos_count );
+    // choose an index from range 0 to qualifying_pos_count -1 (2 qualyfying positions would random from 0 to 1)
+    const quint32 index_chosen = Global::getSecureRandomRange32( 0, qualifying_pos_count -1 );
 
     // seek to index_chosen using incrementor i_idx
     quint32 i_idx = 0;
@@ -525,9 +525,9 @@ Position *PositionMan::getRandomSprucePosition( const QString &market, const qui
         // if we're on the one that we chose, return it
         if ( i_idx == index_chosen )
             return pos;
+
         // increment if not
-        else
-            i_idx++;
+        i_idx++;
     }
 
     // we should never get here
