@@ -393,7 +393,7 @@ void Engine::updateStatsAndPrintFill( const QString &fill_type, const Market &ma
     const Coin quantity_offset = ( side == SIDE_BUY ) ?  quantity
                                                       : -quantity;
 
-    if ( strategy_tag == "spruce" )
+    if ( strategy_tag.startsWith( "spruce" ) )
         spruce->addToShortLonged( market, quantity_offset );
 
     if ( getVerbosity() > 0 )

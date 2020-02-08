@@ -126,7 +126,7 @@ Coin PositionMan::getActiveSpruceEquityTotal( const QString &market, quint8 side
         if (  pos->is_cancelling ||
               pos->side != side ||
               pos->market != market ||
-             !pos->strategy_tag.contains( "spruce" ) )
+             !pos->strategy_tag.startsWith( "spruce" ) )
             continue;
 
         ret += pos->btc_amount;
@@ -145,7 +145,7 @@ Coin PositionMan::getActiveSpruceOrdersOffset( const QString &market, quint8 sid
         if (  pos->is_cancelling ||
               pos->side != side ||
               pos->market != market ||
-             !pos->strategy_tag.contains( "spruce" ) )
+             !pos->strategy_tag.startsWith( "spruce" ) )
             continue;
 
         if ( pos->side == SIDE_BUY ) ret += pos->btc_amount;
@@ -449,7 +449,7 @@ Position *PositionMan::getLowestSpruceBuy( const QString &market ) const
         if (  pos->side != SIDE_BUY ||          // buys only
               pos->is_cancelling ||             // must not be cancelling
               pos->market != market ||          // check market filter
-             !pos->strategy_tag.contains( "spruce" ) )
+             !pos->strategy_tag.startsWith( "spruce" ) )
             continue;
 
         if ( pos->buy_price < lo_buy ) // position index is greater than our incrementor
@@ -474,7 +474,7 @@ Position *PositionMan::getHighestSpruceSell( const QString &market ) const
         if (  pos->side != SIDE_SELL ||         // sells only
               pos->is_cancelling ||             // must not be cancelling
               pos->market != market ||          // check market filter
-             !pos->strategy_tag.contains( "spruce" ) )
+             !pos->strategy_tag.startsWith( "spruce" ) )
             continue;
 
         if ( pos->sell_price > hi_sell ) // position index is less than our incrementor
@@ -498,7 +498,7 @@ Position *PositionMan::getRandomSprucePosition( const QString &market, const qui
         if (  pos->side != side ||         // orders matching our side only
               pos->is_cancelling ||        // must not be cancelling
               pos->market != market ||     // check market filter
-             !pos->strategy_tag.contains( "spruce" ) )
+             !pos->strategy_tag.startsWith( "spruce" ) )
             continue;
 
         qualifying_pos_count++;
@@ -519,7 +519,7 @@ Position *PositionMan::getRandomSprucePosition( const QString &market, const qui
         if (  pos->side != side ||         // orders matching our side only
               pos->is_cancelling ||        // must not be cancelling
               pos->market != market ||     // check market filter
-             !pos->strategy_tag.contains( "spruce" ) )
+             !pos->strategy_tag.startsWith( "spruce" ) )
             continue;
 
         // if we're on the one that we chose, return it
