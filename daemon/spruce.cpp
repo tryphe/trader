@@ -3,8 +3,6 @@
 #include "global.h"
 #include "market.h"
 
-#include <QRandomGenerator>
-
 Spruce::Spruce()
 {
     /// user settings
