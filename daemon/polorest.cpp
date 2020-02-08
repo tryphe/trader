@@ -833,11 +833,13 @@ void PoloREST::onNamReply( QNetworkReply *const &reply )
             }
         }
 
-        // print a nice message saying if we resent the command and print the invalid data
-        kDebug() << QString( "%1nam json error for %2: %3" )
-                    .arg( resent_command ? "(resent) " : "" )
-                    .arg( api_command )
-                    .arg( error_str );
+        // don't print maintenance mode errors
+        if ( error_str != "Currently in maintenance mode." )
+            // print a nice message saying if we resent the command and print the invalid data
+            kDebug() << QString( "%1nam json error for %2: %3" )
+                        .arg( resent_command ? "(resent) " : "" )
+                        .arg( api_command )
+                        .arg( error_str );
 
         deleteReply( reply, request );
         return;
