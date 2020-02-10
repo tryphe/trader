@@ -733,11 +733,11 @@ void TrexREST::parseOrderBook( const QJsonArray &info, qint64 request_time_sent_
     }
 
     // don't accept responses for requests sooner than the latest response request_time_sent_ms
-    if ( request_time_sent_ms < orderbook_public_update_request_time )
+    if ( request_time_sent_ms < ticker_update_request_time )
         return;
 
-    orderbook_public_update_time = current_time;
-    orderbook_public_update_request_time = request_time_sent_ms;
+    ticker_update_time = current_time;
+    ticker_update_request_time = request_time_sent_ms;
 
     QMap<QString, TickerInfo> ticker_info;
 

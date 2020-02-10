@@ -251,8 +251,10 @@ void CommandRunner::command_getlastprices( QStringList & )
 
 void CommandRunner::command_getbuyselltotal( QStringList & )
 {
-    QMap<QString /*market*/, qint32> buys, sells, total;
-    qint32 total_overall = 0;
+    QMap<QString /*market*/, qint32> buy_count, sell_count, total_count;
+    QMap<QString /*market*/, Coin> buy_amount, sell_qty, total_amount;
+    qint32 buy_overall_count = 0, sell_overall_count = 0, total_overall_count = 0;
+    Coin buy_overall_amount, sell_overall_amount, total_overall_amount;
 
     // build indexes from active and queued positions
     QSet<Position*>::const_iterator begin = engine->getPositionMan()->all().begin(),
@@ -262,38 +264,64 @@ void CommandRunner::command_getbuyselltotal( QStringList & )
         Position *const &pos = *i;
 
         if ( pos->side == SIDE_BUY )
-            buys[ pos->market ]++;
+        {
+            buy_count[ pos->market ]++;
+            buy_amount[ pos->market ] += pos->btc_amount;
+            buy_overall_count++;
+            buy_overall_amount += pos->btc_amount;
+        }
         else
-            sells[ pos->market ]++;
+        {
+            sell_count[ pos->market ]++;
+            sell_qty[ pos->market ] += pos->quantity;
+            sell_overall_count++;
+            sell_overall_amount += pos->btc_amount;
+        }
 
         // save the total count
-        total[ pos->market ]++;
-        total_overall++;
+        total_count[ pos->market ]++;
+        total_overall_count++;
+        total_amount[ pos->market ] += pos->btc_amount;
+        total_overall_amount += pos->btc_amount;
     }
 
     // print header
-    // spacing:           10   5          5          5
-    kDebug() << QString( "%1 | buys  | sells | total" )
-                .arg( QString(), MARKET_STRING_WIDTH ); // padding
+    // spacing:           10   5    5    5    17   17   17
+    kDebug() << QString( "%1 | %2 | %3 | %4 | %5 | %6 | %7" )
+                .arg( QString(), MARKET_STRING_WIDTH )
+                .arg( "buys", -5 )
+                .arg( "sells", -5 )
+                .arg( "total", -5 )
+                .arg( "buy amt", -PRICE_WIDTH )
+                .arg( "sell qty", -PRICE_WIDTH )
+                .arg( "total amt", -PRICE_WIDTH ); // padding
+
+    const QString line_str = "%1 | >>>grn<<<%2>>>none<<< | >>>red<<<%3>>>none<<< | %4 | >>>grn<<<%5>>>none<<< | >>>red<<<%6>>>none<<< | %7";
 
     // print each market with orders active
-    for ( QMap<QString, qint32>::const_iterator i = total.begin(); i != total.end(); i++ )
+    for ( QMap<QString, qint32>::const_iterator i = total_count.begin(); i != total_count.end(); i++ )
     {
         const QString &market = i.key();
 
-        kDebug() << QString( "%1 | >>>grn<<<%2>>>none<<< | >>>red<<<%3>>>none<<< | %4" )
+        kDebug() << QString( line_str )
                     .arg( market, -MARKET_STRING_WIDTH )
-                    .arg( buys.value( market ), -5 )
-                    .arg( sells.value( market ), -5 )
-                    .arg( total.value( market ), -5 );
+                    .arg( buy_count.value( market ), -5 )
+                    .arg( sell_count.value( market ), -5 )
+                    .arg( total_count.value( market ), -5 )
+                    .arg( buy_amount.value( market ), -PRICE_WIDTH )
+                    .arg( sell_qty.value( market ), -PRICE_WIDTH )
+                    .arg( buy_amount.value( market ), -PRICE_WIDTH );
     }
 
     // print total overall
-    kDebug() << QString( "%1 | %2 | %3 | %4" )
+    kDebug() << QString( line_str )
                 .arg( QString(), -MARKET_STRING_WIDTH )
-                .arg( QString(), -5 )
-                .arg( QString(), -5 )
-                .arg( total_overall, -5 );
+                .arg( buy_overall_count, -5 )
+                .arg( sell_overall_count, -5 )
+                .arg( total_overall_count, -5 )
+                .arg( buy_overall_amount, -PRICE_WIDTH )
+                .arg( sell_overall_amount, -PRICE_WIDTH )
+                .arg( total_overall_amount, -PRICE_WIDTH );
 }
 
 void CommandRunner::command_cancelall( QStringList &args )
@@ -947,8 +975,6 @@ void CommandRunner::command_getconfig( QStringList &args )
         return;
     }
 
-    //kDebug() << "market info      " << engine->getMarketInfoStructure();
-
 //    kDebug() << "limit_commands_queued =" << rest->limit_commands_queued;
 //    kDebug() << "limit_commands_queued_dc_check =" << rest->limit_commands_queued_dc_check;
 //    kDebug() << "limit_commands_sent =" << rest->limit_commands_sent;
@@ -983,18 +1009,18 @@ void CommandRunner::command_getinternal( QStringList &args )
     Q_UNUSED( args )
     engine->printInternal();
 
-    kDebug() << "nam_queue size:" << rest_arr.value( engine_type )->nam_queue.size();
-    kDebug() << "nam_queue_sent size:" << rest_arr.value( engine_type )->nam_queue_sent.size();
-    kDebug() << "orderbook_update_time:" << QDateTime::fromMSecsSinceEpoch( rest_arr.value( engine_type )->orderbook_update_time ).toString();
-//    kDebug() << "orderbook_update_request_time:" << QDateTime::fromMSecsSinceEpoch( rest->orderbook_update_request_time ).toString();
-//    kDebug() << "orderbook_public_update_time:" << QDateTime::fromMSecsSinceEpoch( rest->orderbook_public_update_time ).toString();
-//    kDebug() << "orderbook_public_update_request_time:" << QDateTime::fromMSecsSinceEpoch( rest->orderbook_public_update_request_time ).toString();
+    BaseREST *rest = rest_arr.value( engine_type );
 
-//    kDebug() << "avg response time:" << rest->avg_response_time.avgResponseTime();
-//    kDebug() << "orders_stale_trip_count: " << rest->orders_stale_trip_count;
-//    kDebug() << "books_stale_trip_count: " << rest->books_stale_trip_count;
-//    kDebug() << "nonce:" << rest->request_nonce;
-
+    kDebug() << "nam_queue size:" << rest->nam_queue.size();
+    kDebug() << "nam_queue_sent size:" << rest->nam_queue_sent.size();
+    kDebug() << "orderbook_update_time:" << QDateTime::fromMSecsSinceEpoch( rest->orderbook_update_time ).toString();
+    kDebug() << "orderbook_update_request_time:" << QDateTime::fromMSecsSinceEpoch( rest->orderbook_update_request_time ).toString();
+    kDebug() << "ticker_update_time:" << QDateTime::fromMSecsSinceEpoch( rest->ticker_update_time ).toString();
+    kDebug() << "ticker_update_request_time:" << QDateTime::fromMSecsSinceEpoch( rest->ticker_update_request_time ).toString();
+    kDebug() << "avg response time:" << rest->avg_response_time.avgResponseTime();
+    kDebug() << "orders_stale_trip_count: " << rest->orders_stale_trip_count;
+    kDebug() << "books_stale_trip_count: " << rest->books_stale_trip_count;
+    kDebug() << "request nonce:" << rest->request_nonce;
     kDebug() << Global::getBuildString();
 }
 

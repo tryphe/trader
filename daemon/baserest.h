@@ -47,11 +47,10 @@ struct BaseREST : public QObject
     qint64 request_nonce{ 0 }; // nonce (except for trex which uses time atm)
     qint64 last_request_sent_ms{ 0 }; // last nam request time
 
-    qint64 ticker_update_time{ 0 }; // last ticker reply
     qint64 orderbook_update_time{ 0 }; // most recent trade time
     qint64 orderbook_update_request_time{ 0 };
-    qint64 orderbook_public_update_time{ 0 };
-    qint64 orderbook_public_update_request_time{ 0 };
+    qint64 ticker_update_time{ 0 };
+    qint64 ticker_update_request_time{ 0 };
     qint32 limit_commands_queued{ 35 }; // stop checks if we are over this many commands queued
     qint32 limit_commands_queued_dc_check{ 10 }; // skip dc check if we are over this many commands queued
     qint32 limit_commands_sent{ 60 }; // stop checks if we are over this many commands sent
