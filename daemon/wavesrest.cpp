@@ -124,6 +124,8 @@ void WavesREST::sendNamRequest( Request * const &request )
     const qint64 current_time = QDateTime::currentMSecsSinceEpoch();
     QString api_command = request->api_command;
 
+    request_nonce++; // bump nonce for baserest stats
+
     // set the order request time for new order
     if ( api_command.startsWith( "on" ) )
         request->pos->order_request_time = current_time;
@@ -515,6 +517,8 @@ void WavesREST::parseOrderStatus( const QJsonObject &info, Request *const &reque
         cancelling_orders_to_query.removeOne( request->pos );
         return;
     }
+
+    BaseREST::orderbook_update_time = QDateTime::currentMSecsSinceEpoch();
 
     Position *const &pos = request->pos;
     const QString &order_status = info.value( "status" ).toString();
