@@ -247,7 +247,7 @@ Position *Engine::addPosition( QString market_input, quint8 side, QString buy_pr
         int timeout = type.mid( read_from, type.size() - read_from ).toInt( &ok );
 
         if ( ok && timeout > 0 )
-            pos->max_age_epoch = QDateTime::currentMSecsSinceEpoch() + ( timeout * timeout );
+            pos->max_age_epoch = QDateTime::currentMSecsSinceEpoch() + ( timeout * 60000 );
     }
 
     // if it's not a taker order, enable local post-only mode
