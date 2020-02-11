@@ -609,16 +609,24 @@ void WavesREST::parseNewOrder( const QJsonObject &info, Request *const &request 
         return;
     }
 
+    Position *const &pos = request->pos;
+
     // check for bad or missing fields
     if ( !info.contains( "success" ) ||
          !info.value( "success" ).toBool() ||
          !info.value( "message" ).toObject().contains( "id" ) )
     {
-        kDebug() << "local waves error: failed to set new order:" << info.value( "message" ).toString();
+        const QString &message = info.value( "message" ).toString();
+        kDebug() << "local waves error: failed to set new order:" << message;
+
+        // remove the position if not enough balance (don't clog up queue)
+        if ( message.startsWith( "Not enough tradable balance." ) )
+            engine->getPositionMan()->remove( pos );
+
         return;
     }
 
-    Position *const &pos = request->pos;
+
     const QString &order_id = info.value( "message" ).toObject().value( "id" ).toString();
 
     // active pos
