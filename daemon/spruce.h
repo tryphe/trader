@@ -92,10 +92,6 @@ public:
     bool isActive();
     QString getSaveState();
 
-    void setLongMax( Coin longmax ) { m_long_max = longmax; }
-    Coin getLongMax() const { return m_long_max; }
-    void setShortMax( Coin shortmax ) { m_short_max = shortmax; }
-    Coin getShortMax() const { return m_short_max; }
     void setMarketBuyMax( Coin marketmax ) { m_market_buy_max = marketmax; }
     Coin getMarketBuyMax( QString market = "" ) const;
     void setMarketSellMax( Coin marketmax ) { m_market_sell_max = marketmax; }
@@ -120,10 +116,6 @@ public:
 
     Coin getEquityNow( QString currency );
     Coin getLastCoeffForMarket( const QString &market ) const;
-
-    void setOrderDuplicity( bool dup, bool taker ) { order_duplicity = dup; taker_mode = taker; }
-    bool getOrderDuplicity() const { return order_duplicity; }
-    bool getTakerMode() const { return taker_mode; }
 
     static inline Coin getUniversalMinOrderSize()
     {
@@ -152,7 +144,7 @@ private:
     QMap<QString,Coin> currency_weight; // note: weights are >0 and <=1
     QMultiMap<Coin,QString> currency_weight_by_coin; // note: weights are >0 and <=1
     QMap<QString, Coin> per_exchange_market_allocations; // note: market allocations are 0:1
-    Coin m_order_greed, m_order_greed_buy_randomness, m_order_greed_sell_randomness, m_long_max, m_short_max, m_market_buy_max,
+    Coin m_order_greed, m_order_greed_buy_randomness, m_order_greed_sell_randomness, m_market_buy_max,
     m_market_sell_max, m_order_size, m_order_nice, m_order_nice_zerobound, m_order_nice_spreadput_bound;
     quint32 m_order_nice_spreadput_pct_chance{ 0 };
 
@@ -165,10 +157,6 @@ private:
     Coin m_leverage_start, m_leverage_stop, m_leverage_increment; // agitator variables
     qint64 m_interval_secs{ 60 * 2 }; // 2min default
     qint64 m_agitator_last_tick{ 0 }; // timestamp state for last agitator tick
-
-    // spread settings
-    bool order_duplicity{ false }; // todo: make a command to set this to true (good volume strat)
-    bool taker_mode{ false }; // if duplicity and taker_mode is set, use bid price for sells, and ask price for buys
 };
 
 #endif // SPRUCE_H

@@ -41,11 +41,11 @@ public Q_SLOTS:
     void onSaveSpruceSettings();
 
 private:
-    void runCancellors( const quint8 side, const QString &strategy );
+    void runCancellors( const QString &market, const quint8 side, const QString &strategy );
 
-    TickerInfo getSpruceSpread( const QString &market, quint8 side );
-    TickerInfo getSpruceSpreadLimit( const QString &market, quint8 side );
-    TickerInfo getSpreadForMarket( const QString &market, qint64 *j_ptr = nullptr /*optional inherited spread vibrator*/ );
+    TickerInfo getSpruceSpreadLimit( const QString &market, quint8 side, bool order_duplicity = false, bool taker_mode = false );
+    TickerInfo getSpruceSpread( const QString &market, qint64 *j_ptr = nullptr /*optional inherited spread vibrator*/ , bool order_duplicity = false, bool taker_mode = false, bool spread_collapse = true );
+    TickerInfo getSpruceSpreadForSide( const QString &market, quint8 side, bool order_duplicity = false, bool taker_mode = false );
     Coin getPriceTicksizeForMarket( const QString &market );
 
     QTimer *spruce_timer{ nullptr };

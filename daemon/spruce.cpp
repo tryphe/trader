@@ -13,8 +13,6 @@ Spruce::Spruce()
     m_order_greed = "0.99"; // keep our spread at least 1-x% apart
     m_order_greed_buy_randomness = m_order_greed_sell_randomness = "0.005"; // randomly subtract tenths of a pct from greed up to this amount
 
-    m_long_max = "0.3000000"; // max long total
-    m_short_max = "-0.50000000"; // max short total
     m_market_buy_max = "0.20000000";
     m_market_sell_max = "0.20000000";
     m_leverage = CoinAmount::COIN;
@@ -267,12 +265,6 @@ QString Spruce::getSaveState()
             .arg( m_order_greed_buy_randomness )
             .arg( m_order_greed_sell_randomness );
 
-    // save long max
-    ret += QString( "setsprucelongmax %1\n" ).arg( m_long_max );
-
-    // save short max
-    ret += QString( "setspruceshortmax %1\n" ).arg( m_short_max );
-
     // save market max
     ret += QString( "setsprucemarketmax %1 %2\n" ).arg( m_market_buy_max )
                                                   .arg( m_market_sell_max );
@@ -290,10 +282,6 @@ QString Spruce::getSaveState()
     ret += QString( "setspruceagitator %1 %2 %3\n" ).arg( m_leverage_start )
                                                     .arg( m_leverage_stop )
                                                     .arg( m_leverage_increment );
-
-    // save order duplicity settings
-    ret += QString( "setspruceduplicity %1 %2\n" ).arg( order_duplicity ? "true" : "false" )
-                                                  .arg( taker_mode ? "true" : "false" );
 
     // save profile u
     for ( QMap<QString,Coin>::const_iterator i = m_currency_profile_u.begin(); i != m_currency_profile_u.end(); i++ )
@@ -365,12 +353,12 @@ QString Spruce::getSaveState()
 
 Coin Spruce::getMarketBuyMax( QString market ) const
 {
-    return market.isEmpty() ? m_market_buy_max : std::max( m_market_buy_max * getMarketWeight( market ), m_market_buy_max * Coin( "0.1" ) );
+    return market.isEmpty() ? m_market_buy_max : std::max( m_market_buy_max * getMarketWeight( market ), m_market_buy_max * Coin( "0.01" ) );
 }
 
 Coin Spruce::getMarketSellMax( QString market ) const
 {
-    return market.isEmpty() ? m_market_sell_max : std::max( m_market_sell_max * getMarketWeight( market ), m_market_sell_max * Coin( "0.1" ) );
+    return market.isEmpty() ? m_market_sell_max : std::max( m_market_sell_max * getMarketWeight( market ), m_market_sell_max * Coin( "0.01" ) );
 
 }
 Coin Spruce::getOrderSize( QString market ) const

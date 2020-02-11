@@ -91,14 +91,11 @@ CommandRunner::CommandRunner( const quint8 _engine_type, Engine *_e, QVector<Bas
     command_map.insert( "setspruceprofile", std::bind( &CommandRunner::command_setspruceprofile, this, _1 ) );
     command_map.insert( "setsprucereserve", std::bind( &CommandRunner::command_setsprucereserve, this, _1 ) );
     command_map.insert( "setspruceordergreed", std::bind( &CommandRunner::command_setspruceordergreed, this, _1 ) );
-    command_map.insert( "setsprucelongmax", std::bind( &CommandRunner::command_setsprucelongmax, this, _1 ) );
-    command_map.insert( "setspruceshortmax", std::bind( &CommandRunner::command_setspruceshortmax, this, _1 ) );
     command_map.insert( "setsprucemarketmax", std::bind( &CommandRunner::command_setsprucemarketmax, this, _1 ) );
     command_map.insert( "setspruceordersize", std::bind( &CommandRunner::command_setspruceordersize, this, _1 ) );
     command_map.insert( "setspruceordernice", std::bind( &CommandRunner::command_setspruceordernice, this, _1 ) );
     command_map.insert( "setspruceallocation", std::bind( &CommandRunner::command_setspruceallocation, this, _1 ) );
     command_map.insert( "setspruceagitator", std::bind( &CommandRunner::command_setspruceagitator, this, _1 ) );
-    command_map.insert( "setspruceduplicity", std::bind( &CommandRunner::command_setspruceduplicity, this, _1 ) );
     command_map.insert( "getstatus", std::bind( &CommandRunner::command_getstatus, this, _1 ) );
     command_map.insert( "getconfig", std::bind( &CommandRunner::command_getconfig, this, _1 ) );
     command_map.insert( "getinternal", std::bind( &CommandRunner::command_getinternal, this, _1 ) );
@@ -310,7 +307,7 @@ void CommandRunner::command_getbuyselltotal( QStringList & )
                     .arg( total_count.value( market ), -5 )
                     .arg( buy_amount.value( market ), -PRICE_WIDTH )
                     .arg( sell_qty.value( market ), -PRICE_WIDTH )
-                    .arg( buy_amount.value( market ), -PRICE_WIDTH );
+                    .arg( total_amount.value( market ), -PRICE_WIDTH );
     }
 
     // print total overall
@@ -844,22 +841,6 @@ void CommandRunner::command_setspruceordergreed( QStringList &args )
     kDebug() << "spruce order greed is" << args.value( 1 ) << args.value( 2 ) << args.value( 3 );
 }
 
-void CommandRunner::command_setsprucelongmax( QStringList &args )
-{
-    if ( !checkArgs( args, 1 ) ) return;
-
-    spruce_overseer->spruce->setLongMax( args.value( 1 ) );
-    kDebug() << "spruce longmax is" << spruce_overseer->spruce->getLongMax();
-}
-
-void CommandRunner::command_setspruceshortmax( QStringList &args )
-{
-    if ( !checkArgs( args, 1 ) ) return;
-
-    spruce_overseer->spruce->setShortMax( args.value( 1 ) );
-    kDebug() << "spruce shortmax is" << spruce_overseer->spruce->getShortMax();
-}
-
 void CommandRunner::command_setsprucemarketmax( QStringList &args )
 {
     if ( !checkArgs( args, 2 ) ) return;
@@ -909,18 +890,6 @@ void CommandRunner::command_setspruceagitator( QStringList &args )
     kDebug() << "spruce agitator start" << args.value( 1 )
                               << "stop" << args.value( 2 )
                               << "increment" << args.value( 3 );
-}
-
-void CommandRunner::command_setspruceduplicity( QStringList &args )
-{
-    if ( !checkArgs( args, 2 ) ) return;
-
-    const bool duplicity = args.value( 1 ) == "true";
-    const bool taker_mode = args.value( 2 ) == "true";
-
-    spruce_overseer->spruce->setOrderDuplicity( duplicity, taker_mode );
-
-    kDebug() << "spruce order duplicity:" << duplicity << "taker mode:" << taker_mode;
 }
 
 void CommandRunner::command_spruceup( QStringList & )
