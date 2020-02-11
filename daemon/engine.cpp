@@ -1457,10 +1457,10 @@ void Engine::onCheckTimeouts()
         }
 
         // search for slippage order we should replace
-        if ( pos->is_slippage &&
-            !pos->is_cancelling &&
-             pos->order_set_time > 0 &&
-             pos->order_set_time < current_time - market_info[ pos->market ].slippage_timeout )
+        if (  pos->is_slippage &&
+             !pos->is_cancelling &&
+              pos->order_set_time > 0 &&
+              pos->order_set_time < current_time - market_info[ pos->market ].slippage_timeout )
         {
             // reconcile slippage price according to spread hi/lo
             if ( tryMoveOrder( pos ) )
@@ -1476,10 +1476,11 @@ void Engine::onCheckTimeouts()
         }
 
         // search for one-time order with age > max_age_minutes
-        if ( pos->is_onetime &&
-             pos->order_set_time > 0 &&
-             pos->max_age_epoch > 0 &&
-             current_time >= pos->max_age_epoch )
+        if ( !pos->is_cancelling &&
+              pos->is_onetime &&
+              pos->order_set_time > 0 &&
+              pos->max_age_epoch > 0 &&
+              current_time >= pos->max_age_epoch )
         {
             // the order has reached max age
             positions->cancel( pos, false, CANCELLING_FOR_MAX_AGE );
