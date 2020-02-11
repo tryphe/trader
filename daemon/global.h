@@ -38,6 +38,7 @@ static const quint8 CANCELLING_FOR_SPRUCE                   ( 8 );
 static const quint8 CANCELLING_FOR_SPRUCE_2                 ( 9 );
 static const quint8 CANCELLING_FOR_SPRUCE_3                 ( 10 );
 static const quint8 CANCELLING_FOR_SPRUCE_4                 ( 11 );
+static const quint8 CANCELLING_FOR_SPRUCE_5                 ( 12 );
 
 static const quint8 FILL_GETORDER                           ( 1 );
 static const quint8 FILL_HISTORY                            ( 2 );
@@ -147,7 +148,7 @@ static const QLatin1String WAVES_EXCHANGE_STR               ( "Waves" );
 static const QLatin1String WAVES_MATCHER_URL                ( "https://matcher.waves.exchange/" );
 static const int WAVES_TIMER_INTERVAL_NAM_SEND              ( 100 );
 static const int WAVES_TIMER_INTERVAL_MARKET_DATA           ( 60000 * 60 );
-static const int WAVES_TIMER_INTERVAL_TICKER                ( 3000 );
+static const int WAVES_TIMER_INTERVAL_TICKER                ( 1000 );
 static const int WAVES_TIMER_INTERVAL_CHECK_NEXT_ORDER      ( 1500 );
 
 static const QLatin1String WAVES_COMMAND_GET_MATCHER_PUBKEY ( "pk-get-matcher" );
