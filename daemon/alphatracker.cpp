@@ -103,7 +103,7 @@ void AlphaTracker::printAlpha() const
                     .arg( getTrades( market ), -7 );
 
         total_volume += volume;
-        estimated_pl += ( alpha - CoinAmount::COIN - ( Coin( BITTREX_DEFAULT_FEERATE ) *2 ) ) * volume;
+        estimated_pl += ( alpha - CoinAmount::COIN /*- ( Coin( BITTREX_DEFAULT_FEERATE ) *2 )*/ ) * volume;
     }
 
     kDebug() << "total volume:" << total_volume;
