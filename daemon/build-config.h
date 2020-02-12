@@ -1,7 +1,7 @@
 #ifndef BUILDCONFIG_H
 #define BUILDCONFIG_H
 
-#define BUILD_VERSION "1.77h"
+#define BUILD_VERSION "1.77i"
 
 /// select your exchanges
 #define BITTREX_ENABLED
@@ -27,5 +27,9 @@
 //#define PRINT_LOGS_WITH_FUNCTION_NAMES
 #define PRINT_ENABLED_SSL_CIPHERS
 //#define PRINT_DISABLED_SSL_CIPHERS
+
+/// spread adjustment, choose one
+#define WIDEN_SPREAD_FULL
+//#define WIDEN_SPREAD_HALF
 
 #endif // BUILDCONFIG_H

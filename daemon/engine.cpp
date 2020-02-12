@@ -341,6 +341,23 @@ void Engine::fillNQ( const QString &order_id, qint8 fill_type , quint8 extra_dat
 
     MarketInfo &info = market_info[ pos->market ];
 
+    Coin new_price;
+#if defined(WIDEN_SPREAD_FULL)
+    new_price = pos->price;
+#elif defined(WIDEN_SPREAD_HALF)
+    new_price = pos->side == SIDE_SELL ? ( pos->price + info.lowest_sell ) /2 :
+                                         ( pos->price + info.highest_buy ) /2;
+#endif
+
+    // widen spread if we filled a buy < bid_price or sell > ask_price
+    if ( new_price.isGreaterThanZero() )
+    {
+        if      ( pos->side == SIDE_BUY  && pos->price < info.highest_buy )
+            info.highest_buy = new_price;
+        else if ( pos->side == SIDE_SELL && pos->price > info.lowest_sell )
+            info.lowest_sell = new_price;
+    }
+
     // increment ping-pong "alternate_size" variable to take the place of order_size after 1 fill
     for ( int i = 0; i < pos->market_indices.size(); i++ )
     {
