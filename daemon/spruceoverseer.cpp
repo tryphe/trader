@@ -76,6 +76,10 @@ void SpruceOverseer::onSpruceUp()
                 Coin price = ( side == SIDE_BUY ) ? mid_spread.bid_price :
                                                     mid_spread.ask_price;
 
+                // these prices should be equal
+                if ( mid_spread.bid_price != mid_spread.ask_price )
+                    kDebug() << "local error: midspread bid" << mid_spread.bid_price << "!= ask" << mid_spread.ask_price;
+
                 // if the ticker isn't updated, just skip this whole function
                 if ( price.isZeroOrLess() )
                 {
