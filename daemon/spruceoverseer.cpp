@@ -11,7 +11,6 @@
 #include <QList>
 #include <QSet>
 #include <QPair>
-#include <QRandomGenerator>
 
 SpruceOverseer::SpruceOverseer( Spruce *_spruce )
     : QObject( nullptr ),
@@ -260,7 +259,7 @@ TickerInfo SpruceOverseer::getSpruceSpreadLimit( const QString &market, quint8 s
     return combined_spread;
 }
 
-TickerInfo SpruceOverseer::getSpruceSpread( const QString &market , qint64 *j_ptr, bool order_duplicity, bool taker_mode , bool spread_collapse )
+TickerInfo SpruceOverseer::getSpruceSpread( const QString &market, qint64 *j_ptr, bool order_duplicity, bool taker_mode, bool spread_collapse )
 {
     /// step 1: get combined spread between all exchanges
     TickerInfo ret;
@@ -577,6 +576,7 @@ void SpruceOverseer::runCancellors( const QString &market, const quint8 side, co
 
             // skip non-qualifying position
             if ( side != pos->side ||
+                 pos->is_cancelling ||
                  market != pos->market ||
                  strategy != pos->strategy_tag )
                 continue;
@@ -656,7 +656,7 @@ void SpruceOverseer::runCancellors( const QString &market, const quint8 side, co
             const Coin order_max = side == SIDE_BUY ? spruce->getMarketBuyMax( market ) :
                                                       spruce->getMarketSellMax( market );
 
-            /// cancellor 5: look for active amount > order_max
+            /// cancellor 5: look for active amount > order_max (so we can change the value in realtime)
             if ( active_amount > order_max )
             {
                 // cancel a random order on that side
