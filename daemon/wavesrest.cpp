@@ -48,8 +48,6 @@ void WavesREST::init()
 
     // init asset maps
     account.initAssetMaps();
-    // set matcher public key
-    account.setMatcherPublicKeyB58( "9cpfKN9suPNvfeUNphzxXMjcnn974eme8ZhWUjaktzU5" );
 
     // we use this to send the requests at a predictable rate
     connect( send_timer, &QTimer::timeout, this, &WavesREST::sendNamQueue );
@@ -409,11 +407,14 @@ void WavesREST::parseMarketData( const QJsonObject &info )
     }
 
     const QString matcher_pubkey = info.value( "matcherPublicKey" ).toString();
-    const QJsonArray markets_arr = info.value( "markets" ).toArray();
 
-    // regenerated tracked markets each update
+    // set matcher public key
+    account.setMatcherPublicKeyB58( matcher_pubkey.toLocal8Bit() );
+
+    // regenerate tracked markets each update
     tracked_markets.clear();
 
+    const QJsonArray markets_arr = info.value( "markets" ).toArray();
     for ( QJsonArray::const_iterator i = markets_arr.begin(); i != markets_arr.end(); i++ )
     {
         const QJsonObject market_data = (*i).toObject();
