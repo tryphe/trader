@@ -420,11 +420,13 @@ void WavesREST::parseMarketData( const QJsonObject &info )
 
         const QString amount_asset_alias = market_data.value( "amountAsset" ).toString();
         const QString price_asset_alias = market_data.value( "priceAsset" ).toString();
-        const Coin ticksize = market_data.value( "matchingRules" ).toObject().value( "tickSize" ).toString();
+        const Coin price_ticksize = market_data.value( "matchingRules" ).toObject().value( "tickSize" ).toString();
+        const Coin qty_ticksize = Coin::ticksizeFromDecimals( market_data.value( "amountAssetInfo" ).toObject().value( "decimals" ).toVariant().toULongLong() );
 
         if ( amount_asset_alias.isEmpty() ||
              price_asset_alias.isEmpty() ||
-             ticksize.isZeroOrLess() )
+             price_ticksize.isZeroOrLess() ||
+             qty_ticksize.isZeroOrLess() )
         {
             kDebug() << "nam reply warning: caught empty market data value";
             continue;
@@ -438,14 +440,16 @@ void WavesREST::parseMarketData( const QJsonObject &info )
 //        kDebug() << "amount_asset_name: " << amount_asset_alias
 //                 << "price_asset_name:  " << price_asset_alias;
 
-        Market market = Market( account.getAssetByAlias( price_asset_alias ),
-                                account.getAssetByAlias( amount_asset_alias ) );
+        const QString price_asset = account.getAssetByAlias( price_asset_alias );
+        const QString amount_asset = account.getAssetByAlias( amount_asset_alias );
+        Market market = Market( price_asset, amount_asset );
 
         tracked_markets += market;
 
         // update market ticksize
         MarketInfo &market_info = engine->getMarketInfo( market );
-        market_info.price_ticksize = ticksize;
+        market_info.price_ticksize = price_ticksize;
+        market_info.quantity_ticksize = qty_ticksize;
     }
 
     // update tickers
@@ -474,8 +478,8 @@ void WavesREST::parseOrderBookData( const QJsonObject &info )
                      &asks = info.value( "asks" ).toArray();
 
     // parse bid/ask price
-    const Coin bid_price = CoinAmount::SATOSHI * bids.first().toObject().value( "price" ).toInt();
-    const Coin ask_price = CoinAmount::SATOSHI * asks.first().toObject().value( "price" ).toInt();
+    const uint64_t bid_price = bids.first().toObject().value( "price" ).toVariant().toULongLong();
+    const uint64_t ask_price = asks.first().toObject().value( "price" ).toVariant().toULongLong();
 
     const QJsonObject &market_info = info.value( "pair" ).toObject();
 
@@ -486,10 +490,12 @@ void WavesREST::parseOrderBookData( const QJsonObject &info )
     Market market = Market( account.getAssetByAlias( price_asset ),
                             account.getAssetByAlias( amount_asset ) );
 
-    QMap<QString, TickerInfo> ticker_info;
-    ticker_info.insert( market, TickerInfo( bid_price, ask_price ) );
+    MarketInfo &local_market_info = engine->getMarketInfo( market );
+    const Coin bid_price_coin = local_market_info.price_ticksize * bid_price;
+    const Coin ask_price_coin = local_market_info.price_ticksize * ask_price;
 
-    // kDebug() << market << ":" << bid_price << ask_price;
+    QMap<QString, TickerInfo> ticker_info;
+    ticker_info.insert( market, TickerInfo( bid_price_coin, ask_price_coin ) );
 
     engine->processTicker( this, ticker_info );
 }
@@ -521,9 +527,11 @@ void WavesREST::parseOrderStatus( const QJsonObject &info, Request *const &reque
     BaseREST::orderbook_update_time = QDateTime::currentMSecsSinceEpoch();
 
     Position *const &pos = request->pos;
+    MarketInfo &market_info = engine->getMarketInfo( pos->market );
+
     const QString &order_status = info.value( "status" ).toString();
-    const Coin filled_quantity = CoinAmount::SATOSHI * info.value( "filledAmount" ).toInt();
-    const Coin filled_fee = CoinAmount::SATOSHI * info.value( "filledFee" ).toInt();
+    const Coin filled_quantity = market_info.quantity_ticksize * info.value( "filledAmount" ).toVariant().toULongLong();
+    //const Coin filled_fee = CoinAmount::SATOSHI * info.value( "filledFee" ).toVariant().toULongLong();
 
     //kDebug() << "order status" << order_id << ":" << order_status;
 
