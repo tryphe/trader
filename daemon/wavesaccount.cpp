@@ -113,7 +113,7 @@ bool WavesAccount::verify( const QByteArray &message, const QByteArray &signatur
 
 void WavesAccount::initAssetMaps()
 {
-    const QString ALIAS_USD =   "Ft8X1v1LTa1ABafufpaCWyVj8KkaxUWE6xBhW6sNFJck",
+    const QString ALIAS_USDT =  "34N9YcEETLWn93qYQ64EsP1x89tSruJU44RrEMSXXEPJ",
                   ALIAS_USDN =  "DG2xFkPdDwKUoBkzGAhQtLpSGzfXLiCYPEzeKH2Ad24p",
                   ALIAS_EUR =   "Gtb1WRznfchDnTh37ezoDTJ4wcoKaRsKqKjJjy7nm2zU",
                   ALIAS_TRY =   "2mX5DzVKWrAJw8iwdJnV2qtoeVG9h5nTDpTqC1wb1WEN",
@@ -127,15 +127,15 @@ void WavesAccount::initAssetMaps()
                   ALIAS_XMR =   "5WvPKSJXzVE2orvbkJ8wsQmmQKqTv9sGBPksV4adViw3",
                   ALIAS_ZEC =   "BrjUWjndUanm5VsJkbUip8VRYy6LWJePtxya3FNv4TQa";
 
-    asset_by_alias.insert( ALIAS_USD, "USD" );
+    asset_by_alias.insert( ALIAS_USDT, "USDT" );
     asset_by_alias.insert( ALIAS_USDN, "USDN" );
-    asset_by_alias.insert( ALIAS_EUR, "EUR" );
-    asset_by_alias.insert( ALIAS_TRY, "TRY" );
+//    asset_by_alias.insert( ALIAS_EUR, "EUR" );
+//    asset_by_alias.insert( ALIAS_TRY, "TRY" );
     asset_by_alias.insert( ALIAS_BTC, "BTC" );
     asset_by_alias.insert( ALIAS_WAVES, "WAVES" );
     asset_by_alias.insert( ALIAS_ETH, "ETH" );
-    asset_by_alias.insert( ALIAS_BCH, "BCH" );
-    asset_by_alias.insert( ALIAS_BSV, "BSV" );
+//    asset_by_alias.insert( ALIAS_BCH, "BCH" );
+//    asset_by_alias.insert( ALIAS_BSV, "BSV" );
     asset_by_alias.insert( ALIAS_LTC, "LTC" );
     asset_by_alias.insert( ALIAS_DASH, "DASH" );
     asset_by_alias.insert( ALIAS_XMR, "XMR" );
