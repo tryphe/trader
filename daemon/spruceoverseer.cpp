@@ -98,6 +98,9 @@ void SpruceOverseer::onSpruceUp()
             if ( !spruce->calculateAmountToShortLong() )
                 return;
 
+            // run cancellors for this strategy tag
+            runCancellors( market_to_trade, side, strategy );
+
             const QMap<QString,Coin> &qty_to_shortlong_map = spruce->getQuantityToShortLongMap();
 
             for ( QMap<quint8, Engine*>::const_iterator e = engine_map.begin(); e != engine_map.end(); e++ )
@@ -209,9 +212,6 @@ void SpruceOverseer::onSpruceUp()
 #endif
                 }
             }
-
-            // run cancellors for this strategy tag
-            runCancellors( market_to_trade, side, strategy );
         }
     }
 }
