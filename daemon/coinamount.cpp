@@ -432,3 +432,17 @@ Coin Coin::truncatedByTicksize( QString ticksize )
     ret.truncateByTicksize( ticksize );
     return ret;
 }
+
+Coin Coin::ticksizeFromDecimals( int dec )
+{
+    Coin ret = CoinAmount::SATOSHI;
+
+    if ( dec > CoinAmount::satoshi_decimals || dec < 0 )
+        return ret;
+
+    // increase magnitude (decimals-8) times
+    for ( int i = 0; i < CoinAmount::satoshi_decimals - dec; i++ )
+        ret *= 10;
+
+    return ret;
+}

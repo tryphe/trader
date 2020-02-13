@@ -68,6 +68,7 @@ public:
 
     void truncateByTicksize( QString ticksize );
     Coin truncatedByTicksize( QString ticksize );
+    static Coin ticksizeFromDecimals( int dec );
 
 private:
     mpz_t b;

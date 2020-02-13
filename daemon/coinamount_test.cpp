@@ -430,6 +430,17 @@ void CoinAmountTest::test()
         test_str += "0";
     }
 
+    // test Coin::ticksizeFromDecimals()
+    assert( Coin::ticksizeFromDecimals( 8 ) == CoinAmount::SATOSHI );
+    assert( Coin::ticksizeFromDecimals( 7 ) == CoinAmount::SATOSHI *10 );
+    assert( Coin::ticksizeFromDecimals( 6 ) == CoinAmount::SATOSHI *100 );
+    assert( Coin::ticksizeFromDecimals( 5 ) == CoinAmount::SATOSHI *1000 );
+    assert( Coin::ticksizeFromDecimals( 4 ) == CoinAmount::SATOSHI *10000 );
+    assert( Coin::ticksizeFromDecimals( 3 ) == CoinAmount::SATOSHI *100000 );
+    assert( Coin::ticksizeFromDecimals( 2 ) == CoinAmount::SATOSHI *1000000 );
+    assert( Coin::ticksizeFromDecimals( 1 ) == CoinAmount::SATOSHI *10000000 );
+    assert( Coin::ticksizeFromDecimals( 0 ) == CoinAmount::COIN );
+
     ///
     /// stuff we support but aren't even using
     ///
