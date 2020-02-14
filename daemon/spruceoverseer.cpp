@@ -121,6 +121,11 @@ void SpruceOverseer::onSpruceUp()
 
                     // get market allocation for this exchange and apply to qty_to_shortlong
                     const Coin market_allocation = spruce->getExchangeAllocation( exchange_market_key );
+
+                    // continue on zero market allocation for this engine
+                    if ( market_allocation.isZeroOrLess() )
+                        continue;
+
                     const Coin qty_to_shortlong = i.value() * market_allocation;
                     const bool is_buy = qty_to_shortlong.isZeroOrLess();
 
