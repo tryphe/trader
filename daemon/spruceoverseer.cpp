@@ -234,10 +234,12 @@ void SpruceOverseer::onSpruceUp()
     }
 }
 
-void SpruceOverseer::adjustSpread( TickerInfo &spread, const Coin &limit, Coin &default_ticksize, bool expand, quint32 *j_ptr )
+void SpruceOverseer::adjustSpread( TickerInfo &spread, const Coin &limit, Coin &minimum_ticksize, bool expand, quint32 *j_ptr )
 {
-    Coin ticksize = default_ticksize;
-    adjustTicksizeToSpread( ticksize, spread );
+    // get price ticksize
+    Coin ticksize = minimum_ticksize;
+
+    adjustTicksizeToSpread( ticksize, spread, minimum_ticksize );
 
     static Coin diff_threshold;
     static Coin moved;
@@ -279,13 +281,13 @@ void SpruceOverseer::adjustSpread( TickerInfo &spread, const Coin &limit, Coin &
         *j_ptr = j;
 }
 
-void SpruceOverseer::adjustTicksizeToSpread( Coin &ticksize, TickerInfo &spread )
+void SpruceOverseer::adjustTicksizeToSpread( Coin &ticksize, TickerInfo &spread, const Coin &ticksize_minimum )
 {
     const Coin diff = std::max( spread.bid_price, spread.ask_price ) - std::min( spread.bid_price, spread.ask_price );
     const Coin diffd2 = diff / 2;
     Coin moved;
     if ( diff > ticksize * 1000 )
-        ticksize = std::max( diff / 1000, CoinAmount::SATOSHI );
+        ticksize = std::max( diff / 1000, ticksize_minimum );
 }
 
 TickerInfo SpruceOverseer::getSpruceSpreadLimit( const QString &market, quint8 side, bool order_duplicity, bool taker_mode )
@@ -294,7 +296,8 @@ TickerInfo SpruceOverseer::getSpruceSpreadLimit( const QString &market, quint8 s
     const Coin trailing_limit = spruce->getOrderTrailingLimit( side );
 
     // get price ticksize
-    Coin ticksize = getPriceTicksizeForMarket( market );
+    const Coin ticksize_minimum = getPriceTicksizeForMarket( market );
+    Coin ticksize = ticksize_minimum;
 
     quint32 j = 0;
 
@@ -302,7 +305,7 @@ TickerInfo SpruceOverseer::getSpruceSpreadLimit( const QString &market, quint8 s
     TickerInfo ticker = getSpruceSpread( market, &j, order_duplicity, taker_mode, false );
 
     // adjust ticksize
-    adjustTicksizeToSpread( ticksize, ticker );
+    adjustTicksizeToSpread( ticksize, ticker, ticksize_minimum );
 
     // first, vibrate one way
     TickerInfo spread1 = TickerInfo( ticker.bid_price, ticker.ask_price );
@@ -355,8 +358,9 @@ TickerInfo SpruceOverseer::getSpruceSpread( const QString &market, quint32 *j_pt
     }
 
     /// step 2: apply base greed value to spread
-    // get price ticksizebool spread_collapse = true,
-    Coin ticksize = getPriceTicksizeForMarket( market );
+    // get price ticksize
+    const Coin ticksize_minimum = getPriceTicksizeForMarket( market );
+    Coin ticksize = ticksize_minimum;
 
     Coin &buy_price = ret.bid_price;
     Coin &sell_price = ret.ask_price;
@@ -371,7 +375,7 @@ TickerInfo SpruceOverseer::getSpruceSpread( const QString &market, quint32 *j_pt
     const Coin diff = std::max( buy_price, sell_price ) - std::min( buy_price, sell_price );
     const Coin diffd2 = diff / 2;
 
-    adjustTicksizeToSpread( ticksize, ret );
+    adjustTicksizeToSpread( ticksize, ret, ticksize_minimum );
 
     // contract our spread if specified
     if ( greed_reduce.isGreaterThanZero() )
@@ -409,7 +413,8 @@ TickerInfo SpruceOverseer::getSpruceSpread( const QString &market, quint32 *j_pt
 TickerInfo SpruceOverseer::getSpruceSpreadForSide( const QString &market, quint8 side, bool order_duplicity, const bool taker_mode )
 {
     // get price ticksize
-    Coin ticksize = getPriceTicksizeForMarket( market );
+    const Coin ticksize_minimum = getPriceTicksizeForMarket( market );
+    Coin ticksize = ticksize_minimum;
 
     // alternate between subtracting from sell side first to buy side first
     quint32 j = Global::getSecureRandomRange32( 0, 1 );
@@ -420,7 +425,7 @@ TickerInfo SpruceOverseer::getSpruceSpreadForSide( const QString &market, quint8
     if ( taker_mode )
         return spread;
 
-    adjustTicksizeToSpread( ticksize, spread );
+    adjustTicksizeToSpread( ticksize, spread, ticksize_minimum );
 
     // expand spread
     adjustSpread( spread, spruce->getOrderGreed( side ), ticksize, true, &j );

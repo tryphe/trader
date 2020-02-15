@@ -44,7 +44,7 @@ private:
     void runCancellors( const QString &market, const quint8 side, const QString &strategy );
 
     void adjustSpread( TickerInfo &spread, const Coin &limit, Coin &default_ticksize, bool expand = true, quint32 *j_ptr = nullptr );
-    void adjustTicksizeToSpread( Coin &ticksize, TickerInfo &spread );
+    void adjustTicksizeToSpread( Coin &ticksize, TickerInfo &spread, const Coin &ticksize_minimum );
     TickerInfo getSpruceSpreadLimit( const QString &market, quint8 side, bool order_duplicity = false, bool taker_mode = false );
     TickerInfo getSpruceSpread( const QString &market, quint32 *j_ptr = nullptr /*optional inherited spread vibrator*/ , bool order_duplicity = false, bool taker_mode = false, Coin greed_reduce = Coin() );
     TickerInfo getSpruceSpreadForSide( const QString &market, quint8 side, bool order_duplicity = false, bool taker_mode = false );
