@@ -10,7 +10,8 @@ Spruce::Spruce()
     m_order_nice = "2";
     m_order_nice_spreadput_bound = "30";
     m_order_nice_zerobound = "0";
-    m_order_greed = "0.99"; // keep our spread at least 1-x% apart
+    m_order_greed = "0.95"; // keep our spread at least 1-x% apart
+    m_order_greed_minimum = "0.975"; // contract greed up to this value
     m_order_greed_buy_randomness = m_order_greed_sell_randomness = "0.005"; // randomly subtract tenths of a pct from greed up to this amount
 
     m_market_buy_max = "0.20000000";
@@ -91,7 +92,7 @@ void Spruce::setExchangeAllocation( const QString &exchange_market_key, const Co
     kDebug() << "[Spruce] exchange allocation for" << exchange_market_key << ":" << allocation;
 }
 
-Coin Spruce::getOrderGreed( quint8 side )
+Coin Spruce::getOrderGreed( quint8 side ) const
 {
     // if greed is unset, just return m_order_greed
     if ( !m_order_greed.isGreaterThanZero() )
@@ -260,8 +261,9 @@ QString Spruce::getSaveState()
     ret += QString( "setspruceleverage %1\n" ).arg( m_leverage );
 
     // save order greed
-    ret += QString( "setspruceordergreed %1 %2 %3\n" )
+    ret += QString( "setspruceordergreed %1 %2 %3 %4\n" )
             .arg( m_order_greed )
+            .arg( m_order_greed_minimum )
             .arg( m_order_greed_buy_randomness )
             .arg( m_order_greed_sell_randomness );
 

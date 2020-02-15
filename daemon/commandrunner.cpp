@@ -833,12 +833,16 @@ void CommandRunner::command_setsprucereserve( QStringList &args )
 
 void CommandRunner::command_setspruceordergreed( QStringList &args )
 {
-    if ( !checkArgs( args, 3 ) ) return;
+    if ( !checkArgs( args, 4 ) ) return;
 
     spruce_overseer->spruce->setOrderGreed( args.value( 1 ) );
-    spruce_overseer->spruce->setOrderRandomBuy( args.value( 2 ) );
-    spruce_overseer->spruce->setOrderRandomSell( args.value( 3 ) );
-    kDebug() << "spruce order greed is" << args.value( 1 ) << args.value( 2 ) << args.value( 3 );
+    spruce_overseer->spruce->setOrderGreedMinimum( args.value( 2 ) );
+    spruce_overseer->spruce->setOrderRandomBuy( args.value( 3 ) );
+    spruce_overseer->spruce->setOrderRandomSell( args.value( 4 ) );
+    kDebug() << "spruce order greed:" << spruce_overseer->spruce->getOrderGreed()
+             << "greed minimum:" << spruce_overseer->spruce->getOrderGreedMinimum()
+             << "buy random:" << spruce_overseer->spruce->getOrderRandomBuy()
+             << "sell random:" << spruce_overseer->spruce->getOrderRandomSell();
 }
 
 void CommandRunner::command_setsprucemarketmax( QStringList &args )

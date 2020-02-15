@@ -58,10 +58,14 @@ public:
 
     void setOrderGreed( Coin ratio ) { m_order_greed = ratio; }
     void setOrderRandomBuy( Coin r ) { m_order_greed_buy_randomness = r; }
+    Coin getOrderRandomBuy() const { return m_order_greed_buy_randomness; }
     void setOrderRandomSell( Coin r ) { m_order_greed_sell_randomness = r; }
-    Coin getOrderGreed( quint8 side );
-    Coin getOrderGreed() { return m_order_greed; }
-    Coin getOrderTrailingLimit( quint8 side ) { return m_order_greed - ( side == SIDE_BUY ? m_order_greed_buy_randomness : m_order_greed_sell_randomness ); }
+    Coin getOrderRandomSell() const { return m_order_greed_sell_randomness; }
+    Coin getOrderGreed( quint8 side ) const;
+    Coin getOrderGreed() const { return m_order_greed; }
+    void setOrderGreedMinimum( Coin ratio ) { m_order_greed_minimum = std::max( ratio, m_order_greed ); }
+    Coin getOrderGreedMinimum() const { return m_order_greed_minimum; }
+    Coin getOrderTrailingLimit( quint8 side ) const { return m_order_greed - ( side == SIDE_BUY ? m_order_greed_buy_randomness : m_order_greed_sell_randomness ); }
 
     void setOrderNice( Coin nice ) { m_order_nice = nice; }
     Coin getOrderNice() const { return m_order_nice; }
@@ -144,7 +148,7 @@ private:
     QMap<QString,Coin> currency_weight; // note: weights are >0 and <=1
     QMultiMap<Coin,QString> currency_weight_by_coin; // note: weights are >0 and <=1
     QMap<QString, Coin> per_exchange_market_allocations; // note: market allocations are 0:1
-    Coin m_order_greed, m_order_greed_buy_randomness, m_order_greed_sell_randomness, m_market_buy_max,
+    Coin m_order_greed, m_order_greed_minimum, m_order_greed_buy_randomness, m_order_greed_sell_randomness, m_market_buy_max,
     m_market_sell_max, m_order_size, m_order_nice, m_order_nice_zerobound, m_order_nice_spreadput_bound;
     quint32 m_order_nice_spreadput_pct_chance{ 0 };
 

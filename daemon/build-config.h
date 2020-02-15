@@ -1,7 +1,7 @@
 #ifndef BUILDCONFIG_H
 #define BUILDCONFIG_H
 
-#define BUILD_VERSION "1.77i"
+#define BUILD_VERSION "1.77j"
 
 /// select your exchanges
 #define BITTREX_ENABLED
@@ -28,8 +28,8 @@
 #define PRINT_ENABLED_SSL_CIPHERS
 //#define PRINT_DISABLED_SSL_CIPHERS
 
-/// spread adjustment, choose one
-#define WIDEN_SPREAD_FULL
-//#define WIDEN_SPREAD_HALF
+/// temporary spread adjustment on fill, choose one
+#define WIDEN_SPREAD_FULL // expand to trade price
+//#define WIDEN_SPREAD_HALF // expand to the halfway between trade price and current ticker price
 
 #endif // BUILDCONFIG_H

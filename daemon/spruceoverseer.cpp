@@ -152,17 +152,27 @@ void SpruceOverseer::onSpruceUp()
                     TickerInfo spread = getSpruceSpreadForSide( market, side, false );
                     QString order_type = "onetime";
 
+                    const Coin spread_put_threshold = order_size_unscaled * spruce->getOrderNiceSpreadPut();
+                    Coin greed_reduce;
+
                     // put prices at spread if pending amount to shortlong is greater than size * order_nice_spreadput
-                    if ( amount_to_shortlong_abs > order_size_unscaled * spruce->getOrderNiceSpreadPut() )
+                    if ( spread_put_threshold.isGreaterThanZero() &&
+                         amount_to_shortlong_abs > spread_put_threshold )
                     {
+                        // amount to reduce greed by = ( amount_to_shortlong / spreadput ) * 0.01
+                        // reduce greed by 0.1% for every spread_put_threshold amount we should set
+                        greed_reduce = ( amount_to_shortlong_abs / spread_put_threshold ) * ( CoinAmount::SATOSHI * 100000 );
+
+                        kDebug() << "amount to shortlong:" << amount_to_shortlong_abs << "spread_put_thresh:" << spread_put_threshold << "greed_reduce:" << greed_reduce;
+
                         // incorporate percentage chance of putting order at spread
                         if ( Global::getSecureRandomRange32( 1, 100 ) <= spruce->getOrderNiceSpreadPutPctChance() )
                         {
-                            const TickerInfo collapsed_spread = getSpruceSpread( market, nullptr, true, false, true );
+                            const TickerInfo collapsed_spread = getSpruceSpread( market, nullptr, true, false, greed_reduce );
                             spread.bid_price = collapsed_spread.bid_price;
                             spread.ask_price = collapsed_spread.ask_price;
 
-                            order_type += "-timeout15";
+                            order_type += "-timeout20";
                         }
                     }
                     const Coin &buy_price = spread.bid_price;
@@ -183,6 +193,10 @@ void SpruceOverseer::onSpruceUp()
                     if ( spruce_active_for_side + order_size_limit >= amount_to_shortlong_abs )
                         continue;
 
+                    // cache greed min, and sell ratio if side == sell
+                    const Coin &greed_minimum = spruce->getOrderGreedMinimum();
+                    const Coin sell_ratio_limit = is_buy ? Coin() : ( CoinAmount::COIN *2 ) - greed_minimum;
+
                     // cancel conflicting spruce positions
                     for ( QSet<Position*>::const_iterator j = engine->positions->all().begin(); j != engine->positions->all().end(); j++ )
                     {
@@ -194,21 +208,22 @@ void SpruceOverseer::onSpruceUp()
                              pos->strategy_tag == strategy )
                             continue;
 
-                        if ( (  is_buy && pos->side == SIDE_SELL && buy_price  >= pos->sell_price.ratio( 0.996 ) ) ||
-                             ( !is_buy && pos->side == SIDE_BUY  && sell_price <= pos->buy_price.ratio( 1.004 ) ) )
+                        if ( (  is_buy && pos->side == SIDE_SELL && buy_price  >= greed_minimum ) ||
+                             ( !is_buy && pos->side == SIDE_BUY  && sell_price <= sell_ratio_limit ) )
                         {
                             kDebug() << "[Spruce] cancelling conflicting spruce order" << pos->order_number;
                             engine->positions->cancel( pos );
                         }
                     }
 
-                    kDebug() << QString( "[%1] %2 | coeff %3 | qty %4 | amt %5 | on-order %6" )
+                    kDebug() << QString( "[%1] %2 | coeff %3 | qty %4 | amt %5 | on-order %6 | spread %7" )
                                    .arg( strategy, -MARKET_STRING_WIDTH - 9 )
                                    .arg( side == SIDE_BUY ? spread.bid_price : spread.ask_price )
                                    .arg( spruce->getLastCoeffForMarket( market ), 12 )
                                    .arg( qty_to_shortlong, 20 )
                                    .arg( amount_to_shortlong, 13 )
-                                   .arg( spruce_active_for_side, 12 );
+                                   .arg( spruce_active_for_side, 12 )
+                                   .arg( Coin( qMin( spruce->getOrderGreed() + greed_reduce, spruce->getOrderGreedMinimum() ) ).toString( 4 ), 8 );
 
                     // queue the order if we aren't paper trading
 #if !defined(PAPER_TRADE)
@@ -268,7 +283,7 @@ TickerInfo SpruceOverseer::getSpruceSpreadLimit( const QString &market, quint8 s
     return combined_spread;
 }
 
-TickerInfo SpruceOverseer::getSpruceSpread( const QString &market, qint64 *j_ptr, bool order_duplicity, bool taker_mode, bool spread_collapse )
+TickerInfo SpruceOverseer::getSpruceSpread( const QString &market, qint64 *j_ptr, bool order_duplicity, bool taker_mode, Coin greed_reduce )
 {
     /// step 1: get combined spread between all exchanges
     TickerInfo ret;
@@ -307,7 +322,7 @@ TickerInfo SpruceOverseer::getSpruceSpread( const QString &market, qint64 *j_ptr
 
     // ensure the spread is more profitable than base greed value
     qint64 j = 0;
-    Coin greed = spruce->getOrderGreed();
+    Coin greed = qMin( spruce->getOrderGreed() + greed_reduce, spruce->getOrderGreedMinimum() );
 
     // alternate between subtracting from sell side first to buy side first
     const bool greed_vibrate_state = Global::getSecureRandomRange32( 0, 1 ) == 0;
@@ -319,17 +334,10 @@ TickerInfo SpruceOverseer::getSpruceSpread( const QString &market, qint64 *j_ptr
     if ( diff > ticksize * 1000 )
         ticksize = std::max( diff / 1000, CoinAmount::SATOSHI );
 
-    // collapse our spread by up to half the difference of the exchange spread
-    if ( spread_collapse )
+    // collapse our spread if specified
+    if ( greed_reduce.isGreaterThanZero() )
     {
-        // reduce greed by half if we're collapsing the spread
-        const Coin greed_reduce = ( CoinAmount::COIN - greed ) /2;
-
-        if ( greed_reduce.isGreaterThanZero() && greed + greed_reduce < CoinAmount::COIN  )
-        {
-            //kDebug() << "greed" << greed << "->" << ( greed + greed_reduce );
-            greed += greed_reduce;
-        }
+        kDebug() << "greed" << spruce->getOrderGreed() << "->" << greed;
 
         while ( buy_price < sell_price * greed )
         {
@@ -338,7 +346,7 @@ TickerInfo SpruceOverseer::getSpruceSpread( const QString &market, qint64 *j_ptr
             else
                 sell_price -= ticksize;
 
-            // don't adjust spread more than half of the diff
+            // if the spread is wider than our greed value, only collapse the spread by up to half
             moved += ticksize;
             if ( moved >= diffd2 )
                 break;
