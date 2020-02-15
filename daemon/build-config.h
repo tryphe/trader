@@ -28,8 +28,11 @@
 #define PRINT_ENABLED_SSL_CIPHERS
 //#define PRINT_DISABLED_SSL_CIPHERS
 
-/// temporary spread adjustment on fill, choose one
-#define WIDEN_SPREAD_FULL // expand to trade price
-//#define WIDEN_SPREAD_HALF // expand to the halfway between trade price and current ticker price
+/// spread expansion on fill
+#define SPREAD_EXPAND_FULL // expand to trade price
+//#define SPREAD_EXPAND_HALF // expand between trade price and current ticker price
+
+/// spread contraction on aggressive spread
+#define SPREAD_CONTRACT_RATIO "0.5"
 
 #endif // BUILDCONFIG_H

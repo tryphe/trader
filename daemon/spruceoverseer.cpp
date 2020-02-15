@@ -241,6 +241,7 @@ void SpruceOverseer::adjustSpread( TickerInfo &spread, const Coin &limit, Coin &
 
     adjustTicksizeToSpread( ticksize, spread, minimum_ticksize );
 
+    static const Coin CONTRACT_RATIO = Coin( SPREAD_CONTRACT_RATIO );
     static Coin diff_threshold;
     static Coin moved;
 
@@ -251,7 +252,7 @@ void SpruceOverseer::adjustSpread( TickerInfo &spread, const Coin &limit, Coin &
         ticksize = -ticksize;
 
         const Coin diff = std::max( spread.bid_price, spread.ask_price ) - std::min( spread.bid_price, spread.ask_price );
-        diff_threshold = diff / 2;
+        diff_threshold = diff * CONTRACT_RATIO;
     }
 
     quint32 j;
@@ -284,8 +285,6 @@ void SpruceOverseer::adjustSpread( TickerInfo &spread, const Coin &limit, Coin &
 void SpruceOverseer::adjustTicksizeToSpread( Coin &ticksize, TickerInfo &spread, const Coin &ticksize_minimum )
 {
     const Coin diff = std::max( spread.bid_price, spread.ask_price ) - std::min( spread.bid_price, spread.ask_price );
-    const Coin diffd2 = diff / 2;
-    Coin moved;
     if ( diff > ticksize * 1000 )
         ticksize = std::max( diff / 1000, ticksize_minimum );
 }
