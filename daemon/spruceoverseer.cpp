@@ -221,7 +221,7 @@ void SpruceOverseer::onSpruceUp()
                                    .arg( qty_to_shortlong, 20 )
                                    .arg( amount_to_shortlong, 13 )
                                    .arg( spruce_active_for_side, 12 )
-                                   .arg( Coin( qMin( spruce->getOrderGreed() + greed_reduce, spruce->getOrderGreedMinimum() ) ).toString( 4 ), 8 );
+                                   .arg( Coin( std::min( spruce->getOrderGreed() + greed_reduce, spruce->getOrderGreedMinimum() ) ).toString( 4 ), 8 );
 
                     // queue the order if we aren't paper trading
 #if !defined(PAPER_TRADE)
@@ -368,7 +368,7 @@ TickerInfo SpruceOverseer::getSpruceSpread( const QString &market, quint32 *j_pt
     quint32 j = Global::getSecureRandomRange32( 0, 1 );
 
     // ensure the spread is more profitable than base greed value
-    const Coin limit = qMin( spruce->getOrderGreed() + greed_reduce, spruce->getOrderGreedMinimum() );
+    const Coin limit = std::min( spruce->getOrderGreed() + greed_reduce, spruce->getOrderGreedMinimum() );
 
     // apply stepping to ticksize to avoid high cpu loop
     const Coin diff = std::max( buy_price, sell_price ) - std::min( buy_price, sell_price );
