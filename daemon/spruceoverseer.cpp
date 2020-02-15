@@ -234,54 +234,97 @@ void SpruceOverseer::onSpruceUp()
     }
 }
 
-TickerInfo SpruceOverseer::getSpruceSpreadLimit( const QString &market, quint8 side , bool order_duplicity, bool taker_mode )
+void SpruceOverseer::adjustSpread( TickerInfo &spread, const Coin &limit, Coin &default_ticksize, bool expand, quint32 *j_ptr )
+{
+    Coin ticksize = default_ticksize;
+    adjustTicksizeToSpread( ticksize, spread );
+
+    static Coin diff_threshold;
+    static Coin moved;
+
+    // if contracting, calculate the contraction limit
+    if ( !expand )
+    {
+        moved = Coin();
+        ticksize = -ticksize;
+
+        const Coin diff = std::max( spread.bid_price, spread.ask_price ) - std::min( spread.bid_price, spread.ask_price );
+        diff_threshold = diff / 2;
+    }
+
+    quint32 j;
+    if ( j_ptr != nullptr )
+        j = *j_ptr;
+    else
+        j = 0;
+
+    while ( expand ? spread.bid_price > spread.ask_price * limit :
+                     spread.bid_price < spread.ask_price * limit )
+    {
+        if ( j++ % 2 == 0 )
+            spread.bid_price -= ticksize;
+        else
+            spread.ask_price += ticksize;
+
+        // only collapse the spread by up to half the distance
+        if ( !expand )
+        {
+            moved += ticksize;
+            if ( moved >= diff_threshold )
+                break;
+        }
+    }
+
+    if ( j_ptr != nullptr )
+        *j_ptr = j;
+}
+
+void SpruceOverseer::adjustTicksizeToSpread( Coin &ticksize, TickerInfo &spread )
+{
+    const Coin diff = std::max( spread.bid_price, spread.ask_price ) - std::min( spread.bid_price, spread.ask_price );
+    const Coin diffd2 = diff / 2;
+    Coin moved;
+    if ( diff > ticksize * 1000 )
+        ticksize = std::max( diff / 1000, CoinAmount::SATOSHI );
+}
+
+TickerInfo SpruceOverseer::getSpruceSpreadLimit( const QString &market, quint8 side, bool order_duplicity, bool taker_mode )
 {
     // get trailing limit for this side
     const Coin trailing_limit = spruce->getOrderTrailingLimit( side );
 
     // get price ticksize
-    const Coin ticksize = getPriceTicksizeForMarket( market );
+    Coin ticksize = getPriceTicksizeForMarket( market );
 
-    qint64 j = 0;
+    quint32 j = 0;
 
     // read combined spread from all exchanges
-    const TickerInfo ticker = getSpruceSpread( market, &j, order_duplicity, taker_mode, false );
+    TickerInfo ticker = getSpruceSpread( market, &j, order_duplicity, taker_mode, false );
+
+    // adjust ticksize
+    adjustTicksizeToSpread( ticksize, ticker );
 
     // first, vibrate one way
     TickerInfo spread1 = TickerInfo( ticker.bid_price, ticker.ask_price );
-    Coin &buy1_price = spread1.bid_price;
-    Coin &sell1_price = spread1.ask_price;
 
-    while ( buy1_price > sell1_price * trailing_limit )
-    {
-        if ( j++ % 2 == 0 )
-            buy1_price -= ticksize;
-        else
-            sell1_price += ticksize;
-    }
+    // expand spread
+    adjustSpread( spread1, trailing_limit, ticksize, true, &j );
 
     // vibrate the other way
     TickerInfo spread2 = TickerInfo( ticker.bid_price, ticker.ask_price );
-    Coin &buy2_price = spread2.bid_price;
-    Coin &sell2_price = spread2.ask_price;
+    j = 1;
 
-    j++;
-    while ( buy2_price > sell2_price * trailing_limit )
-    {
-        if ( j++ % 2 == 0 )
-            buy2_price -= ticksize;
-        else
-            sell2_price += ticksize;
-    }
+    // expand spread
+    adjustSpread( spread2, trailing_limit, ticksize, true, &j );
 
     // combine vibrations
-    TickerInfo combined_spread = TickerInfo( std::min( buy1_price,  buy2_price ),
-                                             std::max( sell1_price, sell2_price ) );
+    TickerInfo combined_spread = TickerInfo( std::min( spread1.bid_price, spread2.bid_price ),
+                                             std::max( spread1.ask_price, spread2.ask_price ) );
 
     return combined_spread;
 }
 
-TickerInfo SpruceOverseer::getSpruceSpread( const QString &market, qint64 *j_ptr, bool order_duplicity, bool taker_mode, Coin greed_reduce )
+TickerInfo SpruceOverseer::getSpruceSpread( const QString &market, quint32 *j_ptr, bool order_duplicity, bool taker_mode, Coin greed_reduce )
 {
     /// step 1: get combined spread between all exchanges
     TickerInfo ret;
@@ -318,45 +361,24 @@ TickerInfo SpruceOverseer::getSpruceSpread( const QString &market, qint64 *j_ptr
     Coin &buy_price = ret.bid_price;
     Coin &sell_price = ret.ask_price;
 
-    // ensure the spread is more profitable than base greed value
-    qint64 j = 0;
-    Coin greed = qMin( spruce->getOrderGreed() + greed_reduce, spruce->getOrderGreedMinimum() );
-
     // alternate between subtracting from sell side first to buy side first
-    const bool greed_vibrate_state = Global::getSecureRandomRange32( 0, 1 ) == 0;
+    quint32 j = Global::getSecureRandomRange32( 0, 1 );
+
+    // ensure the spread is more profitable than base greed value
+    const Coin limit = qMin( spruce->getOrderGreed() + greed_reduce, spruce->getOrderGreedMinimum() );
 
     // apply stepping to ticksize to avoid high cpu loop
     const Coin diff = std::max( buy_price, sell_price ) - std::min( buy_price, sell_price );
     const Coin diffd2 = diff / 2;
-    Coin moved;
-    if ( diff > ticksize * 1000 )
-        ticksize = std::max( diff / 1000, CoinAmount::SATOSHI );
 
-    // collapse our spread if specified
+    adjustTicksizeToSpread( ticksize, ret );
+
+    // contract our spread if specified
     if ( greed_reduce.isGreaterThanZero() )
-    {
-        while ( buy_price < sell_price * greed )
-        {
-            if ( j++ % 2 == greed_vibrate_state ? 0 : 1 )
-                buy_price += ticksize;
-            else
-                sell_price -= ticksize;
-
-            // if the spread is wider than our greed value, only collapse the spread by up to half
-            moved += ticksize;
-            if ( moved >= diffd2 )
-                break;
-        }
-    }
+        adjustSpread( ret, limit, ticksize, false, &j );
 
     // expand wider if needed
-    while ( buy_price > sell_price * greed )
-    {
-        if ( j++ % 2 == greed_vibrate_state ? 0 : 1 )
-            buy_price -= ticksize;
-        else
-            sell_price += ticksize;
-    }
+    adjustSpread( ret, limit, ticksize, true, &j );
 
     // copy non-default j into passed pointer value
     if ( j > 0 && j_ptr != nullptr )
@@ -387,31 +409,21 @@ TickerInfo SpruceOverseer::getSpruceSpread( const QString &market, qint64 *j_ptr
 TickerInfo SpruceOverseer::getSpruceSpreadForSide( const QString &market, quint8 side, bool order_duplicity, const bool taker_mode )
 {
     // get price ticksize
-    const Coin ticksize = getPriceTicksizeForMarket( market );
+    Coin ticksize = getPriceTicksizeForMarket( market );
+
+    // alternate between subtracting from sell side first to buy side first
+    quint32 j = Global::getSecureRandomRange32( 0, 1 );
 
     // read combined spread from all exchanges
-    qint64 j = 0;
     TickerInfo spread = getSpruceSpread( market, &j, order_duplicity, taker_mode, false );
 
     if ( taker_mode )
         return spread;
 
-    Coin &buy_price = spread.bid_price;
-    Coin &sell_price = spread.ask_price;
+    adjustTicksizeToSpread( ticksize, spread );
 
-    // ensure the spread greed is applied for this side
-    const Coin greed = spruce->getOrderGreed( side );
-
-    // alternate between subtracting from sell side first to buy side first
-    const bool greed_vibrate_state = Global::getSecureRandomRange32( 0, 1 ) == 0;
-
-    while ( buy_price > sell_price * greed )
-    {
-        if ( j++ % 2 == greed_vibrate_state ? 0 : 1 )
-            buy_price -= ticksize;
-        else
-            sell_price += ticksize;
-    }
+    // expand spread
+    adjustSpread( spread, spruce->getOrderGreed( side ), ticksize, true, &j );
 
     return spread;
 }
@@ -685,3 +697,4 @@ void SpruceOverseer::runCancellors( const QString &market, const quint8 side, co
         }
     }
 }
+
