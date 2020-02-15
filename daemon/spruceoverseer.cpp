@@ -163,8 +163,6 @@ void SpruceOverseer::onSpruceUp()
                         // reduce greed by 0.1% for every spread_put_threshold amount we should set
                         greed_reduce = ( amount_to_shortlong_abs / spread_put_threshold ) * ( CoinAmount::SATOSHI * 100000 );
 
-                        kDebug() << "amount to shortlong:" << amount_to_shortlong_abs << "spread_put_thresh:" << spread_put_threshold << "greed_reduce:" << greed_reduce;
-
                         // incorporate percentage chance of putting order at spread
                         if ( Global::getSecureRandomRange32( 1, 100 ) <= spruce->getOrderNiceSpreadPutPctChance() )
                         {
@@ -337,8 +335,6 @@ TickerInfo SpruceOverseer::getSpruceSpread( const QString &market, qint64 *j_ptr
     // collapse our spread if specified
     if ( greed_reduce.isGreaterThanZero() )
     {
-        kDebug() << "greed" << spruce->getOrderGreed() << "->" << greed;
-
         while ( buy_price < sell_price * greed )
         {
             if ( j++ % 2 == greed_vibrate_state ? 0 : 1 )
