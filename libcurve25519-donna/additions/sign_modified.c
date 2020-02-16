@@ -12,7 +12,7 @@
 */
 int crypto_sign_modified(
   unsigned char *sm,
-  const unsigned char *m,unsigned long long mlen,
+  const unsigned char *m,uint64_t mlen,
   const unsigned char *sk, const unsigned char* pk,
   const unsigned char* random
 )

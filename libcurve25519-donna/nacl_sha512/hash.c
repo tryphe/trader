@@ -7,7 +7,7 @@ Public domain.
 #include <stdint.h>
 typedef uint64_t uint64;
 
-extern int crypto_hashblocks_sha512(unsigned char *statebytes,const unsigned char *in,unsigned long long inlen);
+extern int crypto_hashblocks_sha512(unsigned char *statebytes,const unsigned char *in,uint64_t inlen);
 
 #define blocks crypto_hashblocks_sha512
 
@@ -22,12 +22,12 @@ static const unsigned char iv[64] = {
   0x5b,0xe0,0xcd,0x19,0x13,0x7e,0x21,0x79
 } ;
 
-int crypto_hash_sha512(unsigned char *out,const unsigned char *in,unsigned long long inlen)
+int crypto_hash_sha512(unsigned char *out,const unsigned char *in,uint64_t inlen)
 {
   unsigned char h[64];
   unsigned char padded[256];
   int i;
-  unsigned long long bytes = inlen;
+  uint64_t bytes = inlen;
 
   for (i = 0;i < 64;++i) h[i] = iv[i];
 

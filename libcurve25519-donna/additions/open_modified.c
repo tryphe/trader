@@ -6,9 +6,8 @@
 #include "../sc.h"
 #include "crypto_additions.h"
 
-int crypto_sign_open_modified(
-  unsigned char *m,
-  const unsigned char *sm,unsigned long long smlen,
+int crypto_sign_open_modified(unsigned char *m,
+  const unsigned char *sm, uint64_t smlen,
   const unsigned char *pk
 )
 {

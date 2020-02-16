@@ -1,6 +1,8 @@
 #ifndef crypto_sign_edwards25519sha512batch_H
 #define crypto_sign_edwards25519sha512batch_H
 
+#include <stdint.h>
+
 #define crypto_sign_edwards25519sha512batch_ref10_SECRETKEYBYTES 64
 #define crypto_sign_edwards25519sha512batch_ref10_PUBLICKEYBYTES 32
 #define crypto_sign_edwards25519sha512batch_ref10_BYTES 64
@@ -11,8 +13,8 @@ extern std::string crypto_sign_edwards25519sha512batch_ref10_open(const std::str
 extern std::string crypto_sign_edwards25519sha512batch_ref10_keypair(std::string *);
 extern "C" {
 #endif
-extern int crypto_sign_edwards25519sha512batch_ref10(unsigned char *,unsigned long long *,const unsigned char *,unsigned long long,const unsigned char *);
-extern int crypto_sign_edwards25519sha512batch_ref10_open(unsigned char *,unsigned long long *,const unsigned char *,unsigned long long,const unsigned char *);
+extern int crypto_sign_edwards25519sha512batch_ref10(unsigned char *,uint64_t *,const unsigned char *,uint64_t,const unsigned char *);
+extern int crypto_sign_edwards25519sha512batch_ref10_open(unsigned char *,uint64_t *,const unsigned char *,uint64_t,const unsigned char *);
 extern int crypto_sign_edwards25519sha512batch_ref10_keypair(unsigned char *,unsigned char *);
 #ifdef __cplusplus
 }

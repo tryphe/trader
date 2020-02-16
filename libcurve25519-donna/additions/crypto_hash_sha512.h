@@ -5,7 +5,9 @@
 extern "C" {
 #endif
 
-extern int crypto_hash_sha512(unsigned char *,const unsigned char *,unsigned long long);
+#include <stdint.h>
+
+extern int crypto_hash_sha512(unsigned char *,const unsigned char *,uint64_t);
 
 #ifdef __cplusplus
 }

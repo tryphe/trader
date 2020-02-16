@@ -6,6 +6,8 @@
 #include "../fe.h"
 #include "../ge.h"
 
+#include <stdint.h>
+
 #define MAX_MSG_LEN 256
 
 #ifdef __cplusplus
@@ -29,11 +31,11 @@ void ge_scalarmult(ge_p3 *h, const unsigned char *a, const ge_p3 *A);
 void ge_scalarmult_cofactor(ge_p3 *q, const ge_p3 *p);
 
 void elligator(fe u, const fe r);
-void hash_to_point(ge_p3* p, const unsigned char* msg, const unsigned long in_len);
+void hash_to_point(ge_p3* p, const unsigned char* msg, const uint32_t in_len);
 
 int crypto_sign_modified(
   unsigned char *sm,
-  const unsigned char *m,unsigned long long mlen,
+  const unsigned char *m,uint64_t mlen,
   const unsigned char *sk, /* Curve/Ed25519 private key */
   const unsigned char *pk, /* Ed25519 public key */
   const unsigned char *random /* 64 bytes random to hash into nonce */
@@ -41,7 +43,7 @@ int crypto_sign_modified(
 
 int crypto_sign_open_modified(
   unsigned char *m,
-  const unsigned char *sm,unsigned long long smlen,
+  const unsigned char *sm,uint64_t smlen,
   const unsigned char *pk
   );
 
