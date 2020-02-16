@@ -76,16 +76,19 @@ void SpruceOverseer::onSpruceUp()
                 Coin price = ( side == SIDE_BUY ) ? mid_spread.bid_price :
                                                     mid_spread.ask_price;
 
-                // these prices should be equal
-                if ( mid_spread.bid_price != mid_spread.ask_price )
-                    kDebug() << "local error: midspread bid" << mid_spread.bid_price << "!= ask" << mid_spread.ask_price;
-
                 // if the ticker isn't updated, just skip this whole function
                 if ( price.isZeroOrLess() )
                 {
                     kDebug() << "[Spruce] local error: no ticker for currency" << market;
                     return;
                 }
+
+                // adjust price input by surface skew
+                price *= spruce->getSkew();
+
+                // these prices should be equal
+                if ( mid_spread.bid_price != mid_spread.ask_price )
+                    kDebug() << "local error: midspread bid" << mid_spread.bid_price << "!= ask" << mid_spread.ask_price;
 
                 if ( (QString) market == (QString) market_to_trade )
                     price = duplicity_price;
@@ -159,19 +162,36 @@ void SpruceOverseer::onSpruceUp()
                     if ( spread_put_threshold.isGreaterThanZero() &&
                          amount_to_shortlong_abs > spread_put_threshold )
                     {
-                        // amount to reduce greed by = ( amount_to_shortlong / spreadput ) * 0.01
-                        // reduce greed by 0.1% for every spread_put_threshold amount we should set
-                        greed_reduce = ( amount_to_shortlong_abs / spread_put_threshold ) * ( CoinAmount::SATOSHI * 100000 );
+                        const Coin taker_threshold = order_size_unscaled * spruce->getOrderNiceSpreadPutTaker();
 
-                        // incorporate percentage chance of putting order at spread
-                        if ( Global::getSecureRandomRange32( 1, 100 ) <= spruce->getOrderNiceSpreadPutPctChance() )
+                        // apply taker threshold, amount should be larger than contraction threshold
+                        if ( amount_to_shortlong_abs >= taker_threshold )
                         {
+                            const TickerInfo taker_spread = getSpruceSpread( market, nullptr, true, true );
+                            spread.bid_price = taker_spread.bid_price;
+                            spread.ask_price = taker_spread.ask_price;
+
+                            // the bid price should be greater than the ask (because the spread is flipped)
+                            if ( taker_spread.bid_price < taker_spread.ask_price )
+                                kDebug() << "local error: taker bid" << taker_spread.bid_price << "< ask" << taker_spread.ask_price;
+
+                            // set local taker mode to disable spread collision detection
+                            order_type += "-taker";
+                        }
+                        // apply soft threshold by contracting the spread
+                        else
+                        {
+                            // amount to reduce greed by = ( amount_to_shortlong / spreadput ) * 0.01
+                            // reduce greed by 0.1% for every spread_put_threshold amount we should set
+                            greed_reduce = ( amount_to_shortlong_abs / spread_put_threshold ) * ( CoinAmount::SATOSHI * 100000 );
+
                             const TickerInfo collapsed_spread = getSpruceSpread( market, nullptr, true, false, greed_reduce );
                             spread.bid_price = collapsed_spread.bid_price;
                             spread.ask_price = collapsed_spread.ask_price;
-
-                            order_type += "-timeout20";
                         }
+
+                        // set timeout for order so we cancel it if it doesn't fill quickly
+                        order_type += "-timeout15";
                     }
                     const Coin &buy_price = spread.bid_price;
                     const Coin &sell_price = spread.ask_price;
@@ -221,7 +241,7 @@ void SpruceOverseer::onSpruceUp()
                                    .arg( qty_to_shortlong, 20 )
                                    .arg( amount_to_shortlong, 13 )
                                    .arg( spruce_active_for_side, 12 )
-                                   .arg( Coin( std::min( spruce->getOrderGreed() + greed_reduce, spruce->getOrderGreedMinimum() ) ).toString( 4 ) );
+                                   .arg( order_type.contains( "taker" ) ? "*taker" : Coin( std::min( spruce->getOrderGreed() + greed_reduce, spruce->getOrderGreedMinimum() ) ).toString( 4 ) );
 
                     // queue the order if we aren't paper trading
 #if !defined(PAPER_TRADE)

@@ -833,16 +833,18 @@ void CommandRunner::command_setsprucereserve( QStringList &args )
 
 void CommandRunner::command_setspruceordergreed( QStringList &args )
 {
-    if ( !checkArgs( args, 4 ) ) return;
+    if ( !checkArgs( args, 5 ) ) return;
 
     spruce_overseer->spruce->setOrderGreed( args.value( 1 ) );
     spruce_overseer->spruce->setOrderGreedMinimum( args.value( 2 ) );
     spruce_overseer->spruce->setOrderRandomBuy( args.value( 3 ) );
     spruce_overseer->spruce->setOrderRandomSell( args.value( 4 ) );
+    spruce_overseer->spruce->setSkew( args.value( 5 ) );
     kDebug() << "spruce order greed:" << spruce_overseer->spruce->getOrderGreed()
              << "greed minimum:" << spruce_overseer->spruce->getOrderGreedMinimum()
              << "buy random:" << spruce_overseer->spruce->getOrderRandomBuy()
-             << "sell random:" << spruce_overseer->spruce->getOrderRandomSell();
+             << "sell random:" << spruce_overseer->spruce->getOrderRandomSell()
+             << "alpha skew:" << spruce_overseer->spruce->getSkew();
 }
 
 void CommandRunner::command_setsprucemarketmax( QStringList &args )
@@ -870,12 +872,12 @@ void CommandRunner::command_setspruceordernice( QStringList &args )
     spruce_overseer->spruce->setOrderNice( args.value( 1 ) );
     spruce_overseer->spruce->setOrderNiceZeroBound( args.value( 2 ) );
     spruce_overseer->spruce->setOrderNiceSpreadPut( args.value( 3 ) );
-    spruce_overseer->spruce->setOrderNiceSpreadPutPctChance( args.value( 4 ).toUInt() );
+    spruce_overseer->spruce->setOrderNiceSpreadPutTaker( args.value( 4 ) );
 
-    kDebug() << "spruce order nice is" << spruce_overseer->spruce->getOrderNice()
-                                       << spruce_overseer->spruce->getOrderNiceZeroBound()
-                                       << spruce_overseer->spruce->getOrderNiceSpreadPut()
-                                       << spruce_overseer->spruce->getOrderNiceSpreadPutPctChance();
+    kDebug() << "spruce order nice:" << spruce_overseer->spruce->getOrderNice()
+                    << "zero bound:" << spruce_overseer->spruce->getOrderNiceZeroBound()
+            << "spread reduce nice:" << spruce_overseer->spruce->getOrderNiceSpreadPut()
+             << "spread taker nice:" << spruce_overseer->spruce->getOrderNiceSpreadPutTaker();
 }
 
 void CommandRunner::command_setspruceallocation( QStringList &args )
