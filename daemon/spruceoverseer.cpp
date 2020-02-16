@@ -91,7 +91,15 @@ void SpruceOverseer::onSpruceUp()
                     kDebug() << "local error: midspread bid" << mid_spread.bid_price << "!= ask" << mid_spread.ask_price;
 
                 if ( (QString) market == (QString) market_to_trade )
-                    price = duplicity_price;
+                {
+                    price = ( side == SIDE_BUY ) ? std::min( price, duplicity_price ) :
+                                                   std::max( price, duplicity_price );
+
+                    // note: unsure if min/max is needed, if this is seen then it is
+                    if ( ( side == SIDE_BUY  && price < duplicity_price ) ||
+                         ( side == SIDE_SELL && price > duplicity_price ) )
+                        kDebug() << "local info: new min max constraint is needed";
+                }
 
                 spread_price.insert( currency, price );
                 spruce->addLiveNode( currency, price );
