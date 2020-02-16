@@ -206,8 +206,8 @@ void SpruceOverseer::onSpruceUp()
                              pos->strategy_tag == strategy )
                             continue;
 
-                        if ( (  is_buy && pos->side == SIDE_SELL && buy_price  >= greed_minimum ) ||
-                             ( !is_buy && pos->side == SIDE_BUY  && sell_price <= sell_ratio_limit ) )
+                        if ( (  is_buy && pos->side == SIDE_SELL && buy_price  >= pos->sell_price * greed_minimum ) ||
+                             ( !is_buy && pos->side == SIDE_BUY  && sell_price <= pos->buy_price * sell_ratio_limit ) )
                         {
                             kDebug() << "[Spruce] cancelling conflicting spruce order" << pos->order_number;
                             engine->positions->cancel( pos );
@@ -221,7 +221,7 @@ void SpruceOverseer::onSpruceUp()
                                    .arg( qty_to_shortlong, 20 )
                                    .arg( amount_to_shortlong, 13 )
                                    .arg( spruce_active_for_side, 12 )
-                                   .arg( Coin( std::min( spruce->getOrderGreed() + greed_reduce, spruce->getOrderGreedMinimum() ) ).toString( 4 ), 8 );
+                                   .arg( Coin( std::min( spruce->getOrderGreed() + greed_reduce, spruce->getOrderGreedMinimum() ) ).toString( 4 ) );
 
                     // queue the order if we aren't paper trading
 #if !defined(PAPER_TRADE)
@@ -361,18 +361,11 @@ TickerInfo SpruceOverseer::getSpruceSpread( const QString &market, quint32 *j_pt
     const Coin ticksize_minimum = getPriceTicksizeForMarket( market );
     Coin ticksize = ticksize_minimum;
 
-    Coin &buy_price = ret.bid_price;
-    Coin &sell_price = ret.ask_price;
-
     // alternate between subtracting from sell side first to buy side first
     quint32 j = Global::getSecureRandomRange32( 0, 1 );
 
     // ensure the spread is more profitable than base greed value
     const Coin limit = std::min( spruce->getOrderGreed() + greed_reduce, spruce->getOrderGreedMinimum() );
-
-    // apply stepping to ticksize to avoid high cpu loop
-    const Coin diff = std::max( buy_price, sell_price ) - std::min( buy_price, sell_price );
-    const Coin diffd2 = diff / 2;
 
     adjustTicksizeToSpread( ticksize, ret, ticksize_minimum );
 
