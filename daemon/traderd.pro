@@ -15,8 +15,8 @@ CONFIG += RELEASE
 
 LIBS += -lgmp
 
-QMAKE_CXXFLAGS_RELEASE = -ansi -pedantic-errors -fstack-protector-strong -fstack-reuse=none -D_FORTIFY_SOURCE=2 -pie -fPIE -O3
-QMAKE_CFLAGS_RELEASE   = -ansi -pedantic-errors -fstack-protector-strong -fstack-reuse=none -D_FORTIFY_SOURCE=2 -pie -fPIE -O3
+QMAKE_CXXFLAGS_RELEASE = -ansi -pedantic -fstack-protector-strong -fstack-reuse=none -D_FORTIFY_SOURCE=2 -pie -fPIE -O3
+QMAKE_CFLAGS_RELEASE   = -ansi -pedantic -fstack-protector-strong -fstack-reuse=none -D_FORTIFY_SOURCE=2 -pie -fPIE -O3
 
 SOURCES += main.cpp \
     alphatracker.cpp \
