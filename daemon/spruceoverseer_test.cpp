@@ -65,15 +65,11 @@ void SpruceOverseerTest::test( SpruceOverseer *o, Engine *engine )
     /// ensure getSpreadLimit() with duplicity disabled gives us the same prices
     const TickerInfo midspread_test = o->getSpreadLimit( TEST_MARKET, false );
     assert( midspread_test.bid_price == midspread_test.ask_price );
-    //kDebug() << midspread_test.bid_price;
 
     /// ensure getSpreadLimit() with taker enabled gives us crossed prices
     const TickerInfo taker_spreadlimit = o->getSpreadLimit( TEST_MARKET, true );
     const TickerInfo taker_spread_buy = o->getSpreadForSide( TEST_MARKET, SIDE_BUY, true, true );
     const TickerInfo taker_spread_sell = o->getSpreadForSide( TEST_MARKET, SIDE_SELL, true, true );
-    kDebug() << taker_spreadlimit.bid_price << taker_spreadlimit.ask_price;
-    kDebug() << taker_spread_buy.bid_price << taker_spread_buy.ask_price;
-    kDebug() << taker_spread_sell.bid_price << taker_spread_sell.ask_price;
 
     // ensure crossed prices match expanded spread
     assert( regular_spread.bid_price == taker_spread_buy.ask_price &&
@@ -88,5 +84,4 @@ void SpruceOverseerTest::test( SpruceOverseer *o, Engine *engine )
 
     // ensure inverse of base taker spread ratio matches base greed
     assert( taker_spread_buy.ask_price / taker_spread_buy.bid_price == o->spruce->getOrderGreed() );
-
 }
