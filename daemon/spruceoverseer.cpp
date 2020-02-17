@@ -71,7 +71,7 @@ void SpruceOverseer::onSpruceUp()
             {
                 const QString &currency = *i;
                 const Market market( spruce->getBaseCurrency(), currency );
-                const TickerInfo mid_spread = getSpreadLimit( market, false, false );
+                const TickerInfo mid_spread = getSpreadLimit( market, false );
                 Coin price = ( side == SIDE_BUY ) ? mid_spread.bid_price :
                                                     mid_spread.ask_price;
 
@@ -314,7 +314,7 @@ void SpruceOverseer::adjustTicksizeToSpread( Coin &ticksize, TickerInfo &spread,
         ticksize = std::max( diff / 1000, ticksize_minimum );
 }
 
-TickerInfo SpruceOverseer::getSpreadLimit( const QString &market, bool order_duplicity, bool taker_mode )
+TickerInfo SpruceOverseer::getSpreadLimit( const QString &market, bool order_duplicity )
 {
     // get trailing limit for this side
     const Coin trailing_limit_buy = spruce->getOrderTrailingLimit( SIDE_BUY );
@@ -325,8 +325,8 @@ TickerInfo SpruceOverseer::getSpreadLimit( const QString &market, bool order_dup
     Coin ticksize = ticksize_minimum;
 
     // read combined spread from all exchanges. include limts for side, but don't randomize
-    TickerInfo ticker_buy = getSpreadForSide( market, SIDE_BUY, order_duplicity, taker_mode, true );
-    TickerInfo ticker_sell = getSpreadForSide( market, SIDE_SELL, order_duplicity, taker_mode, true );
+    TickerInfo ticker_buy = getSpreadForSide( market, SIDE_BUY, order_duplicity, false, true );
+    TickerInfo ticker_sell = getSpreadForSide( market, SIDE_SELL, order_duplicity, false, true );
 
     // first, vibrate one way
     TickerInfo spread1 = TickerInfo( ticker_buy.bid_price, ticker_buy.ask_price );
@@ -625,7 +625,7 @@ void SpruceOverseer::runCancellors( Engine *engine, const QString &market, const
 
         // get possible spread price vibration limits for new spruce order on this side
         const QString &market = pos->market;
-        const TickerInfo spread_limit = getSpreadLimit( market, true, false );
+        const TickerInfo spread_limit = getSpreadLimit( market, true );
         const Coin &buy_price_limit = spread_limit.bid_price;
         const Coin &sell_price_limit = spread_limit.ask_price;
 
