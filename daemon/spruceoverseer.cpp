@@ -110,9 +110,6 @@ void SpruceOverseer::onSpruceUp()
             {
                 Engine *engine = e.value();
 
-                // run cancellors for this strategy tag
-                runCancellors( engine, market_to_trade, side, strategy );
-
                 for ( QMap<QString,Coin>::const_iterator i = qty_to_shortlong_map.begin(); i != qty_to_shortlong_map.end(); i++ )
                 {
                     const QString &market = i.key();
@@ -139,6 +136,10 @@ void SpruceOverseer::onSpruceUp()
                     if ( (  is_buy && side == SIDE_SELL ) ||
                          ( !is_buy && side == SIDE_BUY ) )
                         continue;
+
+                    // run cancellors for this strategy tag right before we read the active amount
+                    // (run down here to avoid running unnecessarily)
+                    runCancellors( engine, market_to_trade, side, strategy );
 
                     const Coin qty_to_shortlong_abs = qty_to_shortlong.abs();
                     const Coin amount_to_shortlong = spruce->getCurrencyPriceByMarket( market ) * qty_to_shortlong;
