@@ -441,9 +441,6 @@ void CoinAmountTest::test()
     assert( Coin::ticksizeFromDecimals( 1 ) == CoinAmount::SATOSHI *10000000 );
     assert( Coin::ticksizeFromDecimals( 0 ) == CoinAmount::COIN );
 
-    ///
-    /// stuff we support but aren't even using
-    ///
     // test scientific exponent style strings ie. "1e+07" passed via toSatoshiFormat( QVariant(d).toString() )
     assert( Coin( QVariant( 10000000.0 /* 1e7 */ ).toString() ) ==  "10000000.00000000" );
     assert( Coin( QVariant( 1000000000000.0 /* 1e12 */ ).toString() ) ==  "1000000000000.00000000" );
@@ -454,6 +451,4 @@ void CoinAmountTest::test()
     assert( Coin( QVariant( -0.000000011 /* -11e-7 */ ).toString() ).toSubSatoshiString() == "-0.0000000110000000" );
     assert( Coin( QVariant( -0.00000001 /* -1e-7 */ ).toString() ).toSubSatoshiString() == "-0.0000000100000000" );
     assert( Coin( QVariant( -0.00000010 /* -1e-6 */ ).toString() ) == "-0.00000010" );
-    ///
-
 }

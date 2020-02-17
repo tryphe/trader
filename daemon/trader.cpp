@@ -17,6 +17,7 @@
 #include "alphatracker.h"
 #include "spruce.h"
 #include "spruceoverseer.h"
+#include "spruceoverseer_test.h"
 #include "wavesutil_test.h"
 #include "wavesaccount_test.h"
 #include "../qbase58/qbase58_test.h"
@@ -152,6 +153,12 @@ Trader::Trader( QObject *parent )
     if ( binance  ) engine_test.test( engine_bnc );
     if ( poloniex ) engine_test.test( engine_polo );
     if ( waves )    engine_test.test( engine_waves );
+
+    SpruceOverseerTest spruceoverseer_test;
+    if ( bittrex  ) spruceoverseer_test.test( spruce_overseer, engine_trex );
+    if ( binance  ) spruceoverseer_test.test( spruce_overseer, engine_bnc );
+    if ( poloniex ) spruceoverseer_test.test( spruce_overseer, engine_polo );
+    if ( waves    ) spruceoverseer_test.test( spruce_overseer, engine_waves );
 
     qint64 t1 = QDateTime::currentMSecsSinceEpoch();
     kDebug() << "[Trader] Tests passed in" << t1 - t0 << "ms.";

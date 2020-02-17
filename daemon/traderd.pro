@@ -30,6 +30,7 @@ SOURCES += main.cpp \
     positionman.cpp \
     spruce.cpp \
     spruceoverseer.cpp \
+    spruceoverseer_test.cpp \
     trader.cpp \
     stats.cpp \
     trexrest.cpp \
@@ -112,6 +113,7 @@ HEADERS += build-config.h \
     positionman.h \
     spruce.h \
     spruceoverseer.h \
+    spruceoverseer_test.h \
     trader.h \
     stats.h \
     trexrest.h \

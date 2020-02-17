@@ -18,7 +18,7 @@ class SpruceOverseer : public QObject
     Q_OBJECT
 
     friend class CommandRunner;
-    friend class EngineTest;
+    friend class SpruceOverseerTest;
 
 public:
     explicit SpruceOverseer( Spruce *_spruce );

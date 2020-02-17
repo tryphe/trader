@@ -27,6 +27,7 @@ class Engine : public QObject
 
     friend class EngineTest;
     friend class SpruceOverseer;
+    friend class SpruceOverseerTest;
 
 public:
     explicit Engine( const quint8 _engine_type );
