@@ -102,10 +102,12 @@ void AlphaTracker::printAlpha() const
                     .arg( getVolumePerTrade( market ), -12 )
                     .arg( getTrades( market ), -7 );
 
-        total_volume += volume;
-
+        // only incorporate volume and alpha into pl if we have buy and sell prices
         if ( alpha.isGreaterThanZero() )
+        {
+            total_volume += volume;
             estimated_pl += ( alpha - CoinAmount::COIN /*- ( Coin( BITTREX_DEFAULT_FEERATE ) *2 )*/ ) * volume;
+        }
     }
 
     kDebug() << "total volume:" << total_volume;
