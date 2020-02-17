@@ -10,7 +10,6 @@
 #include <QMap>
 #include <QList>
 #include <QSet>
-#include <QPair>
 
 SpruceOverseer::SpruceOverseer( Spruce *_spruce )
     : QObject( nullptr ),
@@ -63,16 +62,16 @@ void SpruceOverseer::onSpruceUp()
                                       .arg( side == SIDE_BUY ? "B" : "S" )
                                       .arg( market_to_trade );
 
-            const TickerInfo duplicity_spread = getSpruceSpreadLimit( market_to_trade, side, true, false );
-            const Coin &duplicity_price = ( side == SIDE_BUY ) ? duplicity_spread.bid_price :
-                                                                 duplicity_spread.ask_price;
+            TickerInfo spread_random = getSpreadForSide( market_to_trade, side, true, false, true, true );
+            const Coin &random_price = ( side == SIDE_BUY ) ? spread_random.bid_price :
+                                                              spread_random.ask_price;
 
             spruce->clearLiveNodes();
             for ( QList<QString>::const_iterator i = currencies.begin(); i != currencies.end(); i++ )
             {
                 const QString &currency = *i;
                 const Market market( spruce->getBaseCurrency(), currency );
-                const TickerInfo mid_spread = getSpruceSpread( market, nullptr, false, false, false );
+                const TickerInfo mid_spread = getSpreadLimit( market, false, false );
                 Coin price = ( side == SIDE_BUY ) ? mid_spread.bid_price :
                                                     mid_spread.ask_price;
 
@@ -92,13 +91,9 @@ void SpruceOverseer::onSpruceUp()
 
                 if ( (QString) market == (QString) market_to_trade )
                 {
-                    price = ( side == SIDE_BUY ) ? std::min( price, duplicity_price ) :
-                                                   std::max( price, duplicity_price );
-
-                    // note: unsure if min/max is needed, if this is seen then it is
-                    if ( ( side == SIDE_BUY  && price < duplicity_price ) ||
-                         ( side == SIDE_SELL && price > duplicity_price ) )
-                        kDebug() << "local info: new min max constraint is needed";
+                    // if market matches selected market, select best price from duplicity price or random price
+                    price = ( side == SIDE_BUY ) ? std::min( price, random_price ) :
+                                                   std::max( price, random_price );
                 }
 
                 spread_price.insert( currency, price );
@@ -109,14 +104,14 @@ void SpruceOverseer::onSpruceUp()
             if ( !spruce->calculateAmountToShortLong() )
                 return;
 
-            // run cancellors for this strategy tag
-            runCancellors( market_to_trade, side, strategy );
-
             const QMap<QString,Coin> &qty_to_shortlong_map = spruce->getQuantityToShortLongMap();
 
             for ( QMap<quint8, Engine*>::const_iterator e = engine_map.begin(); e != engine_map.end(); e++ )
             {
                 Engine *engine = e.value();
+
+                // run cancellors for this strategy tag
+                runCancellors( engine, market_to_trade, side, strategy );
 
                 for ( QMap<QString,Coin>::const_iterator i = qty_to_shortlong_map.begin(); i != qty_to_shortlong_map.end(); i++ )
                 {
@@ -159,11 +154,13 @@ void SpruceOverseer::onSpruceUp()
                                                     spruce->getMarketSellMax( market );
                     const Coin order_size_limit = order_size_unscaled * spruce->getOrderNice();
 
-                    // get spread price for new spruce order(don't cache because the function generates a random number)
-                    TickerInfo spread = getSpruceSpreadForSide( market, side, false );
                     QString order_type = "onetime";
+                    Coin &buy_price = spread_random.bid_price;
+                    Coin &sell_price = spread_random.ask_price;
 
                     const Coin spread_put_threshold = order_size_unscaled * spruce->getOrderNiceSpreadPut();
+
+                    // declare greed reduce here so we can print it
                     Coin greed_reduce;
 
                     // put prices at spread if pending amount to shortlong is greater than size * order_nice_spreadput
@@ -175,16 +172,19 @@ void SpruceOverseer::onSpruceUp()
                         // apply taker threshold, amount should be larger than contraction threshold
                         if ( amount_to_shortlong_abs >= taker_threshold )
                         {
-                            const TickerInfo taker_spread = getSpruceSpread( market, nullptr, true, true );
-                            spread.bid_price = taker_spread.bid_price;
-                            spread.ask_price = taker_spread.ask_price;
+                            const TickerInfo taker_spread = getSpreadForSide( market, side, true, true );
+                            buy_price = taker_spread.bid_price;
+                            sell_price = taker_spread.ask_price;
 
                             // the bid price should be greater than the ask (because the spread is flipped)
-                            if ( taker_spread.bid_price < taker_spread.ask_price )
+                            if ( taker_spread.bid_price <= taker_spread.ask_price )
                                 kDebug() << "local error: taker bid" << taker_spread.bid_price << "< ask" << taker_spread.ask_price;
 
                             // set local taker mode to disable spread collision detection
                             order_type += "-taker";
+
+                            // set fast timeout
+                            order_type += "-timeout5";
                         }
                         // apply soft threshold by contracting the spread
                         else
@@ -193,16 +193,19 @@ void SpruceOverseer::onSpruceUp()
                             // reduce greed by 0.1% for every spread_put_threshold amount we should set
                             greed_reduce = ( amount_to_shortlong_abs / spread_put_threshold ) * ( CoinAmount::SATOSHI * 100000 );
 
-                            const TickerInfo collapsed_spread = getSpruceSpread( market, nullptr, true, false, greed_reduce );
-                            spread.bid_price = collapsed_spread.bid_price;
-                            spread.ask_price = collapsed_spread.ask_price;
-                        }
+                            const TickerInfo collapsed_spread = getSpreadForSide( market, side, true, false, true, true, greed_reduce );
+                            buy_price = collapsed_spread.bid_price;
+                            sell_price = collapsed_spread.ask_price;
 
-                        // set timeout for order so we cancel it if it doesn't fill quickly
-                        order_type += "-timeout15";
+                            // set slow timeout
+                            order_type += "-timeout60";
+                        }
                     }
-                    const Coin &buy_price = spread.bid_price;
-                    const Coin &sell_price = spread.ask_price;
+                    else
+                    {
+                        buy_price = spread_random.bid_price;
+                        sell_price = spread_random.ask_price;
+                    }
 
                     // skip noisy amount
                     if ( amount_to_shortlong_abs < order_size_limit )
@@ -228,14 +231,15 @@ void SpruceOverseer::onSpruceUp()
                     {
                         Position *const &pos = *j;
 
-                        if ( pos->is_cancelling ||
+                        if ( pos->side == side ||
+                             pos->is_cancelling ||
                              pos->order_set_time == 0 ||
                              pos->market != market ||
                              pos->strategy_tag == strategy )
                             continue;
 
-                        if ( (  is_buy && pos->side == SIDE_SELL && buy_price  >= pos->sell_price * greed_minimum ) ||
-                             ( !is_buy && pos->side == SIDE_BUY  && sell_price <= pos->buy_price * sell_ratio_limit ) )
+                        if ( (  is_buy && buy_price  >= pos->sell_price * greed_minimum ) ||
+                             ( !is_buy && sell_price <= pos->buy_price * sell_ratio_limit ) )
                         {
                             kDebug() << "[Spruce] cancelling conflicting spruce order" << pos->order_number;
                             engine->positions->cancel( pos );
@@ -244,7 +248,7 @@ void SpruceOverseer::onSpruceUp()
 
                     kDebug() << QString( "[%1] %2 | coeff %3 | qty %4 | amt %5 | on-order %6 | spread %7" )
                                    .arg( strategy, -MARKET_STRING_WIDTH - 9 )
-                                   .arg( side == SIDE_BUY ? spread.bid_price : spread.ask_price )
+                                   .arg( side == SIDE_BUY ? buy_price : sell_price )
                                    .arg( spruce->getLastCoeffForMarket( market ), 12 )
                                    .arg( qty_to_shortlong, 20 )
                                    .arg( amount_to_shortlong, 13 )
@@ -262,7 +266,7 @@ void SpruceOverseer::onSpruceUp()
     }
 }
 
-void SpruceOverseer::adjustSpread( TickerInfo &spread, const Coin &limit, Coin &minimum_ticksize, bool expand, quint32 *j_ptr )
+void SpruceOverseer::adjustSpread( TickerInfo &spread, Coin limit, quint8 side, Coin &minimum_ticksize, bool expand )
 {
     // get price ticksize
     Coin ticksize = minimum_ticksize;
@@ -283,18 +287,13 @@ void SpruceOverseer::adjustSpread( TickerInfo &spread, const Coin &limit, Coin &
         diff_threshold = diff * CONTRACT_RATIO;
     }
 
-    quint32 j;
-    if ( j_ptr != nullptr )
-        j = *j_ptr;
-    else
-        j = 0;
-
     while ( expand ? spread.bid_price > spread.ask_price * limit :
                      spread.bid_price < spread.ask_price * limit )
     {
-        if ( j++ % 2 == 0 )
+        // if the side is buy, expand down, otherwise expand outwards
+        if ( side == SIDE_BUY /*|| j++ % 2 == 0*/ )
             spread.bid_price -= ticksize;
-        else
+        else if ( side == SIDE_SELL )
             spread.ask_price += ticksize;
 
         // only collapse the spread by up to half the distance
@@ -305,9 +304,6 @@ void SpruceOverseer::adjustSpread( TickerInfo &spread, const Coin &limit, Coin &
                 break;
         }
     }
-
-    if ( j_ptr != nullptr )
-        *j_ptr = j;
 }
 
 void SpruceOverseer::adjustTicksizeToSpread( Coin &ticksize, TickerInfo &spread, const Coin &ticksize_minimum )
@@ -317,45 +313,56 @@ void SpruceOverseer::adjustTicksizeToSpread( Coin &ticksize, TickerInfo &spread,
         ticksize = std::max( diff / 1000, ticksize_minimum );
 }
 
-TickerInfo SpruceOverseer::getSpruceSpreadLimit( const QString &market, quint8 side, bool order_duplicity, bool taker_mode )
+TickerInfo SpruceOverseer::getSpreadLimit( const QString &market, bool order_duplicity, bool taker_mode )
 {
     // get trailing limit for this side
-    const Coin trailing_limit = spruce->getOrderTrailingLimit( side );
+    const Coin trailing_limit_buy = spruce->getOrderTrailingLimit( SIDE_BUY );
+    const Coin trailing_limit_sell = spruce->getOrderTrailingLimit( SIDE_SELL );
 
     // get price ticksize
     const Coin ticksize_minimum = getPriceTicksizeForMarket( market );
     Coin ticksize = ticksize_minimum;
 
-    quint32 j = 0;
-
-    // read combined spread from all exchanges
-    TickerInfo ticker = getSpruceSpread( market, &j, order_duplicity, taker_mode, false );
-
-    // adjust ticksize
-    adjustTicksizeToSpread( ticksize, ticker, ticksize_minimum );
+    // read combined spread from all exchanges. include limts for side, but don't randomize
+    TickerInfo ticker_buy = getSpreadForSide( market, SIDE_BUY, order_duplicity, taker_mode, true );
+    TickerInfo ticker_sell = getSpreadForSide( market, SIDE_SELL, order_duplicity, taker_mode, true );
 
     // first, vibrate one way
-    TickerInfo spread1 = TickerInfo( ticker.bid_price, ticker.ask_price );
+    TickerInfo spread1 = TickerInfo( ticker_buy.bid_price, ticker_buy.ask_price );
+
+    // adjust ticksize
+    adjustTicksizeToSpread( ticksize, ticker_buy, ticksize_minimum );
 
     // expand spread
-    adjustSpread( spread1, trailing_limit, ticksize, true, &j );
+    adjustSpread( spread1, trailing_limit_buy, SIDE_BUY, ticksize );
 
     // vibrate the other way
-    TickerInfo spread2 = TickerInfo( ticker.bid_price, ticker.ask_price );
-    j = 1;
+    TickerInfo spread2 = TickerInfo( ticker_sell.bid_price, ticker_sell.ask_price );
+
+    // adjust ticksize
+    adjustTicksizeToSpread( ticksize, ticker_buy, ticksize_minimum );
 
     // expand spread
-    adjustSpread( spread2, trailing_limit, ticksize, true, &j );
+    adjustSpread( spread2, trailing_limit_sell, SIDE_SELL, ticksize );
 
     // combine vibrations
-    TickerInfo combined_spread = TickerInfo( std::min( spread1.bid_price, spread2.bid_price ),
-                                             std::max( spread1.ask_price, spread2.ask_price ) );
+    TickerInfo combined_spread = TickerInfo( spread1.bid_price, spread2.ask_price );
+
+    if ( !order_duplicity )
+    {
+        Coin midprice = ( combined_spread.ask_price + combined_spread.bid_price ) / 2;
+        combined_spread.bid_price = midprice;
+        combined_spread.ask_price = midprice;
+    }
 
     return combined_spread;
 }
 
-TickerInfo SpruceOverseer::getSpruceSpread( const QString &market, quint32 *j_ptr, bool order_duplicity, bool taker_mode, Coin greed_reduce )
+TickerInfo SpruceOverseer::getSpreadForSide( const QString &market, quint8 side, bool order_duplicity, bool taker_mode, bool include_limit_for_side, bool is_randomized, Coin greed_reduce )
 {
+    if ( side == SIDE_SELL )
+        greed_reduce = -greed_reduce;
+
     /// step 1: get combined spread between all exchanges
     TickerInfo ret;
 
@@ -389,24 +396,35 @@ TickerInfo SpruceOverseer::getSpruceSpread( const QString &market, quint32 *j_pt
     const Coin ticksize_minimum = getPriceTicksizeForMarket( market );
     Coin ticksize = ticksize_minimum;
 
-    // alternate between subtracting from sell side first to buy side first
-    quint32 j = Global::getSecureRandomRange32( 0, 1 );
-
-    // ensure the spread is more profitable than base greed value
-    const Coin limit = std::min( spruce->getOrderGreed() + greed_reduce, spruce->getOrderGreedMinimum() );
-
     adjustTicksizeToSpread( ticksize, ret, ticksize_minimum );
 
-    // contract our spread if specified
+    /// step 3: adjust spread by distance chosen
+    // ensure the spread is more profitable than base greed value
+    Coin spread_distance_base = spruce->getOrderGreed();
+    const Coin limit = std::min( spread_distance_base + greed_reduce, spruce->getOrderGreedMinimum() );
+
+    // contract our spread down if specified
     if ( greed_reduce.isGreaterThanZero() )
-        adjustSpread( ret, limit, ticksize, false, &j );
+        adjustSpread( ret, limit, SIDE_BUY, ticksize, false );
 
-    // expand wider if needed
-    adjustSpread( ret, limit, ticksize, true, &j );
+    // expand wider downward if needed
+    adjustSpread( ret, limit, SIDE_BUY, ticksize, true );
 
-    // copy non-default j into passed pointer value
-    if ( j > 0 && j_ptr != nullptr )
-        *j_ptr = j;
+    // if we included randomness, expand again
+    if ( include_limit_for_side )
+    {
+        Coin spread_distance_random;
+        if ( is_randomized )
+            spread_distance_random = spruce->getOrderGreedRandom( side );
+        else
+            spread_distance_random = ( side == SIDE_BUY ) ? spruce->getOrderGreed() - spruce->getOrderRandomBuy() :
+                                                            spruce->getOrderGreed() - spruce->getOrderRandomSell();
+
+        const Coin limit_random = std::min( spread_distance_random + greed_reduce, spruce->getOrderGreedMinimum() );
+
+        // expand to limit_random
+        adjustSpread( ret, limit_random, side, ticksize, true );
+    }
 
     // if duplicity is on, leave everything normal
     if ( order_duplicity )
@@ -428,29 +446,6 @@ TickerInfo SpruceOverseer::getSpruceSpread( const QString &market, quint32 *j_pt
     }
 
     return ret;
-}
-
-TickerInfo SpruceOverseer::getSpruceSpreadForSide( const QString &market, quint8 side, bool order_duplicity, const bool taker_mode )
-{
-    // get price ticksize
-    const Coin ticksize_minimum = getPriceTicksizeForMarket( market );
-    Coin ticksize = ticksize_minimum;
-
-    // alternate between subtracting from sell side first to buy side first
-    quint32 j = Global::getSecureRandomRange32( 0, 1 );
-
-    // read combined spread from all exchanges
-    TickerInfo spread = getSpruceSpread( market, &j, order_duplicity, taker_mode, false );
-
-    if ( taker_mode )
-        return spread;
-
-    adjustTicksizeToSpread( ticksize, spread, ticksize_minimum );
-
-    // expand spread
-    adjustSpread( spread, spruce->getOrderGreed( side ), ticksize, true, &j );
-
-    return spread;
 }
 
 Coin SpruceOverseer::getPriceTicksizeForMarket( const QString &market )
@@ -603,122 +598,117 @@ void SpruceOverseer::onSaveSpruceSettings()
     }
 }
 
-void SpruceOverseer::runCancellors( const QString &market, const quint8 side, const QString &strategy )
+void SpruceOverseer::runCancellors( Engine *engine, const QString &market, const quint8 side, const QString &strategy )
 {
     // because price is atomic, incorporate a limit for trailing price cancellor 1 for each market.
     // 1 = cancelling pace matches the pace of setting orders, 2 = double the pace
     static const int CANCELLOR1_LIMIT = 1;
     QMap<QString,int> cancellor1_current;
 
-    for ( QMap<quint8, Engine*>::const_iterator e = engine_map.begin(); e != engine_map.end(); e++ )
+    // sort active positions by longest active first, shortest active last
+    const QVector<Position*> active_by_set_time = engine->positions->activeBySetTime();
+
+    // look for spruce positions we should cancel on this side
+    const QVector<Position*>::const_iterator begin = active_by_set_time.begin(),
+                                             end = active_by_set_time.end();
+    for ( QVector<Position*>::const_iterator j = begin; j != end; j++ )
     {
-        Engine *engine = e.value();
+        Position *const &pos = *j;
 
-        // sort active positions by longest active first, shortest active last
-        const QVector<Position*> active_by_set_time = engine->positions->activeBySetTime();
+        // skip non-qualifying position
+        if ( side != pos->side ||
+             pos->is_cancelling ||
+             market != pos->market ||
+             strategy != pos->strategy_tag )
+            continue;
 
-        // look for spruce positions we should cancel on this side
-        const QVector<Position*>::const_iterator begin = active_by_set_time.begin(),
-                                                 end = active_by_set_time.end();
-        for ( QVector<Position*>::const_iterator j = begin; j != end; j++ )
+        // get possible spread price vibration limits for new spruce order on this side
+        const QString &market = pos->market;
+        const TickerInfo spread_limit = getSpreadLimit( market, true, false );
+        const Coin &buy_price_limit = spread_limit.bid_price;
+        const Coin &sell_price_limit = spread_limit.ask_price;
+
+        /// cancellor 1: look for prices that are trailing the spread too far
+        if ( buy_price_limit.isGreaterThanZero() && sell_price_limit.isGreaterThanZero() && // ticker is valid
+             ( ( pos->side == SIDE_BUY  && pos->price < buy_price_limit ) ||
+               ( pos->side == SIDE_SELL && pos->price > sell_price_limit ) ) )
         {
-            Position *const &pos = *j;
-
-            // skip non-qualifying position
-            if ( side != pos->side ||
-                 pos->is_cancelling ||
-                 market != pos->market ||
-                 strategy != pos->strategy_tag )
-                continue;
-
-            // get possible spread price vibration limits for new spruce order on this side
-            const QString &market = pos->market;
-            const TickerInfo spread_limit = getSpruceSpreadLimit( market, side, true, false );
-            const Coin &buy_price_limit = spread_limit.bid_price;
-            const Coin &sell_price_limit = spread_limit.ask_price;
-
-            /// cancellor 1: look for prices that are trailing the spread too far
-            if ( buy_price_limit.isGreaterThanZero() && sell_price_limit.isGreaterThanZero() && // ticker is valid
-                 ( ( pos->side == SIDE_BUY  && pos->price < buy_price_limit ) ||
-                   ( pos->side == SIDE_SELL && pos->price > sell_price_limit ) ) )
+            // limit cancellor 1 to trigger CANCELLOR1_LIMIT times, per market, per side, per spruce tick
+            if ( ++cancellor1_current[ market ] <= CANCELLOR1_LIMIT )
             {
-                // limit cancellor 1 to trigger CANCELLOR1_LIMIT times, per market, per side, per spruce tick
-                if ( ++cancellor1_current[ market ] <= CANCELLOR1_LIMIT )
-                {
-                    engine->positions->cancel( pos, false, CANCELLING_FOR_SPRUCE );
-                    continue;
-                }
-            }
-
-            const QString exchange_market_key = QString( "%1-%2" )
-                                                .arg( e.key() )
-                                                .arg( market );
-
-            // get market allocation for this exchange and apply to qty_to_shortlong
-            const Coin market_allocation = spruce->getExchangeAllocation( exchange_market_key );
-            const Coin amount_to_shortlong = spruce->getCurrencyPriceByMarket( market ) * spruce->getQuantityToShortLongNow( market )
-                                             * market_allocation;
-
-            const Coin order_size = spruce->getOrderSize( market );
-            const Coin order_size_limit = order_size * spruce->getOrderNice();
-            const Coin zero_bound_tolerance = order_size * spruce->getOrderNiceZeroBound();
-
-            /// cancellor 2: if the order is active but our rating is the opposite polarity, cancel it
-            if ( ( pos->side == SIDE_BUY  && amount_to_shortlong >  zero_bound_tolerance ) ||
-                 ( pos->side == SIDE_SELL && amount_to_shortlong < -zero_bound_tolerance ) )
-            {
-                engine->positions->cancel( pos, false, CANCELLING_FOR_SPRUCE_2 );
+                engine->positions->cancel( pos, false, CANCELLING_FOR_SPRUCE );
                 continue;
             }
+        }
 
-            // store active spruce offset for this side
-            const Coin spruce_offset = engine->positions->getActiveSpruceOrdersOffset( market, side );
+        const QString exchange_market_key = QString( "%1-%2" )
+                                            .arg( engine->engine_type )
+                                            .arg( market );
 
-            /// cancellor 3: look for spruce active <> what we should short/long
-            if ( ( pos->side == SIDE_BUY  && amount_to_shortlong.isZeroOrLess() &&
-                   amount_to_shortlong + spruce_offset >  order_size_limit + zero_bound_tolerance ) ||
-                 ( pos->side == SIDE_SELL && amount_to_shortlong.isGreaterThanZero() &&
-                   amount_to_shortlong + spruce_offset < -order_size_limit - zero_bound_tolerance ) )
-            {
-                // cancel a random order on that side
-                Position *const &pos_to_cancel = engine->positions->getRandomSprucePosition( market, side );                                                         engine->positions->getHighestSpruceSell( market );
+        // get market allocation for this exchange and apply to qty_to_shortlong
+        const Coin market_allocation = spruce->getExchangeAllocation( exchange_market_key );
+        const Coin amount_to_shortlong = spruce->getCurrencyPriceByMarket( market ) * spruce->getQuantityToShortLongNow( market )
+                                         * market_allocation;
 
-                // check badptr just incase, but should be impossible to get here
-                if ( !pos_to_cancel )
-                    continue;
+        const Coin order_size = spruce->getOrderSize( market );
+        const Coin order_size_limit = order_size * spruce->getOrderNice();
+        const Coin zero_bound_tolerance = order_size * spruce->getOrderNiceZeroBound();
 
-                engine->positions->cancel( pos_to_cancel, false, CANCELLING_FOR_SPRUCE_3 );
+        /// cancellor 2: if the order is active but our rating is the opposite polarity, cancel it
+        if ( ( pos->side == SIDE_BUY  && amount_to_shortlong >  zero_bound_tolerance ) ||
+             ( pos->side == SIDE_SELL && amount_to_shortlong < -zero_bound_tolerance ) )
+        {
+            engine->positions->cancel( pos, false, CANCELLING_FOR_SPRUCE_2 );
+            continue;
+        }
+
+        // store active spruce offset for this side
+        const Coin spruce_offset = engine->positions->getActiveSpruceOrdersOffset( market, side );
+
+        /// cancellor 3: look for spruce active <> what we should short/long
+        if ( ( pos->side == SIDE_BUY  && amount_to_shortlong.isZeroOrLess() &&
+               amount_to_shortlong + spruce_offset >  order_size_limit + zero_bound_tolerance ) ||
+             ( pos->side == SIDE_SELL && amount_to_shortlong.isGreaterThanZero() &&
+               amount_to_shortlong + spruce_offset < -order_size_limit - zero_bound_tolerance ) )
+        {
+            // cancel a random order on that side
+            Position *const &pos_to_cancel = engine->positions->getRandomSprucePosition( market, side );                                                         engine->positions->getHighestSpruceSell( market );
+
+            // check badptr just incase, but should be impossible to get here
+            if ( !pos_to_cancel )
                 continue;
-            }
 
-            const Coin active_amount = engine->positions->getActiveSpruceEquityTotal( market, side );
+            engine->positions->cancel( pos_to_cancel, false, CANCELLING_FOR_SPRUCE_3 );
+            continue;
+        }
 
-            /// cancellor 4: look for active amount > amount_to_shortlong + order_size_limit
-            if ( ( pos->side == SIDE_BUY  && amount_to_shortlong.isZeroOrLess() &&
-                   -active_amount < amount_to_shortlong - order_size_limit - zero_bound_tolerance ) ||
-                 ( pos->side == SIDE_SELL && amount_to_shortlong.isGreaterThanZero() &&
-                    active_amount > amount_to_shortlong + order_size_limit + zero_bound_tolerance ) )
-            {
-                engine->positions->cancel( pos, false, CANCELLING_FOR_SPRUCE_4 );
+        const Coin active_amount = engine->positions->getActiveSpruceEquityTotal( market, side );
+
+        /// cancellor 4: look for active amount > amount_to_shortlong + order_size_limit
+        if ( ( pos->side == SIDE_BUY  && amount_to_shortlong.isZeroOrLess() &&
+               -active_amount < amount_to_shortlong - order_size_limit - zero_bound_tolerance ) ||
+             ( pos->side == SIDE_SELL && amount_to_shortlong.isGreaterThanZero() &&
+                active_amount > amount_to_shortlong + order_size_limit + zero_bound_tolerance ) )
+        {
+            engine->positions->cancel( pos, false, CANCELLING_FOR_SPRUCE_4 );
+            continue;
+        }
+
+        const Coin order_max = side == SIDE_BUY ? spruce->getMarketBuyMax( market ) :
+                                                  spruce->getMarketSellMax( market );
+
+        /// cancellor 5: look for active amount > order_max (so we can change the value in realtime)
+        if ( active_amount > order_max )
+        {
+            // cancel a random order on that side
+            Position *const &pos_to_cancel = engine->positions->getRandomSprucePosition( market, side );                                                         engine->positions->getHighestSpruceSell( market );
+
+            // check badptr just incase, but should be impossible to get here
+            if ( !pos_to_cancel )
                 continue;
-            }
 
-            const Coin order_max = side == SIDE_BUY ? spruce->getMarketBuyMax( market ) :
-                                                      spruce->getMarketSellMax( market );
-
-            /// cancellor 5: look for active amount > order_max (so we can change the value in realtime)
-            if ( active_amount > order_max )
-            {
-                // cancel a random order on that side
-                Position *const &pos_to_cancel = engine->positions->getRandomSprucePosition( market, side );                                                         engine->positions->getHighestSpruceSell( market );
-
-                // check badptr just incase, but should be impossible to get here
-                if ( !pos_to_cancel )
-                    continue;
-
-                engine->positions->cancel( pos_to_cancel, false, CANCELLING_FOR_SPRUCE_5 );
-                continue;
-            }
+            engine->positions->cancel( pos_to_cancel, false, CANCELLING_FOR_SPRUCE_5 );
+            continue;
         }
     }
 }

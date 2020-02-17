@@ -18,6 +18,7 @@ class SpruceOverseer : public QObject
     Q_OBJECT
 
     friend class CommandRunner;
+    friend class EngineTest;
 
 public:
     explicit SpruceOverseer( Spruce *_spruce );
@@ -41,13 +42,12 @@ public Q_SLOTS:
     void onSaveSpruceSettings();
 
 private:
-    void runCancellors( const QString &market, const quint8 side, const QString &strategy );
+    void runCancellors( Engine *engine, const QString &market, const quint8 side, const QString &strategy );
 
-    void adjustSpread( TickerInfo &spread, const Coin &limit, Coin &default_ticksize, bool expand = true, quint32 *j_ptr = nullptr );
+    void adjustSpread( TickerInfo &spread, Coin limit, quint8 side, Coin &default_ticksize, bool expand = true );
     void adjustTicksizeToSpread( Coin &ticksize, TickerInfo &spread, const Coin &ticksize_minimum );
-    TickerInfo getSpruceSpreadLimit( const QString &market, quint8 side, bool order_duplicity = false, bool taker_mode = false );
-    TickerInfo getSpruceSpread( const QString &market, quint32 *j_ptr = nullptr /*optional inherited spread vibrator*/ , bool order_duplicity = false, bool taker_mode = false, Coin greed_reduce = Coin() );
-    TickerInfo getSpruceSpreadForSide( const QString &market, quint8 side, bool order_duplicity = false, bool taker_mode = false );
+    TickerInfo getSpreadLimit( const QString &market, bool order_duplicity = false, bool taker_mode = false );
+    TickerInfo getSpreadForSide( const QString &market, quint8 side, bool order_duplicity = false, bool taker_mode = false, bool include_limit_for_side = false, bool is_randomized = false, Coin greed_reduce = Coin() );
     Coin getPriceTicksizeForMarket( const QString &market );
 
     QTimer *spruce_timer{ nullptr };
