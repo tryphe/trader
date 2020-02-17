@@ -61,11 +61,11 @@ public:
     Coin getOrderRandomBuy() const { return m_order_greed_buy_randomness; }
     void setOrderRandomSell( Coin r ) { m_order_greed_sell_randomness = r; }
     Coin getOrderRandomSell() const { return m_order_greed_sell_randomness; }
-    Coin getOrderGreed( quint8 side ) const;
+    Coin getOrderGreedRandom( quint8 side ) const;
     Coin getOrderGreed() const { return m_order_greed; }
     void setOrderGreedMinimum( Coin ratio ) { m_order_greed_minimum = std::max( ratio, m_order_greed ); }
     Coin getOrderGreedMinimum() const { return m_order_greed_minimum; }
-    Coin getOrderTrailingLimit( quint8 side ) const { return m_order_greed - ( side == SIDE_BUY ? m_order_greed_buy_randomness : m_order_greed_sell_randomness ); }
+    Coin getOrderTrailingLimit( quint8 side ) const { return side == SIDE_BUY ? ( m_order_greed - m_order_greed_buy_randomness ) : CoinAmount::COIN - m_order_greed_sell_randomness; }
 
     void setOrderNice( Coin nice ) { m_order_nice = nice; }
     Coin getOrderNice() const { return m_order_nice; }
