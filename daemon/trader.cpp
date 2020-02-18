@@ -210,6 +210,8 @@ Trader::~Trader()
     delete command_runner_waves;
     delete command_listener;
     delete alpha;
+    delete spruce;
+    delete spruce_overseer;
 
     QCoreApplication::processEvents( QEventLoop::AllEvents, 10000 );
 
