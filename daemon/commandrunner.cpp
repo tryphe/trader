@@ -87,6 +87,7 @@ CommandRunner::CommandRunner( const quint8 _engine_type, Engine *_e, QVector<Bas
     command_map.insert( "setspruceweight", std::bind( &CommandRunner::command_setspruceweight, this, _1 ) );
     command_map.insert( "setsprucestartnode", std::bind( &CommandRunner::command_setsprucestartnode, this, _1 ) );
     command_map.insert( "setspruceshortlongtotal", std::bind( &CommandRunner::command_setspruceshortlongtotal, this, _1 ) );
+    command_map.insert( "setsprucebetamarket", std::bind( &CommandRunner::command_setsprucebetamarket, this, _1 ) );
     command_map.insert( "setspruceleverage", std::bind( &CommandRunner::command_setspruceleverage, this, _1 ) );
     command_map.insert( "setspruceprofile", std::bind( &CommandRunner::command_setspruceprofile, this, _1 ) );
     command_map.insert( "setsprucereserve", std::bind( &CommandRunner::command_setsprucereserve, this, _1 ) );
@@ -807,6 +808,19 @@ void CommandRunner::command_setspruceshortlongtotal( QStringList &args )
     kDebug() << "spruce shortlong total for" << args.value( 1 ) << "is" << args.value( 2 );
 }
 
+void CommandRunner::command_setsprucebetamarket( QStringList &args )
+{
+    if ( !checkArgs( args, 1 ) ) return;
+
+    const Market m = args.value( 1 );
+    spruce_overseer->spruce->addMarketBeta( m );
+
+    if ( spruce_overseer->spruce->getMarketsBeta().contains( m ) )
+        kDebug() << "spruce added beta market" << m;
+    else
+        kDebug() << "local error: spruce failed to add beta market" << m;
+}
+
 void CommandRunner::command_setspruceleverage( QStringList &args )
 {
     if ( !checkArgs( args, 1 ) ) return;
@@ -997,6 +1011,8 @@ void CommandRunner::command_getinternal( QStringList &args )
     kDebug() << "books_stale_trip_count: " << rest->books_stale_trip_count;
     kDebug() << "request nonce:" << rest->request_nonce;
     kDebug() << Global::getBuildString();
+
+    kDebug() << spruce_overseer->spruce->getMarketsBeta();
 }
 
 void CommandRunner::command_setmaintenancetime( QStringList &args )

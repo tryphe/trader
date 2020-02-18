@@ -51,6 +51,7 @@ void Spruce::clear()
     currency_weight_by_coin.clear();
     m_last_coeffs.clear();
     m_qtys.clear();
+    m_markets_beta.clear();
 }
 
 void Spruce::setCurrencyWeight( QString currency, Coin weight )
@@ -178,6 +179,19 @@ void Spruce::addLiveNode( QString _currency, QString _price )
     nodes_now_by_currency.insert( _currency, n );
 }
 
+void Spruce::addMarketBeta( Market m )
+{
+    if ( !original_quantity.contains( m.getBase() ) ||
+         !original_quantity.contains( m.getQuote() ) )
+    {
+        kDebug() << "couldn't find currency" << m.getBase() << "or" << m.getQuote() << "in" << original_quantity;
+        return;
+    }
+
+    if ( !m_markets_beta.contains( m ) )
+        m_markets_beta += m;
+}
+
 void Spruce::clearLiveNodes()
 {
     while ( nodes_now.size() > 0 )
@@ -203,7 +217,7 @@ bool Spruce::calculateAmountToShortLong()
     // record amount to shortlong in a map and get total
     m_quantity_to_shortlong_map.clear();
 
-    QList<QString> markets = getMarkets();
+    QList<QString> markets = getMarketsAlpha();
     for ( QList<QString>::const_iterator i = markets.begin(); i != markets.end(); i++ )
     {
         const QString &market = *i;
@@ -235,7 +249,7 @@ QList<QString> Spruce::getCurrencies() const
     return original_quantity.keys();
 }
 
-QList<QString> Spruce::getMarkets() const
+QList<QString> Spruce::getMarketsAlpha() const
 {
     QList<QString> ret;
     const QList<QString> &keys = original_quantity.keys();
@@ -352,6 +366,13 @@ QString Spruce::getSaveState()
         ret += QString( "setspruceshortlongtotal %1 %2\n" )
                 .arg( Market( i.key() ) )
                 .arg( i.value() );
+    }
+
+    // save beta markets
+    for ( QList<Market>::const_iterator i = m_markets_beta.begin(); i != m_markets_beta.end(); i++ )
+    {
+        ret += QString( "setsprucebetamarket %1\n" )
+                .arg( *i );
     }
 
     return ret;

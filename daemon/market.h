@@ -17,6 +17,7 @@ public:
     Market( const QString &_base, const QString &_quote );
     bool isValid() const;
 
+    bool operator ==( const QString &other ) const;
     operator QString() const; // obtain universal string
     QString toExchangeString( const quint8 engine_type ) const; // obtain exchange-specific string
 

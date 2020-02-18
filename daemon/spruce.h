@@ -7,7 +7,9 @@
 
 #include <QString>
 #include <QMap>
+#include <QMultiMap>
 #include <QVector>
+#include <QList>
 
 static const Coin DEFAULT_PROFILE_U = Coin("10");
 static const Coin DEFAULT_RESERVE = Coin("0.05");
@@ -87,6 +89,7 @@ public:
 
     void addStartNode( QString _currency, QString _quantity, QString _price );
     void addLiveNode( QString _currency, QString _price );
+    void addMarketBeta( Market m );
     void clearLiveNodes();
     void clearStartNodes();
 
@@ -95,7 +98,8 @@ public:
     void addToShortLonged( const QString &market, const Coin &qty );
 
     QList<QString> getCurrencies() const;
-    QList<QString> getMarkets() const;
+    QList<QString> getMarketsAlpha() const;
+    QList<Market> &getMarketsBeta() { return m_markets_beta; }
     bool isActive();
     QString getSaveState();
 
@@ -159,6 +163,7 @@ private:
     QMap<QString,Node*> nodes_now_by_currency;
     QMap<QString/*currency*/,Coin> m_last_coeffs;
     QVector<QMap<QString/*currency*/,Coin>> m_qtys;
+    QList<Market> m_markets_beta;
 
     Coin m_leverage;
     Coin m_leverage_start, m_leverage_stop, m_leverage_increment; // agitator variables
