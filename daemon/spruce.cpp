@@ -184,7 +184,7 @@ void Spruce::addMarketBeta( Market m )
     if ( !original_quantity.contains( m.getBase() ) ||
          !original_quantity.contains( m.getQuote() ) )
     {
-        kDebug() << "couldn't find currency" << m.getBase() << "or" << m.getQuote() << "in" << original_quantity;
+        kDebug() << "spruce error: couldn't find currency" << m.getBase() << "or" << m.getQuote() << "in" << original_quantity;
         return;
     }
 

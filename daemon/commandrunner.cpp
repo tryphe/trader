@@ -814,11 +814,6 @@ void CommandRunner::command_setsprucebetamarket( QStringList &args )
 
     const Market m = args.value( 1 );
     spruce_overseer->spruce->addMarketBeta( m );
-
-    if ( spruce_overseer->spruce->getMarketsBeta().contains( m ) )
-        kDebug() << "spruce added beta market" << m;
-    else
-        kDebug() << "local error: spruce failed to add beta market" << m;
 }
 
 void CommandRunner::command_setspruceleverage( QStringList &args )
