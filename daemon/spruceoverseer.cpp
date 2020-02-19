@@ -49,7 +49,7 @@ void SpruceOverseer::onSpruceUp()
 
     QMap<QString/*market*/,Coin> spread_price;
     const QList<QString> currencies = spruce->getCurrencies();
-    const QList<QString> markets = spruce->getMarkets();
+    const QList<QString> markets = spruce->getMarketsAlpha();
 
     for ( QList<QString>::const_iterator m = markets.begin(); m != markets.end(); m++ )
     {
@@ -62,9 +62,9 @@ void SpruceOverseer::onSpruceUp()
                                       .arg( side == SIDE_BUY ? "B" : "S" )
                                       .arg( market_to_trade );
 
-            TickerInfo spread_random = getSpreadForSide( market_to_trade, side, true, false, true, true );
-            const Coin &random_price = ( side == SIDE_BUY ) ? spread_random.bid_price :
-                                                              spread_random.ask_price;
+            TickerInfo spread_duplicity = getSpreadForSide( market_to_trade, side, true, false, true, true );
+            const Coin &duplicity_price = ( side == SIDE_BUY ) ? spread_duplicity.bid_price :
+                                                                 spread_duplicity.ask_price;
 
             spruce->clearLiveNodes();
             for ( QList<QString>::const_iterator i = currencies.begin(); i != currencies.end(); i++ )
@@ -75,6 +75,13 @@ void SpruceOverseer::onSpruceUp()
                 Coin price = ( side == SIDE_BUY ) ? mid_spread.bid_price :
                                                     mid_spread.ask_price;
 
+                // these prices should be equal
+                if ( mid_spread.bid_price != mid_spread.ask_price )
+                {
+                    kDebug() << "local error: midspread bid" << mid_spread.bid_price << "!= ask" << mid_spread.ask_price;
+                    return;
+                }
+
                 // if the ticker isn't updated, just skip this whole function
                 if ( price.isZeroOrLess() )
                 {
@@ -82,18 +89,14 @@ void SpruceOverseer::onSpruceUp()
                     return;
                 }
 
-                // adjust price input by surface skew
+                // adjust midprice input by surface skew
                 price *= spruce->getSkew();
 
-                // these prices should be equal
-                if ( mid_spread.bid_price != mid_spread.ask_price )
-                    kDebug() << "local error: midspread bid" << mid_spread.bid_price << "!= ask" << mid_spread.ask_price;
-
-                if ( (QString) market == (QString) market_to_trade )
+                if ( market == market_to_trade )
                 {
-                    // if market matches selected market, select best price from duplicity price or random price
-                    price = ( side == SIDE_BUY ) ? std::min( price, random_price ) :
-                                                   std::max( price, random_price );
+                    // if market matches selected market, select best price from duplicity price or mid price
+                    price = ( side == SIDE_BUY ) ? std::min( price, duplicity_price ) :
+                                                   std::max( price, duplicity_price );
                 }
 
                 spread_price.insert( currency, price );
@@ -156,8 +159,8 @@ void SpruceOverseer::onSpruceUp()
                     const Coin order_size_limit = order_size_unscaled * spruce->getOrderNice();
 
                     QString order_type = "onetime";
-                    Coin &buy_price = spread_random.bid_price;
-                    Coin &sell_price = spread_random.ask_price;
+                    Coin &buy_price = spread_duplicity.bid_price;
+                    Coin &sell_price = spread_duplicity.ask_price;
 
                     const Coin spread_put_threshold = order_size_unscaled * spruce->getOrderNiceSpreadPut();
 
@@ -201,11 +204,6 @@ void SpruceOverseer::onSpruceUp()
                             // set slow timeout
                             order_type += "-timeout60";
                         }
-                    }
-                    else
-                    {
-                        buy_price = spread_random.bid_price;
-                        sell_price = spread_random.ask_price;
                     }
 
                     // skip noisy amount
