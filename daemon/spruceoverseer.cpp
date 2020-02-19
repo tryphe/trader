@@ -164,7 +164,7 @@ void SpruceOverseer::onSpruceUp()
 
                     const Coin spread_put_threshold = order_size_unscaled * spruce->getOrderNiceSpreadPut();
 
-                    // declare greed reduce here so we can print it
+                    // declare greed reduce here so we can print/evalulate it after
                     Coin greed_reduce;
 
                     // put prices at spread if pending amount to shortlong is greater than size * order_nice_spreadput
@@ -221,11 +221,11 @@ void SpruceOverseer::onSpruceUp()
                     if ( spruce_active_for_side + order_size_limit >= amount_to_shortlong_abs )
                         continue;
 
-                    // cache greed min, and sell ratio if side == sell
-                    const Coin &greed_minimum = spruce->getOrderGreedMinimum();
-                    const Coin sell_ratio_limit = is_buy ? Coin() : ( CoinAmount::COIN *2 ) - greed_minimum;
+                    // cache spread distance limit, and for side sell, limit = 2 - limit
+                    const Coin spread_distance_limit_buys = std::min( spruce->getOrderGreed() + greed_reduce, spruce->getOrderGreedMinimum() );
+                    const Coin spread_distance_limit_sells = is_buy ? Coin() : ( CoinAmount::COIN *2 ) - spread_distance_limit_buys;
 
-                    // cancel conflicting spruce positions
+                    // detect collisions for this market within the spread distance limit
                     for ( QSet<Position*>::const_iterator j = engine->positions->all().begin(); j != engine->positions->all().end(); j++ )
                     {
                         Position *const &pos = *j;
@@ -237,8 +237,8 @@ void SpruceOverseer::onSpruceUp()
                              pos->strategy_tag == strategy )
                             continue;
 
-                        if ( (  is_buy && buy_price  >= pos->sell_price * greed_minimum ) ||
-                             ( !is_buy && sell_price <= pos->buy_price * sell_ratio_limit ) )
+                        if ( (  is_buy && buy_price  >= pos->sell_price * spread_distance_limit_buys ) ||
+                             ( !is_buy && sell_price <= pos->buy_price * spread_distance_limit_sells ) )
                         {
                             kDebug() << "[Spruce] cancelling conflicting spruce order" << pos->order_number;
                             engine->positions->cancel( pos );
