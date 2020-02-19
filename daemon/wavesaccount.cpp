@@ -276,3 +276,17 @@ QByteArray WavesAccount::createOrderBody( Position * const &pos, const qint64 ep
 
     return doc.toJson( QJsonDocument::Compact );
 }
+
+QByteArray WavesAccount::createGetOrdersBytes( const qint64 epoch_now )
+{
+    QByteArray get_orders_bytes;
+    get_orders_bytes += publicKey();
+
+    QDataStream get_orders_bytes_stream( &get_orders_bytes, QIODevice::WriteOnly );
+    get_orders_bytes_stream.device()->seek( get_orders_bytes.size() );
+    get_orders_bytes_stream << epoch_now;
+
+    assert( get_orders_bytes.size() == 40 );
+
+    return get_orders_bytes;
+}

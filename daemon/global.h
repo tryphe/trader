@@ -149,12 +149,13 @@ static const QLatin1String WAVES_MATCHER_URL                ( "https://matcher.w
 static const int WAVES_TIMER_INTERVAL_NAM_SEND              ( 100 );
 static const int WAVES_TIMER_INTERVAL_MARKET_DATA           ( 60000 * 60 );
 static const int WAVES_TIMER_INTERVAL_TICKER                ( 1000 );
-static const int WAVES_TIMER_INTERVAL_CHECK_NEXT_ORDER      ( 1500 );
+static const int WAVES_TIMER_INTERVAL_CHECK_MY_ORDERS       ( 20000 );
 
 static const QLatin1String WAVES_COMMAND_GET_MATCHER_PUBKEY ( "pk-get-matcher" );
 static const QLatin1String WAVES_COMMAND_GET_MARKET_DATA    ( "md-get-matcher/orderbook" );
 static const QLatin1String WAVES_COMMAND_GET_BOOK_DATA      ( "bd-get-matcher/orderbook/%1/%2" );
 static const QLatin1String WAVES_COMMAND_GET_ORDER_STATUS   ( "os-get-matcher/orderbook/%1/%2/%3" );
+static const QLatin1String WAVES_COMMAND_GET_MY_ORDERS      ( "om-get-matcher/orderbook/%1" );
 static const QLatin1String WAVES_COMMAND_POST_ORDER_CANCEL  ( "oc-post-matcher/orderbook/%1/%2/cancel" );
 static const QLatin1String WAVES_COMMAND_POST_ORDER_NEW     ( "on-post-matcher/orderbook" );
 

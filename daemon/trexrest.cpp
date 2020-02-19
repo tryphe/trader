@@ -543,7 +543,7 @@ void TrexREST::parseCancelOrder( Request *const &request, const QJsonObject &res
     engine->processCancelledOrder( pos );
 }
 
-void TrexREST::parseOpenOrders(const QJsonArray &orders, qint64 request_time_sent_ms )
+void TrexREST::parseOpenOrders( const QJsonArray &orders, qint64 request_time_sent_ms )
 {
     const qint64 current_time = QDateTime::currentMSecsSinceEpoch(); // cache time
 

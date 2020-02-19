@@ -49,6 +49,7 @@ private:
     void parseOrderStatus( const QJsonObject &info, Request *const &request );
     void parseCancelOrder( const QJsonObject &info, Request *const &request );
     void parseNewOrder( const QJsonObject &info, Request *const &request );
+    void parseMyOrders( const QJsonArray &orders, qint64 request_time_sent_ms );
 
     WavesAccount account;
 
@@ -58,7 +59,6 @@ private:
 
     bool initial_ticker_update_done{ false };
     qint32 next_ticker_index_to_query{ 0 };
-    qint32 last_index_checked{ 0 };
     qint32 last_cancelling_index_checked{ 0 };
     QTimer *market_data_timer{ nullptr };
 };

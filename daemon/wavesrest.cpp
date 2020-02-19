@@ -69,12 +69,10 @@ void WavesREST::init()
     keystore.setKeys( "dummy", "dummy" );
 
     connect( orderbook_timer, &QTimer::timeout, this, &WavesREST::onCheckBotOrders );
-    orderbook_timer->start( WAVES_TIMER_INTERVAL_CHECK_NEXT_ORDER );
+    orderbook_timer->start( WAVES_TIMER_INTERVAL_CHECK_MY_ORDERS );
 #endif
 
     onCheckMarketData();
-
-    // sendRequest( WAVES_COMMAND_POST_ORDER_NEW, "{\"amount\":9700000,\"assetPair\":{\"amountAsset\":\"WAVES\",\"priceAsset\":\"8LQW8f7P5d5PZM7GtZEBgaqRPGSzS3DfPuiXrURJ4AJS\"},\"expiration\":1583050061708,\"id\":\"7CrdLzhytNurjrbouN4jXM7xCvVYHTfcYpfgnJuE7QRM\",\"matcherFee\":300000,\"matcherPublicKey\":\"9cpfKN9suPNvfeUNphzxXMjcnn974eme8ZhWUjaktzU5\",\"orderType\":\"sell\",\"price\":1000000,\"proofs\":[\"2ikLEBEGFEW5F5ZfWnNTv8wqvSMhN1x6fZJFQ9FU66cL5EQbi53nidJGHd8kdzutSEtR4PxE7jhjk8mVuWmPMLGs\"],\"senderPublicKey\":\"27YM9icwd6TwfZD3KEJpYsj7rLwPAShJdYXrCt8QRo6L\",\"timestamp\":1580544581708,\"version\":2}" );
 }
 
 void WavesREST::sendNamQueue()
@@ -124,12 +122,17 @@ void WavesREST::sendNamRequest( Request * const &request )
 
     request_nonce++; // bump nonce for baserest stats
 
+    bool is_my_orders_request = false;
+
     // set the order request time for new order
     if ( api_command.startsWith( "on" ) )
         request->pos->order_request_time = current_time;
     // set cancel time properly
     else if ( api_command.startsWith( "oc" ) )
         request->pos->order_cancel_time = current_time;
+    // if calling get my orders, set flag
+    else if ( api_command.startsWith( "om" ) )
+        is_my_orders_request = true;
 
     // add to sent queue so we can check if it timed out
     request->time_sent_ms = current_time;
@@ -160,9 +163,32 @@ void WavesREST::sendNamRequest( Request * const &request )
     QNetworkRequest nam_request;
     nam_request.setUrl( url );
 
+    // add orders request http headers
+    if ( is_my_orders_request )
+    {
+        const QUrlQuery query = QUrlQuery( "activeOnly=true" );
+        url.setQuery( query );
+
+        const QByteArray sign_bytes = account.createGetOrdersBytes( current_time );
+        QByteArray signature;
+
+        bool success = account.sign( sign_bytes, signature );
+
+        if ( !success )
+            kDebug() << "local waves error: failed to sign for get my orders request";
+
+        // add signature and timestamp header
+        nam_request.setRawHeader( "Signature", QBase58::encode( signature ) );
+        nam_request.setRawHeader( "Timestamp", QString::number( current_time ).toLocal8Bit() );
+    }
+    else
+    {
+        // add http content json header
+        nam_request.setRawHeader( "Content-Type", "application/json;charset=UTF-8" );
+    }
+
     // add http json accept header
     nam_request.setRawHeader( "Accept", "application/json" );
-    nam_request.setRawHeader( "Content-Type", "application/json;charset=UTF-8" );
 
     // send REST message
     QNetworkReply *const &reply = is_get  ? nam->get( nam_request ) :
@@ -299,9 +325,14 @@ void WavesREST::onNamReply( QNetworkReply * const &reply )
     {
         parseNewOrder( result_obj, request );
     }
+    // handle my orders response
+    else if ( api_command.startsWith( "om" ) )
+    {
+        parseMyOrders( result_arr, request->time_sent_ms );
+    }
     else
     {
-        kDebug() << "local warning: nam reply of unknown command for" << path << ":" << data;
+        kDebug() << "local warning: nam reply of unknown command for command:" << api_command << "path:" << path << ":" << data;
     }
 
     deleteReply( reply, request );
@@ -355,21 +386,24 @@ void WavesREST::onCheckBotOrders()
     if ( yieldToFlowControl() )
         return;
 
-    /// step 1: query one active order
-    // check for empty positions
-    if ( engine->getPositionMan()->active().size() > 0 )
-    {
-        // TODO: fix this crappy shit
-        QList<Position*> pos_list = engine->getPositionMan()->active().toList();
+    sendRequest( QString( WAVES_COMMAND_GET_MY_ORDERS )
+                  .arg( QString( account.publicKeyB58() ) ) );
 
-        if ( ++last_index_checked >= pos_list.size() )
-            last_index_checked = 0;
+//    /// step 1: query one active order
+//    // check for empty positions
+//    if ( engine->getPositionMan()->active().size() > 0 )
+//    {
+//        // TODO: fix this crappy shit
+//        QList<Position*> pos_list = engine->getPositionMan()->active().toList();
 
-        //kDebug() << "checking order" << order_to_check->order_number;
+//        if ( ++last_index_checked >= pos_list.size() )
+//            last_index_checked = 0;
 
-        Position *order_to_check = pos_list.value( last_index_checked );
-        getOrderStatus( order_to_check );
-    }
+//        //kDebug() << "checking order" << order_to_check->order_number;
+
+//        Position *order_to_check = pos_list.value( last_index_checked );
+//        getOrderStatus( order_to_check );
+//    }
 }
 
 void WavesREST::onCheckCancellingOrders()
@@ -525,8 +559,6 @@ void WavesREST::parseOrderStatus( const QJsonObject &info, Request *const &reque
         return;
     }
 
-    BaseREST::orderbook_update_time = QDateTime::currentMSecsSinceEpoch();
-
     Position *const &pos = request->pos;
     MarketInfo &market_info = engine->getMarketInfo( pos->market );
 
@@ -640,4 +672,53 @@ void WavesREST::parseNewOrder( const QJsonObject &info, Request *const &request 
 
     // active pos
     engine->getPositionMan()->activate( pos, order_id );
+}
+
+void WavesREST::parseMyOrders( const QJsonArray &orders, qint64 request_time_sent_ms )
+{
+    const qint64 current_time = QDateTime::currentMSecsSinceEpoch(); // cache time
+
+    // is the orderbook is too old to be safe? check the stale tolerance
+    if ( request_time_sent_ms < current_time - orderbook_stale_tolerance )
+    {
+        orders_stale_trip_count++;
+        return;
+    }
+
+    // don't accept responses for requests sooner than the latest response request_time_sent_ms
+    if ( request_time_sent_ms < orderbook_update_request_time )
+        return;
+
+    // set the timestamp of orderbook update if we saw any orders
+    orderbook_update_time = current_time;
+    orderbook_update_request_time = request_time_sent_ms;
+
+    // parse array of objects
+    QVector<QString> order_numbers; // keep track of order numbers
+    QMultiHash<QString, OrderInfo> order_map; // store map of order numbers/orderinfo
+
+    for ( QJsonArray::const_iterator i = orders.begin(); i != orders.end(); i++ )
+    {
+        if ( !(*i).isObject() )
+            continue;
+
+        const QJsonObject &order = (*i).toObject();
+        const QString &id = order.value( "id" ).toString();
+
+        //kDebug() << "got active order" << id;
+
+        // check for bad info
+        if ( id.isEmpty() || !engine->getPositionMan()->isValidOrderID( id ) )
+            continue;
+
+        Position *const &pos = engine->getPositionMan()->getByOrderID( id );
+
+        // insert into seen orders
+        order_numbers += id;
+
+        // insert (market, order)
+        order_map.insert( pos->market, OrderInfo( id, pos->side, pos->price, pos->btc_amount ) );
+    }
+
+    engine->processOpenOrders( order_numbers, order_map, request_time_sent_ms );
 }
