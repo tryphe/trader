@@ -198,9 +198,6 @@ void SpruceOverseer::onSpruceUp()
                             const TickerInfo collapsed_spread = getSpreadForSide( market, side, true, false, true, true, greed_reduce );
                             buy_price = collapsed_spread.bid_price;
                             sell_price = collapsed_spread.ask_price;
-
-                            // set slow timeout
-                            order_type += "-timeout60";
                         }
                     }
 
