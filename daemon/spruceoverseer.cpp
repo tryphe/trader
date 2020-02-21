@@ -92,12 +92,10 @@ void SpruceOverseer::onSpruceUp()
                 // adjust midprice input by surface skew
                 price *= spruce->getSkew();
 
+                // if market matches selected market, select best price from duplicity price or mid price
                 if ( market == market_to_trade )
-                {
-                    // if market matches selected market, select best price from duplicity price or mid price
                     price = ( side == SIDE_BUY ) ? std::min( price, duplicity_price ) :
                                                    std::max( price, duplicity_price );
-                }
 
                 spread_price.insert( currency, price );
                 spruce->addLiveNode( currency, price );
