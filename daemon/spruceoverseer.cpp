@@ -11,6 +11,8 @@
 #include <QList>
 #include <QSet>
 
+const bool expand_spread_down = false; // true = expand down only for base greed, false = both both sides
+
 SpruceOverseer::SpruceOverseer( Spruce *_spruce )
     : QObject( nullptr ),
     spruce( _spruce )
@@ -397,12 +399,12 @@ TickerInfo SpruceOverseer::getSpreadForSide( const QString &market, quint8 side,
     Coin spread_distance_base = spruce->getOrderGreed();
     const Coin limit = std::min( spread_distance_base + greed_reduce, spruce->getOrderGreedMinimum() );
 
-    // contract our spread down if specified
+    // contract our spread in the direction specified
     if ( greed_reduce.isGreaterThanZero() )
-        adjustSpread( ret, limit, SIDE_BUY, ticksize, false );
+        adjustSpread( ret, limit, expand_spread_down ? SIDE_BUY : side, ticksize, false );
 
-    // expand wider downward if needed
-    adjustSpread( ret, limit, SIDE_BUY, ticksize, true );
+    // expand further in the direction specified, if needed
+    adjustSpread( ret, limit, expand_spread_down ? SIDE_BUY : side, ticksize, true );
 
     // if we included randomness, expand again
     if ( include_limit_for_side )
