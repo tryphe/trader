@@ -437,11 +437,10 @@ Position *PositionMan::getHighestPingPong( const QString &market ) const
     return hi_pos;
 }
 
-Position *PositionMan::getLowestSpruceBuy( const QString &market ) const
+Position *PositionMan::getHighestSpruceBuy( const QString &market ) const
 {
-    // TODO: nothing uses this now, maybe add mode to switch between getLowestSpruce/HighestSpruce and getRandomSpruce?
     Position *ret = nullptr;
-    Coin lo_buy = CoinAmount::A_LOT;
+    Coin hi_buy;
 
     for ( QSet<Position*>::const_iterator i = positions_active.begin(); i != positions_active.end(); i++ )
     {
@@ -452,9 +451,9 @@ Position *PositionMan::getLowestSpruceBuy( const QString &market ) const
              !pos->strategy_tag.startsWith( "spruce" ) )
             continue;
 
-        if ( pos->buy_price < lo_buy ) // position index is greater than our incrementor
+        if ( pos->buy_price > hi_buy )
         {
-            lo_buy = pos->buy_price;
+            hi_buy = pos->buy_price;
             ret = pos;
         }
     }
@@ -462,11 +461,10 @@ Position *PositionMan::getLowestSpruceBuy( const QString &market ) const
     return ret;
 }
 
-Position *PositionMan::getHighestSpruceSell( const QString &market ) const
+Position *PositionMan::getLowestSpruceSell( const QString &market ) const
 {
-    // TODO: nothing uses this now, maybe add mode to switch between getLowestSpruce/HighestSpruce and getRandomSpruce?
     Position *ret = nullptr;
-    Coin hi_sell = -1;
+    Coin lo_sell = CoinAmount::A_LOT;
 
     for ( QSet<Position*>::const_iterator i = positions_active.begin(); i != positions_active.end(); i++ )
     {
@@ -477,9 +475,9 @@ Position *PositionMan::getHighestSpruceSell( const QString &market ) const
              !pos->strategy_tag.startsWith( "spruce" ) )
             continue;
 
-        if ( pos->sell_price > hi_sell ) // position index is less than our incrementor
+        if ( pos->sell_price < lo_sell )
         {
-            hi_sell = pos->sell_price;
+            lo_sell = pos->sell_price;
             ret = pos;
         }
     }

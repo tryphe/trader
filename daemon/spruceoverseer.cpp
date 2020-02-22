@@ -283,13 +283,14 @@ void SpruceOverseer::adjustSpread( TickerInfo &spread, Coin limit, quint8 side, 
         diff_threshold = diff * CONTRACT_RATIO;
     }
 
+    quint32 j = ( side == SIDE_BUY ) ? 0 : 1;
     while ( expand ? spread.bid_price > spread.ask_price * limit :
                      spread.bid_price < spread.ask_price * limit )
     {
         // if the side is buy, expand down, otherwise expand outwards
-        if ( side == SIDE_BUY /*|| j++ % 2 == 0*/ )
+        if ( ( expand_spread_down ) || j++ % 2 == 1 )
             spread.bid_price -= ticksize;
-        else if ( side == SIDE_SELL )
+        else
             spread.ask_price += ticksize;
 
         // only collapse the spread by up to half the distance
@@ -619,15 +620,14 @@ void SpruceOverseer::runCancellors( Engine *engine, const QString &market, const
             continue;
 
         // get possible spread price vibration limits for new spruce order on this side
-        const QString &market = pos->market;
         const TickerInfo spread_limit = getSpreadLimit( market, true );
         const Coin &buy_price_limit = spread_limit.bid_price;
         const Coin &sell_price_limit = spread_limit.ask_price;
 
         /// cancellor 1: look for prices that are trailing the spread too far
         if ( buy_price_limit.isGreaterThanZero() && sell_price_limit.isGreaterThanZero() && // ticker is valid
-             ( ( pos->side == SIDE_BUY  && pos->price < buy_price_limit ) ||
-               ( pos->side == SIDE_SELL && pos->price > sell_price_limit ) ) )
+             ( ( side == SIDE_BUY  && pos->price < buy_price_limit ) ||
+               ( side == SIDE_SELL && pos->price > sell_price_limit ) ) )
         {
             // limit cancellor 1 to trigger CANCELLOR1_LIMIT times, per market, per side, per spruce tick
             if ( ++cancellor1_current[ market ] <= CANCELLOR1_LIMIT )
@@ -651,10 +651,18 @@ void SpruceOverseer::runCancellors( Engine *engine, const QString &market, const
         const Coin zero_bound_tolerance = order_size * spruce->getOrderNiceZeroBound();
 
         /// cancellor 2: if the order is active but our rating is the opposite polarity, cancel it
-        if ( ( pos->side == SIDE_BUY  && amount_to_shortlong >  zero_bound_tolerance ) ||
-             ( pos->side == SIDE_SELL && amount_to_shortlong < -zero_bound_tolerance ) )
+        if ( ( side == SIDE_BUY  && amount_to_shortlong >  zero_bound_tolerance ) ||
+             ( side == SIDE_SELL && amount_to_shortlong < -zero_bound_tolerance ) )
         {
-            engine->positions->cancel( pos, false, CANCELLING_FOR_SPRUCE_2 );
+            // cancel a random order on that side
+            Position *const &pos_to_cancel = ( side == SIDE_BUY ) ? engine->positions->getHighestSpruceBuy( market )
+                                                                  : engine->positions->getLowestSpruceSell( market );
+
+            // check badptr just incase, but should be impossible to get here
+            if ( !pos_to_cancel )
+                continue;
+
+            engine->positions->cancel( pos_to_cancel, false, CANCELLING_FOR_SPRUCE_2 );
             continue;
         }
 
@@ -662,13 +670,14 @@ void SpruceOverseer::runCancellors( Engine *engine, const QString &market, const
         const Coin spruce_offset = engine->positions->getActiveSpruceOrdersOffset( market, side );
 
         /// cancellor 3: look for spruce active <> what we should short/long
-        if ( ( pos->side == SIDE_BUY  && amount_to_shortlong.isZeroOrLess() &&
+        if ( ( side == SIDE_BUY  && amount_to_shortlong.isZeroOrLess() &&
                amount_to_shortlong + spruce_offset >  order_size_limit + zero_bound_tolerance ) ||
-             ( pos->side == SIDE_SELL && amount_to_shortlong.isGreaterThanZero() &&
+             ( side == SIDE_SELL && amount_to_shortlong.isGreaterThanZero() &&
                amount_to_shortlong + spruce_offset < -order_size_limit - zero_bound_tolerance ) )
         {
             // cancel a random order on that side
-            Position *const &pos_to_cancel = engine->positions->getRandomSprucePosition( market, side );                                                         engine->positions->getHighestSpruceSell( market );
+            Position *const &pos_to_cancel = ( side == SIDE_BUY ) ? engine->positions->getHighestSpruceBuy( market )
+                                                                  : engine->positions->getLowestSpruceSell( market );
 
             // check badptr just incase, but should be impossible to get here
             if ( !pos_to_cancel )
@@ -681,9 +690,9 @@ void SpruceOverseer::runCancellors( Engine *engine, const QString &market, const
         const Coin active_amount = engine->positions->getActiveSpruceEquityTotal( market, side );
 
         /// cancellor 4: look for active amount > amount_to_shortlong + order_size_limit
-        if ( ( pos->side == SIDE_BUY  && amount_to_shortlong.isZeroOrLess() &&
+        if ( ( side == SIDE_BUY  && amount_to_shortlong.isZeroOrLess() &&
                -active_amount < amount_to_shortlong - order_size_limit - zero_bound_tolerance ) ||
-             ( pos->side == SIDE_SELL && amount_to_shortlong.isGreaterThanZero() &&
+             ( side == SIDE_SELL && amount_to_shortlong.isGreaterThanZero() &&
                 active_amount > amount_to_shortlong + order_size_limit + zero_bound_tolerance ) )
         {
             engine->positions->cancel( pos, false, CANCELLING_FOR_SPRUCE_4 );
@@ -697,7 +706,7 @@ void SpruceOverseer::runCancellors( Engine *engine, const QString &market, const
         if ( active_amount > order_max )
         {
             // cancel a random order on that side
-            Position *const &pos_to_cancel = engine->positions->getRandomSprucePosition( market, side );                                                         engine->positions->getHighestSpruceSell( market );
+            Position *const &pos_to_cancel = engine->positions->getRandomSprucePosition( market, side );
 
             // check badptr just incase, but should be impossible to get here
             if ( !pos_to_cancel )

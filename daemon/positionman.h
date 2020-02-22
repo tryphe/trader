@@ -51,8 +51,8 @@ public:
     Position *getLowestSellByPrice( const QString &market ) const;
     Position *getLowestPingPong( const QString &market ) const;
     Position *getHighestPingPong( const QString &market ) const;
-    Position *getLowestSpruceBuy( const QString &market ) const;
-    Position *getHighestSpruceSell( const QString &market ) const;
+    Position *getHighestSpruceBuy( const QString &market ) const;
+    Position *getLowestSpruceSell( const QString &market ) const;
     Position *getRandomSprucePosition( const QString &market, const quint8 side );
 
     qint32 getLowestPingPongIndex( const QString &market ) const;
