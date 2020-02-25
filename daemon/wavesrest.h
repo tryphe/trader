@@ -45,7 +45,7 @@ private:
     void checkTicker( bool ignore_flow_control = false );
 
     void parseMarketData( const QJsonObject &info );
-    void parseOrderBookData( const QJsonObject &info );
+    void parseMarketStatus( const QJsonObject &info, Request *const &request );
     void parseOrderStatus( const QJsonObject &info, Request *const &request );
     void parseCancelOrder( const QJsonObject &info, Request *const &request );
     void parseNewOrder( const QJsonObject &info, Request *const &request );

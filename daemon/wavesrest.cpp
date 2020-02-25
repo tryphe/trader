@@ -302,9 +302,9 @@ void WavesREST::onNamReply( QNetworkReply * const &reply )
         parseMarketData( result_obj );
     }
     // handle order depth response
-    else if ( api_command.startsWith( "bd" ) )
+    else if ( api_command.startsWith( "ms" ) )
     {
-        parseOrderBookData( result_obj );
+        parseMarketStatus( result_obj, request );
     }
     // handle order status response
     else if ( api_command.startsWith( "os" ) )
@@ -371,7 +371,7 @@ void WavesREST::checkTicker( bool ignore_flow_control )
                                 .arg( amount_alias )
                                 .arg( price_alias );
 
-    sendRequest( ticker_url, "depth=1" );
+    sendRequest( ticker_url );
 
     // iterate index
     next_ticker_index_to_query++;
@@ -493,43 +493,92 @@ void WavesREST::parseMarketData( const QJsonObject &info )
     }
 }
 
-void WavesREST::parseOrderBookData( const QJsonObject &info )
+void WavesREST::parseMarketStatus( const QJsonObject &info, Request *const &request )
 {
-//    kDebug() << info;
+    /// step 1: extract market out of the url
+    QList<QString> url_split = request->api_command.split( QChar( '/' ) );
 
-    if ( !info.value( "bids" ).isArray() ||
-         !info.value( "asks" ).isArray() ||
-         !info.value( "pair" ).isObject() )
+    if ( url_split.size() != 5 )
     {
-        kDebug() << "nam reply warning: caught empty bid/ask data";
+        kDebug() << "local waves error: couldn't split market status args";
         return;
     }
 
-    const QJsonArray &bids = info.value( "bids" ).toArray(),
-                     &asks = info.value( "asks" ).toArray();
-
-    // parse bid/ask price
-    const uint64_t bid_price = bids.first().toObject().value( "price" ).toVariant().toULongLong();
-    const uint64_t ask_price = asks.first().toObject().value( "price" ).toVariant().toULongLong();
-
-    const QJsonObject &market_info = info.value( "pair" ).toObject();
-
-    // parse price/amount asset
-    const QString &amount_asset = market_info.value( "amountAsset" ).toString();
-    const QString &price_asset = market_info.value( "priceAsset" ).toString();
+    // extract assets
+    const QString &amount_asset = url_split.value( 2 );
+    const QString &price_asset = url_split.value( 3 );
 
     Market market = Market( account.getAssetByAlias( price_asset ),
                             account.getAssetByAlias( amount_asset ) );
 
+    // check that market exists
+    if ( !engine->getMarketInfoStructure().contains( market ) )
+    {
+        kDebug() << "local waves warning: caught market" << market << "not in market info structure";
+        return;
+    }
+
+    /// step 2: read spread values
+    if ( !info.contains( "bid" ) ||
+         !info.contains( "ask" ) )
+    {
+        kDebug() << "local waves warning: caught empty bid/ask data";
+        return;
+    }
+
+    // extract ints from json
+    const uint64_t bid_raw = info.value( "bid" ).toVariant().toULongLong();
+    const uint64_t ask_raw = info.value( "ask" ).toVariant().toULongLong();
+
+    // apply market ticksize to price (the raw price is a multiple of the ticksize)
     MarketInfo &local_market_info = engine->getMarketInfo( market );
-    const Coin bid_price_coin = local_market_info.price_ticksize * bid_price;
-    const Coin ask_price_coin = local_market_info.price_ticksize * ask_price;
+    const Coin bid_price = local_market_info.price_ticksize * bid_raw;
+    const Coin ask_price = local_market_info.price_ticksize * ask_raw;
 
     QMap<QString, TickerInfo> ticker_info;
-    ticker_info.insert( market, TickerInfo( bid_price_coin, ask_price_coin ) );
+    ticker_info.insert( market, TickerInfo( bid_price, ask_price ) );
 
     engine->processTicker( this, ticker_info );
 }
+
+/// order book data: now unused
+//void WavesREST::parseOrderBookData( const QJsonObject &info )
+//{
+////    kDebug() << info;
+
+//    if ( !info.value( "bids" ).isArray() ||
+//         !info.value( "asks" ).isArray() ||
+//         !info.value( "pair" ).isObject() )
+//    {
+//        kDebug() << "nam reply warning: caught empty bid/ask data";
+//        return;
+//    }
+
+//    const QJsonArray &bids = info.value( "bids" ).toArray(),
+//                     &asks = info.value( "asks" ).toArray();
+
+//    // parse bid/ask price
+//    const uint64_t bid_price = bids.first().toObject().value( "price" ).toVariant().toULongLong();
+//    const uint64_t ask_price = asks.first().toObject().value( "price" ).toVariant().toULongLong();
+
+//    const QJsonObject &market_info = info.value( "pair" ).toObject();
+
+//    // parse price/amount asset
+//    const QString &amount_asset = market_info.value( "amountAsset" ).toString();
+//    const QString &price_asset = market_info.value( "priceAsset" ).toString();
+
+//    Market market = Market( account.getAssetByAlias( price_asset ),
+//                            account.getAssetByAlias( amount_asset ) );
+
+//    MarketInfo &local_market_info = engine->getMarketInfo( market );
+//    const Coin bid_price_coin = local_market_info.price_ticksize * bid_price;
+//    const Coin ask_price_coin = local_market_info.price_ticksize * ask_price;
+
+//    QMap<QString, TickerInfo> ticker_info;
+//    ticker_info.insert( market, TickerInfo( bid_price_coin, ask_price_coin ) );
+
+//    engine->processTicker( this, ticker_info );
+//}
 
 void WavesREST::parseOrderStatus( const QJsonObject &info, Request *const &request )
 {
