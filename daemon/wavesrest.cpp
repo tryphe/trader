@@ -613,6 +613,9 @@ void WavesREST::parseOrderStatus( const QJsonObject &info, Request *const &reque
 
     //kDebug() << "order status" << order_id << ":" << order_status;
 
+    if ( filled_quantity > pos->quantity )
+        kDebug() << "local waves warning: filled quantity" << filled_quantity << "> pos quantity" << pos->quantity;
+
     // remove it from pending status orders
     if ( pos->is_cancelling )
         cancelling_orders_to_query.removeOne( pos );
