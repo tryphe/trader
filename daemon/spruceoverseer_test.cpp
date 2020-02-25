@@ -22,9 +22,7 @@ void SpruceOverseerTest::test( SpruceOverseer *o, Engine *engine )
 
     const TickerInfo regular_spread = o->getSpreadLimit( TEST_MARKET, true );
 
-//    kDebug() << regular_spread.bid_price / regular_spread.ask_price;
-//    kDebug() << regular_spread.bid_price << regular_spread.ask_price;
-    //assert( regular_spread.bid_price / regular_spread.ask_price == o->spruce->getOrderGreed() );
+    assert( regular_spread.bid_price / regular_spread.ask_price <= o->spruce->getOrderGreed() );
 
     // set randomness to 10%
     o->spruce->setOrderRandomBuy( Coin( "0.1" ) );
@@ -32,9 +30,9 @@ void SpruceOverseerTest::test( SpruceOverseer *o, Engine *engine )
 
     const TickerInfo expanded_spread = o->getSpreadLimit( TEST_MARKET, true );
 
-    // ensure completely expanded spread is 0.95 * 0.8 == 76 (note: 0.8 == 100%-20%, the random spread vars)
-    // why isn't it exactly 0.76? not sure...
-    //assert( ( expanded_spread.bid_price / expanded_spread.ask_price ).toAmountString() == Coin( "0.76047479" ) );
+    // ensure completely expanded spread is <= the maximum ratio of the trailing limit
+    assert( expanded_spread.bid_price / expanded_spread.ask_price <= o->spruce->getOrderTrailingLimit( SIDE_BUY ) );
+    assert( expanded_spread.bid_price / expanded_spread.ask_price <= o->spruce->getOrderTrailingLimit( SIDE_SELL ) );
 
     // restore settings
     o->spruce->setOrderRandomBuy( order_random_buy );
@@ -44,8 +42,8 @@ void SpruceOverseerTest::test( SpruceOverseer *o, Engine *engine )
     const TickerInfo buy_spread = o->getSpreadForSide( TEST_MARKET, SIDE_BUY, true, false );
     const TickerInfo sell_spread = o->getSpreadForSide( TEST_MARKET, SIDE_SELL, true, false );
 
-    //assert( buy_spread.bid_price / buy_spread.ask_price == o->spruce->getOrderGreed() );
-    //assert( sell_spread.bid_price / sell_spread.ask_price == o->spruce->getOrderGreed() );
+    assert( buy_spread.bid_price / buy_spread.ask_price <= o->spruce->getOrderGreed() );
+    assert( sell_spread.bid_price / sell_spread.ask_price <= o->spruce->getOrderGreed() );
 
     /// ensure getSpreadForSide() random prices are in bounds of getSpreadLimit()
     const TickerInfo buy_spread_random = o->getSpreadForSide( TEST_MARKET, SIDE_BUY, true, false, true, true );
@@ -85,7 +83,8 @@ void SpruceOverseerTest::test( SpruceOverseer *o, Engine *engine )
             taker_spread_sell.ask_price == taker_spread_sell.ask_price );
 
     // ensure inverse of base taker spread ratio matches base greed
-    //assert( taker_spread_buy.ask_price / taker_spread_buy.bid_price == o->spruce->getOrderGreed() );
+    kDebug() << taker_spread_buy.ask_price / taker_spread_buy.bid_price;
+    assert( taker_spread_buy.ask_price / taker_spread_buy.bid_price <= o->spruce->getOrderGreed() );
 
     const TickerInfo taker_spread_buy_rand = o->getSpreadForSide( TEST_MARKET, SIDE_BUY, true, true, true );
     const TickerInfo taker_spread_sell_rand = o->getSpreadForSide( TEST_MARKET, SIDE_SELL, true, true, true );
