@@ -83,7 +83,6 @@ void SpruceOverseerTest::test( SpruceOverseer *o, Engine *engine )
             taker_spread_sell.ask_price == taker_spread_sell.ask_price );
 
     // ensure inverse of base taker spread ratio matches base greed
-    kDebug() << taker_spread_buy.ask_price / taker_spread_buy.bid_price;
     assert( taker_spread_buy.ask_price / taker_spread_buy.bid_price <= o->spruce->getOrderGreed() );
 
     const TickerInfo taker_spread_buy_rand = o->getSpreadForSide( TEST_MARKET, SIDE_BUY, true, true, true );
