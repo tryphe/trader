@@ -11,7 +11,7 @@
 #include <QList>
 #include <QSet>
 
-const bool expand_spread_down = false; // true = expand down only for base greed, false = both both sides
+const bool expand_spread_down = true; // true = expand down only for base greed, false = both both sides
 
 SpruceOverseer::SpruceOverseer( Spruce *_spruce )
     : QObject( nullptr ),
@@ -200,6 +200,9 @@ void SpruceOverseer::onSpruceUp()
                             const TickerInfo collapsed_spread = getSpreadForSide( market, side, true, false, true, true, greed_reduce );
                             buy_price = collapsed_spread.bid_price;
                             sell_price = collapsed_spread.ask_price;
+
+                            // set slow timeout
+                            order_type += "-timeout120";
                         }
                     }
 
@@ -288,7 +291,9 @@ void SpruceOverseer::adjustSpread( TickerInfo &spread, Coin limit, quint8 side, 
                      spread.bid_price < spread.ask_price * limit )
     {
         // if the side is buy, expand down, otherwise expand outwards
-        if ( ( expand_spread_down ) || j++ % 2 == 1 )
+        j++;
+        if ( (  expand_spread_down && j % 4 < 3 ) ||
+             ( !expand_spread_down && j % 2 == 1 ) )
             spread.bid_price -= ticksize;
         else
             spread.ask_price += ticksize;
@@ -402,10 +407,10 @@ TickerInfo SpruceOverseer::getSpreadForSide( const QString &market, quint8 side,
 
     // contract our spread in the direction specified
     if ( greed_reduce.isGreaterThanZero() )
-        adjustSpread( ret, limit, expand_spread_down ? SIDE_BUY : side, ticksize, false );
+        adjustSpread( ret, limit, side, ticksize, false );
 
     // expand further in the direction specified, if needed
-    adjustSpread( ret, limit, expand_spread_down ? SIDE_BUY : side, ticksize, true );
+    adjustSpread( ret, limit, side, ticksize, true );
 
     // if we included randomness, expand again
     if ( include_limit_for_side )
@@ -655,8 +660,9 @@ void SpruceOverseer::runCancellors( Engine *engine, const QString &market, const
              ( side == SIDE_SELL && amount_to_shortlong < -zero_bound_tolerance ) )
         {
             // cancel a random order on that side
-            Position *const &pos_to_cancel = ( side == SIDE_BUY ) ? engine->positions->getHighestSpruceBuy( market )
-                                                                  : engine->positions->getLowestSpruceSell( market );
+            Position *const &pos_to_cancel = engine->positions->getRandomSprucePosition( market, side );
+                                           /*( side == SIDE_BUY ) ? engine->positions->getHighestSpruceBuy( market )
+                                                                  : engine->positions->getLowestSpruceSell( market );*/
 
             // check badptr just incase, but should be impossible to get here
             if ( !pos_to_cancel )
@@ -676,8 +682,7 @@ void SpruceOverseer::runCancellors( Engine *engine, const QString &market, const
                amount_to_shortlong + spruce_offset < -order_size_limit - zero_bound_tolerance ) )
         {
             // cancel a random order on that side
-            Position *const &pos_to_cancel = ( side == SIDE_BUY ) ? engine->positions->getHighestSpruceBuy( market )
-                                                                  : engine->positions->getLowestSpruceSell( market );
+            Position *const &pos_to_cancel = engine->positions->getRandomSprucePosition( market, side );
 
             // check badptr just incase, but should be impossible to get here
             if ( !pos_to_cancel )
@@ -706,8 +711,7 @@ void SpruceOverseer::runCancellors( Engine *engine, const QString &market, const
         if ( active_amount > order_max )
         {
             // cancel a random order on that side
-            Position *const &pos_to_cancel = ( side == SIDE_BUY ) ? engine->positions->getHighestSpruceBuy( market )
-                                                                  : engine->positions->getLowestSpruceSell( market );
+            Position *const &pos_to_cancel = engine->positions->getRandomSprucePosition( market, side );
 
             // check badptr just incase, but should be impossible to get here
             if ( !pos_to_cancel )
