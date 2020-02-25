@@ -367,7 +367,7 @@ void WavesREST::checkTicker( bool ignore_flow_control )
     const QString price_alias = account.getAliasByAsset( market.getBase() );
     const QString amount_alias = account.getAliasByAsset( market.getQuote() );
 
-    const QString ticker_url = QString( WAVES_COMMAND_GET_BOOK_DATA )
+    const QString ticker_url = QString( WAVES_COMMAND_GET_MARKET_STATUS )
                                 .arg( amount_alias )
                                 .arg( price_alias );
 
