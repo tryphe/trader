@@ -79,8 +79,8 @@ void SpruceOverseerTest::test( SpruceOverseer *o, Engine *engine )
     assert( taker_spread_buy.bid_price > taker_spread_buy.ask_price );
 
     // ensure mid spreads are equal for the same spread expansion
-    assert( taker_spread_buy.bid_price == taker_spread_buy.bid_price &&
-            taker_spread_sell.ask_price == taker_spread_sell.ask_price );
+    assert( taker_spread_buy.bid_price == taker_spread_sell.bid_price &&
+            taker_spread_sell.ask_price == taker_spread_buy.ask_price );
 
     // ensure inverse of base taker spread ratio matches base greed
     assert( taker_spread_buy.ask_price / taker_spread_buy.bid_price <= o->spruce->getOrderGreed() );
