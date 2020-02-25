@@ -153,15 +153,8 @@ void WavesREST::sendNamRequest( Request * const &request )
     // create url which will hold 'url'+'query_args'
     QUrl url = QUrl( base_url_str + api_command );
 
-    // inherit the body from the input structure and add it to the url
-//    const QUrlQuery query = QUrlQuery( request->body );
-//    url.setQuery( query );
-
-//    kDebug() << query.toString();
-
     // create the request
     QNetworkRequest nam_request;
-    nam_request.setUrl( url );
 
     // add orders request http headers
     if ( is_my_orders_request )
@@ -189,6 +182,9 @@ void WavesREST::sendNamRequest( Request * const &request )
 
     // add http json accept header
     nam_request.setRawHeader( "Accept", "application/json" );
+
+    // set the url
+    nam_request.setUrl( url );
 
     // send REST message
     QNetworkReply *const &reply = is_get  ? nam->get( nam_request ) :
