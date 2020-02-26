@@ -202,10 +202,22 @@ void AlphaTracker::readSaveState( const QString &state )
         {
             // read epoch secs
             daily_volume_epoch_secs = args.at( 1 ).toLongLong();
+            qint64 epoch_secs_delta = daily_volume_epoch_secs;
 
             // read daily volume sequentially
-            for ( qint64 j = 2; j < args.size(); j++ )
+            qint64 j;
+            for ( j = 2; j < args.size(); j++ )
+            {
                 daily_volume.insert( j -2, args.at( j ) );
+                epoch_secs_delta += 60 * 60 * 24;
+            }
+
+            // insert 0 volume for each day between epoch_secs_delta and today's date
+            while ( QDateTime::fromSecsSinceEpoch( epoch_secs_delta ).daysTo( QDateTime::currentDateTime() ) > 0 )
+            {
+                daily_volume.insert( ++j -2, 0 );
+                epoch_secs_delta += 60 * 60 * 24;
+            }
         }
     }
 }
