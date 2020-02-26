@@ -68,6 +68,8 @@ public:
     void setOrderGreedMinimum( Coin ratio ) { m_order_greed_minimum = std::max( ratio, m_order_greed ); }
     Coin getOrderGreedMinimum() const { return m_order_greed_minimum; }
     Coin getOrderTrailingLimit( quint8 side ) const { return side == SIDE_BUY ? ( m_order_greed - m_order_greed_buy_randomness ) : CoinAmount::COIN - m_order_greed_sell_randomness; }
+    void setOrderCancelMode( bool cancel_random ) { m_order_cancel_mode = cancel_random; }
+    bool getOrderCancelMode() const { return m_order_cancel_mode; }
 
     void setOrderNice( Coin nice ) { m_order_nice = nice; }
     Coin getOrderNice() const { return m_order_nice; }
@@ -169,6 +171,7 @@ private:
     Coin m_leverage_start, m_leverage_stop, m_leverage_increment; // agitator variables
     qint64 m_interval_secs{ 60 * 2 }; // 2min default
     qint64 m_agitator_last_tick{ 0 }; // timestamp state for last agitator tick
+    bool m_order_cancel_mode{ false }; // false = cancel edges, true = cancel random
 };
 
 #endif // SPRUCE_H

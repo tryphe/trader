@@ -97,6 +97,7 @@ CommandRunner::CommandRunner( const quint8 _engine_type, Engine *_e, QVector<Bas
     command_map.insert( "setspruceordernice", std::bind( &CommandRunner::command_setspruceordernice, this, _1 ) );
     command_map.insert( "setspruceallocation", std::bind( &CommandRunner::command_setspruceallocation, this, _1 ) );
     command_map.insert( "setspruceagitator", std::bind( &CommandRunner::command_setspruceagitator, this, _1 ) );
+    command_map.insert( "setsprucecancelmode", std::bind( &CommandRunner::command_setsprucecancelmode, this, _1 ) );
     command_map.insert( "getstatus", std::bind( &CommandRunner::command_getstatus, this, _1 ) );
     command_map.insert( "getconfig", std::bind( &CommandRunner::command_getconfig, this, _1 ) );
     command_map.insert( "getinternal", std::bind( &CommandRunner::command_getinternal, this, _1 ) );
@@ -905,6 +906,15 @@ void CommandRunner::command_setspruceagitator( QStringList &args )
     kDebug() << "spruce agitator start" << args.value( 1 )
                               << "stop" << args.value( 2 )
                               << "increment" << args.value( 3 );
+}
+
+void CommandRunner::command_setsprucecancelmode( QStringList &args )
+{
+    if ( !checkArgs( args, 1 ) ) return;
+
+    spruce_overseer->spruce->setOrderCancelMode( args.value( 1 ) == "true" ? true : false );
+
+    kDebug() << "spruce order cancel mode:" << ( spruce_overseer->spruce->getOrderCancelMode() ? "random" : "inner edge" );
 }
 
 void CommandRunner::command_spruceup( QStringList & )

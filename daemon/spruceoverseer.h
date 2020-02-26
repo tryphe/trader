@@ -43,6 +43,7 @@ public Q_SLOTS:
 
 private:
     void runCancellors( Engine *engine, const QString &market, const quint8 side, const QString &strategy );
+    void cancelForReason( Engine *const &engine, const Market &market, const quint8 side, const quint8 reason );
 
     void adjustSpread( TickerInfo &spread, Coin limit, quint8 side, Coin &default_ticksize, bool expand = true );
     void adjustTicksizeToSpread( Coin &ticksize, TickerInfo &spread, const Coin &ticksize_minimum );
