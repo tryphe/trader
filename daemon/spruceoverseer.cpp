@@ -656,12 +656,12 @@ void SpruceOverseer::runCancellors( Engine *engine, const QString &market, const
         const Coin zero_bound_tolerance = order_size * spruce->getOrderNiceZeroBound();
 
         /// cancellor 2: if the order is active but our rating is the opposite polarity, cancel it
-        if ( ( side == SIDE_BUY  && amount_to_shortlong >  zero_bound_tolerance ) ||
-             ( side == SIDE_SELL && amount_to_shortlong < -zero_bound_tolerance ) )
-        {
-            cancelForReason( engine, market, side, CANCELLING_FOR_SPRUCE_2 );
-            continue;
-        }
+//        if ( ( side == SIDE_BUY  && amount_to_shortlong >  zero_bound_tolerance ) ||
+//             ( side == SIDE_SELL && amount_to_shortlong < -zero_bound_tolerance ) )
+//        {
+//            cancelForReason( engine, market, side, CANCELLING_FOR_SPRUCE_2 );
+//            continue;
+//        }
 
         // store active spruce offset for this side
         const Coin spruce_offset = engine->positions->getActiveSpruceOrdersOffset( market, side );
