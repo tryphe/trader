@@ -203,30 +203,15 @@ void SpruceOverseer::onSpruceUp()
 
                             // set slow timeout
                             order_type += QString( "-timeout%1" )
-                                          .arg( Global::getSecureRandomRange32( 120, 180 ) );
+                                          .arg( Global::getSecureRandomRange32( 60, 180 ) );
                         }
                     }
 
-                    // skip noisy amount
-                    if ( amount_to_shortlong_abs < order_size_limit )
-                        continue;
-
-                    // don't go over our per-market max
-                    if ( spruce_active_for_side + order_size >= order_max )
-                    {
-                        kDebug() << "[Spruce] info:" << market << "over market" << QString( "%1" ).arg( is_buy ? "buy" : "sell" ) << "order max";
-                        continue;
-                    }
-
-                    // don't go over the abs value of our new projected position
-                    if ( spruce_active_for_side + order_size_limit >= amount_to_shortlong_abs )
-                        continue;
-
+                    /// detect collisions for this market within the spread distance limit
                     // cache spread distance limit, and for side sell, limit = 2 - limit
                     const Coin spread_distance_limit_buys = std::min( spruce->getOrderGreed() + greed_reduce, spruce->getOrderGreedMinimum() );
                     const Coin spread_distance_limit_sells = is_buy ? Coin() : ( CoinAmount::COIN *2 ) - spread_distance_limit_buys;
 
-                    // detect collisions for this market within the spread distance limit
                     for ( QSet<Position*>::const_iterator j = engine->positions->all().begin(); j != engine->positions->all().end(); j++ )
                     {
                         Position *const &pos = *j;
@@ -245,6 +230,21 @@ void SpruceOverseer::onSpruceUp()
                             engine->positions->cancel( pos );
                         }
                     }
+
+                    // skip noisy amount
+                    if ( amount_to_shortlong_abs < order_size_limit )
+                        continue;
+
+                    // don't go over our per-market max
+                    if ( spruce_active_for_side + order_size >= order_max )
+                    {
+                        kDebug() << "[Spruce] info:" << market << "over market" << QString( "%1" ).arg( is_buy ? "buy" : "sell" ) << "order max";
+                        continue;
+                    }
+
+                    // don't go over the abs value of our new projected position
+                    if ( spruce_active_for_side + order_size_limit >= amount_to_shortlong_abs )
+                        continue;
 
                     kDebug() << QString( "[%1] %2 | coeff %3 | qty %4 | amt %5 | on-order %6 | spread %7" )
                                    .arg( strategy, -MARKET_STRING_WIDTH - 9 )
