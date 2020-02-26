@@ -304,7 +304,7 @@ QString Spruce::getSaveState()
                                                     .arg( m_leverage_increment );
 
     // save agitator
-    ret += QString( "setsprucecancelmode %1\n" ).arg( m_order_cancel_mode );
+    ret += QString( "setsprucecancelmode %1\n" ).arg( m_order_cancel_mode ? "true" : "false" );
 
     // save profile u
     for ( QMap<QString,Coin>::const_iterator i = m_currency_profile_u.begin(); i != m_currency_profile_u.end(); i++ )
