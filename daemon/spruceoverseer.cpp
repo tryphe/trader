@@ -672,7 +672,8 @@ void SpruceOverseer::runCancellors( Engine *engine, const QString &market, const
              ( side == SIDE_SELL && amount_to_shortlong.isGreaterThanZero() &&
                amount_to_shortlong + spruce_offset < -order_size_limit - zero_bound_tolerance ) )
         {
-            cancelForReason( engine, market, side, CANCELLING_FOR_SPRUCE_3 );
+            engine->positions->cancel( pos, false, CANCELLING_FOR_SPRUCE_3 );
+            //cancelForReason( engine, market, side, CANCELLING_FOR_SPRUCE_3 );
             continue;
         }
 
@@ -684,7 +685,8 @@ void SpruceOverseer::runCancellors( Engine *engine, const QString &market, const
              ( side == SIDE_SELL && amount_to_shortlong.isGreaterThanZero() &&
                 active_amount > amount_to_shortlong + order_size_limit + zero_bound_tolerance ) )
         {
-            cancelForReason( engine, market, side, CANCELLING_FOR_SPRUCE_4 );
+            engine->positions->cancel( pos, false, CANCELLING_FOR_SPRUCE_4 );
+            //cancelForReason( engine, market, side, CANCELLING_FOR_SPRUCE_4 );
             continue;
         }
 
