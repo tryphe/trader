@@ -398,6 +398,21 @@ void Engine::updateStatsAndPrintFill( const QString &fill_type, const Market &ma
     else if ( quantity.isZero() )
         quantity = btc_amount / price;
 
+    // if base market is not btc, find price of in btc
+    if ( market.getBase() != "BTC" )
+    {
+        const Market base_btc_pair = Market( "BTC", market.getBase() );
+        //const Market quote_btc_pair = Market( "BTC", market.getQuote() );
+
+        if ( !is_testing && !getMarketInfoStructure().contains( base_btc_pair ) )
+        {
+            kDebug() << "local error: couldn't find ticker for" << base_btc_pair;
+            return;
+        }
+
+        btc_amount = getMarketInfo( base_btc_pair ).highest_buy * btc_amount / quantity;
+    }
+
     // negate commission from final qty and calculate final amounts
     btc_amount = btc_amount - btc_commission;
     quantity = btc_amount / price;
