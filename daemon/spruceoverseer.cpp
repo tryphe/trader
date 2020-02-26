@@ -207,6 +207,10 @@ void SpruceOverseer::onSpruceUp()
                         }
                     }
 
+                    // skip noisy amount
+                    if ( amount_to_shortlong_abs < order_size_limit )
+                        continue;
+
                     /// detect collisions for this market within the spread distance limit
                     // cache spread distance limit, and for side sell, limit = 2 - limit
                     const Coin spread_distance_limit_buys = std::min( spruce->getOrderGreed() + greed_reduce, spruce->getOrderGreedMinimum() );
@@ -230,10 +234,6 @@ void SpruceOverseer::onSpruceUp()
                             engine->positions->cancel( pos );
                         }
                     }
-
-                    // skip noisy amount
-                    if ( amount_to_shortlong_abs < order_size_limit )
-                        continue;
 
                     // don't go over our per-market max
                     if ( spruce_active_for_side + order_size >= order_max )
