@@ -202,7 +202,8 @@ void SpruceOverseer::onSpruceUp()
                             sell_price = collapsed_spread.ask_price;
 
                             // set slow timeout
-                            order_type += "-timeout120";
+                            order_type += QString( "-timeout%1" )
+                                          .arg( Global::getSecureRandomRange32( 120, 180 ) );
                         }
                     }
 
