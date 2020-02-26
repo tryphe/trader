@@ -147,7 +147,7 @@ void SpruceOverseer::onSpruceUp()
                     const Coin qty_to_shortlong_abs = qty_to_shortlong.abs();
                     const Coin amount_to_shortlong = spruce->getCurrencyPriceByMarket( market ) * qty_to_shortlong;
                     const Coin amount_to_shortlong_abs = amount_to_shortlong.abs();
-                    const Coin spruce_active_for_side = engine->positions->getActiveSpruceEquityTotal( market, side );
+                    const Coin spruce_active_for_side = engine->positions->getActiveSpruceEquityTotal( market, side, Coin() );
 
                     // cache some order info
                     static const int ORDERSIZE_EXPAND_THRESH = 16;
@@ -664,7 +664,7 @@ void SpruceOverseer::runCancellors( Engine *engine, const QString &market, const
 //        }
 
         // store active spruce offset for this side
-        const Coin spruce_offset = engine->positions->getActiveSpruceOrdersOffset( market, side );
+        const Coin spruce_offset = engine->positions->getActiveSpruceOrdersOffset( market, side, pos->price );
 
         /// cancellor 3: look for spruce active <> what we should short/long
         if ( ( side == SIDE_BUY  && amount_to_shortlong.isZeroOrLess() &&
@@ -677,7 +677,7 @@ void SpruceOverseer::runCancellors( Engine *engine, const QString &market, const
             continue;
         }
 
-        const Coin active_amount = engine->positions->getActiveSpruceEquityTotal( market, side );
+        const Coin active_amount = engine->positions->getActiveSpruceEquityTotal( market, side, pos->price );
 
         /// cancellor 4: look for active amount > amount_to_shortlong + order_size_limit
         if ( ( side == SIDE_BUY  && amount_to_shortlong.isZeroOrLess() &&
@@ -693,7 +693,8 @@ void SpruceOverseer::runCancellors( Engine *engine, const QString &market, const
         const Coin order_max = side == SIDE_BUY ? spruce->getMarketBuyMax( market ) :
                                                   spruce->getMarketSellMax( market );
 
-        /// cancellor 5: look for active amount > order_max (so we can change the value in realtime)
+        /// cancellor 5: look for active amount > order_max
+        /// this won't go off normally, only if we change the limit. then this will shave off some orders.
         if ( active_amount > order_max )
         {
             cancelForReason( engine, market, side, CANCELLING_FOR_SPRUCE_5 );
