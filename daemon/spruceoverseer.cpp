@@ -11,7 +11,7 @@
 #include <QList>
 #include <QSet>
 
-const bool expand_spread_down = true; // true = expand down only for base greed, false = both both sides
+const bool expand_spread_down = false; // true = expand down only for base greed, false = both both sides
 
 SpruceOverseer::SpruceOverseer( Spruce *_spruce )
     : QObject( nullptr ),
@@ -609,11 +609,6 @@ void SpruceOverseer::onSaveSpruceSettings()
 
 void SpruceOverseer::runCancellors( Engine *engine, const QString &market, const quint8 side, const QString &strategy )
 {
-    // because price is atomic, incorporate a limit for trailing price cancellor 1 for each market.
-    // 1 = cancelling pace matches the pace of setting orders, 2 = double the pace
-    static const int CANCELLOR1_LIMIT = 1;
-    QMap<QString,int> cancellor1_current;
-
     // sort active positions by longest active first, shortest active last
     const QVector<Position*> active_by_set_time = engine->positions->activeBySetTime();
 
@@ -641,12 +636,8 @@ void SpruceOverseer::runCancellors( Engine *engine, const QString &market, const
              ( ( side == SIDE_BUY  && pos->price < buy_price_limit ) ||
                ( side == SIDE_SELL && pos->price > sell_price_limit ) ) )
         {
-            // limit cancellor 1 to trigger CANCELLOR1_LIMIT times, per market, per side, per spruce tick
-            if ( ++cancellor1_current[ market ] <= CANCELLOR1_LIMIT )
-            {
-                engine->positions->cancel( pos, false, CANCELLING_FOR_SPRUCE );
-                continue;
-            }
+            engine->positions->cancel( pos, false, CANCELLING_FOR_SPRUCE );
+            continue;
         }
 
         const QString exchange_market_key = QString( "%1-%2" )
