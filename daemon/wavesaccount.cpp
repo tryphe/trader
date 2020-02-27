@@ -76,13 +76,14 @@ bool WavesAccount::sign( const QByteArray &message, QByteArray &signature, bool 
         return false;
     }
 
-    // generate random bytes
+    // generate random bytes if add_random_bytes is set
     QByteArray random_bytes;
     random_bytes.resize( 64 );
-    random_bytes.fill( 0x00 );
 
     if ( add_random_bytes )
         QRandomGenerator::global()->generate( random_bytes.begin(), random_bytes.end() );
+    else
+        random_bytes.fill( 0x00 );
 
     // assure correct signature buffer size
     signature.resize( 64 );
@@ -91,7 +92,7 @@ bool WavesAccount::sign( const QByteArray &message, QByteArray &signature, bool 
                                      reinterpret_cast<const uint8_t*>( private_key.constData() ),
                                      reinterpret_cast<const uint8_t*>( message.constData() ),
                                      message.size(),
-                                     reinterpret_cast<const uint8_t*>(random_bytes.constData() ) );
+                                     reinterpret_cast<const uint8_t*>( random_bytes.constData() ) );
 
     return ret == 0;
 }
