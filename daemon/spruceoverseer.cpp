@@ -146,10 +146,6 @@ void SpruceOverseer::onSpruceUp()
                          ( !is_buy && side == SIDE_BUY ) )
                         continue;
 
-                    // run cancellors for this strategy tag right before we read the active amount
-                    // (run down here to avoid running unnecessarily)
-                    runCancellors( engine, market_to_trade, side, strategy );
-
                     const Coin qty_to_shortlong_abs = qty_to_shortlong.abs();
                     const Coin amount_to_shortlong = spruce->getCurrencyPriceByMarket( market ) * qty_to_shortlong;
                     const Coin amount_to_shortlong_abs = amount_to_shortlong.abs();
@@ -212,6 +208,10 @@ void SpruceOverseer::onSpruceUp()
                                           .arg( Global::getSecureRandomRange32( 60, 180 ) );
                         }
                     }
+
+                    // run cancellors for this strategy tag right before we read the active amount
+                    // (run down here to avoid running unnecessarily)
+                    runCancellors( engine, market_to_trade, side, strategy, side == SIDE_BUY ? buy_price : sell_price );
 
                     // skip noisy amount
                     if ( amount_to_shortlong_abs < order_size_limit )
@@ -607,7 +607,7 @@ void SpruceOverseer::onSaveSpruceSettings()
     }
 }
 
-void SpruceOverseer::runCancellors( Engine *engine, const QString &market, const quint8 side, const QString &strategy )
+void SpruceOverseer::runCancellors( Engine *engine, const QString &market, const quint8 side, const QString &strategy, const Coin &flux_price )
 {
     // sort active positions by longest active first, shortest active last
     const QVector<Position*> active_by_set_time = engine->positions->activeBySetTime();
@@ -640,6 +640,33 @@ void SpruceOverseer::runCancellors( Engine *engine, const QString &market, const
             continue;
         }
 
+        const Coin order_max = side == SIDE_BUY ? spruce->getMarketBuyMax( market ) :
+                                                  spruce->getMarketSellMax( market );
+
+        const Coin active_amount = engine->positions->getActiveSpruceEquityTotal( market, side, flux_price );
+
+        /// cancellor 4: look for active amount > order_max
+        /// this won't go off normally, only if we change the limit. then this will shave off some orders.
+        if ( active_amount > order_max )
+        {
+            // cancel a random order on that side
+            Position *const &pos_to_cancel = spruce->getOrderCancelMode() ? engine->positions->getRandomSprucePosition( market, side ) :
+                                             side == SIDE_BUY ? engine->positions->getHighestSpruceBuy( market ) :
+                                                                engine->positions->getLowestSpruceSell( market );
+
+            // check badptr just incase, but should be impossible to get here
+            if ( pos_to_cancel == nullptr )
+                return;
+
+            engine->positions->cancel( pos_to_cancel, false, CANCELLING_FOR_SPRUCE_4 );
+            continue;
+        }
+
+        // for cancellor 2 and 3, only try to cancel positions within the flux bounds
+        if ( ( side == SIDE_BUY  && pos->price < flux_price ) ||
+             ( side == SIDE_SELL && pos->price > flux_price ) )
+            continue;
+
         const QString exchange_market_key = QString( "%1-%2" )
                                             .arg( engine->engine_type )
                                             .arg( market );
@@ -654,9 +681,9 @@ void SpruceOverseer::runCancellors( Engine *engine, const QString &market, const
         const Coin zero_bound_tolerance = order_size * spruce->getOrderNiceZeroBound();
 
         // store active spruce offset for this side
-        const Coin spruce_offset = engine->positions->getActiveSpruceOrdersOffset( market, side, pos->price );
+        const Coin spruce_offset = engine->positions->getActiveSpruceOrdersOffset( market, side, flux_price );
 
-        /// cancellor 3: look for spruce active <> what we should short/long
+        /// cancellor 2: look for spruce active <> what we should short/long
         if ( ( side == SIDE_BUY  && amount_to_shortlong.isZeroOrLess() &&
                amount_to_shortlong + spruce_offset >  order_size_limit + zero_bound_tolerance ) ||
              ( side == SIDE_SELL && amount_to_shortlong.isGreaterThanZero() &&
@@ -666,35 +693,13 @@ void SpruceOverseer::runCancellors( Engine *engine, const QString &market, const
             continue;
         }
 
-        const Coin active_amount = engine->positions->getActiveSpruceEquityTotal( market, side, pos->price );
-
-        /// cancellor 4: look for active amount > amount_to_shortlong + order_size_limit
+        /// cancellor 3: look for active amount > amount_to_shortlong + order_size_limit
         if ( ( side == SIDE_BUY  && amount_to_shortlong.isZeroOrLess() &&
                -active_amount < amount_to_shortlong - order_size_limit - zero_bound_tolerance ) ||
              ( side == SIDE_SELL && amount_to_shortlong.isGreaterThanZero() &&
                 active_amount > amount_to_shortlong + order_size_limit + zero_bound_tolerance ) )
         {
             engine->positions->cancel( pos, false, CANCELLING_FOR_SPRUCE_3 );
-            continue;
-        }
-
-        const Coin order_max = side == SIDE_BUY ? spruce->getMarketBuyMax( market ) :
-                                                  spruce->getMarketSellMax( market );
-
-        /// cancellor 5: look for active amount > order_max
-        /// this won't go off normally, only if we change the limit. then this will shave off some orders.
-        if ( active_amount > order_max )
-        {
-            // cancel a random order on that side
-            Position *const &pos_to_cancel = spruce->getOrderCancelMode() ? engine->positions->getRandomSprucePosition( market, side ) :
-                                             side == SIDE_BUY ? engine->positions->getHighestSpruceBuy( market ) :
-                                                                engine->positions->getLowestSpruceSell( market );
-
-            // check badptr just incase, but should be impossible to get here
-            if ( pos_to_cancel == nullptr )
-                return;
-
-            engine->positions->cancel( pos_to_cancel, false, CANCELLING_FOR_SPRUCE_4 );
             continue;
         }
     }

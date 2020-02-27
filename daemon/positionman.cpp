@@ -128,8 +128,8 @@ Coin PositionMan::getActiveSpruceEquityTotal( const QString &market, quint8 side
               pos->market != market ||
              !pos->strategy_tag.startsWith( "spruce" ) ||
               // if the threshold is zero, include any price into the total, otherwise return amount inside of the threshold only
-             ( side == SIDE_BUY  && price_threshold.isGreaterThanZero() && pos->price < price_threshold ) ||
-             ( side == SIDE_SELL && price_threshold.isGreaterThanZero() && pos->price > price_threshold ) )
+             ( side == SIDE_BUY  && price_threshold.isGreaterThanZero() && pos->price >= price_threshold ) ||
+             ( side == SIDE_SELL && price_threshold.isGreaterThanZero() && pos->price <= price_threshold ) )
             continue;
 
         ret += pos->btc_amount;
@@ -150,8 +150,8 @@ Coin PositionMan::getActiveSpruceOrdersOffset( const QString &market, quint8 sid
               pos->market != market ||
              !pos->strategy_tag.startsWith( "spruce" ) ||
               // if the threshold is zero, include any price into the total, otherwise return amount inside of the threshold only
-             ( side == SIDE_BUY  && price_threshold.isGreaterThanZero() && pos->price < price_threshold ) ||
-             ( side == SIDE_SELL && price_threshold.isGreaterThanZero() && pos->price > price_threshold ) )
+             ( side == SIDE_BUY  && price_threshold.isGreaterThanZero() && pos->price >= price_threshold ) ||
+             ( side == SIDE_SELL && price_threshold.isGreaterThanZero() && pos->price <= price_threshold ) )
             continue;
 
         if ( pos->side == SIDE_BUY ) ret += pos->btc_amount;
@@ -1132,7 +1132,6 @@ void PositionMan::cancel( Position *const &pos, bool quiet, quint8 cancel_reason
                           cancel_reason == CANCELLING_FOR_SPRUCE_2       ? " sp2 " :
                           cancel_reason == CANCELLING_FOR_SPRUCE_3       ? " sp3 " :
                           cancel_reason == CANCELLING_FOR_SPRUCE_4       ? " sp4 " :
-                          cancel_reason == CANCELLING_FOR_SPRUCE_5       ? " sp5 " :
                                                                            "" ); // CANCELLING_FOR_SLIPPAGE_RESET
 
         kDebug() << QString( "%1 %2" )
