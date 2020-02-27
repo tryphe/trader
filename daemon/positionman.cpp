@@ -128,8 +128,8 @@ Coin PositionMan::getActiveSpruceEquityTotal( const QString &market, quint8 side
               pos->market != market ||
              !pos->strategy_tag.startsWith( "spruce" ) ||
               // if the threshold is zero, include any price into the total, otherwise return amount inside of the threshold only
-             ( side == SIDE_BUY  && price_threshold.isGreaterThanZero() && pos->price >= price_threshold ) ||
-             ( side == SIDE_SELL && price_threshold.isGreaterThanZero() && pos->price <= price_threshold ) )
+             ( side == SIDE_BUY  && price_threshold.isGreaterThanZero() && pos->price < price_threshold ) ||
+             ( side == SIDE_SELL && price_threshold.isGreaterThanZero() && pos->price > price_threshold ) )
             continue;
 
         ret += pos->btc_amount;
@@ -150,8 +150,8 @@ Coin PositionMan::getActiveSpruceOrdersOffset( const QString &market, quint8 sid
               pos->market != market ||
              !pos->strategy_tag.startsWith( "spruce" ) ||
               // if the threshold is zero, include any price into the total, otherwise return amount inside of the threshold only
-             ( side == SIDE_BUY  && price_threshold.isGreaterThanZero() && pos->price >= price_threshold ) ||
-             ( side == SIDE_SELL && price_threshold.isGreaterThanZero() && pos->price <= price_threshold ) )
+             ( side == SIDE_BUY  && price_threshold.isGreaterThanZero() && pos->price < price_threshold ) ||
+             ( side == SIDE_SELL && price_threshold.isGreaterThanZero() && pos->price > price_threshold ) )
             continue;
 
         if ( pos->side == SIDE_BUY ) ret += pos->btc_amount;
