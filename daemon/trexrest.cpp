@@ -699,7 +699,7 @@ void TrexREST::parseGetOrder( const QJsonObject &order )
                                                                                      : SIDE_BUY;
 
             // TODO: FIX THIS (we don't know if it's a spruce order, but assume for now)
-            engine->updateStatsAndPrintFill( "getorder", market, order_id, side, "spruce", btc_amount_filled, Coin(), price, btc_commission, true );
+            engine->updateStatsAndPrintFill( "getorder", market, order_id, side, "spruce", btc_amount_filled, Coin(), price, btc_commission );
         }
 
         return;

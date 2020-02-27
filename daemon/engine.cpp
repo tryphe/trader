@@ -374,7 +374,7 @@ void Engine::fillNQ( const QString &order_id, qint8 fill_type , quint8 extra_dat
 
     // update stats and print
     // note: btc_commission is set in rest->parseOrderHistory
-    updateStatsAndPrintFill( fill_str, pos->market, pos->order_number, pos->side, pos->strategy_tag, pos->btc_amount, Coin(), pos->price, pos->btc_commission, false );
+    updateStatsAndPrintFill( fill_str, pos->market, pos->order_number, pos->side, pos->strategy_tag, pos->btc_amount, Coin(), pos->price, pos->btc_commission );
 
     // set the next position
     flipPosition( pos );
@@ -390,7 +390,7 @@ void Engine::fillNQ( const QString &order_id, qint8 fill_type , quint8 extra_dat
 
 void Engine::updateStatsAndPrintFill( const QString &fill_type, const Market &market, const QString &order_id, const quint8 side,
                                       const QString &strategy_tag, Coin btc_amount, Coin quantity, const Coin &price,
-                                      const Coin &btc_commission, bool partial_fill )
+                                      const Coin &btc_commission )
 {
     // one of these values should be zero, unless the exchange supplies both?
     if ( btc_amount.isZero() )
@@ -418,7 +418,7 @@ void Engine::updateStatsAndPrintFill( const QString &fill_type, const Market &ma
     quantity = btc_amount / price;
 
     // add stats changes to alpha tracker (note: volume before commission is used)
-    alpha->addAlpha( market, side, btc_amount, price, partial_fill );
+    alpha->addAlpha( market, side, btc_amount, price );
     alpha->addDailyVolume( QDateTime::currentSecsSinceEpoch(), btc_amount );
 
     // add qty changes to spruce strat
@@ -435,8 +435,7 @@ void Engine::updateStatsAndPrintFill( const QString &fill_type, const Market &ma
                                  .arg( is_buy ? ">>>grn<<<" : ">>>red<<<" )
                                  .arg( is_buy ? "buy " : "sell" );
 
-        kDebug() << QString( "%1(%2): %3 %4 %5 (c %7 (q %8 @ %9 o %10" )
-                    .arg( partial_fill ? "part" : "full" )
+        kDebug() << QString( "fill-%1: %2 %3 %4 (c %5 (q %6 @ %7 o %8" )
                     .arg( fill_type, -8 )
                     .arg( side_str )
                     .arg( market, MARKET_STRING_WIDTH )

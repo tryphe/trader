@@ -630,7 +630,7 @@ void WavesREST::parseOrderStatus( const QJsonObject &info, Request *const &reque
     {
         // order might be partially filled in this state
         if ( filled_quantity.isGreaterThanZero() )
-            engine->updateStatsAndPrintFill( "getorder", pos->market, pos->order_number, pos->side, pos->strategy_tag, Coin(), filled_quantity, pos->price, Coin(), true );
+            engine->updateStatsAndPrintFill( "getorder", pos->market, pos->order_number, pos->side, pos->strategy_tag, Coin(), filled_quantity, pos->price, Coin() );
 
         engine->processCancelledOrder( pos );
     }

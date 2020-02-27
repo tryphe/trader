@@ -81,7 +81,7 @@ public:
 
     void updateStatsAndPrintFill( const QString &fill_type, const Market &market, const QString &order_id, const quint8 side,
                                   const QString &strategy_tag, Coin btc_amount, Coin quantity, const Coin &price,
-                                  const Coin &btc_commission, bool partial_fill );
+                                  const Coin &btc_commission );
 
     QVector<QString/*order_id*/> orders_for_polling;
 
