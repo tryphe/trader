@@ -43,6 +43,10 @@ SpruceOverseer::~SpruceOverseer()
 
 void SpruceOverseer::onSpruceUp()
 {
+    // store last spread distance limits
+    static QMap<QString,Coin> last_spread_distance_limit_buys;
+    static QMap<QString,Coin> last_spread_distance_limit_sells;
+
     if ( !spruce->isActive() )
         return;
 
@@ -213,33 +217,47 @@ void SpruceOverseer::onSpruceUp()
                     // (run down here to avoid running unnecessarily)
                     runCancellors( engine, market_to_trade, side, strategy, side == SIDE_BUY ? buy_price : sell_price );
 
-                    // skip noisy amount
-                    if ( amount_to_shortlong_abs < order_size_limit )
-                        continue;
-
-                    /// detect collisions for this market within the spread distance limit
+                    /// detect conflicting positions for this market within the spread distance limit
                     // cache spread distance limit, and for side sell, limit = 2 - limit
                     const Coin spread_distance_limit_buys = std::min( spruce->getOrderGreed() + greed_reduce, spruce->getOrderGreedMinimum() );
                     const Coin spread_distance_limit_sells = is_buy ? Coin() : ( CoinAmount::COIN *2 ) - spread_distance_limit_buys;
 
-                    for ( QSet<Position*>::const_iterator j = engine->positions->all().begin(); j != engine->positions->all().end(); j++ )
+                    // cache spread distance limit for this side
+                    if ( is_buy )
+                        last_spread_distance_limit_buys.insert( market, spread_distance_limit_buys );
+                    else
+                        last_spread_distance_limit_sells.insert( market, spread_distance_limit_sells );
+
+                    // only probe for conflicting position if limit value for the opposite side exists
+                    if ( (  is_buy && last_spread_distance_limit_sells.value( market ).isGreaterThanZero() ) ||
+                         ( !is_buy && last_spread_distance_limit_buys.value( market ).isGreaterThanZero() ) )
                     {
-                        Position *const &pos = *j;
+                        const Coin &limit_for_other_side = is_buy ? last_spread_distance_limit_sells.value( market ) :
+                                                                    last_spread_distance_limit_buys.value( market );
 
-                        if ( pos->side == side ||
-                             pos->is_cancelling ||
-                             pos->order_set_time == 0 ||
-                             pos->market != market ||
-                             pos->strategy_tag == strategy )
-                            continue;
-
-                        if ( (  is_buy && buy_price  >= pos->sell_price * spread_distance_limit_buys ) ||
-                             ( !is_buy && sell_price <= pos->buy_price * spread_distance_limit_sells ) )
+                        for ( QSet<Position*>::const_iterator j = engine->positions->all().begin(); j != engine->positions->all().end(); j++ )
                         {
-                            kDebug() << "[Spruce] cancelling conflicting spruce order" << pos->order_number;
-                            engine->positions->cancel( pos );
+                            Position *const &pos = *j;
+
+                            // look for positions on the other side of this market
+                            if ( pos->side == side ||
+                                 pos->is_cancelling ||
+                                 pos->order_set_time == 0 ||
+                                 pos->market != market )
+                                continue;
+
+                            if ( (  is_buy && buy_price * limit_for_other_side >= pos->sell_price ) ||
+                                 ( !is_buy && sell_price * limit_for_other_side <= pos->buy_price ) )
+                            {
+                                kDebug() << "[Spruce] cancelling conflicting spruce order" << pos->order_number;
+                                engine->positions->cancel( pos );
+                            }
                         }
                     }
+
+                    // skip noisy amount
+                    if ( amount_to_shortlong_abs < order_size_limit )
+                        continue;
 
                     // don't go over our per-market max
                     if ( spruce_active_for_side + order_size >= order_max )
