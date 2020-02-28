@@ -228,6 +228,10 @@ void SpruceOverseer::onSpruceUp()
                     else
                         last_spread_distance_limit_sells.insert( market, spread_distance_limit_sells );
 
+                    // if we wouldn't set an order this side, skip searching for conflicts on the other side
+                    if ( amount_to_shortlong_abs < order_size_limit )
+                        continue;
+
                     // only probe for conflicting position if limit value for the opposite side exists
                     if ( (  is_buy && last_spread_distance_limit_sells.value( market ).isGreaterThanZero() ) ||
                          ( !is_buy && last_spread_distance_limit_buys.value( market ).isGreaterThanZero() ) )
@@ -253,10 +257,6 @@ void SpruceOverseer::onSpruceUp()
                             }
                         }
                     }
-
-                    // skip noisy amount
-                    if ( amount_to_shortlong_abs < order_size_limit )
-                        continue;
 
                     // don't go over our per-market max
                     if ( spruce_active_for_side + order_size >= order_max )
