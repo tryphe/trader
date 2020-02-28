@@ -249,8 +249,7 @@ void SpruceOverseer::onSpruceUp()
                             if ( (  is_buy && buy_price * limit_for_other_side >= pos->sell_price ) ||
                                  ( !is_buy && sell_price * limit_for_other_side <= pos->buy_price ) )
                             {
-                                kDebug() << "[Spruce] cancelling conflicting spruce order" << pos->order_number;
-                                engine->positions->cancel( pos );
+                                engine->positions->cancel( pos, false, CANCELLING_FOR_SPRUCE_CONFLICT );
                             }
                         }
                     }
