@@ -2,14 +2,18 @@
 #include "spruce.h"
 #include "alphatracker.h"
 #include "position.h"
+#include "coinamount.h"
+#include "misctypes.h"
 #include "market.h"
 #include "engine.h"
 #include "positionman.h"
 
 #include <QTimer>
+#include <QVector>
 #include <QMap>
 #include <QList>
 #include <QSet>
+#include <QFile>
 
 const bool expand_spread_down = false; // true = expand down only for base greed, false = both both sides
 
