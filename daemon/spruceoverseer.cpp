@@ -48,8 +48,8 @@ SpruceOverseer::~SpruceOverseer()
 void SpruceOverseer::onSpruceUp()
 {
     // store last spread distance limits
-    static QMap<QString,Coin> last_spread_distance_limit_buys;
-    static QMap<QString,Coin> last_spread_distance_limit_sells;
+    static QMap<QString,Coin> last_spread_reduce_buys;
+    static QMap<QString,Coin> last_spread_reduce_sells;
 
     if ( !spruce->isActive() )
         return;
@@ -174,8 +174,8 @@ void SpruceOverseer::onSpruceUp()
 
                     const Coin spread_put_threshold = order_size_unscaled * spruce->getOrderNiceSpreadPut();
 
-                    // declare greed reduce here so we can print/evalulate it after
-                    Coin greed_reduce;
+                    // declare spread reduce here so we can print/evalulate it after
+                    Coin spread_reduce;
 
                     // put prices at spread if pending amount to shortlong is greater than size * order_nice_spreadput
                     if ( spread_put_threshold.isGreaterThanZero() &&
@@ -205,9 +205,9 @@ void SpruceOverseer::onSpruceUp()
                         {
                             // amount to reduce greed by = ( amount_to_shortlong / spreadput ) * 0.01
                             // reduce greed by 0.1% for every spread_put_threshold amount we should set
-                            greed_reduce = ( amount_to_shortlong_abs / spread_put_threshold ) * ( CoinAmount::SATOSHI * 100000 );
+                            spread_reduce = ( amount_to_shortlong_abs / spread_put_threshold ) * ( CoinAmount::SATOSHI * 100000 );
 
-                            const TickerInfo collapsed_spread = getSpreadForSide( market, side, true, false, true, true, greed_reduce );
+                            const TickerInfo collapsed_spread = getSpreadForSide( market, side, true, false, true, true, spread_reduce );
                             buy_price = collapsed_spread.bid_price;
                             sell_price = collapsed_spread.ask_price;
 
@@ -222,43 +222,36 @@ void SpruceOverseer::onSpruceUp()
                     runCancellors( engine, market_to_trade, side, strategy, side == SIDE_BUY ? buy_price : sell_price );
 
                     /// detect conflicting positions for this market within the spread distance limit
-                    // cache spread distance limit, and for side sell, limit = 2 - limit
-                    const Coin spread_distance_limit_buys = std::min( spruce->getOrderGreed() + greed_reduce, spruce->getOrderGreedMinimum() );
-                    const Coin spread_distance_limit_sells = is_buy ? Coin() : ( CoinAmount::COIN *2 ) - spread_distance_limit_buys;
-
                     // cache spread distance limit for this side
                     if ( is_buy )
-                        last_spread_distance_limit_buys.insert( market, spread_distance_limit_buys );
+                        last_spread_reduce_buys.insert( market, spread_reduce );
                     else
-                        last_spread_distance_limit_sells.insert( market, spread_distance_limit_sells );
+                        last_spread_reduce_sells.insert( market, spread_reduce );
+
+                    // cache spread distance limit for this side, but selected larger spread_reduce value from both sides
+                    const Coin spread_reduce_selected = std::max( last_spread_reduce_buys.value( market ), last_spread_reduce_sells.value( market ) );
+                    const Coin spread_distance_limit = std::min( spruce->getOrderGreed() + spread_reduce_selected, spruce->getOrderGreedMinimum() );
 
                     // if we wouldn't set an order this side, skip searching for conflicts on the other side
                     if ( amount_to_shortlong_abs < order_size_limit )
                         continue;
 
-                    // only probe for conflicting position if limit value for the opposite side exists
-                    if ( (  is_buy && last_spread_distance_limit_sells.value( market ).isGreaterThanZero() ) ||
-                         ( !is_buy && last_spread_distance_limit_buys.value( market ).isGreaterThanZero() ) )
+                    for ( QSet<Position*>::const_iterator j = engine->positions->all().begin(); j != engine->positions->all().end(); j++ )
                     {
-                        const Coin &limit_for_other_side = is_buy ? last_spread_distance_limit_sells.value( market ) :
-                                                                    last_spread_distance_limit_buys.value( market );
+                        Position *const &pos = *j;
 
-                        for ( QSet<Position*>::const_iterator j = engine->positions->all().begin(); j != engine->positions->all().end(); j++ )
+                        // look for positions on the other side of this market
+                        if ( pos->side == side ||
+                             pos->is_cancelling ||
+                             pos->order_set_time == 0 ||
+                             pos->market != market ||
+                            !pos->strategy_tag.startsWith( "spruce" ) )
+                            continue;
+
+                        if ( (  is_buy && buy_price >= pos->sell_price * spread_distance_limit ) ||
+                             ( !is_buy && sell_price * spread_distance_limit <= pos->buy_price ) )
                         {
-                            Position *const &pos = *j;
-
-                            // look for positions on the other side of this market
-                            if ( pos->side == side ||
-                                 pos->is_cancelling ||
-                                 pos->order_set_time == 0 ||
-                                 pos->market != market )
-                                continue;
-
-                            if ( (  is_buy && buy_price * limit_for_other_side >= pos->sell_price ) ||
-                                 ( !is_buy && sell_price * limit_for_other_side <= pos->buy_price ) )
-                            {
-                                engine->positions->cancel( pos, false, CANCELLING_FOR_SPRUCE_CONFLICT );
-                            }
+                            engine->positions->cancel( pos, false, CANCELLING_FOR_SPRUCE_CONFLICT );
                         }
                     }
 
@@ -273,14 +266,14 @@ void SpruceOverseer::onSpruceUp()
                     if ( spruce_active_for_side + order_size_limit >= amount_to_shortlong_abs )
                         continue;
 
-                    kDebug() << QString( "[%1] %2 | coeff %3 | qty %4 | amt %5 | on-order %6 | spread %7" )
+                    kDebug() << QString( "[%1] %2 | coeff %3 | qty %4 | amt %5 | on-order %6 | sp_reduce %7" )
                                    .arg( strategy, -MARKET_STRING_WIDTH - 9 )
                                    .arg( side == SIDE_BUY ? buy_price : sell_price )
                                    .arg( spruce->getLastCoeffForMarket( market ), 12 )
                                    .arg( qty_to_shortlong, 20 )
                                    .arg( amount_to_shortlong, 13 )
                                    .arg( spruce_active_for_side, 12 )
-                                   .arg( order_type.contains( "taker" ) ? "*taker" : Coin( std::min( spruce->getOrderGreed() + greed_reduce, spruce->getOrderGreedMinimum() ) ).toString( 4 ) );
+                                   .arg( order_type.contains( "taker" ) ? "*taker" : spread_reduce.toString( 4 ) );
 
                     // queue the order if we aren't paper trading
 #if !defined(PAPER_TRADE)
