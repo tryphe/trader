@@ -213,7 +213,7 @@ void SpruceOverseer::onSpruceUp()
 
                             // set slow timeout
                             order_type += QString( "-timeout%1" )
-                                          .arg( Global::getSecureRandomRange32( 60, 180 ) );
+                                          .arg( Global::getSecureRandomRange32( 120, 200 ) );
                         }
                     }
 
@@ -702,17 +702,17 @@ void SpruceOverseer::runCancellors( Engine *engine, const QString &market, const
         const Coin zero_bound_tolerance = order_size * spruce->getOrderNiceZeroBound();
 
         // store active spruce offset for this side
-        const Coin spruce_offset = engine->positions->getActiveSpruceOrdersOffset( market, side, flux_price );
+//        const Coin spruce_offset = engine->positions->getActiveSpruceOrdersOffset( market, side, flux_price );
 
         /// cancellor 2: look for spruce active <> what we should short/long
-        if ( ( side == SIDE_BUY  && amount_to_shortlong.isZeroOrLess() &&
-               amount_to_shortlong + spruce_offset >  order_size_limit + zero_bound_tolerance ) ||
-             ( side == SIDE_SELL && amount_to_shortlong.isGreaterThanZero() &&
-               amount_to_shortlong + spruce_offset < -order_size_limit - zero_bound_tolerance ) )
-        {
-            engine->positions->cancel( pos, false, CANCELLING_FOR_SPRUCE_2 );
-            continue;
-        }
+//        if ( ( side == SIDE_BUY  && amount_to_shortlong.isZeroOrLess() &&
+//               amount_to_shortlong + spruce_offset >  order_size_limit + zero_bound_tolerance ) ||
+//             ( side == SIDE_SELL && amount_to_shortlong.isGreaterThanZero() &&
+//               amount_to_shortlong + spruce_offset < -order_size_limit - zero_bound_tolerance ) )
+//        {
+//            engine->positions->cancel( pos, false, CANCELLING_FOR_SPRUCE_2 );
+//            continue;
+//        }
 
         /// cancellor 3: look for active amount > amount_to_shortlong + order_size_limit
         if ( ( side == SIDE_BUY  && amount_to_shortlong.isZeroOrLess() &&
