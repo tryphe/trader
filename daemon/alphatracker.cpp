@@ -22,6 +22,8 @@ void AlphaTracker::addAlpha( const QString &market, const quint8 side, const Coi
     // for each trade, v += volume, and vp += volume * price
     d.v += volume;
     d.vp += volume * price;
+
+    d.trades++;
 }
 
 Coin AlphaTracker::getAlpha( const QString &market ) const
