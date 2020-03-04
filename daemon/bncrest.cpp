@@ -497,14 +497,19 @@ void BncREST::onNamReply( QNetworkReply *const &reply )
     deleteReply( reply, request );
 }
 
-void BncREST::onCheckBotOrders()
+void BncREST::checkBotOrders( bool ignore_flow_control )
 {
     // return on unset key/secret, or if we already queued this command
-    if ( isKeyOrSecretUnset() || isCommandQueued( BNC_COMMAND_GETORDERS ) || isCommandSent( BNC_COMMAND_GETORDERS, 10 ) )
+    if ( !ignore_flow_control && ( isKeyOrSecretUnset() || isCommandQueued( BNC_COMMAND_GETORDERS ) || isCommandSent( BNC_COMMAND_GETORDERS, 10 ) ) )
         return;
 
     // get list of open orders
     sendRequest( BNC_COMMAND_GETORDERS, "", nullptr, 40 );
+}
+
+void BncREST::onCheckBotOrders()
+{
+    checkBotOrders();
 }
 
 void BncREST::onCheckTicker()

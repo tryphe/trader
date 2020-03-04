@@ -385,29 +385,18 @@ void WavesREST::checkTicker( bool ignore_flow_control )
     next_ticker_index_to_query++;
 }
 
-void WavesREST::onCheckBotOrders()
+void WavesREST::checkBotOrders( bool ignore_flow_control )
 {
-    if ( yieldToFlowControl() )
+    if ( !ignore_flow_control && yieldToFlowControl() )
         return;
 
     sendRequest( QString( WAVES_COMMAND_GET_MY_ORDERS )
                   .arg( QString( account.publicKeyB58() ) ) );
+}
 
-//    /// step 1: query one active order
-//    // check for empty positions
-//    if ( engine->getPositionMan()->active().size() > 0 )
-//    {
-//        // TODO: fix this crappy shit
-//        QList<Position*> pos_list = engine->getPositionMan()->active().toList();
-
-//        if ( ++last_index_checked >= pos_list.size() )
-//            last_index_checked = 0;
-
-//        //kDebug() << "checking order" << order_to_check->order_number;
-
-//        Position *order_to_check = pos_list.value( last_index_checked );
-//        getOrderStatus( order_to_check );
-//    }
+void WavesREST::onCheckBotOrders()
+{
+    checkBotOrders();
 }
 
 void WavesREST::onCheckCancellingOrders()

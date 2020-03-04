@@ -32,6 +32,9 @@ public:
     void sendCancelNonLocal( const QString &order_id , const QString &amount_asset_alias, const QString &price_asset_alias );
     void sendBuySell( Position *const &pos, bool quiet = true );
 
+    void checkTicker( bool ignore_flow_control = false );
+    void checkBotOrders( bool ignore_flow_control = false );
+
 public Q_SLOTS:
     void sendNamQueue();
     void onNamReply( QNetworkReply *const &reply );
@@ -42,8 +45,6 @@ public Q_SLOTS:
     void onCheckCancellingOrders();
 
 private:
-    void checkTicker( bool ignore_flow_control = false );
-
     void parseMarketData( const QJsonObject &info );
     void parseMarketStatus( const QJsonObject &info, Request *const &request );
     void parseOrderStatus( const QJsonObject &info, Request *const &request );

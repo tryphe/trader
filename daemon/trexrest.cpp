@@ -439,13 +439,18 @@ void TrexREST::onNamReply( QNetworkReply *const &reply )
     deleteReply( reply, request );
 }
 
-void TrexREST::onCheckBotOrders()
+void TrexREST::checkBotOrders( bool ignore_flow_control )
 {
     // return on unset key/secret, or if we already queued this command
-    if ( isKeyOrSecretUnset() || isCommandQueued( TREX_COMMAND_GET_ORDERS ) || isCommandSent( TREX_COMMAND_GET_ORDERS, 10 ) )
+    if ( !ignore_flow_control && ( isKeyOrSecretUnset() || isCommandQueued( TREX_COMMAND_GET_ORDERS ) || isCommandSent( TREX_COMMAND_GET_ORDERS, 10 ) ) )
         return;
 
     sendRequest( TREX_COMMAND_GET_ORDERS );
+}
+
+void TrexREST::onCheckBotOrders()
+{
+    checkBotOrders();
 }
 
 void TrexREST::onCheckOrderHistory()

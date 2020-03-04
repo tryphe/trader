@@ -41,6 +41,8 @@ public:
     void parseExchangeInfo( const QJsonObject &obj );
     void wssSendJsonObj( const QJsonObject &obj );
 
+    void checkBotOrders( bool ignore_flow_control = false );
+
 public Q_SLOTS:
     void sendNamQueue();
     void onNamReply( QNetworkReply *const &reply );

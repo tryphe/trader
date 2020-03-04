@@ -994,12 +994,15 @@ void PositionMan::cancelAll( QString market )
     is_running_cancelall = true;
     cancel_market_filter = market;
 
+    // send an order book request, but ignore flow control
     if ( engine->engine_type == ENGINE_BITTREX )
-        engine->rest_arr.value( ENGINE_BITTREX )->sendRequest( TREX_COMMAND_GET_ORDERS );
+        reinterpret_cast<TrexREST*>( engine->rest_arr.value( ENGINE_BITTREX ) )->checkBotOrders( true );
     else if ( engine->engine_type == ENGINE_BINANCE )
-        engine->rest_arr.value( ENGINE_BINANCE )->sendRequest( BNC_COMMAND_GETORDERS, "", nullptr, 40 );
+        reinterpret_cast<BncREST*>( engine->rest_arr.value( ENGINE_BINANCE ) )->checkBotOrders( true );
     else if ( engine->engine_type == ENGINE_POLONIEX )
-        engine->rest_arr.value( ENGINE_POLONIEX )->sendRequest( POLO_COMMAND_GETORDERS, POLO_COMMAND_GETORDERS_ARGS );
+        reinterpret_cast<PoloREST*>( engine->rest_arr.value( ENGINE_POLONIEX ) )->checkBotOrders( true );
+    else if ( engine->engine_type == ENGINE_WAVES )
+        reinterpret_cast<WavesREST*>( engine->rest_arr.value( ENGINE_WAVES ) )->checkBotOrders( true );
 }
 
 void PositionMan::cancelLocal( QString market )

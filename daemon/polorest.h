@@ -47,6 +47,8 @@ public:
     bool getWSS1000State() const { return wss_1000_state; }
     qreal getSlippageMul( const QString &market ) const { return slippage_multiplier.value( market, 0.005 ); }
 
+    void checkBotOrders( bool ignore_flow_control = false );
+
 public Q_SLOTS:
     // timer slots
     void sendNamQueue();

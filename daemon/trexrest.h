@@ -29,19 +29,6 @@ public:
 
     bool yieldToLag() const;
 
-public Q_SLOTS:
-    void sendNamQueue();
-    void onNamReply( QNetworkReply *const &reply );
-
-    void onCheckBotOrders();
-    void onCheckOrderHistory();
-    void onCheckTicker();
-
-    void wssConnected();
-    void wssCheckConnection();
-    void wssTextMessageReceived( const QString &msg );
-
-public:
     void sendNamRequest( Request *const &request );
     void sendBuySell( Position *const &pos, bool quiet = true );
     void sendCancel( const QString &order_id, Position *const &pos = nullptr );
@@ -54,6 +41,20 @@ public:
     void parseOrderHistory( const QJsonObject &obj );
 
     void wssSendJsonObj( const QJsonObject &obj );
+
+    void checkBotOrders( bool ignore_flow_control = false );
+
+public Q_SLOTS:
+    void sendNamQueue();
+    void onNamReply( QNetworkReply *const &reply );
+
+    void onCheckBotOrders();
+    void onCheckOrderHistory();
+    void onCheckTicker();
+
+    void wssConnected();
+    void wssCheckConnection();
+    void wssTextMessageReceived( const QString &msg );
 
 private:
     qint64 order_history_update_time{ 0 };
