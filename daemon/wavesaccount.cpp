@@ -222,7 +222,7 @@ QByteArray WavesAccount::createOrderBytes( Position * const &pos, const qint64 e
     order_v2_stream << pos->quantity.toIntSatoshis(); // amount = 9700000
     order_v2_stream << epoch_now; // order set time +1 minute
     order_v2_stream << epoch_expiration; // expiration time
-    order_v2_stream << 300000LL; // matcher fee = 300000
+    order_v2_stream << qint64( 300000 ); // matcher fee = 300000
 
     // make sure the stream only appended 40 more bytes ( size = 100 + 40 or 132 + 40 )
     assert( order_v2.size() == 140 || order_v2.size() == 172 );

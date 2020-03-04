@@ -76,12 +76,12 @@ void WavesAccountTest::test()
 
     Position pos = Position( "BTC_WAVES", SIDE_SELL, "", "0.01000000", "0.00097" );
 
-    QByteArray order_bytes_v2 = acc.createOrderBytes( &pos, 1580472938469LL, 1582978538468LL );
+    QByteArray order_bytes_v2 = acc.createOrderBytes( &pos, quint64( 1580472938469 ), quint64( 1582978538468 ) );
 
     assert( acc.createOrderId( order_bytes_v2 ) == "DH2Uyfdoj2pj1t1EEbLPYJMVRcWYqw6kBgQkVZjNiE2o" );
 
     /// test creating order body from the order byes above
-    assert( acc.createOrderBody( &pos, 1580472938469LL, 1582978538468LL , false ) == "{\"amount\":9700000,\"assetPair\":{\"amountAsset\":\"WAVES\",\"priceAsset\":\"8LQW8f7P5d5PZM7GtZEBgaqRPGSzS3DfPuiXrURJ4AJS\"},\"expiration\":1582978538468,\"id\":\"DH2Uyfdoj2pj1t1EEbLPYJMVRcWYqw6kBgQkVZjNiE2o\",\"matcherFee\":300000,\"matcherPublicKey\":\"9cpfKN9suPNvfeUNphzxXMjcnn974eme8ZhWUjaktzU5\",\"orderType\":\"sell\",\"price\":1000000,\"proofs\":[\"DCKsiyJu1avWRDe3Zr5Wxt2T1A352T1TosxwUiaQEaTDqYoNC7D9N3fa6fDjGLL3QRbxKnovKchrMCJb6fv1d5y\"],\"senderPublicKey\":\"27YM9icwd6TwfZD3KEJpYsj7rLwPAShJdYXrCt8QRo6L\",\"timestamp\":1580472938469,\"version\":2}" );
+    assert( acc.createOrderBody( &pos, quint64( 1580472938469 ), quint64( 1582978538468 ) , false ) == "{\"amount\":9700000,\"assetPair\":{\"amountAsset\":\"WAVES\",\"priceAsset\":\"8LQW8f7P5d5PZM7GtZEBgaqRPGSzS3DfPuiXrURJ4AJS\"},\"expiration\":1582978538468,\"id\":\"DH2Uyfdoj2pj1t1EEbLPYJMVRcWYqw6kBgQkVZjNiE2o\",\"matcherFee\":300000,\"matcherPublicKey\":\"9cpfKN9suPNvfeUNphzxXMjcnn974eme8ZhWUjaktzU5\",\"orderType\":\"sell\",\"price\":1000000,\"proofs\":[\"DCKsiyJu1avWRDe3Zr5Wxt2T1A352T1TosxwUiaQEaTDqYoNC7D9N3fa6fDjGLL3QRbxKnovKchrMCJb6fv1d5y\"],\"senderPublicKey\":\"27YM9icwd6TwfZD3KEJpYsj7rLwPAShJdYXrCt8QRo6L\",\"timestamp\":1580472938469,\"version\":2}" );
 
     /// test creating get orders bytes
     QByteArray get_orders_bytes = acc.createGetOrdersBytes( qint64( 0 ) );
