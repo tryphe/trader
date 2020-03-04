@@ -611,9 +611,9 @@ qint32 PositionMan::getMarketOrderTotal( const QString &market, bool onetime_onl
     return total;
 }
 
-qint32 PositionMan::getBuyTotal( const QString &market ) const
+qint32 PositionMan::getTotalOrdersForSide( const Market &market, const quint8 side, const QString &strategy_filter ) const
 {
-    if ( market.isEmpty() )
+    if ( !market.isValid() )
         return 0;
 
     qint32 total = 0;
@@ -623,8 +623,10 @@ qint32 PositionMan::getBuyTotal( const QString &market ) const
     {
         Position *const &pos = *i;
 
-        if ( pos->side == SIDE_BUY &&
-             pos->market == market )
+        if (  pos->side == side &&
+             !pos->is_cancelling &&
+              pos->market == market &&
+              pos->strategy_tag.startsWith( strategy_filter ) )
             total++;
     }
 
@@ -655,26 +657,6 @@ Coin PositionMan::getLoSell( const QString &market ) const
 Coin PositionMan::getHiBuy( const QString &market ) const
 {
     return engine->getMarketInfoStructure()[ market ].highest_buy;
-}
-
-qint32 PositionMan::getSellTotal( const QString &market ) const
-{
-    if ( market.isEmpty() )
-        return 0;
-
-    qint32 total = 0;
-
-    // get total order count for a market
-    for ( QSet<Position*>::const_iterator i = positions_all.begin(); i != positions_all.end(); i++ )
-    {
-        Position *const &pos = *i;
-
-        if ( pos->side == SIDE_SELL &&
-             pos->market == market )
-            total++;
-    }
-
-    return total;
 }
 
 void PositionMan::flipHiBuyPrice( const QString &market, QString tag )

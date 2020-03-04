@@ -3,6 +3,7 @@
 
 #include "global.h"
 #include "coinamount.h"
+#include "market.h"
 
 #include <QObject>
 #include <QMap>
@@ -58,8 +59,7 @@ public:
     qint32 getLowestPingPongIndex( const QString &market ) const;
     qint32 getHighestPingPongIndex( const QString &market ) const;
     qint32 getMarketOrderTotal( const QString &market, bool onetime_only = false ) const;
-    qint32 getBuyTotal( const QString &market ) const;
-    qint32 getSellTotal( const QString &market ) const;
+    qint32 getTotalOrdersForSide( const Market &market, const quint8 side, const QString &strategy_filter = QLatin1String() ) const;
 
     void flipHiBuyPrice( const QString &market, QString tag );
     void flipHiBuyIndex( const QString &market, QString tag );

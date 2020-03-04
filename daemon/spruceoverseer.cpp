@@ -161,10 +161,15 @@ void SpruceOverseer::onSpruceUp()
                     static const int ORDERSIZE_EXPAND_THRESH = 16;
                     static const int ORDERSIZE_EXPAND_MAX = 5;
                     const Coin order_size_unscaled = spruce->getOrderSize( market );
-                    const Coin order_size = std::min( order_size_unscaled * ORDERSIZE_EXPAND_MAX, std::max( order_size_unscaled, amount_to_shortlong_abs / ORDERSIZE_EXPAND_THRESH ) );
+                    Coin order_size = std::min( order_size_unscaled * ORDERSIZE_EXPAND_MAX, std::max( order_size_unscaled, amount_to_shortlong_abs / ORDERSIZE_EXPAND_THRESH ) );
                     const Coin order_max = is_buy ? spruce->getMarketBuyMax( market ) :
                                                     spruce->getMarketSellMax( market );
                     const Coin order_size_limit = order_size_unscaled * spruce->getOrderNice();
+
+                    // if we have more than ORDERSIZE_EXPAND_THRESH orders and the order size is < the order size for weight 1, set it to the order size for weight 1
+                    if ( engine->getPositionMan()->getTotalOrdersForSide( market, side, strategy ) >= ORDERSIZE_EXPAND_THRESH &&
+                         order_size < spruce->getOrderSizeForFullWeight() )
+                        order_size = spruce->getOrderSizeForFullWeight();
 
                     QString order_type = "onetime";
                     Coin &buy_price = spread_duplicity.bid_price;
@@ -683,7 +688,7 @@ void SpruceOverseer::runCancellors( Engine *engine, const QString &market, const
             continue;
         }
 
-        // for cancellor 2 and 3, only try to cancel positions within the flux bounds
+        // for cancellor 3, only try to cancel positions within the flux bounds
         if ( ( side == SIDE_BUY  && pos->price < flux_price ) ||
              ( side == SIDE_SELL && pos->price > flux_price ) )
             continue;
@@ -698,27 +703,13 @@ void SpruceOverseer::runCancellors( Engine *engine, const QString &market, const
                                          * market_allocation;
 
         const Coin order_size = spruce->getOrderSize( market );
-        const Coin order_size_limit = order_size * spruce->getOrderNice();
         const Coin zero_bound_tolerance = order_size * spruce->getOrderNiceZeroBound();
-
-        // store active spruce offset for this side
-//        const Coin spruce_offset = engine->positions->getActiveSpruceOrdersOffset( market, side, flux_price );
-
-        /// cancellor 2: look for spruce active <> what we should short/long
-//        if ( ( side == SIDE_BUY  && amount_to_shortlong.isZeroOrLess() &&
-//               amount_to_shortlong + spruce_offset >  order_size_limit + zero_bound_tolerance ) ||
-//             ( side == SIDE_SELL && amount_to_shortlong.isGreaterThanZero() &&
-//               amount_to_shortlong + spruce_offset < -order_size_limit - zero_bound_tolerance ) )
-//        {
-//            engine->positions->cancel( pos, false, CANCELLING_FOR_SPRUCE_2 );
-//            continue;
-//        }
 
         /// cancellor 3: look for active amount > amount_to_shortlong + order_size_limit
         if ( ( side == SIDE_BUY  && amount_to_shortlong.isZeroOrLess() &&
-               -active_amount < amount_to_shortlong - order_size_limit - zero_bound_tolerance ) ||
+                active_amount - zero_bound_tolerance > amount_to_shortlong.abs() ) ||
              ( side == SIDE_SELL && amount_to_shortlong.isGreaterThanZero() &&
-                active_amount > amount_to_shortlong + order_size_limit + zero_bound_tolerance ) )
+                active_amount - zero_bound_tolerance > amount_to_shortlong.abs() ) )
         {
             engine->positions->cancel( pos, false, CANCELLING_FOR_SPRUCE_3 );
             continue;

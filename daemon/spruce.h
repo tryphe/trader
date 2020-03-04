@@ -111,6 +111,7 @@ public:
     Coin getMarketSellMax( QString market = "" ) const;
     void setOrderSize( Coin ordersize ) { m_order_size = ordersize; }
     Coin getOrderSize( QString market = "" ) const;
+    Coin getOrderSizeForFullWeight() const { return m_order_size; }
 
     const RelativeCoeffs &startCoeffs() { return m_start_coeffs; }
     const RelativeCoeffs &relativeCoeffs() { return m_relative_coeffs; }
