@@ -15,7 +15,8 @@
 #include <QSet>
 #include <QFile>
 
-const bool expand_spread_down = false; // true = expand down only for base greed, false = both both sides
+const bool expand_spread_down = false; // true = expand down 3/4ths, false = expand both sides evenly
+const bool expand_spread_base_down_= false; // true = getSpreadForSide always expands down for base greed value before applying other effects
 
 SpruceOverseer::SpruceOverseer( Spruce *_spruce )
     : QObject( nullptr ),
@@ -75,13 +76,14 @@ void SpruceOverseer::onSpruceUp()
             TickerInfo spread_duplicity = getSpreadForSide( market_to_trade, side, true, false, true, true );
 
             spruce->clearLiveNodes();
+            Coin price_to_use;
             for ( QList<QString>::const_iterator i = currencies.begin(); i != currencies.end(); i++ )
             {
                 const QString &currency = *i;
                 const Market market( spruce->getBaseCurrency(), currency );
                 const TickerInfo mid_spread = getSpreadLimit( market, false );
-                Coin price = ( side == SIDE_BUY ) ? mid_spread.bid_price :
-                                                    mid_spread.ask_price;
+                price_to_use = ( side == SIDE_BUY ) ? mid_spread.bid_price :
+                                                      mid_spread.ask_price;
 
                 // these prices should be equal
                 if ( mid_spread.bid_price != mid_spread.ask_price )
@@ -91,30 +93,25 @@ void SpruceOverseer::onSpruceUp()
                 }
 
                 // if the ticker isn't updated, just skip this whole function
-                if ( price.isZeroOrLess() )
+                if ( price_to_use.isZeroOrLess() )
                 {
                     kDebug() << "[Spruce] local error: no ticker for currency" << market;
                     return;
                 }
 
-                // adjust midprice input by surface skew
-                price *= spruce->getSkew();
-
                 // if market matches selected market, select best price from duplicity price or mid price
                 if ( market == market_to_trade )
                 {
-                    // possibly modify spread_duplicity to select midprice over duplicity price to set order at
-                    if      ( side == SIDE_BUY )
-                        spread_duplicity.bid_price = std::min( price, spread_duplicity.bid_price );
-                    else if ( side == SIDE_SELL )
-                        spread_duplicity.ask_price = std::max( price, spread_duplicity.ask_price );
-
-                    price = ( side == SIDE_BUY ) ? spread_duplicity.bid_price :
-                                                   spread_duplicity.ask_price;
+                    // set the most optimistic price to use, either the midprice or duplicity price
+                    price_to_use = ( side == SIDE_BUY ) ? std::min( price_to_use, spread_duplicity.bid_price ) :
+                                                          std::max( price_to_use, spread_duplicity.ask_price );
                 }
 
-                spread_price.insert( currency, price );
-                spruce->addLiveNode( currency, price );
+                // adjust all prices by surface skew
+                price_to_use *= spruce->getSkew();
+
+                spread_price.insert( currency, price_to_use );
+                spruce->addLiveNode( currency, price_to_use );
             }
 
             // calculate amount to short/long, and fail if necessary
@@ -158,6 +155,7 @@ void SpruceOverseer::onSpruceUp()
                     const Coin amount_to_shortlong = spruce->getCurrencyPriceByMarket( market ) * qty_to_shortlong;
                     const Coin amount_to_shortlong_abs = amount_to_shortlong.abs();
                     const Coin spruce_active_for_side = engine->positions->getActiveSpruceEquityTotal( market, side, Coin() );
+                    const Coin spruce_active_for_side_up_to_flux_price = engine->positions->getActiveSpruceEquityTotal( market, side, price_to_use );
 
                     // cache some order info
                     static const int ORDERSIZE_EXPAND_THRESH = 16;
@@ -228,14 +226,15 @@ void SpruceOverseer::onSpruceUp()
                     else
                         last_spread_reduce_sells.insert( market, spread_reduce );
 
+                    // if we're under the nice size limit, skip conflict checks and order setting
+                    if ( amount_to_shortlong_abs < order_size_limit )
+                        continue;
+
                     // cache spread distance limit for this side, but selected larger spread_reduce value from both sides
                     const Coin spread_reduce_selected = std::max( last_spread_reduce_buys.value( market ), last_spread_reduce_sells.value( market ) );
                     const Coin spread_distance_limit = std::min( spruce->getOrderGreed() + spread_reduce_selected, spruce->getOrderGreedMinimum() );
 
-                    // if we wouldn't set an order this side, skip searching for conflicts on the other side
-                    if ( amount_to_shortlong_abs < order_size_limit )
-                        continue;
-
+                    // search positions for conflicts
                     for ( QSet<Position*>::const_iterator j = engine->positions->all().begin(); j != engine->positions->all().end(); j++ )
                     {
                         Position *const &pos = *j;
@@ -263,16 +262,16 @@ void SpruceOverseer::onSpruceUp()
                     }
 
                     // don't go over the abs value of our new projected position
-                    if ( spruce_active_for_side + order_size_limit >= amount_to_shortlong_abs )
+                    if ( spruce_active_for_side_up_to_flux_price + order_size_limit >= amount_to_shortlong_abs )
                         continue;
 
-                    kDebug() << QString( "[%1] %2 | coeff %3 | qty %4 | amt %5 | on-order %6 | sp_reduce %7" )
+                    kDebug() << QString( "[%1] %2 | coeff %3 | qty %4 | amt %5 | active-total %6 | sp_limit %7" )
                                    .arg( strategy, -MARKET_STRING_WIDTH - 9 )
                                    .arg( side == SIDE_BUY ? buy_price : sell_price )
                                    .arg( spruce->getLastCoeffForMarket( market ), 12 )
                                    .arg( qty_to_shortlong, 20 )
                                    .arg( amount_to_shortlong, 13 )
-                                   .arg( spruce_active_for_side, 12 )
+                                   .arg( spread_distance_limit, 12 )
                                    .arg( order_type.contains( "taker" ) ? "*taker" : spread_reduce.toString( 4 ) );
 
                     // queue the order if we aren't paper trading
@@ -313,8 +312,8 @@ void SpruceOverseer::adjustSpread( TickerInfo &spread, Coin limit, quint8 side, 
     {
         // if the side is buy, expand down, otherwise expand outwards
         j++;
-        if ( (  expand_spread_down && j % 4 < 3 ) ||
-             ( !expand_spread_down && j % 2 == 1 ) )
+        if ( (  expand_spread_down && j % 4 < 3 ) || // if expanding down, only expand down 3/4ths of the time
+             ( !expand_spread_down && j % 2 == 1 ) ) // if not expanding down, expand 50/50
             spread.bid_price -= ticksize;
         else
             spread.ask_price += ticksize;
@@ -388,6 +387,7 @@ TickerInfo SpruceOverseer::getSpreadForSide( const QString &market, quint8 side,
 
     /// step 1: get combined spread between all exchanges
     TickerInfo ret;
+    quint16 samples = 0;
 
     for ( QMap<quint8, Engine*>::const_iterator i = engine_map.begin(); i != engine_map.end(); i++ )
     {
@@ -403,15 +403,22 @@ TickerInfo SpruceOverseer::getSpreadForSide( const QString &market, quint8 side,
         if ( info.highest_buy.isZeroOrLess() || info.lowest_sell.isZeroOrLess() )
             continue;
 
-        // incorporate bid price of this exchange
-        if ( ret.bid_price.isZeroOrLess() || // bid doesn't exist yet
-             ret.bid_price > info.highest_buy ) // bid is higher than the exchange bid
-            ret.bid_price = info.highest_buy;
+        samples++;
 
-        // incorporate ask price of this exchange
-        if ( ret.ask_price.isZeroOrLess() || // ask doesn't exist yet
-             ret.ask_price < info.lowest_sell ) // ask is lower than the exchange ask
-            ret.ask_price = info.lowest_sell;
+        // incorporate prices of this exchange
+        ret.bid_price += info.highest_buy;
+        ret.ask_price += info.lowest_sell;
+    }
+
+    // on 0 samples, return here
+    if ( samples < 1 )
+        return TickerInfo();
+
+    // divide by num of samples if necessary
+    if ( samples > 1 )
+    {
+        ret.bid_price /= samples;
+        ret.ask_price /= samples;
     }
 
     /// step 2: apply base greed value to spread
@@ -428,10 +435,10 @@ TickerInfo SpruceOverseer::getSpreadForSide( const QString &market, quint8 side,
 
     // contract our spread in the direction specified
     if ( greed_reduce.isGreaterThanZero() )
-        adjustSpread( ret, limit, side, ticksize, false );
+        adjustSpread( ret, limit, expand_spread_base_down_ ? SIDE_BUY : side, ticksize, false );
 
     // expand further in the direction specified, if needed
-    adjustSpread( ret, limit, side, ticksize, true );
+    adjustSpread( ret, limit, expand_spread_base_down_ ? SIDE_BUY : side, ticksize, true );
 
     // if we included randomness, expand again
     if ( include_limit_for_side )
