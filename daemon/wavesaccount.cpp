@@ -134,6 +134,7 @@ void WavesAccount::initAssetMaps()
 //    asset_by_alias.insert( ALIAS_TRY, "TRY" );
     asset_by_alias.insert( ALIAS_BTC, "BTC" );
     asset_by_alias.insert( ALIAS_WAVES, "WAVES" );
+    asset_by_alias.insert( QString(), "WAVES" );
     asset_by_alias.insert( ALIAS_ETH, "ETH" );
 //    asset_by_alias.insert( ALIAS_BCH, "BCH" );
 //    asset_by_alias.insert( ALIAS_BSV, "BSV" );
