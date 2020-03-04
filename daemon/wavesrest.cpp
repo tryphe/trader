@@ -128,7 +128,7 @@ void WavesREST::sendNamRequest( Request * const &request )
     if ( api_command.startsWith( "on" ) )
         request->pos->order_request_time = current_time;
     // set cancel time properly
-    else if ( api_command.startsWith( "oc" ) )
+    else if ( api_command.startsWith( "oc" ) && request->pos != nullptr )
         request->pos->order_cancel_time = current_time;
     // if calling get my orders, set flag
     else if ( api_command.startsWith( "om" ) )
@@ -165,7 +165,7 @@ void WavesREST::sendNamRequest( Request * const &request )
         const QByteArray sign_bytes = account.createGetOrdersBytes( current_time );
         QByteArray signature;
 
-        bool success = account.sign( sign_bytes, signature );
+        const bool success = account.sign( sign_bytes, signature );
 
         if ( !success )
             kDebug() << "local waves error: failed to sign for get my orders request";
@@ -210,15 +210,23 @@ void WavesREST::getOrderStatus( Position * const &pos )
                   .arg( pos->order_number ), "", pos );
 }
 
-void WavesREST::sendCancel( Position * const &pos )
+void WavesREST::sendCancel( const QString &order_id, Position * const &pos, const Market &market )
 {
-    const QByteArray body = account.createCancelBody( pos->order_number.toLatin1() );
+    const QByteArray body = account.createCancelBody( order_id.toLocal8Bit() );
 
     const QString command = QString( WAVES_COMMAND_POST_ORDER_CANCEL )
-                             .arg( account.getAliasByAsset( pos->market.getQuote() ) )
-                             .arg( account.getAliasByAsset( pos->market.getBase() ) );
+                             .arg( account.getAliasByAsset( market.getQuote() ) )
+                             .arg( account.getAliasByAsset( market.getBase() ) );
 
-    //kDebug() << "sending cancel request:" << command << body;
+    // set is_cancelling
+    if ( pos && engine->getPositionMan()->isActive( pos ) )
+    {
+        pos->is_cancelling = true;
+
+        // set the cancel time once here, and once on send, to avoid double cancel timeouts
+        pos->order_cancel_time = QDateTime::currentMSecsSinceEpoch();
+    }
+
     sendRequest( command, body, pos );
 }
 
@@ -752,20 +760,41 @@ void WavesREST::parseMyOrders( const QJsonArray &orders, qint64 request_time_sen
 
         const QJsonObject &order = (*i).toObject();
         const QString &id = order.value( "id" ).toString();
+        const QString &side_str = order.value( "type" ).toString().toLower();
+        const uint64_t price_raw = order.value( "price" ).toVariant().toULongLong();
+        const uint64_t amount_raw = order.value( "amount" ).toVariant().toULongLong();
 
-        //kDebug() << "got active order" << id;
+        const QJsonObject &asset_pair = order.value( "assetPair" ).toObject();
 
-        // check for bad info
-        if ( id.isEmpty() || !engine->getPositionMan()->isValidOrderID( id ) )
+        // parse price/amount asset
+        const QString &amount_asset = asset_pair.value( "amountAsset" ).toString();
+        const QString &price_asset = asset_pair.value( "priceAsset" ).toString();
+
+        Market market = Market( account.getAssetByAlias( price_asset ),
+                                account.getAssetByAlias( amount_asset ) );
+
+        // process price/base amounts
+        MarketInfo &local_market_info = engine->getMarketInfo( market );
+        const Coin price = local_market_info.price_ticksize * price_raw;
+        const Coin base_amount = ( local_market_info.quantity_ticksize * amount_raw ) * price;
+
+        if ( id.isEmpty() || // check for bad id
+             asset_pair.isEmpty() || // check empty asset pair
+             !market.isValid() || // check for empty assets
+             ( side_str != "buy" && side_str != "sell" ) || // check for bad side
+             price_raw < 1 || // check for bad raw price
+             amount_raw < 1 || // check for bad raw amount
+             price.isZeroOrLess() || // check for bad price
+             base_amount.isZeroOrLess() ) // check for bad amount
             continue;
 
-        Position *const &pos = engine->getPositionMan()->getByOrderID( id );
+        const quint8 side = side_str == "buy" ? SIDE_BUY : SIDE_SELL;
 
         // insert into seen orders
         order_numbers += id;
 
         // insert (market, order)
-        order_map.insert( pos->market, OrderInfo( id, pos->side, pos->price, pos->btc_amount ) );
+        order_map.insert( market, OrderInfo( id, side, price, base_amount ) );
     }
 
     engine->processOpenOrders( order_numbers, order_map, request_time_sent_ms );

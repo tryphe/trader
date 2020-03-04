@@ -28,7 +28,7 @@ public:
 
     void getOrderStatus( Position *const &pos );
 
-    void sendCancel( Position *const &pos );
+    void sendCancel( const QString &order_id, Position *const &pos , const Market &market );
     void sendCancelNonLocal( const QString &order_id , const QString &amount_asset_alias, const QString &price_asset_alias );
     void sendBuySell( Position *const &pos, bool quiet = true );
 

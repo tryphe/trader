@@ -498,6 +498,7 @@ void Engine::processOpenOrders( QVector<QString> &order_numbers, QMultiHash<QStr
     qint32 ct_cancelled = 0, ct_all = 0;
 
     QQueue<QString> stray_orders;
+    QQueue<Market> stray_orders_markets;
 
     for ( QMultiHash<QString, OrderInfo>::const_iterator i = orders.begin(); i != orders.end(); i++ )
     {
@@ -528,7 +529,7 @@ void Engine::processOpenOrders( QVector<QString> &order_numbers, QMultiHash<QStr
                 kDebug() << "cancelling non-bot order" << market << side << btc_amount << "@" << price << "id:" << order_number;
 
                 // send a one time cancel request for orders we don't own
-                sendCancel( order_number, nullptr );
+                sendCancel( order_number, nullptr, market );
                 continue;
             }
 
@@ -589,7 +590,11 @@ void Engine::processOpenOrders( QVector<QString> &order_numbers, QMultiHash<QStr
             else if ( current_time - order_grace_times.value( order_number ) > settings->stray_grace_time_limit )
             {
                 kDebug() << "queued cancel for stray order" << market << side << btc_amount << "@" << price << "id:" << order_number;
-                stray_orders.append( order_number );
+                stray_orders += order_number;
+
+                // for waves, we need to record the market also
+                if ( engine_type == ENGINE_WAVES )
+                    stray_orders_markets += market;
             }
         }
     }
@@ -612,7 +617,9 @@ void Engine::processOpenOrders( QVector<QString> &order_numbers, QMultiHash<QStr
         while ( stray_orders.size() > 0 )
         {
             const QString &order_number = stray_orders.takeFirst();
-            sendCancel( order_number, nullptr );
+            const Market &market = engine_type == ENGINE_WAVES ? stray_orders_markets.takeFirst() : Market();
+
+            sendCancel( order_number, nullptr, market );
             // reset grace time incase we see this order again from the next response
             order_grace_times.insert( order_number, current_time + settings->stray_grace_time_limit /* don't try to cancel again for 10m */ );
         }
@@ -1315,7 +1322,7 @@ void Engine::sendBuySell( Position * const &pos , bool quiet )
         reinterpret_cast<WavesREST*>( rest_arr.value( ENGINE_WAVES ) )->sendBuySell( pos, quiet );
 }
 
-void Engine::sendCancel( const QString &order_number, Position * const &pos )
+void Engine::sendCancel( const QString &order_number, Position * const &pos, const Market &market )
 {
     if ( engine_type == ENGINE_BITTREX )
         reinterpret_cast<TrexREST*>( rest_arr.value( ENGINE_BITTREX ) )->sendCancel( order_number, pos );
@@ -1324,7 +1331,7 @@ void Engine::sendCancel( const QString &order_number, Position * const &pos )
     else if ( engine_type == ENGINE_POLONIEX )
         reinterpret_cast<PoloREST*>( rest_arr.value( ENGINE_POLONIEX ) )->sendCancel( order_number, pos );
     else if ( engine_type == ENGINE_WAVES )
-        reinterpret_cast<WavesREST*>( rest_arr.value( ENGINE_WAVES ) )->sendCancel( pos );
+        reinterpret_cast<WavesREST*>( rest_arr.value( ENGINE_WAVES ) )->sendCancel( order_number, pos, market );
 }
 
 bool Engine::yieldToFlowControl()

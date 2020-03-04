@@ -76,7 +76,7 @@ public:
     void findBetterPrice( Position *const &pos );
 
     void sendBuySell( Position *const &pos, bool quiet = false );
-    void sendCancel( const QString &order_number, Position *const &pos );
+    void sendCancel( const QString &order_number, Position *const &pos, const Market &market = Market() );
     bool yieldToFlowControl();
 
     void updateStatsAndPrintFill( const QString &fill_type, const Market &market, const QString &order_id, const quint8 side,

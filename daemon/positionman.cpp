@@ -1141,7 +1141,7 @@ void PositionMan::cancel( Position *const &pos, bool quiet, quint8 cancel_reason
     }
 
     // send request
-    engine->sendCancel( pos->order_number, pos );
+    engine->sendCancel( pos->order_number, pos, engine->engine_type == ENGINE_WAVES ? pos->market : Market() );
 }
 
 void PositionMan::cancelHighest( const QString &market )
