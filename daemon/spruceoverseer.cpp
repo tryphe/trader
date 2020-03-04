@@ -271,8 +271,8 @@ void SpruceOverseer::onSpruceUp()
                                    .arg( spruce->getLastCoeffForMarket( market ), 12 )
                                    .arg( qty_to_shortlong, 20 )
                                    .arg( amount_to_shortlong, 13 )
-                                   .arg( spread_distance_limit, 12 )
-                                   .arg( order_type.contains( "taker" ) ? "*taker" : spread_reduce.toString( 4 ) );
+                                   .arg( spruce_active_for_side, 12 )
+                                   .arg( order_type.contains( "taker" ) ? "*taker" : spread_distance_limit.toString( 4 ) );
 
                     // queue the order if we aren't paper trading
 #if !defined(PAPER_TRADE)
