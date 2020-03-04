@@ -158,18 +158,13 @@ void SpruceOverseer::onSpruceUp()
                     const Coin spruce_active_for_side_up_to_flux_price = engine->positions->getActiveSpruceEquityTotal( market, side, price_to_use );
 
                     // cache some order info
-                    static const int ORDERSIZE_EXPAND_THRESH = 16;
+                    static const int ORDERSIZE_EXPAND_THRESH = 15;
                     static const int ORDERSIZE_EXPAND_MAX = 5;
                     const Coin order_size_unscaled = spruce->getOrderSize( market );
-                    Coin order_size = std::min( order_size_unscaled * ORDERSIZE_EXPAND_MAX, std::max( order_size_unscaled, amount_to_shortlong_abs / ORDERSIZE_EXPAND_THRESH ) );
+                    const Coin order_size = std::min( order_size_unscaled * ORDERSIZE_EXPAND_MAX, std::max( order_size_unscaled, amount_to_shortlong_abs / ORDERSIZE_EXPAND_THRESH ) );
                     const Coin order_max = is_buy ? spruce->getMarketBuyMax( market ) :
                                                     spruce->getMarketSellMax( market );
                     const Coin order_size_limit = order_size_unscaled * spruce->getOrderNice();
-
-                    // if we have more than ORDERSIZE_EXPAND_THRESH orders and the order size is < the order size for weight 1, set it to the order size for weight 1
-                    if ( engine->getPositionMan()->getTotalOrdersForSide( market, side, strategy ) >= ORDERSIZE_EXPAND_THRESH &&
-                         order_size < spruce->getOrderSizeForFullWeight() )
-                        order_size = spruce->getOrderSizeForFullWeight();
 
                     QString order_type = "onetime";
                     Coin &buy_price = spread_duplicity.bid_price;
