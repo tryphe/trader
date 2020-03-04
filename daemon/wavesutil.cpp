@@ -2,8 +2,6 @@
 #include "../blake2b/sse/blake2.h"
 #include "../qbase58/qbase58.h"
 
-#include <vector>
-
 #include <QByteArray>
 #include <QString>
 #include <QCryptographicHash>
