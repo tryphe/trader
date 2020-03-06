@@ -697,7 +697,7 @@ void Engine::processTicker( BaseREST *base_rest_module, const QMap<QString, Tick
 
     for ( QMap<QString, TickerInfo>::const_iterator i = ticker_data.begin(); i != ticker_data.end(); i++ )
     {
-        const QString market = Market( i.key() );
+        const Market market = i.key();
         const TickerInfo &ticker = i.value();
         const Coin &ask = ticker.ask_price;
         const Coin &bid = ticker.bid_price;
@@ -706,27 +706,22 @@ void Engine::processTicker( BaseREST *base_rest_module, const QMap<QString, Tick
         if ( ask.isZeroOrLess() || bid.isZeroOrLess() )
             continue;
 
+        // update values for market
         MarketInfo &info = market_info[ market ];
 
-        // update both values
-        if      ( info.highest_buy != bid &&
-                  info.lowest_sell != ask )
-        {
-            info.highest_buy = bid;
-            info.lowest_sell = ask;
-        }
-        // update bid price
-        else if ( info.highest_buy != bid )
-        {
-            info.highest_buy = bid;
-        }
-        // update ask price
-        else if ( info.lowest_sell != ask )
-        {
-            info.lowest_sell = ask;
-        }
+        info.highest_buy = bid;
+        info.lowest_sell = ask;
+        info.is_tradeable = true;
 
-        emit tickerUpdate( engine_type, Market( i.key() ), bid, ask );
+        // update values for inverse market, if it is not tradeable
+        Market market_inverse = Market( market.getQuote(), market.getBase() );
+        MarketInfo &info_inverse = market_info[ market_inverse ];
+
+        if ( !info_inverse.is_tradeable )
+        {
+            info_inverse.highest_buy = CoinAmount::COIN / bid;
+            info_inverse.lowest_sell = CoinAmount::COIN / ask;
+        }
     }
 
     // if this is a ticker feed, just process the ticker data. the fill feed will cause false fills when the ticker comes in just as new positions were set,

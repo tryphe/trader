@@ -93,7 +93,6 @@ public:
 signals:
     void newEngineMessage( QString &str ); // new wss message
     void gotUserCommandChunk( QString &s ); // loaded settings file
-    void tickerUpdate( quint8 engine_type, const Market &market, const Coin &bid_price, const Coin &ask_price ); // for spruce overseer
 
 public Q_SLOTS:
     void onEngineMaintenance();

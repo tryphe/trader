@@ -93,6 +93,9 @@ struct MarketInfo
     Coin price_min_mul{ 0.2 };
     Coin price_max_mul{ 5.0 };
     Coin quantity_ticksize{ CoinAmount::SATOSHI }; // used to pass filter LOT_SIZE "stepSize"
+
+    // inverse market tags
+    bool is_tradeable{ false };
 };
 
 #endif // MARKET_H
