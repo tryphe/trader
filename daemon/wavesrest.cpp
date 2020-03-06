@@ -449,7 +449,7 @@ void WavesREST::parseMarketData( const QJsonObject &info )
         const QString amount_asset_alias = market_data.value( "amountAsset" ).toString();
         const QString price_asset_alias = market_data.value( "priceAsset" ).toString();
         const Coin price_ticksize = market_data.value( "matchingRules" ).toObject().value( "tickSize" ).toString();
-        const Coin qty_ticksize = Coin::ticksizeFromDecimals( market_data.value( "amountAssetInfo" ).toObject().value( "decimals" ).toVariant().toULongLong() );
+        const Coin qty_ticksize = Coin::ticksizeFromDecimals( market_data.value( "priceAssetInfo" ).toObject().value( "decimals" ).toVariant().toULongLong() );
 
         if ( amount_asset_alias.isEmpty() ||
              price_asset_alias.isEmpty() ||
@@ -529,8 +529,8 @@ void WavesREST::parseMarketStatus( const QJsonObject &info, Request *const &requ
 
     // apply market ticksize to price (the raw price is a multiple of the ticksize)
     MarketInfo &local_market_info = engine->getMarketInfo( market );
-    const Coin bid_price = local_market_info.price_ticksize * bid_raw;
-    const Coin ask_price = local_market_info.price_ticksize * ask_raw;
+    const Coin bid_price = local_market_info.quantity_ticksize * bid_raw;
+    const Coin ask_price = local_market_info.quantity_ticksize * ask_raw;
 
     QMap<QString, TickerInfo> ticker_info;
     ticker_info.insert( market, TickerInfo( bid_price, ask_price ) );
