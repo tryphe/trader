@@ -24,6 +24,8 @@ public:
     const QString &getBase() const { return base; }
     const QString &getQuote() const { return quote; }
 
+    Market getInverse() const { return Market( getQuote(), getBase() ); }
+
 private:
     QString base, quote;
 };
