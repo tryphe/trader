@@ -1,3 +1,5 @@
+## Warning: this repo is in a transition phase. Use the code as you wish, but take caution. ##
+
 What is Trader?
 ---------------
 Trader is a bot that makes manual orders for the user, and/or makes automatic ping-pong orders. Trader can execute one-time, fill-or-kill, and maker/taker orders, and simulates these modes on exchanges without direct support. Trader also respects exchange limits like maximum number of orders, minimum price, maximum price, minimum lot size, price ticksize, etc.
