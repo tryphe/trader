@@ -79,8 +79,8 @@ public:
     void sendCancel( const QString &order_number, Position *const &pos, const Market &market = Market() );
     bool yieldToFlowControl();
 
-    void updateStatsAndPrintFill( const QString &fill_type, const Market &market, const QString &order_id, const quint8 side,
-                                  const QString &strategy_tag, Coin btc_amount, Coin quantity, const Coin &price,
+    void updateStatsAndPrintFill( const QString &fill_type, Market market, const QString &order_id, quint8 side,
+                                  const QString &strategy_tag, Coin btc_amount, Coin quantity, Coin price,
                                   const Coin &btc_commission );
 
     QVector<QString/*order_id*/> orders_for_polling;

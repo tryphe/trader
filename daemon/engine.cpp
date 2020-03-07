@@ -413,8 +413,8 @@ void Engine::fillNQ( const QString &order_id, qint8 fill_type , quint8 extra_dat
     positions->remove( pos );
 }
 
-void Engine::updateStatsAndPrintFill( const QString &fill_type, const Market &market, const QString &order_id, const quint8 side,
-                                      const QString &strategy_tag, Coin btc_amount, Coin quantity, const Coin &price,
+void Engine::updateStatsAndPrintFill( const QString &fill_type, Market market, const QString &order_id, quint8 side,
+                                      const QString &strategy_tag, Coin btc_amount, Coin quantity, Coin price,
                                       const Coin &btc_commission )
 {
     // one of these values should be zero, unless the exchange supplies both?
@@ -423,19 +423,23 @@ void Engine::updateStatsAndPrintFill( const QString &fill_type, const Market &ma
     else if ( quantity.isZero() )
         quantity = btc_amount / price;
 
-    // if base market is not btc, find price of in btc
-    if ( market.getBase() != "BTC" )
+    // if base market is not btc, but the quote is, calculate btc price with inverse
+    if ( market.getBase() != spruce->getBaseCurrency() &&
+         market.getQuote() == spruce->getBaseCurrency() )
     {
-        const Market base_btc_pair = Market( "BTC", market.getBase() );
-        //const Market quote_btc_pair = Market( "BTC", market.getQuote() );
+        // invert market to make stats show properly
+        market = market.getInverse();
 
-        if ( !is_testing && !getMarketInfoStructure().contains( base_btc_pair ) )
-        {
-            kDebug() << "local error: couldn't find ticker for" << base_btc_pair;
-            return;
-        }
+        // invert price, recalculate amt/qty
+        price = CoinAmount::COIN / price;
+        btc_amount = price * btc_amount;
+        quantity = btc_amount / price;
+    }
+    // TODO: found beta level trade, convert prices and volumes using base currency prices
+    else if ( market.getBase() != spruce->getBaseCurrency() &&
+              market.getQuote() != spruce->getBaseCurrency() )
+    {
 
-        btc_amount = getMarketInfo( base_btc_pair ).highest_buy * btc_amount / quantity;
     }
 
     // negate commission from final qty and calculate final amounts
