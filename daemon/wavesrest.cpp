@@ -249,8 +249,10 @@ void WavesREST::sendBuySell( Position * const &pos, bool quiet )
     const qint64 future_29d = current_time + ( 60000LL * 60LL * 24LL * 29LL );
     const qint64 future_28d = current_time + ( 60000LL * 60LL * 24LL * 28LL );
 
+    MarketInfo &info = engine->getMarketInfo( pos->market );
+
     // create order body for expiration in 29 days
-    const QByteArray body = account.createOrderBody( pos, now, future_29d );
+    const QByteArray body = account.createOrderBody( pos, info.price_ticksize, info.quantity_ticksize, now, future_29d );
 
     // if the order is already set to expire, keep that time, otherwise set to cancel in 28 days
     if ( pos->max_age_epoch == 0 )
@@ -448,13 +450,13 @@ void WavesREST::parseMarketData( const QJsonObject &info )
 
         const QString amount_asset_alias = market_data.value( "amountAsset" ).toString();
         const QString price_asset_alias = market_data.value( "priceAsset" ).toString();
-        const Coin price_ticksize = market_data.value( "matchingRules" ).toObject().value( "tickSize" ).toString();
-        const Coin qty_ticksize = Coin::ticksizeFromDecimals( market_data.value( "priceAssetInfo" ).toObject().value( "decimals" ).toVariant().toULongLong() );
+        const Coin price_ticksize = Coin::ticksizeFromDecimals( market_data.value( "priceAssetInfo" ).toObject().value( "decimals" ).toVariant().toULongLong() );
+        const Coin amount_ticksize = Coin::ticksizeFromDecimals( market_data.value( "amountAssetInfo" ).toObject().value( "decimals" ).toVariant().toULongLong() );
 
         if ( amount_asset_alias.isEmpty() ||
              price_asset_alias.isEmpty() ||
              price_ticksize.isZeroOrLess() ||
-             qty_ticksize.isZeroOrLess() )
+             amount_ticksize.isZeroOrLess() )
         {
             kDebug() << "nam reply warning: caught empty market data value";
             continue;
@@ -465,19 +467,20 @@ void WavesREST::parseMarketData( const QJsonObject &info )
              !account.getPriceAssets().contains( amount_asset_alias ) )
             continue;
 
-//        kDebug() << "amount_asset_name: " << amount_asset_alias
-//                 << "price_asset_name:  " << price_asset_alias;
-
         const QString price_asset = account.getAssetByAlias( price_asset_alias );
         const QString amount_asset = account.getAssetByAlias( amount_asset_alias );
         Market market = Market( price_asset, amount_asset );
+
+//        kDebug() << market << "matching_ticksize:" << market_data.value( "matchingRules" ).toObject().value( "tickSize" ).toString()
+//                 << "price asset:" << price_asset << "price ticksize:" << price_ticksize
+//                 << "amount asset:" << amount_asset << "amount ticksize:" << amount_ticksize;
 
         tracked_markets += market;
 
         // update market ticksize
         MarketInfo &market_info = engine->getMarketInfo( market );
         market_info.price_ticksize = price_ticksize;
-        market_info.quantity_ticksize = qty_ticksize;
+        market_info.quantity_ticksize = amount_ticksize;
     }
 
     // update tickers
@@ -529,8 +532,8 @@ void WavesREST::parseMarketStatus( const QJsonObject &info, Request *const &requ
 
     // apply market ticksize to price (the raw price is a multiple of the ticksize)
     MarketInfo &local_market_info = engine->getMarketInfo( market );
-    const Coin bid_price = local_market_info.quantity_ticksize * bid_raw;
-    const Coin ask_price = local_market_info.quantity_ticksize * ask_raw;
+    const Coin bid_price = local_market_info.price_ticksize * bid_raw;
+    const Coin ask_price = local_market_info.price_ticksize * ask_raw;
 
     QMap<QString, TickerInfo> ticker_info;
     ticker_info.insert( market, TickerInfo( bid_price, ask_price ) );

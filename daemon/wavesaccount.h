@@ -2,6 +2,7 @@
 #define WAVESACCOUNT_H
 
 #include "../qbase58/qbase58.h"
+#include "coinamount.h"
 
 #include <QByteArray>
 #include <QMap>
@@ -42,9 +43,9 @@ public:
     QByteArray createCancelBytes( const QByteArray &order_id_b58 ) const;
     QByteArray createCancelBody( const QByteArray &order_id_b58, bool random_sign_bytes = true ) const;
 
-    QByteArray createOrderBytes( Position *const &pos, const qint64 epoch_now, const qint64 epoch_expiration ) const;
+    QByteArray createOrderBytes( Position *const &pos, const Coin &price_ticksize, const Coin &qty_ticksize, const qint64 epoch_now, const qint64 epoch_expiration ) const;
     QByteArray createOrderId( const QByteArray &order_bytes ) const;
-    QByteArray createOrderBody( Position *const &pos, const qint64 epoch_now, const qint64 epoch_expiration, bool random_sign_bytes = true ) const;
+    QByteArray createOrderBody( Position *const &pos, const Coin &price_ticksize, const Coin &qty_ticksize, const qint64 epoch_now, const qint64 epoch_expiration, bool random_sign_bytes = true ) const;
 
     QByteArray createGetOrdersBytes( const qint64 epoch_now );
 

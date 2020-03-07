@@ -24,9 +24,8 @@ void EngineTest::test( Engine *e )
     assert( Market( "test_" ).operator QString().isEmpty() ); // test empty quote currency
     assert( Market( "_test" ).operator QString().isEmpty() ); // test empty base currency
 
-    // make sure we are ready to start
-//    assert( e->getRest() != nullptr );
-//    assert( e->getStats() != nullptr );
+    // set ticker to tradeable
+    e->getMarketInfoStructure()[ TEST_MARKET ].is_tradeable = true;
 
     // disable verbosity during testing
     const int preserved_verbosity = e->verbosity;

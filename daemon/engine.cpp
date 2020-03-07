@@ -86,6 +86,31 @@ Position *Engine::addPosition( QString market_input, quint8 side, QString buy_pr
         return nullptr;
     }
 
+    if ( !info.is_tradeable )
+    {
+        // invert market pair
+        market = market.getInverse();
+
+        // flip side
+        side = ( side == SIDE_BUY ) ? SIDE_SELL :
+                                      SIDE_BUY;
+
+        // invert cross-prices
+        Coin new_buy_price = CoinAmount::COIN / sell_price;
+        Coin new_sell_price = CoinAmount::COIN / buy_price;
+        Coin new_size = ( side == SIDE_BUY ) ? new_buy_price * order_size :
+                                               new_sell_price * order_size;
+
+        // set new prices/size
+        buy_price = new_buy_price;
+        sell_price = new_sell_price;
+        order_size = new_size;
+
+//        kDebug() << "market" << market << "is not tradeable, converting to tradeable market"
+//                 << market_inverse << "new_buy:" << new_buy_price << "new_sell:" << new_sell_price
+//                 << "new_size:" << new_size;
+    }
+
     // parse alternate size from order_size, format: 0.001/0.002 (the alternate size is 0.002)
     QStringList parse = order_size.split( QChar( '/' ) );
     QString alternate_size;
@@ -200,7 +225,7 @@ Position *Engine::addPosition( QString market_input, quint8 side, QString buy_pr
           pos->btc_amount.isZeroOrLess() ||
           pos->quantity.isZeroOrLess() )
     {
-        kDebug() << "local warning: failed to set order because of invalid value:" << market << side << buy_price << sell_price << order_size << indices << landmark;
+        kDebug() << "local warning: failed to set order because of invalid value:" << market << pos->side << pos->buy_price << pos->sell_price << pos->btc_amount << pos->quantity << indices << landmark;
         if ( pos ) delete pos;
         return nullptr;
     }
@@ -713,14 +738,21 @@ void Engine::processTicker( BaseREST *base_rest_module, const QMap<QString, Tick
         info.lowest_sell = ask;
         info.is_tradeable = true;
 
+        // TODO: make this faster
         // update values for inverse market, if it is not tradeable
-        Market market_inverse = Market( market.getQuote(), market.getBase() );
+        Market market_inverse = market.getInverse();
         MarketInfo &info_inverse = market_info[ market_inverse ];
 
+        // if it doesn't have an active ticker, update it with the inverse market ticker
         if ( !info_inverse.is_tradeable )
         {
-            info_inverse.highest_buy = CoinAmount::COIN / bid;
-            info_inverse.lowest_sell = CoinAmount::COIN / ask;
+            // cross prices
+            info_inverse.highest_buy = CoinAmount::COIN / ask;
+            info_inverse.lowest_sell = CoinAmount::COIN / bid;
+
+            // cross ticksizes
+            info_inverse.price_ticksize = info.quantity_ticksize;
+            info_inverse.quantity_ticksize = info.price_ticksize;
         }
     }
 

@@ -194,7 +194,7 @@ QByteArray WavesAccount::createCancelBody( const QByteArray &order_id_b58, bool 
     return doc.toJson( QJsonDocument::Compact );
 }
 
-QByteArray WavesAccount::createOrderBytes( Position * const &pos, const qint64 epoch_now, const qint64 epoch_expiration ) const
+QByteArray WavesAccount::createOrderBytes( Position * const &pos, const Coin &price_ticksize, const Coin &qty_ticksize, const qint64 epoch_now, const qint64 epoch_expiration ) const
 {
     if ( matcher_public_key.size() < 32 ||
          public_key.size() < 32 ||
@@ -218,8 +218,8 @@ QByteArray WavesAccount::createOrderBytes( Position * const &pos, const qint64 e
     QDataStream order_v2_stream( &order_v2, QIODevice::WriteOnly );
     order_v2_stream.device()->seek( order_v2.size() );
 
-    order_v2_stream << pos->price.toIntSatoshis(); // price = 1000000
-    order_v2_stream << pos->quantity.toIntSatoshis(); // amount = 9700000
+    order_v2_stream << Coin( CoinAmount::SATOSHI * ( pos->price / price_ticksize ) ).toIntSatoshis(); // price = 1000000
+    order_v2_stream << Coin( CoinAmount::SATOSHI * ( pos->quantity / qty_ticksize ) ).toIntSatoshis(); // amount = 9700000
     order_v2_stream << epoch_now; // order set time +1 minute
     order_v2_stream << epoch_expiration; // expiration time
     order_v2_stream << qint64( 300000 ); // matcher fee = 300000
@@ -235,7 +235,7 @@ QByteArray WavesAccount::createOrderId( const QByteArray &order_bytes ) const
     return QBase58::encode( WavesUtil::hashBlake2b( order_bytes ) );
 }
 
-QByteArray WavesAccount::createOrderBody( Position * const &pos, const qint64 epoch_now, const qint64 epoch_expiration, bool random_sign_bytes ) const
+QByteArray WavesAccount::createOrderBody( Position * const &pos, const Coin &price_ticksize, const Coin &qty_ticksize, const qint64 epoch_now, const qint64 epoch_expiration, bool random_sign_bytes ) const
 {
     if ( matcher_public_key.size() < 32 ||
          public_key.size() < 32 ||
@@ -246,7 +246,7 @@ QByteArray WavesAccount::createOrderBody( Position * const &pos, const qint64 ep
     }
 
     // note: 29d expiration == + ( 60000LL * 60LL * 24LL * 29LL )
-    const QByteArray order_bytes_v2 = createOrderBytes( pos, epoch_now, epoch_expiration );
+    const QByteArray order_bytes_v2 = createOrderBytes( pos, price_ticksize, qty_ticksize, epoch_now, epoch_expiration );
     const QByteArray order_id_v2_b58 = createOrderId( order_bytes_v2 );
     QByteArray signature;
 
@@ -254,14 +254,19 @@ QByteArray WavesAccount::createOrderBody( Position * const &pos, const qint64 ep
 
     assert( sign_result );
 
+//    kDebug() << "price ticksize" << price_ticksize;
+//    kDebug() << "  qty ticksize" << qty_ticksize;
+//    kDebug() << "price parts" << Coin( CoinAmount::SATOSHI * ( pos->price / price_ticksize ) ).toIntSatoshis();
+//    kDebug() << "  qty parts" << Coin( CoinAmount::SATOSHI * ( pos->quantity / qty_ticksize ) ).toIntSatoshis();
+
     QJsonObject order_body_v2;
     // put transaction bytes
     order_body_v2[ "orderType" ] = pos->side == SIDE_BUY ? "buy" : "sell";
     order_body_v2[ "version" ] = 2;
     order_body_v2[ "assetPair" ] = QJsonObject{ { "amountAsset", alias_by_asset.value( pos->market.getQuote() ) },
                                                 { "priceAsset", alias_by_asset.value( pos->market.getBase() ) } };
-    order_body_v2[ "price" ] = pos->price.toIntSatoshis();
-    order_body_v2[ "amount" ] = pos->quantity.toIntSatoshis();
+    order_body_v2[ "price" ] = Coin( CoinAmount::SATOSHI * ( pos->price / price_ticksize ) ).toIntSatoshis();
+    order_body_v2[ "amount" ] = Coin( CoinAmount::SATOSHI * ( pos->quantity / qty_ticksize ) ).toIntSatoshis();
     order_body_v2[ "timestamp" ] = epoch_now;
     order_body_v2[ "expiration" ] = epoch_expiration;
     order_body_v2[ "matcherFee" ] = 300000;
