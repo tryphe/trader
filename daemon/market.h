@@ -18,6 +18,7 @@ public:
     bool isValid() const;
 
     bool operator ==( const QString &other ) const;
+    bool operator !=( const QString &other ) const;
     operator QString() const; // obtain universal string
     QString toExchangeString( const quint8 engine_type ) const; // obtain exchange-specific string
 
@@ -36,9 +37,10 @@ struct MarketInfo
     {
     }
 
-    operator QString() const { return QString( "bid %1 ask %2 order_min %3 order_max %4 order_dc %5 order_dc_nice %6 order_landmark_thresh %7 order_landmark_start %8 slippage_timeout %9 market_offset %10 market_sentiment %11" )
+    operator QString() const { return QString( "bid %1 ask %2 tradeable %3 order_min %4 order_max %5 order_dc %6 order_dc_nice %7 order_landmark_thresh %8 order_landmark_start %9 slippage_timeout %10 market_offset %11 market_sentiment %12" )
                                    .arg( highest_buy, -16 )
                                    .arg( lowest_sell, -16 )
+                                   .arg( is_tradeable )
                                    .arg( order_min, -2 )
                                    .arg( order_max, -2 )
                                    .arg( order_dc, -2 )

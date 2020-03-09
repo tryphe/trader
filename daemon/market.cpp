@@ -30,9 +30,14 @@ bool Market::isValid() const
     return !( base.isEmpty() || quote.isEmpty() );
 }
 
-bool Market::operator ==(const QString &other ) const
+bool Market::operator ==( const QString &other ) const
 {
     return operator QString() == other;
+}
+
+bool Market::operator !=( const QString &other ) const
+{
+    return !operator ==( other );
 }
 
 Market::operator QString() const
