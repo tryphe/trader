@@ -419,17 +419,18 @@ void Spruce::setReserve( QString currency, Coin r )
     m_currency_reserve.insert( currency, r );
 }
 
-Coin Spruce::getEquityNow( QString currency )
+Coin Spruce::getEquityAll()
 {
+    Coin ret;
+
     for ( QList<Node*>::const_iterator i = nodes_now.begin(); i != nodes_now.end(); i++ )
     {
         Node *n = *i;
 
-        if ( n->currency == currency )
-            return n->quantity * n->price;
+        ret += n->quantity * n->price;
     }
 
-    return Coin();
+    return ret;
 }
 
 Coin Spruce::getLastCoeffForMarket( const QString &market ) const
@@ -531,16 +532,16 @@ bool Spruce::equalizeDates()
     // find hi/lo coeffs
     m_start_coeffs = m_relative_coeffs = getRelativeCoeffs();
 
-    static const int MAX_PROBLEM_PARTS = 15000;
-    static const Coin MIN_TICKSIZE = CoinAmount::SATOSHI * 60000;
-    const Coin hi_equity = getEquityNow( m_relative_coeffs.hi_currency );
-    const Coin ticksize = std::max( MIN_TICKSIZE, hi_equity / MAX_PROBLEM_PARTS );
+    static const int MAX_PROBLEM_PARTS = 10000;
+    static const Coin MIN_TICKSIZE = CoinAmount::SATOSHI * 50000;
+    const Coin equity = getEquityAll();
+    const Coin ticksize = std::max( MIN_TICKSIZE, equity / MAX_PROBLEM_PARTS );
     const Coin ticksize_leveraged = ticksize * m_leverage;
 
     // if we don't have enough to make the adjustment, abort
-    if ( hi_equity < getUniversalMinOrderSize() )
+    if ( equity < getUniversalMinOrderSize() )
     {
-        kDebug() << "[Spruce] local warning: not enough equity to equalizeDates" << hi_equity;
+        kDebug() << "[Spruce] local warning: not enough equity to equalizeDates" << equity;
         return false;
     }
 
@@ -591,7 +592,7 @@ bool Spruce::equalizeDates()
                m_qtys.value( 0 ) == m_qtys.value( m_qtys.value( 0 ).size() -2 ) ) )
             break;
 
-        // break at max equity to avoid infinite loop
+        // break at equity limit to avoid infinite loop or bad things
         if ( i++ == MAX_PROBLEM_PARTS )
             break;
     }

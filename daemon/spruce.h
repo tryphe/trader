@@ -127,7 +127,7 @@ public:
     void setReserve( QString currency, Coin r );
     Coin getReserve( QString currency ) const { return m_currency_reserve.value( currency, DEFAULT_RESERVE ); }
 
-    Coin getEquityNow( QString currency );
+    Coin getEquityAll();
     Coin getLastCoeffForMarket( const QString &market ) const;
 
     static inline Coin getUniversalMinOrderSize()
