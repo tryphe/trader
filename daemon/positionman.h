@@ -71,8 +71,7 @@ public:
     Coin getHiBuyFlipPrice( const QString &market ) const;
     Coin getLoSellFlipPrice( const QString &market ) const;
 
-    Coin getActiveSpruceEquityTotal( const QString &market, quint8 side, const Coin &price_threshold );
-    Coin getActiveSpruceOrdersOffset( const QString &market, quint8 side, const Coin &price_threshold );
+    Coin getActiveSpruceEquityTotal( const Market &market, quint8 side, const Coin &price_threshold );
 
     void add( Position *const &pos );
     void activate( Position *const &pos, const QString &order_number );

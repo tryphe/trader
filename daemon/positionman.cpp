@@ -116,12 +116,28 @@ Coin PositionMan::getLoSellFlipPrice( const QString &market ) const
     return pos->buy_price;
 }
 
-Coin PositionMan::getActiveSpruceEquityTotal( const QString &market, quint8 side, const Coin &price_threshold )
+Coin PositionMan::getActiveSpruceEquityTotal( const Market &market, quint8 side, const Coin &price_threshold )
 {
     Coin ret;
     for( QSet<Position*>::const_iterator i = positions_all.begin(); i != positions_all.end(); i++ )
     {
         Position *const &pos = *i;
+
+        if ( !pos->is_cancelling &&
+              pos->side != side && // if it's not tradeable, flip sides
+              pos->strategy_tag.startsWith( "spruce" ) &&
+              market.getInverse() == pos->market )
+        {
+            // for inverted markets, price = 1/price
+            const Coin price_actual = ( CoinAmount::COIN / pos->price );
+
+            if ( ( side != SIDE_BUY  && price_threshold.isGreaterThanZero() && price_actual < price_threshold ) ||
+                 ( side != SIDE_SELL && price_threshold.isGreaterThanZero() && price_actual > price_threshold ) )
+                continue;
+
+            ret += pos->btc_amount * price_actual;
+            continue;
+        }
 
         if (  pos->is_cancelling ||
               pos->side != side ||
@@ -133,29 +149,6 @@ Coin PositionMan::getActiveSpruceEquityTotal( const QString &market, quint8 side
             continue;
 
         ret += pos->btc_amount;
-    }
-
-    return ret;
-}
-
-Coin PositionMan::getActiveSpruceOrdersOffset( const QString &market, quint8 side, const Coin &price_threshold )
-{
-    Coin ret;
-    for( QSet<Position*>::const_iterator i = positions_all.begin(); i != positions_all.end(); i++ )
-    {
-        Position *const &pos = *i;
-
-        if (  pos->is_cancelling ||
-              pos->side != side ||
-              pos->market != market ||
-             !pos->strategy_tag.startsWith( "spruce" ) ||
-              // if the threshold is zero, include any price into the total, otherwise return amount inside of the threshold only
-             ( side == SIDE_BUY  && price_threshold.isGreaterThanZero() && pos->price < price_threshold ) ||
-             ( side == SIDE_SELL && price_threshold.isGreaterThanZero() && pos->price > price_threshold ) )
-            continue;
-
-        if ( pos->side == SIDE_BUY ) ret += pos->btc_amount;
-        else                         ret -= pos->btc_amount;
     }
 
     return ret;
