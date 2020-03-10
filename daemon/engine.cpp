@@ -430,16 +430,20 @@ void Engine::updateStatsAndPrintFill( const QString &fill_type, Market market, c
         // invert market to make stats show properly
         market = market.getInverse();
 
+        // invert side
+        side = ( side == SIDE_BUY ) ? SIDE_SELL : SIDE_BUY;
+
         // invert price, recalculate amt/qty
+        const Coin amount_tmp = btc_amount;
+
         price = CoinAmount::COIN / price;
-        btc_amount = price * btc_amount;
-        quantity = btc_amount / price;
+        btc_amount = quantity;
+        quantity = amount_tmp;
     }
     // TODO: found beta level trade, convert prices and volumes using base currency prices
     else if ( market.getBase() != spruce->getBaseCurrency() &&
               market.getQuote() != spruce->getBaseCurrency() )
     {
-
     }
 
     // negate commission from final qty and calculate final amounts
