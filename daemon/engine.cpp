@@ -275,33 +275,34 @@ Position *Engine::addPosition( QString market_input, quint8 side, QString buy_pr
             pos->max_age_epoch = QDateTime::currentMSecsSinceEpoch() + ( timeout * 60000 );
     }
 
+    // TODO: if the positon is simulated in an inverted market, don't run this. otherwise, run it
     // if it's not a taker order, enable local post-only mode
-    if ( !is_taker )
-    {
-        // if we are setting a new position, try to obtain a better price
-        if ( tryMoveOrder( pos ) )
-        {
-            pos->applyOffset();
-        }
+//    if ( !is_taker )
+//    {
+//        // if we are setting a new position, try to obtain a better price
+//        if ( tryMoveOrder( pos ) )
+//        {
+//            pos->applyOffset();
+//        }
 
-        if ( pos->side == SIDE_SELL && pos->sell_price < info.lowest_sell )
-        {
-            info.lowest_sell = pos->sell_price;
+//        if ( pos->side == SIDE_SELL && pos->sell_price < info.lowest_sell )
+//        {
+//            info.lowest_sell = pos->sell_price;
 
-            // avoid collision
-            if ( info.lowest_sell <= info.highest_buy )
-                info.highest_buy = info.lowest_sell - info.price_ticksize;
-        }
+//            // avoid collision
+//            if ( info.lowest_sell <= info.highest_buy )
+//                info.highest_buy = info.lowest_sell - info.price_ticksize;
+//        }
 
-        if ( pos->side == SIDE_BUY  && pos->buy_price > info.highest_buy )
-        {
-            info.highest_buy = pos->buy_price;
+//        if ( pos->side == SIDE_BUY  && pos->buy_price > info.highest_buy )
+//        {
+//            info.highest_buy = pos->buy_price;
 
-            // avoid collision
-            if ( info.highest_buy >= info.lowest_sell )
-                info.lowest_sell = info.highest_buy + info.price_ticksize;
-        }
-    }
+//            // avoid collision
+//            if ( info.highest_buy >= info.lowest_sell )
+//                info.lowest_sell = info.highest_buy + info.price_ticksize;
+//        }
+//    }
 
     // position is now queued, update engine state
     positions->add( pos );
