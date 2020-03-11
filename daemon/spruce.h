@@ -118,8 +118,8 @@ public:
 
     Coin getCurrencyPriceByMarket( Market market );
 
-    void setLeverage( Coin l ) { m_leverage = l; }
-    Coin getLeverage() const { return m_leverage; }
+    void setAmplification( Coin l ) { m_amplification = l; }
+    Coin getAmplification() const { return m_amplification; }
 
     void setProfileU( QString currency, Coin u );
     Coin getProfileU( QString currency ) const { return m_currency_profile_u.value( currency, DEFAULT_PROFILE_U ); }
@@ -167,8 +167,8 @@ private:
     QVector<QMap<QString/*currency*/,Coin>> m_qtys;
     QList<Market> m_markets_beta;
 
-    Coin m_leverage;
-    Coin m_leverage_start, m_leverage_stop, m_leverage_increment; // agitator variables
+    Coin m_amplification;
+    Coin m_amplification_start, m_amplification_stop, m_amplification_increment; // agitator variables
     qint64 m_interval_secs{ 60 * 2 }; // 2min default
     qint64 m_agitator_last_tick{ 0 }; // timestamp state for last agitator tick
     bool m_order_cancel_mode{ false }; // false = cancel edges, true = cancel random

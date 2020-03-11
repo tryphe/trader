@@ -19,7 +19,7 @@ Spruce::Spruce()
 
     m_market_buy_max = "0.20000000";
     m_market_sell_max = "0.20000000";
-    m_leverage = CoinAmount::COIN;
+    m_amplification = CoinAmount::COIN;
 
     m_agitator_last_tick = QDateTime::currentSecsSinceEpoch();
 }
@@ -120,9 +120,9 @@ Coin Spruce::getOrderGreedRandom( quint8 side ) const
 
 void Spruce::setAgitator( Coin start, Coin stop, Coin increment )
 {
-    m_leverage_start = start;
-    m_leverage_stop = stop;
-    m_leverage_increment = increment;
+    m_amplification_start = start;
+    m_amplification_stop = stop;
+    m_amplification_increment = increment;
 }
 
 void Spruce::runAgitator()
@@ -135,25 +135,25 @@ void Spruce::runAgitator()
     m_agitator_last_tick = QDateTime::currentSecsSinceEpoch();
 
     // check for valid variables
-    if ( m_leverage_start >= m_leverage_stop ||
-         m_leverage_start.isZeroOrLess() ||
-         m_leverage_stop.isZeroOrLess() ||
-         m_leverage_increment.isZero() )
+    if ( m_amplification_start >= m_amplification_stop ||
+         m_amplification_start.isZeroOrLess() ||
+         m_amplification_stop.isZeroOrLess() ||
+         m_amplification_increment.isZero() )
         return;
 
     // if we're about to go over the stop, reverse polarity of increment
-    if ( m_leverage >= m_leverage_stop )
-        m_leverage_increment = -m_leverage_increment;
+    if ( m_amplification >= m_amplification_stop )
+        m_amplification_increment = -m_amplification_increment;
 
     // if we're about to go under the start, reverse polarity of increment
-    if ( m_leverage <= m_leverage_start )
-        m_leverage_increment = -m_leverage_increment;
+    if ( m_amplification <= m_amplification_start )
+        m_amplification_increment = -m_amplification_increment;
 
     // agitate
-    const Coin old_leverage = m_leverage;
-    m_leverage += m_leverage_increment;
+    const Coin old_amplification = m_amplification;
+    m_amplification += m_amplification_increment;
 
-    kDebug() << "[Spruce] agitator active, leverage" << old_leverage << "->" << m_leverage << ", increment" << m_leverage_increment;
+    kDebug() << "[Spruce] agitator active, amplification" << old_amplification << "->" << m_amplification << ", increment" << m_amplification_increment;
 }
 
 void Spruce::addStartNode( QString _currency, QString _quantity, QString _price )
@@ -274,8 +274,8 @@ QString Spruce::getSaveState()
     // save base
     ret += QString( "setsprucebasecurrency %1\n" ).arg( base_currency.isEmpty() ? "disabled" : base_currency );
 
-    // save log factor
-    ret += QString( "setspruceleverage %1\n" ).arg( m_leverage );
+    // save amplification
+    ret += QString( "setspruceamplification %1\n" ).arg( m_amplification );
 
     // save spread tolerances
     ret += QString( "setspruceordergreed %1 %2 %3 %4 %5\n" )
@@ -299,9 +299,9 @@ QString Spruce::getSaveState()
                                                      .arg( m_order_nice_spreadput_bound_taker );
 
     // save agitator
-    ret += QString( "setspruceagitator %1 %2 %3\n" ).arg( m_leverage_start )
-                                                    .arg( m_leverage_stop )
-                                                    .arg( m_leverage_increment );
+    ret += QString( "setspruceagitator %1 %2 %3\n" ).arg( m_amplification_start )
+                                                    .arg( m_amplification_stop )
+                                                    .arg( m_amplification_increment );
 
     // save agitator
     ret += QString( "setsprucecancelmode %1\n" ).arg( m_order_cancel_mode ? "true" : "false" );
@@ -536,7 +536,7 @@ bool Spruce::equalizeDates()
     static const Coin MIN_TICKSIZE = CoinAmount::SATOSHI * 50000;
     const Coin equity = getEquityAll();
     const Coin ticksize = std::max( MIN_TICKSIZE, equity / MAX_PROBLEM_PARTS );
-    const Coin ticksize_leveraged = ticksize * m_leverage;
+    const Coin ticksize_amplified = ticksize * m_amplification;
 
     // if we don't have enough to make the adjustment, abort
     if ( equity < getUniversalMinOrderSize() )
@@ -567,8 +567,8 @@ bool Spruce::equalizeDates()
         // short highest coeff, long lowest coeff
         if ( node_long && node_short )
         {
-            Coin qty_short = ( ticksize_leveraged / node_short->price ),
-                 qty_long  = ( ticksize_leveraged / node_long->price );
+            Coin qty_short = ( ticksize_amplified / node_short->price ),
+                 qty_long  = ( ticksize_amplified / node_long->price );
 
             if ( node_short->quantity > qty_short )
             {

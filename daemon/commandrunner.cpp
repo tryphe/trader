@@ -88,7 +88,8 @@ CommandRunner::CommandRunner( const quint8 _engine_type, Engine *_e, QVector<Bas
     command_map.insert( "setsprucestartnode", std::bind( &CommandRunner::command_setsprucestartnode, this, _1 ) );
     command_map.insert( "setspruceshortlongtotal", std::bind( &CommandRunner::command_setspruceshortlongtotal, this, _1 ) );
     command_map.insert( "setsprucebetamarket", std::bind( &CommandRunner::command_setsprucebetamarket, this, _1 ) );
-    command_map.insert( "setspruceleverage", std::bind( &CommandRunner::command_setspruceleverage, this, _1 ) );
+    command_map.insert( "setspruceleverage", std::bind( &CommandRunner::command_setspruceamplification, this, _1 ) );
+    command_map.insert( "setspruceamplification", std::bind( &CommandRunner::command_setspruceamplification, this, _1 ) );
     command_map.insert( "setspruceprofile", std::bind( &CommandRunner::command_setspruceprofile, this, _1 ) );
     command_map.insert( "setsprucereserve", std::bind( &CommandRunner::command_setsprucereserve, this, _1 ) );
     command_map.insert( "setspruceordergreed", std::bind( &CommandRunner::command_setspruceordergreed, this, _1 ) );
@@ -844,12 +845,12 @@ void CommandRunner::command_setsprucebetamarket( QStringList &args )
     spruce_overseer->spruce->addMarketBeta( m );
 }
 
-void CommandRunner::command_setspruceleverage( QStringList &args )
+void CommandRunner::command_setspruceamplification( QStringList &args )
 {
     if ( !checkArgs( args, 1 ) ) return;
 
-    spruce_overseer->spruce->setLeverage( args.value( 1 ) );
-    kDebug() << "spruce log leverage is" << spruce_overseer->spruce->getLeverage();
+    spruce_overseer->spruce->setAmplification( args.value( 1 ) );
+    kDebug() << "spruce log amplification is" << spruce_overseer->spruce->getAmplification();
 }
 
 void CommandRunner::command_setspruceprofile( QStringList &args )
