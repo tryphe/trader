@@ -13,9 +13,9 @@ void CoinAmountTest::test()
     // synopsis: double is okay to store bitcoin quantities, but not other altcoins with larger supplies, or
     //           coins with a different number of coin parts, or prices with a certain amount of decimals, or
     //           tick sizes.
-    assert( (double) 2100000000000000.0 != (double) 2099999999999999.0 ); // bitcoin max satoshis != max -1
-    assert( (double) 2251799813685248.0 == (double) 2251799813685247.9 ); // 2^51 == 2^51 - 0.1
-    assert( (double) 100000000.00000010 == (double) 100000000.00000011 ); // however, an altcoin with 100m coins or large ticksize would lose precision
+    assert( (double) 2100000000000000.0 != (double) 2099999999999999.0 ); // bitcoin max digits are safe, test that max satoshis != max satoshis -1
+    assert( (double) 2251799813685248.0 == (double) 2251799813685247.9 ); // however, if we went over the current supply limit (as some altcoins do), a mantissa of 2^51 == 2^51 - 0.1
+    assert( (double) 100000000.00000010 == (double) 100000000.00000011 ); // in addition, an altcoin would lose precision with (1) something like 100m coins or (2) precision higher than satoshis
 
     // floats suck #2
     // synopsis: using comparators with float's internal half-rounding is bad
