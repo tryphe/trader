@@ -255,6 +255,8 @@ void CommandRunner::command_getbuyselltotal( QStringList & )
     qint32 buy_overall_count = 0, sell_overall_count = 0, total_overall_count = 0;
     Coin buy_overall_amount, sell_overall_amount, total_overall_amount;
 
+    QString base_asset = spruce_overseer->spruce->getBaseCurrency();
+
     // build indexes from active and queued positions
     QSet<Position*>::const_iterator begin = engine->getPositionMan()->all().begin(),
                                     end = engine->getPositionMan()->all().end();
@@ -262,26 +264,51 @@ void CommandRunner::command_getbuyselltotal( QStringList & )
     {
         Position *const &pos = *i;
 
-        if ( pos->side == SIDE_BUY )
+        quint8 side_actual;
+        Market market_actual;
+        Coin price_actual, amount_actual, quantity_actual;
+
+        /// step 1: filter side, market, price, amount, qty by base spruce base market
+        // quote asset = spruce base, invert market
+        if ( base_asset == pos->market.getQuote() )
         {
-            buy_count[ pos->market ]++;
-            buy_amount[ pos->market ] += pos->btc_amount;
+            side_actual = ( pos->side == SIDE_BUY ) ? SIDE_SELL : SIDE_BUY;
+            market_actual = pos->market.getInverse();
+            price_actual = CoinAmount::COIN / pos->price;
+            amount_actual = pos->quantity;
+            quantity_actual = pos->btc_amount;
+        }
+        // base == spruce base, or neither of the currencies are the base(TODO: beta market conversions)
+        else// if ( base_asset == pos->market.getBase() )
+        {
+            side_actual = pos->side;
+            market_actual = pos->market;
+            price_actual = pos->price;
+            amount_actual = pos->btc_amount;
+            quantity_actual = pos->quantity;
+        }
+
+        /// step 2: fill maps with data
+        if ( side_actual == SIDE_BUY )
+        {
+            buy_count[ market_actual ]++;
+            buy_amount[ market_actual ] += amount_actual;
             buy_overall_count++;
-            buy_overall_amount += pos->btc_amount;
+            buy_overall_amount += amount_actual;
         }
         else
         {
-            sell_count[ pos->market ]++;
-            sell_qty[ pos->market ] += pos->quantity;
+            sell_count[ market_actual ]++;
+            sell_qty[ market_actual ] += quantity_actual;
             sell_overall_count++;
-            sell_overall_amount += pos->btc_amount;
+            sell_overall_amount += amount_actual;
         }
 
         // save the total count
-        total_count[ pos->market ]++;
+        total_count[ market_actual ]++;
         total_overall_count++;
-        total_amount[ pos->market ] += pos->btc_amount;
-        total_overall_amount += pos->btc_amount;
+        total_amount[ market_actual ] += amount_actual;
+        total_overall_amount += amount_actual;
     }
 
     // print header
