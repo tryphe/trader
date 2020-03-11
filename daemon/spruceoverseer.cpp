@@ -15,8 +15,8 @@
 #include <QSet>
 #include <QFile>
 
-const bool expand_spread_base_down = true; // true = getSpreadForSide always expands down for base greed value before applying other effects
-const bool expand_spread_buys = true; // expand buy side down more than sell side
+const bool expand_spread_base_down = false; // true = getSpreadForSide always expands down for base greed value before applying other effects
+const bool expand_spread_buys = false; // expand buy side down more than sell side
 
 const bool prices_uses_avg = false; // false = use widest spread edges, true = average spreads together
 
@@ -161,11 +161,11 @@ void SpruceOverseer::onSpruceUp()
 
                     // cache some order info
                     static const int ORDERSIZE_EXPAND_THRESH = 16;
-                    static const int ORDERSIZE_EXPAND_MAX = 4;
+                    static const int ORDERSIZE_EXPAND_MAX = 6;
                     const Coin order_size_unscaled = spruce->getOrderSize( market );
                     const Coin order_size = std::min( order_size_unscaled * ORDERSIZE_EXPAND_MAX, std::max( order_size_unscaled, amount_to_shortlong_abs / ORDERSIZE_EXPAND_THRESH ) );
                     //const Coin order_max = is_buy ? spruce->getMarketBuyMax( market ) :
-                                                    spruce->getMarketSellMax( market );
+                    //                                spruce->getMarketSellMax( market );
                     const Coin order_size_limit = order_size_unscaled * spruce->getOrderNice();
 
                     QString order_type = "onetime";
@@ -332,9 +332,9 @@ void SpruceOverseer::adjustSpread( TickerInfo &spread, Coin limit, quint8 side, 
         }
 
         // TODO: NOTE: if the trader doesn't freeze, this prevents an almost infinite loop
-        if ( j > 1000 )
+        if ( j > 2000 )
         {
-            ticksize *= 3;
+            ticksize *= Coin("1.5");
             j = 0;
 
             if ( ++debug_reset_count > 50 )
@@ -358,7 +358,7 @@ TickerInfo SpruceOverseer::getSpreadLimit( const QString &market, bool order_dup
 
     // get price ticksize
     // TODO: fix this by reading price matcher ticksize from exchange
-    const Coin ticksize_minimum = CoinAmount::SATOSHI;//getPriceTicksizeForMarket( market );
+    const Coin ticksize_minimum = getPriceTicksizeForMarket( market );
     Coin ticksize = ticksize_minimum;
 
     // read combined spread from all exchanges. include limts for side, but don't randomize
@@ -464,7 +464,7 @@ TickerInfo SpruceOverseer::getSpreadForSide( const QString &market, quint8 side,
     /// step 2: apply base greed value to spread
     // get price ticksize
     // TODO: fix this by reading price matcher ticksize from exchange
-    const Coin ticksize_minimum = CoinAmount::SATOSHI; //getPriceTicksizeForMarket( market );
+    const Coin ticksize_minimum = getPriceTicksizeForMarket( market );
     Coin ticksize = ticksize_minimum;
 
     adjustTicksizeToSpread( ticksize, ret, ticksize_minimum );
@@ -521,8 +521,6 @@ TickerInfo SpruceOverseer::getSpreadForSide( const QString &market, quint8 side,
 
 Coin SpruceOverseer::getPriceTicksizeForMarket( const Market &market )
 {
-    Coin ret = CoinAmount::SATOSHI;
-
     for ( QMap<quint8, Engine*>::const_iterator i = engine_map.begin(); i != engine_map.end(); i++ )
     {
         Engine *engine = i.value();
@@ -531,13 +529,12 @@ Coin SpruceOverseer::getPriceTicksizeForMarket( const Market &market )
         if ( !engine->market_info.contains( market ) )
             continue;
 
-        const MarketInfo &info = engine->market_info[ market ];
+        const MarketInfo &info = engine->getMarketInfo( market );
 
-        if ( info.price_ticksize > ret )
-            ret = info.price_ticksize;
+        return std::max( CoinAmount::SATOSHI, info.highest_buy / 100000 );
     }
 
-    return ret;
+    return CoinAmount::SATOSHI;
 }
 
 void SpruceOverseer::loadSettings()
