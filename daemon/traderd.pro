@@ -32,7 +32,6 @@ SOURCES += main.cpp \
     spruceoverseer.cpp \
     spruceoverseer_test.cpp \
     trader.cpp \
-    stats.cpp \
     trexrest.cpp \
     bncrest.cpp \
     polorest.cpp \
@@ -115,7 +114,6 @@ HEADERS += build-config.h \
     spruceoverseer.h \
     spruceoverseer_test.h \
     trader.h \
-    stats.h \
     trexrest.h \
     bncrest.h \
     wavesrest.h \
