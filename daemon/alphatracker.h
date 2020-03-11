@@ -25,7 +25,7 @@ public:
     Coin getVolumePerTrade( const QString &market ) const;
     Coin getAvgPrice( const QString &market, quint8 side ) const;
     quint64 getTrades( const QString &market ) const;
-    void addAlpha( const QString &market, const quint8 side, const Coin &btc_amount, const Coin &price );
+    void addAlpha( const QString &market, const quint8 side, const Coin &amount, const Coin &price );
     //
 
     // "daily volume"

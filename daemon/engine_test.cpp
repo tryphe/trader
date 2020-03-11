@@ -47,7 +47,7 @@ void EngineTest::test( Engine *e )
     assert( p.side == SIDE_BUY );
     assert( p.sideStr() == BUY );
     assert( p.is_landmark == false );
-    assert( p.btc_amount == "0.10000000" );
+    assert( p.amount == "0.10000000" );
     assert( p.original_size == "0.10000000" );
     assert( p.buy_price == "0.00001000" );
     assert( p.sell_price == "0.00009000" );
@@ -77,7 +77,7 @@ void EngineTest::test( Engine *e )
     assert( p2.side == SIDE_BUY );
     assert( p2.sideStr() == BUY );
     assert( p2.is_landmark == false );
-    assert( p2.btc_amount == "0.07777776" );
+    assert( p2.amount == "0.07777776" );
     assert( p2.original_size == "0.07777777" );
     assert( p2.quantity == "4376.91446257" );
     assert( p2.buy_price == "0.00001777" );
@@ -108,7 +108,7 @@ void EngineTest::test( Engine *e )
     assert( p3.sideStr() == SELL );
     assert( p3.is_landmark == true );
     assert( p3.market_indices == landmark_indices );
-    assert( p3.btc_amount == "0.05999999" );
+    assert( p3.amount == "0.05999999" );
     assert( p3.original_size == "0.06000000" );
     assert( p3.quantity == "95238.09523809" );
     assert( p3.buy_price == "0.00000004" );
@@ -122,7 +122,7 @@ void EngineTest::test( Engine *e )
     assert( e->positions->all().size() == 0 );
     Position *p4 = e->addPosition( TEST_MARKET, SIDE_SELL, "0.00000000", "0.00000010", "0.02000000", "onetime" );
     assert( p4 != nullptr );
-    assert( p4->btc_amount == "0.02000000" );
+    assert( p4->amount == "0.02000000" );
     assert( p4->quantity == "200000.00000000" );
 
     // Engine::deletePosition
@@ -137,7 +137,7 @@ void EngineTest::test( Engine *e )
     landmark_indices = QVector<qint32>() << 0 << 1 << 2;
     Position *p5 = e->addPosition( TEST_MARKET, SIDE_BUY, "0.00000001", "0.00000002", "0.00000000", ACTIVE, "test-strat", landmark_indices, true );
     assert( p5 != nullptr );
-    assert( p5->btc_amount == "0.06000000" );
+    assert( p5->amount == "0.06000000" );
     assert( p5->quantity == "6000000.00000000" );
     assert( p5->buy_price == "0.00000001" );
     assert( p5->sell_price == "0.00000063" );

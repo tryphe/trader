@@ -26,18 +26,18 @@ struct OrderInfo
     explicit OrderInfo( const QString &_order_number,
                         const quint8 &_side,
                         const QString &_price,
-                        const QString &_btc_amount )
+                        const QString &_amount )
     {
         order_number = _order_number;
         side = _side;
         price = _price;
-        btc_amount = _btc_amount;
+        amount = _amount;
     }
 
     QString order_number;
     quint8 side;
     QString price;
-    QString btc_amount;
+    QString amount;
 };
 
 struct TickerInfo

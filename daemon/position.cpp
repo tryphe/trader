@@ -161,25 +161,37 @@ void Position::calculateQuantity()
         return;
 
     // q = btc / price;
-    quantity = btc_amount / price;
+    quantity = amount / price;
 
     // truncate quantity by price ticksize
-    if ( engine != nullptr &&
-         ( engine->engine_type == ENGINE_BINANCE || engine->engine_type == ENGINE_WAVES ) )
+    if ( engine != nullptr )
     {
-        // TODO: maybe we should truncate by quantity_ticksize instead?
-        const Coin &ticksize = !engine ? CoinAmount::SATOSHI : engine->getMarketInfo( market ).price_ticksize;
-        quantity.truncateByTicksize( ticksize );
+        if ( engine->engine_type == ENGINE_BINANCE )
+        {
+            // TODO: maybe we should truncate by quantity_ticksize instead?
+            const Coin &ticksize = !engine ? CoinAmount::SATOSHI : engine->getMarketInfo( market ).price_ticksize;
+            quantity.truncateByTicksize( ticksize );
+        }
+        else if ( engine->engine_type == ENGINE_WAVES )
+        {
+            const Coin &price_ticksize = !engine ? CoinAmount::SATOSHI : engine->getMarketInfo( market ).price_ticksize;
+            const Coin &qty_ticksize = !engine ? CoinAmount::SATOSHI : engine->getMarketInfo( market ).quantity_ticksize;
+
+            // TODO: truncate waves price by matcher ticksize instead of price ticksize
+
+            price.truncateByTicksize( price_ticksize );
+            quantity.truncateByTicksize( qty_ticksize );
+        }
     }
 
-    // polo doesn't do this... do it anyways
-    btc_amount = quantity * price;
+    // recalculate amount based on truncated quantity
+    amount = quantity * price;
 }
 
 void Position::flip()
 {
     // set position size to original size
-    btc_amount = original_size;
+    amount = original_size;
 
     // buy->sell
     if ( side == SIDE_BUY )
@@ -244,19 +256,19 @@ void Position::applyOffset( qreal _offset, bool sentiment )
     const qreal lo_scalar = 1. - offset;
     const qreal hi_scalar = 1. + offset;
 
-    btc_amount = original_size;
+    amount = original_size;
     // bullish sentiment on buy
     if ( sentiment && is_buy )
-        btc_amount.applyRatio( hi_scalar );
+        amount.applyRatio( hi_scalar );
     // bullish sentiment on sell
     else if ( sentiment && !is_buy )
-        btc_amount.applyRatio( lo_scalar );
+        amount.applyRatio( lo_scalar );
     // bearish sentiment on buy
     else if ( !sentiment && is_buy )
-        btc_amount.applyRatio( lo_scalar );
+        amount.applyRatio( lo_scalar );
     // bearish sentiment on sell
     else// if ( !sentiment && !is_buy )
-        btc_amount.applyRatio( hi_scalar );
+        amount.applyRatio( hi_scalar );
 
     // calculate lo/hi amounts
     Coin amount_lo_d;
@@ -264,13 +276,13 @@ void Position::applyOffset( qreal _offset, bool sentiment )
 
     if ( sentiment )
     {
-        amount_lo_d = btc_amount * hi_scalar;
-        amount_hi_d = btc_amount * lo_scalar;
+        amount_lo_d = amount * hi_scalar;
+        amount_hi_d = amount * lo_scalar;
     }
     else
     {
-        amount_lo_d = btc_amount * lo_scalar;
-        amount_hi_d = btc_amount * hi_scalar;
+        amount_lo_d = amount * lo_scalar;
+        amount_hi_d = amount * hi_scalar;
     }
     //
 
@@ -336,7 +348,7 @@ void Position::jsonifyPositionCancel( QJsonArray &arr )
 
 //    // order info
 //    ret["price"] = price;
-//    ret["size"] = btc_amount;
+//    ret["size"] = amount;
 //    ret["side"] = side;
 
 //    // local info
@@ -350,10 +362,10 @@ QString Position::stringifyOrder()
 {
     QString ret = QString( "%1%2  %3 %4 %5 @ %6               o %7 %8")
                 .arg( is_landmark ? "L" : is_onetime ? "O" : " " )
-                .arg( is_slippage ? "S" : " " )
+                .arg( is_slippage ? "S" : max_age_epoch > 0 ? "T" : " " )
                 .arg( sideStr(), -4 )
                 .arg( market, MARKET_STRING_WIDTH )
-                .arg( btc_amount, 11 )
+                .arg( amount, 11 )
                 .arg( price, 10 )
                 .arg( order_number, ORDER_STRING_SIZE )
                 .arg( indices_str );
@@ -365,10 +377,10 @@ QString Position::stringifyOrderWithoutOrderID()
 {
     QString ret = QString( "%1%2  %3 %4 %5 @ %6 %7")
                 .arg( is_landmark ? "L" : is_onetime ? "O" : " " )
-                .arg( is_slippage ? "S" : " " )
+                .arg( is_slippage ? "S" : max_age_epoch > 0 ? "T" : " " )
                 .arg( sideStr(), -4 )
                 .arg( market, MARKET_STRING_WIDTH )
-                .arg( btc_amount, 11 )
+                .arg( amount, 11 )
                 .arg( price, 10 )
                 .arg( indices_str );
 
@@ -378,11 +390,11 @@ QString Position::stringifyOrderWithoutOrderID()
 QString Position::stringifyNewPosition()
 {
     QString ret = QString( "%1%2  %3 %4 %5 @ %6 %7 %8")
-                    .arg( is_landmark ? "L" : " " )
-                    .arg( is_slippage ? "S" : " " )
+                    .arg( is_landmark ? "L" : is_onetime ? "O" : " " )
+                    .arg( is_slippage ? "S" : max_age_epoch > 0 ? "T" : " " )
                     .arg( sideStr(), -4 )
                     .arg( market, MARKET_STRING_WIDTH )
-                    .arg( btc_amount, 11 )
+                    .arg( amount, 11 )
                     .arg( buy_price, 10 )
                     .arg( sell_price, -16 - ORDER_STRING_SIZE )
                     .arg( indices_str );
@@ -412,7 +424,7 @@ QString Position::stringifyPositionChange()
             .arg( is_buy ? ">>>grn<<<" : ">>>red<<<" )
             .arg( sideStr(), -4 )
             .arg( market, MARKET_STRING_WIDTH )
-            .arg( btc_amount, 11 )
+            .arg( amount, 11 )
             .arg( price_str, -24 )
             .arg( order_number, ORDER_STRING_SIZE )
             .arg( indices_str )

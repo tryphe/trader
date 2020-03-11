@@ -135,7 +135,7 @@ Coin PositionMan::getActiveSpruceEquityTotal( const Market &market, quint8 side,
                  ( side != SIDE_SELL && price_threshold.isGreaterThanZero() && price_actual > price_threshold ) )
                 continue;
 
-            ret += pos->btc_amount * price_actual;
+            ret += pos->amount * price_actual;
             continue;
         }
 
@@ -148,7 +148,7 @@ Coin PositionMan::getActiveSpruceEquityTotal( const Market &market, quint8 side,
              ( side == SIDE_SELL && price_threshold.isGreaterThanZero() && pos->price > price_threshold ) )
             continue;
 
-        ret += pos->btc_amount;
+        ret += pos->amount;
     }
 
     return ret;

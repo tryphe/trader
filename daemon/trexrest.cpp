@@ -587,23 +587,23 @@ void TrexREST::parseOpenOrders( const QJsonArray &orders, qint64 request_time_se
         // the exchange uses a double (wtf), we'll read a double
         const Coin price = order.value( "Limit" ).toDouble();
         const Coin quantity = order.value( "Quantity" ).toDouble();
-        const Coin btc_amount = quantity * price;
+        const Coin amount = quantity * price;
 
         //kDebug() << order;
-        //kDebug() << market << side << btc_amount << "@" << price << order_number;
+        //kDebug() << market << side << amount << "@" << price << order_number;
 
         // check for missing information
         if ( market.isEmpty() ||
              order_number.isEmpty() ||
              side == 0 ||
-             btc_amount.isZeroOrLess() ) // only check btc_amount: if price or quantity is 0, btc_amount is also 0
+             amount.isZeroOrLess() ) // only check amount: if price or quantity is 0, amount is also 0
             continue;
 
         // insert into seen orders
         order_numbers.append( order_number );
 
         // insert (market, order)
-        order_map.insert( market, OrderInfo( order_number, side, price, btc_amount ) );
+        order_map.insert( market, OrderInfo( order_number, side, price, amount ) );
     }
 
     engine->processOpenOrders( order_numbers, order_map, request_time_sent_ms );
@@ -687,7 +687,7 @@ void TrexREST::parseGetOrder( const QJsonObject &order )
     if ( !is_open && // order was closed
          !engine->getPositionMan()->isValidOrderID( order_id ) ) // position doesn't exist locally
     {
-        const Coin btc_amount_filled = order.value( "Price" ).toDouble();
+        const Coin amount_filled = order.value( "Price" ).toDouble();
         const Coin qty = order.value( "Quantity" ).toDouble();
         const Coin qty_remaining = order.value( "QuantityRemaining" ).toDouble();
         const Coin qty_filled = qty - qty_remaining;
@@ -695,7 +695,7 @@ void TrexREST::parseGetOrder( const QJsonObject &order )
         const Coin btc_commission = order.value( "CommissionPaid" ).toDouble();
 
         // we filled something (check that both values are gz just incase)
-        if ( btc_amount_filled.isGreaterThanZero() &&
+        if ( amount_filled.isGreaterThanZero() &&
              qty_filled.isGreaterThanZero() &&
              price.isGreaterThanZero() )
         {
@@ -704,7 +704,7 @@ void TrexREST::parseGetOrder( const QJsonObject &order )
                                                                                      : SIDE_BUY;
 
             // TODO: FIX THIS (we don't know if it's a spruce order, but assume for now)
-            engine->updateStatsAndPrintFill( "getorder", market, order_id, side, "spruce", btc_amount_filled, Coin(), price, btc_commission );
+            engine->updateStatsAndPrintFill( "getorder", market, order_id, side, "spruce", amount_filled, Coin(), price, btc_commission );
         }
 
         return;

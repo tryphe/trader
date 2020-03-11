@@ -4,7 +4,6 @@
 #include "bncrest.h"
 #include "polorest.h"
 #include "wavesrest.h"
-#include "stats.h"
 #include "positionman.h"
 #include "enginesettings.h"
 #include "market.h"
@@ -222,10 +221,10 @@ Position *Engine::addPosition( QString market_input, quint8 side, QString buy_pr
     if ( !pos ||
          !pos->market.isValid() ||
           pos->price.isZeroOrLess() ||
-          pos->btc_amount.isZeroOrLess() ||
+          pos->amount.isZeroOrLess() ||
           pos->quantity.isZeroOrLess() )
     {
-        kDebug() << "local warning: failed to set order because of invalid value:" << market << pos->side << pos->buy_price << pos->sell_price << pos->btc_amount << pos->quantity << indices << landmark;
+        kDebug() << "local warning: failed to set order because of invalid value:" << market << pos->side << pos->buy_price << pos->sell_price << pos->amount << pos->quantity << indices << landmark;
         if ( pos ) delete pos;
         return nullptr;
     }
@@ -237,9 +236,9 @@ Position *Engine::addPosition( QString market_input, quint8 side, QString buy_pr
                                     engine_type == ENGINE_WAVES    ? Coin( WAVES_MINIMUM_ORDER_SIZE ) :
                                                                     Coin();
 
-    if ( pos->btc_amount < Coin( minimum_order_size ) - CoinAmount::SATOSHI )
+    if ( pos->amount < Coin( minimum_order_size ) - CoinAmount::SATOSHI )
     {
-        kDebug() << "local warning: failed to set order: size" << pos->btc_amount << "is under the minimum size" << minimum_order_size;
+        kDebug() << "local warning: failed to set order: size" << pos->amount << "is under the minimum size" << minimum_order_size;
         return nullptr;
     }
 
@@ -400,7 +399,7 @@ void Engine::fillNQ( const QString &order_id, qint8 fill_type , quint8 extra_dat
 
     // update stats and print
     // note: btc_commission is set in rest->parseOrderHistory
-    updateStatsAndPrintFill( fill_str, pos->market, pos->order_number, pos->side, pos->strategy_tag, pos->btc_amount, Coin(), pos->price, pos->btc_commission );
+    updateStatsAndPrintFill( fill_str, pos->market, pos->order_number, pos->side, pos->strategy_tag, pos->amount, Coin(), pos->price, pos->btc_commission );
 
     // set the next position
     flipPosition( pos );
@@ -415,14 +414,14 @@ void Engine::fillNQ( const QString &order_id, qint8 fill_type , quint8 extra_dat
 }
 
 void Engine::updateStatsAndPrintFill( const QString &fill_type, Market market, const QString &order_id, quint8 side,
-                                      const QString &strategy_tag, Coin btc_amount, Coin quantity, Coin price,
+                                      const QString &strategy_tag, Coin amount, Coin quantity, Coin price,
                                       const Coin &btc_commission )
 {
     // one of these values should be zero, unless the exchange supplies both?
-    if ( btc_amount.isZero() )
-        btc_amount = quantity * price;
+    if ( amount.isZero() )
+        amount = quantity * price;
     else if ( quantity.isZero() )
-        quantity = btc_amount / price;
+        quantity = amount / price;
 
     // if base market is not btc, but the quote is, calculate btc price with inverse
     if ( market.getBase() != spruce->getBaseCurrency() &&
@@ -435,10 +434,10 @@ void Engine::updateStatsAndPrintFill( const QString &fill_type, Market market, c
         side = ( side == SIDE_BUY ) ? SIDE_SELL : SIDE_BUY;
 
         // invert price, recalculate amt/qty
-        const Coin amount_tmp = btc_amount;
+        const Coin amount_tmp = amount;
 
         price = CoinAmount::COIN / price;
-        btc_amount = quantity;
+        amount = quantity;
         quantity = amount_tmp;
     }
     // TODO: found beta level trade, convert prices and volumes using base currency prices
@@ -448,12 +447,12 @@ void Engine::updateStatsAndPrintFill( const QString &fill_type, Market market, c
     }
 
     // negate commission from final qty and calculate final amounts
-    btc_amount = btc_amount - btc_commission;
-    quantity = btc_amount / price;
+    amount = amount - btc_commission;
+    quantity = amount / price;
 
     // add stats changes to alpha tracker (note: volume before commission is used)
-    alpha->addAlpha( market, side, btc_amount, price );
-    alpha->addDailyVolume( QDateTime::currentSecsSinceEpoch(), btc_amount );
+    alpha->addAlpha( market, side, amount, price );
+    alpha->addDailyVolume( QDateTime::currentSecsSinceEpoch(), amount );
 
     // add qty changes to spruce strat
     const Coin quantity_offset = ( side == SIDE_BUY ) ?  quantity
@@ -473,7 +472,7 @@ void Engine::updateStatsAndPrintFill( const QString &fill_type, Market market, c
                     .arg( fill_type, -8 )
                     .arg( side_str )
                     .arg( market, MARKET_STRING_WIDTH )
-                    .arg( btc_amount, PRICE_WIDTH )
+                    .arg( amount, PRICE_WIDTH )
                     .arg( btc_commission + ")", -PRICE_WIDTH -1 )
                     .arg( quantity + ")", -PRICE_WIDTH -1 )
                     .arg( price, -PRICE_WIDTH )
@@ -540,10 +539,10 @@ void Engine::processOpenOrders( QVector<QString> &order_numbers, QMultiHash<QStr
         const OrderInfo &info = i.value();
         const quint8 &side = info.side;
         const QString &price = info.price;
-        const QString &btc_amount = info.btc_amount;
+        const QString &amount = info.amount;
         const QString &order_number = info.order_number;
 
-        //kDebug() << "processing order" << order_number << market << side << btc_amount << "@" << price;
+        //kDebug() << "processing order" << order_number << market << side << amount << "@" << price;
 
         // if we ran cancelall, try to cancel this order
         if ( positions->isRunningCancelAll() )
@@ -560,7 +559,7 @@ void Engine::processOpenOrders( QVector<QString> &order_numbers, QMultiHash<QStr
             // cancel stray orders
             if ( !positions->isValidOrderID( order_number ) )
             {
-                kDebug() << "cancelling non-bot order" << market << side << btc_amount << "@" << price << "id:" << order_number;
+                kDebug() << "cancelling non-bot order" << market << side << amount << "@" << price << "id:" << order_number;
 
                 // send a one time cancel request for orders we don't own
                 sendCancel( order_number, nullptr, market );
@@ -581,7 +580,7 @@ void Engine::processOpenOrders( QVector<QString> &order_numbers, QMultiHash<QStr
             // we haven't seen it, add a grace time if it doesn't match an active position
             if ( !order_grace_times.contains( order_number ) )
             {
-                const Coin &btc_amount_d = btc_amount;
+                const Coin &amount_d = amount;
                 Position *matching_pos = nullptr;
 
                 // try and match a queued position to our json data
@@ -597,9 +596,9 @@ void Engine::processOpenOrders( QVector<QString> &order_numbers, QMultiHash<QStr
                     if ( pos->market == market &&
                          pos->side == side &&
                          pos->price == price &&
-                         pos->btc_amount == btc_amount &&
-                         btc_amount_d >= pos->btc_amount.ratio( 0.999 ) &&
-                         btc_amount_d <= pos->btc_amount.ratio( 1.001 ) )
+                         pos->amount == amount &&
+                         amount_d >= pos->amount.ratio( 0.999 ) &&
+                         amount_d <= pos->amount.ratio( 1.001 ) )
                     {
                         matching_pos = pos;
                         break;
@@ -623,7 +622,7 @@ void Engine::processOpenOrders( QVector<QString> &order_numbers, QMultiHash<QStr
             // we have seen the stray order at least once before, measure the grace time
             else if ( current_time - order_grace_times.value( order_number ) > settings->stray_grace_time_limit )
             {
-                kDebug() << "queued cancel for stray order" << market << side << btc_amount << "@" << price << "id:" << order_number;
+                kDebug() << "queued cancel for stray order" << market << side << amount << "@" << price << "id:" << order_number;
                 stray_orders += order_number;
 
                 // for waves, we need to record the market also

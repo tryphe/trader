@@ -1,7 +1,6 @@
 #include "polorest.h"
 #include "position.h"
 #include "positionman.h"
-#include "stats.h"
 #include "engine.h"
 #include "enginesettings.h"
 #include "coinamount.h"
@@ -324,21 +323,21 @@ void PoloREST::parseOpenOrders( const QJsonObject &markets, qint64 request_time_
             const QString &order_number = order.value( "orderNumber" ).toString();
             const QString &side = order.value( "type" ).toString();
             const QString &price = Coin( order.value( "rate" ).toString() ); // reformat into padded
-            const QString &btc_amount = Coin( order.value( "total" ).toString() ); // reformat into padded
+            const QString &amount = Coin( order.value( "total" ).toString() ); // reformat into padded
 
             // check for missing information
             if ( market.isEmpty() ||
                  order_number.isEmpty() ||
                  side.isEmpty() ||
                  price.isEmpty() ||
-                 btc_amount.isEmpty() )
+                 amount.isEmpty() )
                 continue;
 
             // insert into seen orders
             order_numbers.append( order_number );
 
             // insert (market, order)
-            orders.insert( market, OrderInfo( order_number, side == BUY ? SIDE_BUY : side == SELL ? SIDE_SELL : 0, price, btc_amount ) );
+            orders.insert( market, OrderInfo( order_number, side == BUY ? SIDE_BUY : side == SELL ? SIDE_SELL : 0, price, amount ) );
         }
     }
 

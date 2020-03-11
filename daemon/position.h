@@ -54,7 +54,7 @@ public:
     QString indices_str;
     Coin price, buy_price, sell_price;
     Coin buy_price_original, sell_price_original;
-    Coin original_size, btc_amount, per_trade_profit, profit_margin, btc_commission;
+    Coin original_size, amount, per_trade_profit, profit_margin, btc_commission;
     quint32 price_reset_count;
     qint64 max_age_epoch; // epoch time of when we should cancel the order
     QString strategy_tag; // tag for short/long

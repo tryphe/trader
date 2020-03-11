@@ -14,14 +14,14 @@ void AlphaTracker::reset()
     daily_volume.clear();
 }
 
-void AlphaTracker::addAlpha( const QString &market, const quint8 side, const Coin &volume, const Coin &price )
+void AlphaTracker::addAlpha( const QString &market, const quint8 side, const Coin &amount, const Coin &price )
 {
     QMap<QString,AlphaData> &map = side == SIDE_BUY ? buys : sells;
     AlphaData &d = map[ market ];
 
     // for each trade, v += volume, and vp += volume * price
-    d.v += volume;
-    d.vp += volume * price;
+    d.v += amount;
+    d.vp += amount * price;
 
     d.trades++;
 }

@@ -80,7 +80,7 @@ public:
     bool yieldToFlowControl();
 
     void updateStatsAndPrintFill( const QString &fill_type, Market market, const QString &order_id, quint8 side,
-                                  const QString &strategy_tag, Coin btc_amount, Coin quantity, Coin price,
+                                  const QString &strategy_tag, Coin amount, Coin quantity, Coin price,
                                   const Coin &btc_commission );
 
     QVector<QString/*order_id*/> orders_for_polling;

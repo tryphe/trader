@@ -1,5 +1,4 @@
 #include "bncrest.h"
-#include "stats.h"
 #include "engine.h"
 #include "position.h"
 #include "positionman.h"
@@ -686,23 +685,23 @@ void BncREST::parseOpenOrders( const QJsonArray &markets, qint64 request_time_se
         const QString &side = order.value( "side" ).toString().toLower();
         const Coin &price = order.value( "price" ).toString();
         const Coin &original_quantity = order.value( "origQty" ).toString();
-        const Coin &btc_amount = price * original_quantity;
+        const Coin &amount = price * original_quantity;
 
-        //kDebug() << market << order_number << side << price << btc_amount;
+        //kDebug() << market << order_number << side << price << amount;
 
         // check for missing information
         if ( market.isEmpty()||
              order_number.isEmpty() ||
              side.isEmpty() ||
              price.isZeroOrLess() ||
-             btc_amount.isZeroOrLess() )
+             amount.isZeroOrLess() )
             continue;
 
         // insert into seen orders
         order_numbers += order_number;
 
         // insert (market, order)
-        orders.insert( market, OrderInfo( order_number, side == BUY ? SIDE_BUY : side == SELL ? SIDE_SELL : 0, price, btc_amount ) );
+        orders.insert( market, OrderInfo( order_number, side == BUY ? SIDE_BUY : side == SELL ? SIDE_SELL : 0, price, amount ) );
     }
 
     engine->processOpenOrders( order_numbers, orders, request_time_sent_ms );

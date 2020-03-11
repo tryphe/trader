@@ -1,6 +1,5 @@
 #include "trader.h"
 #include "bncrest.h"
-#include "stats.h"
 #include "position.h"
 #include "engine.h"
 #include "engine_test.h"

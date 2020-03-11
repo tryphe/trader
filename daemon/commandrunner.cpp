@@ -6,7 +6,6 @@
 #include "polorest.h"
 #include "wavesrest.h"
 #include "bncrest.h"
-#include "stats.h"
 #include "positionman.h"
 #include "market.h"
 #include "alphatracker.h"
@@ -277,7 +276,7 @@ void CommandRunner::command_getbuyselltotal( QStringList & )
             market_actual = pos->market.getInverse();
             price_actual = CoinAmount::COIN / pos->price;
             amount_actual = pos->quantity;
-            quantity_actual = pos->btc_amount;
+            quantity_actual = pos->amount;
         }
         // base == spruce base, or neither of the currencies are the base(TODO: beta market conversions)
         else// if ( base_asset == pos->market.getBase() )
@@ -285,7 +284,7 @@ void CommandRunner::command_getbuyselltotal( QStringList & )
             side_actual = pos->side;
             market_actual = pos->market;
             price_actual = pos->price;
-            amount_actual = pos->btc_amount;
+            amount_actual = pos->amount;
             quantity_actual = pos->quantity;
         }
 
