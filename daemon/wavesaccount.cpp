@@ -245,7 +245,6 @@ QByteArray WavesAccount::createOrderBody( Position * const &pos, const Coin &pri
         return QByteArray();
     }
 
-    // note: 29d expiration == + ( 60000LL * 60LL * 24LL * 29LL )
     const QByteArray order_bytes_v2 = createOrderBytes( pos, price_ticksize, qty_ticksize, epoch_now, epoch_expiration );
     const QByteArray order_id_v2_b58 = createOrderId( order_bytes_v2 );
     QByteArray signature;

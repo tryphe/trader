@@ -248,8 +248,8 @@ void WavesREST::sendBuySell( Position * const &pos, bool quiet )
 {
     const qint64 current_time = QDateTime::currentMSecsSinceEpoch();
     const qint64 now = current_time + 60000;
-    const qint64 future_29d = current_time + ( 60000LL * 60LL * 24LL * 29LL );
-    const qint64 future_28d = current_time + ( 60000LL * 60LL * 24LL * 28LL );
+    const qint64 future_29d = current_time + qint64( 60000 ) * 60 * 24 * 29;
+    const qint64 future_28d = current_time + qint64( 60000 ) * 60 * 24 * 28;
 
     MarketInfo &info = engine->getMarketInfo( pos->market );
 
