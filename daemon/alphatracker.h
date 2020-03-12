@@ -21,7 +21,9 @@ public:
 
     // "alpha"
     Coin getAlpha( const QString &market ) const;
+    Coin getAlphaSignificanceFactor( const QString &market ) const;
     Coin getVolume( const QString &market ) const;
+    Coin getVolume( const quint8 side, const QString &market ) const;
     Coin getVolumePerTrade( const QString &market ) const;
     Coin getAvgPrice( const QString &market, quint8 side ) const;
     quint64 getTrades( const QString &market ) const;

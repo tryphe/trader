@@ -37,9 +37,27 @@ Coin AlphaTracker::getAlpha( const QString &market ) const
     return ( sell_price / buy_price );
 }
 
+Coin AlphaTracker::getAlphaSignificanceFactor( const QString &market ) const
+{
+    const Coin buy_vol = getVolume( SIDE_BUY, market );
+    const Coin sell_vol = getVolume( SIDE_SELL, market );
+
+    const Coin lo = std::min( buy_vol, sell_vol );
+    const Coin hi = std::max( buy_vol, sell_vol );
+
+    return ( hi.isGreaterThanZero() ) ? lo / hi : Coin();
+}
+
 Coin AlphaTracker::getVolume( const QString &market ) const
 {
     return buys.value( market ).v + sells.value( market ).v;
+}
+
+Coin AlphaTracker::getVolume( const quint8 side, const QString &market ) const
+{
+    return ( side == SIDE_BUY ) ? buys.value( market ).v :
+           ( side == SIDE_SELL ) ? sells.value( market ).v :
+                                   Coin();
 }
 
 Coin AlphaTracker::getVolumePerTrade( const QString &market ) const
@@ -90,11 +108,13 @@ void AlphaTracker::printAlpha() const
     {
         const QString &market = *i;
         const Coin volume = getVolume( market );
+        const Coin significance = getAlphaSignificanceFactor( market );
         const Coin alpha = getAlpha( market );
 
-        kDebug() << QString( "%1 | alpha %2 | buy %3 | sell %4 | vol %5 | vol-trade %6 | trades %7" )
+        kDebug() << QString( "%1 | est_alpha %2 | signif %3 | buy %4 | sell %5 | vol %6 | vol-trade %7 | trades %8" )
                     .arg( market, -MARKET_STRING_WIDTH )
-                    .arg( alpha, -10 )
+                    .arg( alpha.toString( 4 ), -6 )
+                    .arg( significance.toString( 3 ), -5 )
                     .arg( getAvgPrice( market, SIDE_BUY ), -12 )
                     .arg( getAvgPrice( market, SIDE_SELL ), -12 )
                     .arg( volume, -12 )
@@ -105,7 +125,7 @@ void AlphaTracker::printAlpha() const
         if ( alpha.isGreaterThanZero() )
         {
             total_volume += volume;
-            estimated_pl += ( alpha - CoinAmount::COIN /*- ( Coin( BITTREX_DEFAULT_FEERATE ) *2 )*/ ) * volume;
+            estimated_pl += significance * ( ( alpha - CoinAmount::COIN ) * volume );
         }
     }
 
