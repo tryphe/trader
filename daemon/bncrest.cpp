@@ -783,7 +783,6 @@ void BncREST::parseTicker( const QJsonArray &info, qint64 request_time_sent_ms )
     if ( request_time_sent_ms < ticker_update_request_time )
         return;
 
-    ticker_update_time = current_time;
     ticker_update_request_time = request_time_sent_ms;
 
     // iterate through each market object
