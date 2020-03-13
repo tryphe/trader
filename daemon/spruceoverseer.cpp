@@ -418,7 +418,10 @@ TickerInfo SpruceOverseer::getSpreadForSide( const QString &market, quint8 side,
         // ensure ticker isn't stale
         if ( engine->rest_arr.at( engine->engine_type )->ticker_update_time
              < QDateTime::currentMSecsSinceEpoch() - 60000 )
+        {
+            kDebug() << "local warning: engine ticker" << engine->engine_type << "is stale, skipping";
             continue;
+        }
 
         const MarketInfo &info = engine->market_info[ market ];
 

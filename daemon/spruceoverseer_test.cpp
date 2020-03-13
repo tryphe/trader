@@ -13,6 +13,11 @@ void SpruceOverseerTest::test( SpruceOverseer *o, Engine *engine )
     engine->market_info[ TEST_MARKET ].highest_buy = "0.00010000";
     engine->market_info[ TEST_MARKET ].lowest_sell = "0.00010100";
 
+    // update ticker update time
+    for ( quint8 type = 0; type < 4; type++ )
+        if ( engine->rest_arr.value( type ) != nullptr )
+            engine->rest_arr.value( type )->ticker_update_time = QDateTime::currentMSecsSinceEpoch();
+
     /// ensure that getSpreadLimit() ratio == regular spread ratio
     // override some settings
     const Coin order_random_buy = o->spruce->getOrderRandomBuy();
@@ -98,4 +103,9 @@ void SpruceOverseerTest::test( SpruceOverseer *o, Engine *engine )
 //    kDebug() << "       sell spread:" << o->getSpreadForSide( TEST_MARKET, SIDE_SELL, true, false );
 //    kDebug() << "sell spread random:" << o->getSpreadForSide( TEST_MARKET, SIDE_SELL, true, false, true, true );
 //    kDebug() << "sell spread reduce:" << o->getSpreadForSide( TEST_MARKET, SIDE_SELL, true, false, false, false, Coin( "0.01" ) );
+
+    // invalidate ticker update time
+    for ( quint8 type = 0; type < 4; type++ )
+        if ( engine->rest_arr.value( type ) != nullptr )
+            engine->rest_arr.value( type )->ticker_update_time = 0;
 }
