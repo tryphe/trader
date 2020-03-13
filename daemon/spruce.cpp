@@ -293,8 +293,9 @@ QString Spruce::getSaveState()
     ret += QString( "setspruceordersize %1\n" ).arg( m_order_size );
 
     // save order size
-    ret += QString( "setspruceordernice %1 %2 %3 %4\n" ).arg( m_order_nice )
+    ret += QString( "setspruceordernice %1 %2 %3 %4 %5\n" ).arg( m_order_nice )
                                                      .arg( m_order_nice_zerobound )
+                                                     .arg( m_order_nice_buy_offset )
                                                      .arg( m_order_nice_spreadput_bound )
                                                      .arg( m_order_nice_spreadput_bound_taker );
 

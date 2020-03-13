@@ -72,10 +72,11 @@ public:
     bool getOrderCancelMode() const { return m_order_cancel_mode; }
 
     void setOrderNice( Coin nice ) { m_order_nice = nice; }
-    Coin getOrderNice() const { return m_order_nice; }
+    void setOrderNiceBuyOffset( Coin offset ) { m_order_nice_buy_offset = offset; }
+    Coin getOrderNice( const quint8 side ) const { return ( side == SIDE_BUY ) ? m_order_nice + m_order_nice_buy_offset : m_order_nice; }
 
     void setOrderNiceZeroBound( Coin nice ) { m_order_nice_zerobound = nice; }
-    Coin getOrderNiceZeroBound() const { return m_order_nice_zerobound; }
+    Coin getOrderNiceZeroBound( const quint8 side ) const { return /*( side == SIDE_BUY ) ? m_order_nice_zerobound + m_order_nice_buy_offset :*/ m_order_nice_zerobound; }
 
     void setOrderNiceSpreadPut( Coin nice ) { m_order_nice_spreadput_bound = nice.isZeroOrLess() ? m_order_nice_spreadput_bound : nice; }
     Coin getOrderNiceSpreadPut() const { return m_order_nice_spreadput_bound; }
@@ -158,7 +159,7 @@ private:
     QMultiMap<Coin,QString> currency_weight_by_coin; // note: weights are >0 and <=1
     QMap<QString, Coin> per_exchange_market_allocations; // note: market allocations are 0:1
     Coin m_order_greed, m_order_greed_minimum, m_order_greed_buy_randomness, m_order_greed_sell_randomness, m_market_buy_max,
-    m_market_sell_max, m_order_size, m_order_nice, m_order_nice_zerobound, m_order_nice_spreadput_bound,
+    m_market_sell_max, m_order_size, m_order_nice, m_order_nice_zerobound, m_order_nice_buy_offset, m_order_nice_spreadput_bound,
     m_order_nice_spreadput_bound_taker, m_skew;
 
     QList<Node*> nodes_start, nodes_now;

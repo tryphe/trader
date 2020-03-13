@@ -87,7 +87,6 @@ CommandRunner::CommandRunner( const quint8 _engine_type, Engine *_e, QVector<Bas
     command_map.insert( "setsprucestartnode", std::bind( &CommandRunner::command_setsprucestartnode, this, _1 ) );
     command_map.insert( "setspruceshortlongtotal", std::bind( &CommandRunner::command_setspruceshortlongtotal, this, _1 ) );
     command_map.insert( "setsprucebetamarket", std::bind( &CommandRunner::command_setsprucebetamarket, this, _1 ) );
-    command_map.insert( "setspruceleverage", std::bind( &CommandRunner::command_setspruceamplification, this, _1 ) );
     command_map.insert( "setspruceamplification", std::bind( &CommandRunner::command_setspruceamplification, this, _1 ) );
     command_map.insert( "setspruceprofile", std::bind( &CommandRunner::command_setspruceprofile, this, _1 ) );
     command_map.insert( "setsprucereserve", std::bind( &CommandRunner::command_setsprucereserve, this, _1 ) );
@@ -904,15 +903,17 @@ void CommandRunner::command_setspruceordersize( QStringList &args )
 
 void CommandRunner::command_setspruceordernice( QStringList &args )
 {
-    if ( !checkArgs( args, 4 ) ) return;
+    if ( !checkArgs( args, 5 ) ) return;
 
     spruce_overseer->spruce->setOrderNice( args.value( 1 ) );
     spruce_overseer->spruce->setOrderNiceZeroBound( args.value( 2 ) );
-    spruce_overseer->spruce->setOrderNiceSpreadPut( args.value( 3 ) );
-    spruce_overseer->spruce->setOrderNiceSpreadPutTaker( args.value( 4 ) );
+    spruce_overseer->spruce->setOrderNiceBuyOffset( args.value( 3 ) );
+    spruce_overseer->spruce->setOrderNiceSpreadPut( args.value( 4 ) );
+    spruce_overseer->spruce->setOrderNiceSpreadPutTaker( args.value( 5 ) );
 
-    kDebug() << "spruce order nice:" << spruce_overseer->spruce->getOrderNice()
-                    << "zero bound:" << spruce_overseer->spruce->getOrderNiceZeroBound()
+    kDebug() << "spruce order nice:" << args.value( 1 )
+                    << "zero bound:" << args.value( 2 )
+               << "buys nice offset" << args.value( 3 )
             << "spread reduce nice:" << spruce_overseer->spruce->getOrderNiceSpreadPut()
              << "spread taker nice:" << spruce_overseer->spruce->getOrderNiceSpreadPutTaker();
 }
