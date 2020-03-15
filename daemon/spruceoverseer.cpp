@@ -187,8 +187,10 @@ void SpruceOverseer::onSpruceUp()
                         if ( amount_to_shortlong_abs >= taker_threshold )
                         {
                             const TickerInfo taker_spread = getSpreadForSide( market, side, true, true );
-                            buy_price = taker_spread.bid_price;
-                            sell_price = taker_spread.ask_price;
+
+                            // select best price, but only move 0.5% away from spread
+                            buy_price = std::min( taker_spread.bid_price, taker_spread.ask_price * Coin( "1.005" ) );
+                            sell_price = std::max( taker_spread.ask_price, taker_spread.bid_price * Coin( "0.995" ) );
 
                             // the bid price should be greater than the ask (because the spread is flipped)
                             if ( taker_spread.bid_price <= taker_spread.ask_price )
