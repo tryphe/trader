@@ -94,6 +94,7 @@ CommandRunner::CommandRunner( const quint8 _engine_type, Engine *_e, QVector<Bas
     command_map.insert( "setsprucemarketmax", std::bind( &CommandRunner::command_setsprucemarketmax, this, _1 ) );
     command_map.insert( "setspruceordersize", std::bind( &CommandRunner::command_setspruceordersize, this, _1 ) );
     command_map.insert( "setspruceordernice", std::bind( &CommandRunner::command_setspruceordernice, this, _1 ) );
+    command_map.insert( "setspruceordernicecustom", std::bind( &CommandRunner::command_setspruceordernicecustom, this, _1 ) );
     command_map.insert( "setspruceallocation", std::bind( &CommandRunner::command_setspruceallocation, this, _1 ) );
     command_map.insert( "setspruceagitator", std::bind( &CommandRunner::command_setspruceagitator, this, _1 ) );
     command_map.insert( "setsprucecancelmode", std::bind( &CommandRunner::command_setsprucecancelmode, this, _1 ) );
@@ -220,8 +221,14 @@ bool CommandRunner::checkArgs( const QStringList &args, qint32 expected_args_min
     const QString prefix = QString( "[CommandRunner %1]" )
                             .arg( engine_type );
 
+    // count the number of non-empty args
+    qint32 nonzero_args_size = 0;
+    for ( QStringList::const_iterator i = args.begin(); i != args.end(); i++ )
+        if ( !(*i).trimmed().isEmpty() )
+            nonzero_args_size++;
+
     // check for expected arg count
-    if ( args.size() < expected_args_min || args.size() > expected_args_max )
+    if ( nonzero_args_size < expected_args_min || nonzero_args_size > expected_args_max )
     {
         kDebug() << QString( "%1 not enough args (%2)" )
                         .arg( prefix )
@@ -799,7 +806,6 @@ void CommandRunner::command_setspruceinterval( QStringList &args )
 
     spruce_overseer->spruce->setIntervalSecs( secs );
     spruce_overseer->spruce_timer->setInterval( secs *1000 );
-    spruce_overseer->autosave_timer->setInterval( std::min( spruce_overseer->spruce_timer->interval() * 40, 60000 * 60 ));
     kDebug() << "spruce interval is now" << spruce_overseer->spruce->getIntervalSecs() << "seconds";
 }
 
@@ -903,19 +909,38 @@ void CommandRunner::command_setspruceordersize( QStringList &args )
 
 void CommandRunner::command_setspruceordernice( QStringList &args )
 {
-    if ( !checkArgs( args, 5 ) ) return;
+    if ( !checkArgs( args, 6 ) ) return;
 
-    spruce_overseer->spruce->setOrderNice( args.value( 1 ) );
-    spruce_overseer->spruce->setOrderNiceZeroBound( args.value( 2 ) );
-    spruce_overseer->spruce->setOrderNiceBuyOffset( args.value( 3 ) );
-    spruce_overseer->spruce->setOrderNiceSpreadPut( args.value( 4 ) );
-    spruce_overseer->spruce->setOrderNiceSpreadPutTaker( args.value( 5 ) );
+    spruce_overseer->spruce->setOrderNice( SIDE_BUY, args.value( 1 ) );
+    spruce_overseer->spruce->setOrderNiceZeroBound( SIDE_BUY, args.value( 2 ) );
+    spruce_overseer->spruce->setOrderNiceSpreadPut( SIDE_BUY, args.value( 3 ) );
 
-    kDebug() << "spruce order nice:" << args.value( 1 )
-                    << "zero bound:" << args.value( 2 )
-               << "buys nice offset" << args.value( 3 )
-            << "spread reduce nice:" << spruce_overseer->spruce->getOrderNiceSpreadPut()
-             << "spread taker nice:" << spruce_overseer->spruce->getOrderNiceSpreadPutTaker();
+    spruce_overseer->spruce->setOrderNice( SIDE_SELL, args.value( 4 ) );
+    spruce_overseer->spruce->setOrderNiceZeroBound( SIDE_SELL, args.value( 5 ) );
+    spruce_overseer->spruce->setOrderNiceSpreadPut( SIDE_SELL, args.value( 6 ) );
+
+    kDebug()    << "buy nice:" << spruce_overseer->spruce->getOrderNice( SIDE_BUY )
+          << "buy zero bound:" << spruce_overseer->spruce->getOrderNiceZeroBound( SIDE_BUY )
+       << "buy spread reduce:" << spruce_overseer->spruce->getOrderNiceSpreadPut( SIDE_BUY )
+               << "sell nice:" << spruce_overseer->spruce->getOrderNice( SIDE_SELL )
+         << "sell zero bound:" << spruce_overseer->spruce->getOrderNiceZeroBound( SIDE_SELL )
+         << "sell spread reduce:" << spruce_overseer->spruce->getOrderNiceSpreadPut( SIDE_SELL );
+}
+
+void CommandRunner::command_setspruceordernicecustom( QStringList &args )
+{
+    if ( !checkArgs( args, 4 ) ) return;
+
+    spruce_overseer->spruce->setOrderNiceCustom( SIDE_BUY, args.value( 1 ) );
+    spruce_overseer->spruce->setOrderNiceCustomZeroBound( SIDE_BUY, args.value( 2 ) );
+
+    spruce_overseer->spruce->setOrderNiceCustom( SIDE_SELL, args.value( 3 ) );
+    spruce_overseer->spruce->setOrderNiceCustomZeroBound( SIDE_SELL, args.value( 4 ) );
+
+    kDebug() << "buy nice custom:" << spruce_overseer->spruce->getOrderNiceCustom( SIDE_BUY )
+       << "buy zero bound custom:" << spruce_overseer->spruce->getOrderNiceCustomZeroBound( SIDE_BUY )
+            << "sell nice custom:" << spruce_overseer->spruce->getOrderNiceCustom( SIDE_SELL )
+      << "sell zero bound custom:" << spruce_overseer->spruce->getOrderNiceCustomZeroBound( SIDE_SELL );
 }
 
 void CommandRunner::command_setspruceallocation( QStringList &args )

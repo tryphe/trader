@@ -116,7 +116,7 @@ Coin PositionMan::getLoSellFlipPrice( const QString &market ) const
     return pos->buy_price;
 }
 
-Coin PositionMan::getActiveSpruceEquityTotal( const Market &market, quint8 side, const Coin &price_threshold )
+Coin PositionMan::getActiveSpruceEquityTotal( const Market &market, const QString &strategy, quint8 side, const Coin &price_threshold )
 {
     Coin ret;
     for( QSet<Position*>::const_iterator i = positions_all.begin(); i != positions_all.end(); i++ )
@@ -125,7 +125,7 @@ Coin PositionMan::getActiveSpruceEquityTotal( const Market &market, quint8 side,
 
         if ( !pos->is_cancelling &&
               pos->side != side && // if it's not tradeable, flip sides
-              pos->strategy_tag.startsWith( "spruce" ) &&
+              pos->strategy_tag == strategy &&
               market.getInverse() == pos->market )
         {
             // for inverted markets, price = 1/price
@@ -142,7 +142,7 @@ Coin PositionMan::getActiveSpruceEquityTotal( const Market &market, quint8 side,
         if (  pos->is_cancelling ||
               pos->side != side ||
               pos->market != market ||
-             !pos->strategy_tag.startsWith( "spruce" ) ||
+              pos->strategy_tag != strategy ||
               // if the threshold is zero, include any price into the total, otherwise return amount inside of the threshold only
              ( side == SIDE_BUY  && price_threshold.isGreaterThanZero() && pos->price < price_threshold ) ||
              ( side == SIDE_SELL && price_threshold.isGreaterThanZero() && pos->price > price_threshold ) )

@@ -7,10 +7,16 @@ Spruce::Spruce()
 {
     /// user settings
     m_order_size = "0.00500000";
-    m_order_nice = "2";
-    m_order_nice_spreadput_bound = "6";
-    m_order_nice_spreadput_bound_taker = "32";
-    m_order_nice_zerobound = "0";
+    m_order_nice_buys = "2";
+    m_order_nice_sells = "2";
+    m_order_nice_zerobound_buys = "0";
+    m_order_nice_zerobound_sells = "0";
+    m_order_nice_spreadput_buys = "6";
+    m_order_nice_spreadput_sells = "6";
+    m_order_nice_custom_buys = "100";
+    m_order_nice_custom_sells = "100";
+    m_order_nice_custom_zerobound_buys = "3";
+    m_order_nice_custom_zerobound_sells = "3";
     m_order_greed = "0.95"; // keep our spread at least 1-x% apart
     m_order_greed_minimum = "0.975"; // contract greed up to this value
     m_order_greed_buy_randomness = "0.05";
@@ -292,12 +298,19 @@ QString Spruce::getSaveState()
     // save order size
     ret += QString( "setspruceordersize %1\n" ).arg( m_order_size );
 
-    // save order size
-    ret += QString( "setspruceordernice %1 %2 %3 %4 %5\n" ).arg( m_order_nice )
-                                                     .arg( m_order_nice_zerobound )
-                                                     .arg( m_order_nice_buy_offset )
-                                                     .arg( m_order_nice_spreadput_bound )
-                                                     .arg( m_order_nice_spreadput_bound_taker );
+    // save order size for normal phases
+    ret += QString( "setspruceordernice %1 %2 %3 %4 %5 %6\n" ).arg( m_order_nice_buys )
+                                                    .arg( m_order_nice_zerobound_buys )
+                                                    .arg( m_order_nice_spreadput_buys )
+                                                    .arg( m_order_nice_sells )
+                                                    .arg( m_order_nice_zerobound_sells )
+                                                    .arg( m_order_nice_spreadput_sells );
+
+    // save order size for custom phase
+    ret += QString( "setspruceordernicecustom %1 %2 %3 %4\n" ).arg( m_order_nice_custom_buys )
+                                                    .arg( m_order_nice_custom_zerobound_buys )
+                                                    .arg( m_order_nice_custom_sells )
+                                                    .arg( m_order_nice_custom_zerobound_sells );
 
     // save agitator
     ret += QString( "setspruceagitator %1 %2 %3\n" ).arg( m_amplification_start )

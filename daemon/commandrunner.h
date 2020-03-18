@@ -105,6 +105,7 @@ private:
     void command_setsprucemarketmax( QStringList &args );
     void command_setspruceordersize( QStringList &args );
     void command_setspruceordernice( QStringList &args );
+    void command_setspruceordernicecustom( QStringList &args );
     void command_setspruceallocation( QStringList &args );
     void command_setspruceagitator( QStringList &args );
     void command_setsprucecancelmode( QStringList &args );
