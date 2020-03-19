@@ -77,15 +77,7 @@ Position *Engine::addPosition( QString market_input, quint8 side, QString buy_pr
         return nullptr;
     }
 
-    MarketInfo &info = market_info[ market ];
-    // check if bid/ask price exists
-    if ( info.highest_buy.isZeroOrLess() || info.lowest_sell.isZeroOrLess() )
-    {
-        kDebug() << "local error: ticker has not been read yet. (try again)";
-        return nullptr;
-    }
-
-    if ( !info.is_tradeable )
+    if ( !market_info[ market ].is_tradeable )
     {
         // invert market pair
         market = market.getInverse();
@@ -108,6 +100,15 @@ Position *Engine::addPosition( QString market_input, quint8 side, QString buy_pr
 //        kDebug() << "market" << market << "is not tradeable, converting to tradeable market"
 //                 << market_inverse << "new_buy:" << new_buy_price << "new_sell:" << new_sell_price
 //                 << "new_size:" << new_size;
+    }
+
+    MarketInfo &info = market_info[ market ];
+
+    // check if bid/ask price exists
+    if ( info.highest_buy.isZeroOrLess() || info.lowest_sell.isZeroOrLess() )
+    {
+        kDebug() << "local error: ticker has not been read yet. (try again)";
+        return nullptr;
     }
 
     // parse alternate size from order_size, format: 0.001/0.002 (the alternate size is 0.002)
