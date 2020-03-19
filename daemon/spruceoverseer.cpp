@@ -94,7 +94,7 @@ void SpruceOverseer::onSpruceUp()
                 const QString &currency = *i;
                 const Market market( spruce->getBaseCurrency(), currency );
 
-                mid_spread[ market ] = getSpreadLimit( market, false );
+                mid_spread[ market ] = getMidSpread( market );
                 flux_price = ( side == SIDE_BUY ) ? mid_spread.value( market ).bid_price :
                                                     mid_spread.value( market ).ask_price;
 
@@ -175,7 +175,7 @@ void SpruceOverseer::onSpruceUp()
                         order_type += "-taker";
 
                         // set fast timeout
-                        order_type += "-timeout5";
+                        order_type += "-timeout3";
                     }
                     else
                     {
@@ -438,12 +438,8 @@ TickerInfo SpruceOverseer::getSpreadLimit( const QString &market, bool order_dup
     return combined_spread;
 }
 
-TickerInfo SpruceOverseer::getSpreadForSide( const QString &market, quint8 side, bool order_duplicity, bool taker_mode, bool include_limit_for_side, bool is_randomized, Coin greed_reduce )
+TickerInfo SpruceOverseer::getMidSpread( const QString &market )
 {
-    if ( side == SIDE_SELL )
-        greed_reduce = -greed_reduce;
-
-    /// step 1: get combined spread between all exchanges
     TickerInfo ret;
     quint16 samples = 0;
 
@@ -508,6 +504,21 @@ TickerInfo SpruceOverseer::getSpreadForSide( const QString &market, quint8 side,
     }
     else if ( ret.bid_price.isZeroOrLess() || ret.bid_price.isZeroOrLess() )
         return TickerInfo();
+
+    Coin midprice = ( ret.ask_price + ret.bid_price ) / 2;
+    ret.bid_price = midprice;
+    ret.ask_price = midprice;
+
+    return ret;
+}
+
+TickerInfo SpruceOverseer::getSpreadForSide( const QString &market, quint8 side, bool order_duplicity, bool taker_mode, bool include_limit_for_side, bool is_randomized, Coin greed_reduce )
+{
+    if ( side == SIDE_SELL )
+        greed_reduce = -greed_reduce;
+
+    /// step 1: get combined spread between all exchanges
+    TickerInfo ret = getMidSpread( market );
 
     /// step 2: apply base greed value to spread
     // get price ticksize

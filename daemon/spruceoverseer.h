@@ -48,6 +48,7 @@ private:
     void adjustSpread( TickerInfo &spread, Coin limit, quint8 side, Coin &default_ticksize, bool expand = true );
     void adjustTicksizeToSpread( Coin &ticksize, TickerInfo &spread, const Coin &ticksize_minimum );
     TickerInfo getSpreadLimit( const QString &market, bool order_duplicity = false );
+    TickerInfo getMidSpread( const QString &market );
     TickerInfo getSpreadForSide( const QString &market, quint8 side, bool order_duplicity = false, bool taker_mode = false, bool include_limit_for_side = false, bool is_randomized = false, Coin greed_reduce = Coin() );
     Coin getPriceTicksizeForMarket( const Market &market );
 
