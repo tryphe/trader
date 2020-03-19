@@ -74,7 +74,6 @@ void BncREST::init()
 #endif
 
     onCheckExchangeInfo();
-    onCheckTicker();
 
     engine->loadSettings();
 }
@@ -930,8 +929,11 @@ void BncREST::parseExchangeInfo( const QJsonObject &obj )
         }
     }
 
-    // after we get a response, turn our timer interval up
+    // after we get the first response, turn our timer interval up, and check ticker
     static const qint32 exchangeinfo_interval = 60000 * 60; // 1 hour
     if ( exchangeinfo_timer->interval() < exchangeinfo_interval )
+    {
         exchangeinfo_timer->setInterval( exchangeinfo_interval );
+        onCheckTicker();
+    }
 }
