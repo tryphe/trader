@@ -68,8 +68,6 @@ public:
     void setOrderGreedMinimum( Coin ratio ) { m_order_greed_minimum = std::max( ratio, m_order_greed ); }
     Coin getOrderGreedMinimum() const { return m_order_greed_minimum; }
     Coin getOrderTrailingLimit( quint8 side ) const { return side == SIDE_BUY ? ( m_order_greed - m_order_greed_buy_randomness ) : CoinAmount::COIN - m_order_greed_sell_randomness; }
-    void setOrderCancelMode( bool cancel_random ) { m_order_cancel_mode = cancel_random; }
-    bool getOrderCancelMode() const { return m_order_cancel_mode; }
 
     void setOrderNice( const quint8 side, Coin nice ) { ( side == SIDE_BUY ) ? m_order_nice_buys = nice : m_order_nice_sells = nice ; }
     Coin getOrderNice( const quint8 side ) const { return ( side == SIDE_BUY ) ? m_order_nice_buys : m_order_nice_sells; }

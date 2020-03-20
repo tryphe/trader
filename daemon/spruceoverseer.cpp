@@ -803,9 +803,7 @@ void SpruceOverseer::runCancellors( Engine *engine, const QString &market, const
         if ( active_amount > order_max )
         {
             // cancel a random order on that side
-            Position *const &pos_to_cancel = spruce->getOrderCancelMode() ? engine->positions->getRandomSprucePosition( market, this_pos_side ) :
-                                             this_pos_side == SIDE_BUY ? engine->positions->getHighestSpruceBuy( market ) :
-                                                                         engine->positions->getLowestSpruceSell( market );
+            Position *const &pos_to_cancel = engine->positions->getRandomSprucePosition( market, this_pos_side );
 
             // check badptr just incase, but should be impossible to get here
             if ( pos_to_cancel == nullptr )
