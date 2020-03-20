@@ -70,6 +70,9 @@ void SpruceOverseer::onSpruceUp()
 
     for ( QList<QString>::const_iterator m = markets.begin(); m != markets.end(); m++ )
     {
+        // track mid spread for each market (spread for every market is needed for custom phase)
+        QMap<QString,TickerInfo> mid_spread;
+
         const Market market_phase = *m;
 
         // one pass in each phase for buys and sells
@@ -84,9 +87,6 @@ void SpruceOverseer::onSpruceUp()
             if ( market_phase != CUSTOM_PHASE_0 )
                 spread_duplicity = getSpreadForSide( market_phase, side, true, false, true, true );
 
-            // track mid spread for each market (spread for every market is needed for custom phase)
-            QMap<QString,TickerInfo> mid_spread;
-
             spruce->clearLiveNodes();
             Coin flux_price;
             for ( QList<QString>::const_iterator i = currencies.begin(); i != currencies.end(); i++ )
@@ -94,7 +94,10 @@ void SpruceOverseer::onSpruceUp()
                 const QString &currency = *i;
                 const Market market( spruce->getBaseCurrency(), currency );
 
-                mid_spread[ market ] = getMidSpread( market );
+                // if midspread is blank, cache it
+                if ( !mid_spread.contains( market ) )
+                    mid_spread[ market ] = getMidSpread( market );
+
                 flux_price = ( side == SIDE_BUY ) ? mid_spread.value( market ).bid_price :
                                                     mid_spread.value( market ).ask_price;
 
