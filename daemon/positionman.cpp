@@ -144,8 +144,8 @@ Coin PositionMan::getActiveSpruceEquityTotal( const Market &market, const QStrin
               pos->market != market ||
               pos->strategy_tag != strategy ||
               // if the threshold is zero, include any price into the total, otherwise return amount inside of the threshold only
-             ( side == SIDE_BUY  && price_threshold.isGreaterThanZero() && pos->price < price_threshold ) ||
-             ( side == SIDE_SELL && price_threshold.isGreaterThanZero() && pos->price > price_threshold ) )
+             ( pos->side == side && side == SIDE_BUY  && price_threshold.isGreaterThanZero() && pos->price < price_threshold ) ||
+             ( pos->side == side && side == SIDE_SELL && price_threshold.isGreaterThanZero() && pos->price > price_threshold ) )
             continue;
 
         ret += pos->amount;
