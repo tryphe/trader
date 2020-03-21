@@ -77,7 +77,7 @@ static const QLatin1String BITTREX_EXCHANGE_STR             ( "Bittrex" );
 static const int BITTREX_TIMER_INTERVAL_NAM_SEND            ( 330 );
 static const int BITTREX_TIMER_INTERVAL_ORDER_HISTORY       ( 60000 );
 static const int BITTREX_TIMER_INTERVAL_ORDERBOOK           ( 150000 );
-static const int BITTREX_TIMER_INTERVAL_TICKER              ( 30000 );
+static const int BITTREX_TIMER_INTERVAL_TICKER              ( 15000 );
 static const int BITTREX_SAFETY_DELAY                       ( 8500 );
 
 static const QLatin1String TREX_REST_URL                    ( "https://bittrex.com/api/v1.1/" );
@@ -99,7 +99,7 @@ static const QLatin1String BINANCE_MARKET_STRING_TEMPLATE   ( "%2%1" );
 static const QLatin1String BINANCE_EXCHANGE_STR             ( "Binance" );
 static const int BINANCE_TIMER_INTERVAL_NAM_SEND            ( 111 );
 static const int BINANCE_TIMER_INTERVAL_ORDERBOOK           ( 50000 );
-static const int BINANCE_TIMER_INTERVAL_TICKER              ( 30000 );
+static const int BINANCE_TIMER_INTERVAL_TICKER              ( 15000 );
 static const int BINANCE_SAFETY_DELAY                       ( 2000 );
 static const int BINANCE_RATELIMIT_WINDOW                   ( 60000 );
 
@@ -124,7 +124,7 @@ static const QLatin1String POLONIEX_MARKET_STRING_TEMPLATE  ( "%1_%2" );
 static const QLatin1String POLONIEX_EXCHANGE_STR            ( "Poloniex" );
 static const int POLONIEX_TIMER_INTERVAL_NAM_SEND           ( 200 );
 static const int POLONIEX_TIMER_INTERVAL_ORDERBOOK          ( 50000 );
-static const int POLONIEX_TIMER_INTERVAL_TICKER             ( 30000 );
+static const int POLONIEX_TIMER_INTERVAL_TICKER             ( 15000 );
 static const int POLONIEX_SAFETY_DELAY                      ( 2000 );
 
 static const QLatin1String POLO_URL_TRADE                   ( "https://poloniex.com/tradingApi" );
@@ -148,7 +148,7 @@ static const QLatin1String WAVES_EXCHANGE_STR               ( "Waves" );
 static const QLatin1String WAVES_MATCHER_URL                ( "https://matcher.waves.exchange/" );
 static const int WAVES_TIMER_INTERVAL_NAM_SEND              ( 100 );
 static const int WAVES_TIMER_INTERVAL_MARKET_DATA           ( 60000 * 60 );
-static const int WAVES_TIMER_INTERVAL_TICKER                ( 1000 );
+static const int WAVES_TIMER_INTERVAL_TICKER                ( 900 );
 static const int WAVES_TIMER_INTERVAL_CHECK_MY_ORDERS       ( 15000 );
 
 static const QLatin1String WAVES_COMMAND_GET_MATCHER_PUBKEY ( "pk-get-matcher" );
