@@ -769,9 +769,9 @@ void SpruceOverseer::runCancellors( Engine *engine, const QString &market, const
         Coin buy_price_limit, sell_price_limit;
         if ( strategy.contains( CUSTOM_PHASE_0 ) )
         {
-            TickerInfo mid_spread = getSpreadLimit( market, false );
-            buy_price_limit = mid_spread.bid_price * Coin( "0.999" );
-            sell_price_limit = mid_spread.ask_price * Coin( "1.001" );
+            TickerInfo mid_spread = getMidSpread( market );
+            buy_price_limit = mid_spread.bid_price;
+            sell_price_limit = mid_spread.ask_price;
         }
         else
         {
@@ -786,8 +786,8 @@ void SpruceOverseer::runCancellors( Engine *engine, const QString &market, const
 
         /// cancellor 1: look for prices that are trailing the spread too far
         if ( buy_price_limit.isGreaterThanZero() && sell_price_limit.isGreaterThanZero() && // ticker is valid
-             ( ( this_pos_side == SIDE_BUY  && price_actual < buy_price_limit ) ||
-               ( this_pos_side == SIDE_SELL && price_actual > sell_price_limit ) ) )
+             ( ( this_pos_side == SIDE_BUY  && price_actual < buy_price_limit * Coin("0.998") ) ||
+               ( this_pos_side == SIDE_SELL && price_actual > sell_price_limit * Coin("1.002") ) ) )
         {
             engine->positions->cancel( pos, false, CANCELLING_FOR_SPRUCE );
             continue;
