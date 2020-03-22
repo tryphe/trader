@@ -232,37 +232,15 @@ void SpruceOverseer::onSpruceUp()
                         if ( spread_put_threshold.isGreaterThanZero() &&
                              amount_to_shortlong_abs > spread_put_threshold )
                         {
-    //                        const Coin taker_threshold = order_size_unscaled * spruce->getOrderNiceSpreadPutTaker( side );
+                            spread_reduce = ( amount_to_shortlong_abs / spread_put_threshold ) * ( CoinAmount::SATOSHI * 100000 );
 
-                            // apply taker threshold, amount should be larger than contraction threshold
-    //                        if ( amount_to_shortlong_abs >= taker_threshold )
-    //                        {
-    //                            const TickerInfo taker_spread = getSpreadForSide( market, side, true, true );
+                            const TickerInfo collapsed_spread = getSpreadForSide( market, side, true, false, true, true, spread_reduce );
+                            buy_price = collapsed_spread.bid_price;
+                            sell_price = collapsed_spread.ask_price;
 
-    //                            // select best price, but only move 0.5% away from maker spread
-    //                            buy_price = std::min( taker_spread.bid_price, taker_spread.ask_price * Coin( "1.01" ) );
-    //                            sell_price = std::max( taker_spread.ask_price, taker_spread.bid_price * Coin( "0.99" ) );
-
-    //                            // the bid price should be greater than the ask (because the spread is flipped)
-    //                            if ( taker_spread.bid_price <= taker_spread.ask_price )
-    //                                kDebug() << "local error: taker bid" << taker_spread.bid_price << "< ask" << taker_spread.ask_price;
-    //                        }
-
-                            // apply soft threshold by contracting the spread
-    //                        if ( amount_to_shortlong_abs < taker_threshold )
-    //                        {
-                                // amount to reduce greed by = ( amount_to_shortlong / spreadput ) * 0.01
-                                // reduce greed by 0.1% for every spread_put_threshold amount we should set
-                                spread_reduce = ( amount_to_shortlong_abs / spread_put_threshold ) * ( CoinAmount::SATOSHI * 100000 );
-
-                                const TickerInfo collapsed_spread = getSpreadForSide( market, side, true, false, true, true, spread_reduce );
-                                buy_price = collapsed_spread.bid_price;
-                                sell_price = collapsed_spread.ask_price;
-
-                                // set slow timeout
-                                order_type += QString( "-timeout%1" )
-                                              .arg( Global::getSecureRandomRange32( 120, 200 ) );
-    //                        }
+                            // set slow timeout
+                            order_type += QString( "-timeout%1" )
+                                          .arg( Global::getSecureRandomRange32( 120, 200 ) );
                         }
 
                         // cache spread distance limit for this side
@@ -302,8 +280,6 @@ void SpruceOverseer::onSpruceUp()
 //                        kDebug() << "[Spruce] info:" << market << "over market" << QString( "%1" ).arg( is_buy ? "buy" : "sell" ) << "order max";
 //                        continue;
 //                    }
-
-                    //kDebug() << strategy << "qty to shortlong" << qty_to_shortlong;
 
                     // don't go over the abs value of our new projected position
                     // TODO: once we use smoothing for sp3 calculation, use spruce_active_for_side_up_to_flux_price
