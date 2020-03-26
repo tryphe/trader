@@ -165,6 +165,14 @@ void TrexREST::sendNamQueue()
 
 void TrexREST::sendNamRequest( Request *const &request )
 {
+    // check for valid pos
+    if ( request->pos != nullptr && !engine->getPositionMan()->isValid( request->pos ) )
+    {
+        kDebug() << "local warning: caught nam request with invalid position";
+        nam_queue.removeOne( request );
+        return;
+    }
+
     const qint64 current_time = QDateTime::currentMSecsSinceEpoch();
     const QString &api_command = request->api_command;
 

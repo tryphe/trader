@@ -180,6 +180,14 @@ void BncREST::sendNamQueue()
 
 void BncREST::sendNamRequest( Request *const &request )
 {
+    // check for valid pos
+    if ( request->pos != nullptr && !engine->getPositionMan()->isValid( request->pos ) )
+    {
+        kDebug() << "local warning: caught nam request with invalid position";
+        nam_queue.removeOne( request );
+        return;
+    }
+
     binance_weight += request->weight;
 
     const qint64 current_time = QDateTime::currentMSecsSinceEpoch();
