@@ -72,7 +72,7 @@ void SpruceOverseerTest::test( SpruceOverseer *o, Engine *engine )
     assert( midspread_test.bid_price == midspread_test.ask_price );
 
     /// ensure getSpreadLimit() with taker enabled gives us crossed prices
-    const TickerInfo taker_spreadlimit = o->getSpreadLimit( TEST_MARKET, true );
+
     const TickerInfo taker_spread_buy = o->getSpreadForSide( TEST_MARKET, SIDE_BUY, true, true );
     const TickerInfo taker_spread_sell = o->getSpreadForSide( TEST_MARKET, SIDE_SELL, true, true );
 
@@ -95,6 +95,13 @@ void SpruceOverseerTest::test( SpruceOverseer *o, Engine *engine )
 
     assert( taker_spread_buy_rand.bid_price > taker_spread_buy_rand.ask_price );
     assert( taker_spread_sell_rand.bid_price > taker_spread_sell_rand.ask_price );
+
+    /// test spread limit
+    const TickerInfo spreadlimit = o->getSpreadLimit( TEST_MARKET, true );
+
+    // ensure spread limit is better than our ticker prices
+    assert( spreadlimit.bid_price < engine->market_info[ TEST_MARKET ].highest_buy &&
+            spreadlimit.ask_price > engine->market_info[ TEST_MARKET ].lowest_sell );
 
 //    kDebug() << "      spread limit:" << o->getSpreadLimit( TEST_MARKET, true, false );
 //    kDebug() << "        buy spread:" << o->getSpreadForSide( TEST_MARKET, SIDE_BUY, true, false );
