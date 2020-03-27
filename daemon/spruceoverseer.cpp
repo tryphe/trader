@@ -120,7 +120,7 @@ void SpruceOverseer::onSpruceUp()
 
                 // if market matches selected market, select best price from duplicity price or mid price
                 if ( market == market_phase &&
-                     market != CUSTOM_PHASE_0 ) // on custom iteration, skip this step
+                     market_phase != CUSTOM_PHASE_0 ) // on custom iteration, skip this step
                 {
                     // set the most optimistic price to use, either the midprice or duplicity price
                     flux_price = ( side == SIDE_BUY ) ? std::min( flux_price, spread_duplicity.bid_price ) :
@@ -204,14 +204,14 @@ void SpruceOverseer::onSpruceUp()
                     //const Coin spruce_active_for_side_up_to_flux_price = engine->positions->getActiveSpruceEquityTotal( market, side, price_to_use );
 
                     // cache some order info
-                    const int ORDERSIZE_EXPAND_THRESH = ( market_phase == CUSTOM_PHASE_0 ) ? 4 : 16;
+                    const int ORDERSIZE_EXPAND_THRESH = ( market_phase == CUSTOM_PHASE_0 ) ? 4 : 15;
                     const int ORDERSIZE_EXPAND_MAX = ( market_phase == CUSTOM_PHASE_0 ) ? 10 : 5;
                     const Coin order_size_unscaled = spruce->getOrderSize( market );
                     const Coin order_size = std::min( order_size_unscaled * ORDERSIZE_EXPAND_MAX, std::max( order_size_unscaled, amount_to_shortlong_abs / ORDERSIZE_EXPAND_THRESH ) );
                     //const Coin order_max = is_buy ? spruce->getMarketBuyMax( market ) :
                     //                                spruce->getMarketSellMax( market );
-                    const Coin order_nice = ( market_phase == CUSTOM_PHASE_0 ) ? spruce->getOrderNiceCustom( side ) :
-                                                                                          spruce->getOrderNice( side );
+                    const Coin order_nice = ( market_phase == CUSTOM_PHASE_0 ) ? spruce->getOrderNiceCustom( market, side ) :
+                                                                                 spruce->getOrderNice( market, side );
                     const Coin order_size_limit = order_size_unscaled * order_nice;
 
                     // if we're under the nice size limit, skip conflict checks and order setting
@@ -283,7 +283,8 @@ void SpruceOverseer::onSpruceUp()
 
                     // don't go over the abs value of our new projected position
                     // TODO: once we use smoothing for sp3 calculation, use spruce_active_for_side_up_to_flux_price
-                    if ( spruce_active_for_side + order_size_limit >= amount_to_shortlong_abs )
+                    if ( spruce_active_for_side + order_size >= amount_to_shortlong_abs ||
+                         spruce_active_for_side + order_size_limit >= amount_to_shortlong_abs )
                         continue;
 
                     kDebug() << QString( "[%1 %2] %3 | coeff %4 | qty %5 | amt %6 | active %7 | spr %8" )
@@ -434,7 +435,7 @@ TickerInfo SpruceOverseer::getMidSpread( const QString &market )
         if ( engine->rest_arr.at( engine->engine_type )->ticker_update_time
              < QDateTime::currentMSecsSinceEpoch() - 60000 )
         {
-            kDebug() << "local warning: engine ticker" << engine->engine_type << "is stale, skipping";
+            //kDebug() << "local warning: engine ticker" << engine->engine_type << "is stale, skipping";
             continue;
         }
 
@@ -746,13 +747,13 @@ void SpruceOverseer::runCancellors( Engine *engine, const QString &market, const
         if ( strategy.contains( CUSTOM_PHASE_0 ) )
         {
             TickerInfo mid_spread = getMidSpread( market );
-            buy_price_limit = mid_spread.bid_price;
-            sell_price_limit = mid_spread.ask_price;
+            buy_price_limit = mid_spread.bid_price * Coin("0.99");
+            sell_price_limit = mid_spread.ask_price * Coin("1.01");
         }
         else
         {
-            buy_price_limit = spread_limit.bid_price;
-            sell_price_limit = spread_limit.ask_price;
+            buy_price_limit = spread_limit.bid_price * Coin("0.999");
+            sell_price_limit = spread_limit.ask_price * Coin("1.001");
         }
 
         const Coin price_actual = is_inverse ? ( CoinAmount::COIN / pos->price ) :
@@ -762,8 +763,8 @@ void SpruceOverseer::runCancellors( Engine *engine, const QString &market, const
 
         /// cancellor 1: look for prices that are trailing the spread too far
         if ( buy_price_limit.isGreaterThanZero() && sell_price_limit.isGreaterThanZero() && // ticker is valid
-             ( ( this_pos_side == SIDE_BUY  && price_actual < buy_price_limit * Coin("0.998") ) ||
-               ( this_pos_side == SIDE_SELL && price_actual > sell_price_limit * Coin("1.002") ) ) )
+             ( ( this_pos_side == SIDE_BUY  && price_actual < buy_price_limit ) ||
+               ( this_pos_side == SIDE_SELL && price_actual > sell_price_limit ) ) )
         {
             engine->positions->cancel( pos, false, CANCELLING_FOR_SPRUCE );
             continue;
@@ -804,8 +805,8 @@ void SpruceOverseer::runCancellors( Engine *engine, const QString &market, const
                                          * market_allocation;
 
         const Coin order_size = spruce->getOrderSize( market );
-        const Coin nice_zero_bound = ( strategy.contains( CUSTOM_PHASE_0 ) ) ? spruce->getOrderNiceCustomZeroBound( this_pos_side ) :
-                                                                                     spruce->getOrderNiceZeroBound( this_pos_side );
+        const Coin nice_zero_bound = ( strategy.contains( CUSTOM_PHASE_0 ) ) ? spruce->getOrderNiceCustomZeroBound( market, this_pos_side ) :
+                                                                                     spruce->getOrderNiceZeroBound( market, this_pos_side );
         const Coin zero_bound_tolerance = order_size;
 
         /// cancellor 3: look for active amount > amount_to_shortlong + order_size_limit

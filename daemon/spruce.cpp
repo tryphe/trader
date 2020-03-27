@@ -317,6 +317,29 @@ QString Spruce::getSaveState()
                                                     .arg( m_amplification_stop )
                                                     .arg( m_amplification_increment );
 
+    // save order nice market offsets
+    for ( QMap<QString,Coin>::const_iterator i = m_order_nice_market_offset_buys.begin(); i != m_order_nice_market_offset_buys.end(); i++ )
+    {
+        const QString &market = i.key();
+        const Coin &offset_buys = i.value();
+        const Coin &offset_sells = m_order_nice_market_offset_sells.value( market );
+        const Coin &offset_zerobound_buys = m_order_nice_market_offset_zerobound_buys.value( market );
+        const Coin &offset_zerobound_sells = m_order_nice_market_offset_zerobound_sells.value( market );
+
+        // skip if all values are 0
+        if ( offset_buys.isZero() &&
+             offset_sells.isZero() &&
+             offset_zerobound_buys.isZero() &&
+             offset_zerobound_sells.isZero() )
+            continue;
+
+        ret += QString( "setspruceordernicemarketoffset %1 %2 %3 %4 %5\n" ).arg( market )
+                                                                           .arg( offset_buys )
+                                                                           .arg( offset_zerobound_buys )
+                                                                           .arg( offset_sells )
+                                                                           .arg( offset_zerobound_sells );
+    }
+
     // save profile u
     for ( QMap<QString,Coin>::const_iterator i = m_currency_profile_u.begin(); i != m_currency_profile_u.end(); i++ )
     {

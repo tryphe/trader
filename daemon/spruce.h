@@ -69,17 +69,36 @@ public:
     Coin getOrderGreedMinimum() const { return m_order_greed_minimum; }
     Coin getOrderTrailingLimit( quint8 side ) const { return side == SIDE_BUY ? ( m_order_greed - m_order_greed_buy_randomness ) : CoinAmount::COIN - m_order_greed_sell_randomness; }
 
-    void setOrderNice( const quint8 side, Coin nice ) { ( side == SIDE_BUY ) ? m_order_nice_buys = nice : m_order_nice_sells = nice ; }
-    Coin getOrderNice( const quint8 side ) const { return ( side == SIDE_BUY ) ? m_order_nice_buys : m_order_nice_sells; }
-    void setOrderNiceZeroBound( const quint8 side, Coin nice ) { ( side == SIDE_BUY ) ? m_order_nice_zerobound_buys = nice : m_order_nice_zerobound_sells = nice; }
-    Coin getOrderNiceZeroBound( const quint8 side ) const { return ( side == SIDE_BUY ) ? m_order_nice_zerobound_buys : m_order_nice_zerobound_sells; }
-    void setOrderNiceSpreadPut( const quint8 side, Coin nice ) { ( side == SIDE_BUY ) ? m_order_nice_spreadput_buys = nice : m_order_nice_spreadput_sells = nice; }
-    Coin getOrderNiceSpreadPut( const quint8 side ) const { return ( side == SIDE_BUY ) ? m_order_nice_spreadput_buys : m_order_nice_spreadput_sells; }
+    void setOrderNice( const quint8 side, Coin nice ) { ( side == SIDE_BUY ) ? m_order_nice_buys = nice :
+                                                                               m_order_nice_sells = nice ; }
+    Coin getOrderNice( const QString &market, const quint8 side ) const { return ( side == SIDE_BUY ) ? m_order_nice_buys + m_order_nice_market_offset_buys.value( market ) :
+                                                                                                        m_order_nice_sells + m_order_nice_market_offset_sells.value( market ); }
+    void setOrderNiceZeroBound( const quint8 side, Coin nice ) { ( side == SIDE_BUY ) ? m_order_nice_zerobound_buys = nice :
+                                                                                        m_order_nice_zerobound_sells = nice; }
+    Coin getOrderNiceZeroBound( const QString &market, const quint8 side ) const { return ( side == SIDE_BUY ) ? m_order_nice_zerobound_buys + m_order_nice_market_offset_zerobound_buys.value( market ) :
+                                                                                                                 m_order_nice_zerobound_sells + m_order_nice_market_offset_zerobound_sells.value( market ); }
+    void setOrderNiceSpreadPut( const quint8 side, Coin nice ) { ( side == SIDE_BUY ) ? m_order_nice_spreadput_buys = nice :
+                                                                                        m_order_nice_spreadput_sells = nice; }
+    Coin getOrderNiceSpreadPut( const quint8 side ) const { return ( side == SIDE_BUY ) ? m_order_nice_spreadput_buys :
+                                                                                          m_order_nice_spreadput_sells; }
 
-    void setOrderNiceCustom( const quint8 side, Coin nice ) { ( side == SIDE_BUY ) ? m_order_nice_custom_buys = nice : m_order_nice_custom_sells = nice ; }
-    Coin getOrderNiceCustom( const quint8 side ) const { return ( side == SIDE_BUY ) ? m_order_nice_custom_buys : m_order_nice_custom_sells; }
-    void setOrderNiceCustomZeroBound( const quint8 side, Coin nice ) { ( side == SIDE_BUY ) ? m_order_nice_custom_zerobound_buys = nice : m_order_nice_custom_zerobound_sells = nice; }
-    Coin getOrderNiceCustomZeroBound( const quint8 side ) const { return ( side == SIDE_BUY ) ? m_order_nice_custom_zerobound_buys : m_order_nice_custom_zerobound_sells; }
+    void setOrderNiceCustom( const quint8 side, Coin nice ) { ( side == SIDE_BUY ) ? m_order_nice_custom_buys = nice :
+                                                                                     m_order_nice_custom_sells = nice ; }
+    Coin getOrderNiceCustom( const QString &market, const quint8 side ) const { return ( side == SIDE_BUY ) ? m_order_nice_custom_buys + m_order_nice_market_offset_buys.value( market ):
+                                                                                                              m_order_nice_custom_sells + m_order_nice_market_offset_sells.value( market ); }
+    void setOrderNiceCustomZeroBound( const quint8 side, Coin nice ) { ( side == SIDE_BUY ) ? m_order_nice_custom_zerobound_buys = nice :
+                                                                                              m_order_nice_custom_zerobound_sells = nice; }
+    Coin getOrderNiceCustomZeroBound( const QString &market, const quint8 side ) const { return ( side == SIDE_BUY ) ? m_order_nice_custom_zerobound_buys + m_order_nice_market_offset_zerobound_buys.value( market ) :
+                                                                                                                       m_order_nice_custom_zerobound_sells + m_order_nice_market_offset_zerobound_sells.value( market ); }
+
+    void setOrderNiceMarketOffset( const QString &market, const quint8 side, Coin offset ) { ( side == SIDE_BUY ) ? m_order_nice_market_offset_buys[ market ] = offset :
+                                                                                                                    m_order_nice_market_offset_sells[ market ] = offset; }
+    Coin getOrderNiceMarketOffset( const QString &market, const quint8 side ) { return ( side == SIDE_BUY ) ? m_order_nice_market_offset_buys.value( market ) :
+                                                                                                              m_order_nice_market_offset_sells.value( market ); }
+    void setOrderNiceZeroBoundMarketOffset( const QString &market, const quint8 side, Coin offset ) { ( side == SIDE_BUY ) ? m_order_nice_market_offset_zerobound_buys[ market ] = offset :
+                                                                                                                             m_order_nice_market_offset_zerobound_sells[ market ] = offset; }
+    Coin getOrderNiceZeroBoundMarketOffset( const QString &market, const quint8 side ) { return ( side == SIDE_BUY ) ? m_order_nice_market_offset_zerobound_buys.value( market ) :
+                                                                                                                       m_order_nice_market_offset_zerobound_sells.value( market ); }
 
     void setSkew( Coin s ) { m_skew = s; }
     Coin getSkew() const { return m_skew; }
@@ -159,6 +178,8 @@ private:
     m_market_sell_max, m_order_size, m_order_nice_buys, m_order_nice_sells, m_order_nice_zerobound_buys, m_order_nice_zerobound_sells,
     m_order_nice_spreadput_buys, m_order_nice_spreadput_sells, m_order_nice_custom_buys, m_order_nice_custom_sells,
     m_order_nice_custom_zerobound_buys, m_order_nice_custom_zerobound_sells, m_skew;
+    QMap<QString, Coin> m_order_nice_market_offset_buys, m_order_nice_market_offset_sells, m_order_nice_market_offset_zerobound_buys,
+    m_order_nice_market_offset_zerobound_sells;
 
     QList<Node*> nodes_start, nodes_now;
     QMap<QString,Node*> nodes_now_by_currency;

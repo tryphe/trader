@@ -95,6 +95,7 @@ CommandRunner::CommandRunner( const quint8 _engine_type, Engine *_e, QVector<Bas
     command_map.insert( "setspruceordersize", std::bind( &CommandRunner::command_setspruceordersize, this, _1 ) );
     command_map.insert( "setspruceordernice", std::bind( &CommandRunner::command_setspruceordernice, this, _1 ) );
     command_map.insert( "setspruceordernicecustom", std::bind( &CommandRunner::command_setspruceordernicecustom, this, _1 ) );
+    command_map.insert( "setspruceordernicemarketoffset", std::bind( &CommandRunner::command_setspruceordernicemarketoffset, this, _1 ) );
     command_map.insert( "setspruceallocation", std::bind( &CommandRunner::command_setspruceallocation, this, _1 ) );
     command_map.insert( "setspruceagitator", std::bind( &CommandRunner::command_setspruceagitator, this, _1 ) );
     command_map.insert( "getstatus", std::bind( &CommandRunner::command_getstatus, this, _1 ) );
@@ -918,12 +919,12 @@ void CommandRunner::command_setspruceordernice( QStringList &args )
     spruce_overseer->spruce->setOrderNiceZeroBound( SIDE_SELL, args.value( 5 ) );
     spruce_overseer->spruce->setOrderNiceSpreadPut( SIDE_SELL, args.value( 6 ) );
 
-    kDebug()    << "buy nice:" << spruce_overseer->spruce->getOrderNice( SIDE_BUY )
-          << "buy zero bound:" << spruce_overseer->spruce->getOrderNiceZeroBound( SIDE_BUY )
+    kDebug()    << "buy nice:" << spruce_overseer->spruce->getOrderNice( QString(), SIDE_BUY )
+          << "buy zero bound:" << spruce_overseer->spruce->getOrderNiceZeroBound( QString(), SIDE_BUY )
        << "buy spread reduce:" << spruce_overseer->spruce->getOrderNiceSpreadPut( SIDE_BUY )
-               << "sell nice:" << spruce_overseer->spruce->getOrderNice( SIDE_SELL )
-         << "sell zero bound:" << spruce_overseer->spruce->getOrderNiceZeroBound( SIDE_SELL )
-         << "sell spread reduce:" << spruce_overseer->spruce->getOrderNiceSpreadPut( SIDE_SELL );
+               << "sell nice:" << spruce_overseer->spruce->getOrderNice( QString(), SIDE_SELL )
+         << "sell zero bound:" << spruce_overseer->spruce->getOrderNiceZeroBound( QString(), SIDE_SELL )
+      << "sell spread reduce:" << spruce_overseer->spruce->getOrderNiceSpreadPut( SIDE_SELL );
 }
 
 void CommandRunner::command_setspruceordernicecustom( QStringList &args )
@@ -936,10 +937,25 @@ void CommandRunner::command_setspruceordernicecustom( QStringList &args )
     spruce_overseer->spruce->setOrderNiceCustom( SIDE_SELL, args.value( 3 ) );
     spruce_overseer->spruce->setOrderNiceCustomZeroBound( SIDE_SELL, args.value( 4 ) );
 
-    kDebug() << "buy nice custom:" << spruce_overseer->spruce->getOrderNiceCustom( SIDE_BUY )
-       << "buy zero bound custom:" << spruce_overseer->spruce->getOrderNiceCustomZeroBound( SIDE_BUY )
-            << "sell nice custom:" << spruce_overseer->spruce->getOrderNiceCustom( SIDE_SELL )
-      << "sell zero bound custom:" << spruce_overseer->spruce->getOrderNiceCustomZeroBound( SIDE_SELL );
+    kDebug() << "buy nice custom:" << spruce_overseer->spruce->getOrderNiceCustom( QString(), SIDE_BUY )
+       << "buy zero bound custom:" << spruce_overseer->spruce->getOrderNiceCustomZeroBound( QString(), SIDE_BUY )
+            << "sell nice custom:" << spruce_overseer->spruce->getOrderNiceCustom( QString(), SIDE_SELL )
+      << "sell zero bound custom:" << spruce_overseer->spruce->getOrderNiceCustomZeroBound( QString(), SIDE_SELL );
+}
+
+void CommandRunner::command_setspruceordernicemarketoffset( QStringList &args )
+{
+    if ( !checkArgs( args, 5 ) ) return;
+
+    spruce_overseer->spruce->setOrderNiceMarketOffset( args.value( 1 ), SIDE_BUY, args.value( 2 ) );
+    spruce_overseer->spruce->setOrderNiceZeroBoundMarketOffset( args.value( 1 ), SIDE_BUY, args.value( 3 ) );
+    spruce_overseer->spruce->setOrderNiceMarketOffset( args.value( 1 ), SIDE_SELL, args.value( 4 ) );
+    spruce_overseer->spruce->setOrderNiceZeroBoundMarketOffset( args.value( 1 ), SIDE_SELL, args.value( 5 ) );
+
+    kDebug()    << "buy nice offset:" << spruce_overseer->spruce->getOrderNiceMarketOffset( args.value( 1 ), SIDE_BUY )
+          << "buy zero bound offset:" << spruce_overseer->spruce->getOrderNiceZeroBoundMarketOffset( args.value( 1 ), SIDE_BUY )
+               << "sell nice offset:" << spruce_overseer->spruce->getOrderNiceMarketOffset( args.value( 1 ), SIDE_SELL )
+         << "sell zero bound offset:" << spruce_overseer->spruce->getOrderNiceZeroBoundMarketOffset( args.value( 1 ), SIDE_SELL );
 }
 
 void CommandRunner::command_setspruceallocation( QStringList &args )

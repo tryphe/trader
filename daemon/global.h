@@ -94,7 +94,7 @@ static const QByteArray TREX_APISIGN                        ( "apisign" );
 
 // binance symbols
 static const QLatin1String BINANCE_DEFAULT_FEERATE          ( "0.001" );
-static const QLatin1String BINANCE_MINIMUM_ORDER_SIZE       ( "0.00105000" );
+static const QLatin1String BINANCE_MINIMUM_ORDER_SIZE       ( "0.00250000" );
 static const QLatin1String BINANCE_MARKET_STRING_TEMPLATE   ( "%2%1" );
 static const QLatin1String BINANCE_EXCHANGE_STR             ( "Binance" );
 static const int BINANCE_TIMER_INTERVAL_NAM_SEND            ( 111 );
@@ -119,7 +119,7 @@ static const QByteArray BNC_APIKEY                          ( "X-MBX-APIKEY" );
 
 // polo symbols
 static const QLatin1String POLONIEX_DEFAULT_FEERATE         ( "0.001" );
-static const QLatin1String POLONIEX_MINIMUM_ORDER_SIZE      ( "0.00100000" );
+static const QLatin1String POLONIEX_MINIMUM_ORDER_SIZE      ( "0.00250000" );
 static const QLatin1String POLONIEX_MARKET_STRING_TEMPLATE  ( "%1_%2" );
 static const QLatin1String POLONIEX_EXCHANGE_STR            ( "Poloniex" );
 static const int POLONIEX_TIMER_INTERVAL_NAM_SEND           ( 200 );
@@ -143,7 +143,7 @@ static const QLatin1String POLO_COMMAND_GETBOOKS_ARGS       ( "currencyPair=all&
 static const QLatin1String POLO_COMMAND_GETFEE              ( "returnFeeInfo" );
 
 // waves symbols
-static const QLatin1String WAVES_MINIMUM_ORDER_SIZE         ( "0.00100000" );
+static const QLatin1String WAVES_MINIMUM_ORDER_SIZE         ( "0.00250000" );
 static const QLatin1String WAVES_EXCHANGE_STR               ( "Waves" );
 static const QLatin1String WAVES_MATCHER_URL                ( "https://matcher.waves.exchange/" );
 static const int WAVES_TIMER_INTERVAL_NAM_SEND              ( 100 );
