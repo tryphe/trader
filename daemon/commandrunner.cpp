@@ -91,7 +91,6 @@ CommandRunner::CommandRunner( const quint8 _engine_type, Engine *_e, QVector<Bas
     command_map.insert( "setspruceprofile", std::bind( &CommandRunner::command_setspruceprofile, this, _1 ) );
     command_map.insert( "setsprucereserve", std::bind( &CommandRunner::command_setsprucereserve, this, _1 ) );
     command_map.insert( "setspruceordergreed", std::bind( &CommandRunner::command_setspruceordergreed, this, _1 ) );
-    command_map.insert( "setsprucemarketmax", std::bind( &CommandRunner::command_setsprucemarketmax, this, _1 ) );
     command_map.insert( "setspruceordersize", std::bind( &CommandRunner::command_setspruceordersize, this, _1 ) );
     command_map.insert( "setspruceordernice", std::bind( &CommandRunner::command_setspruceordernice, this, _1 ) );
     command_map.insert( "setspruceordernicecustom", std::bind( &CommandRunner::command_setspruceordernicecustom, this, _1 ) );
@@ -887,16 +886,6 @@ void CommandRunner::command_setspruceordergreed( QStringList &args )
              << "buy random:" << spruce_overseer->spruce->getOrderRandomBuy()
              << "sell random:" << spruce_overseer->spruce->getOrderRandomSell()
              << "alpha skew:" << spruce_overseer->spruce->getSkew();
-}
-
-void CommandRunner::command_setsprucemarketmax( QStringList &args )
-{
-    if ( !checkArgs( args, 2 ) ) return;
-
-    spruce_overseer->spruce->setMarketBuyMax( args.value( 1 ) );
-    spruce_overseer->spruce->setMarketSellMax( args.value( 2 ) );
-    kDebug() << "spruce marketmax is" << spruce_overseer->spruce->getMarketBuyMax()
-                                      << spruce_overseer->spruce->getMarketSellMax();
 }
 
 void CommandRunner::command_setspruceordersize( QStringList &args )

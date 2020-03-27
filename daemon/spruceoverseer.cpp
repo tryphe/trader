@@ -228,7 +228,7 @@ void SpruceOverseer::onSpruceUp()
                         // declare spread reduce here so we can print/evalulate it after
                         Coin spread_reduce;
 
-                        // put prices at spread if pending amount to shortlong is greater than size * order_nice_spreadput
+                        // reduce spread if pending amount to shortlong is greater than size * order_nice_spreadput
                         if ( spread_put_threshold.isGreaterThanZero() &&
                              amount_to_shortlong_abs > spread_put_threshold )
                         {
@@ -273,13 +273,6 @@ void SpruceOverseer::onSpruceUp()
                             }
                         }
                     }
-
-                    // don't go over our per-market max
-//                    if ( spruce_active_for_side + order_size >= order_max )
-//                    {
-//                        kDebug() << "[Spruce] info:" << market << "over market" << QString( "%1" ).arg( is_buy ? "buy" : "sell" ) << "order max";
-//                        continue;
-//                    }
 
                     // don't go over the abs value of our new projected position
                     // TODO: once we use smoothing for sp3 calculation, use spruce_active_for_side_up_to_flux_price
@@ -770,25 +763,6 @@ void SpruceOverseer::runCancellors( Engine *engine, const QString &market, const
             continue;
         }
 
-        const Coin order_max = this_pos_side == SIDE_BUY ? spruce->getMarketBuyMax( market ) :
-                                                           spruce->getMarketSellMax( market );
-
-        const Coin active_amount = engine->positions->getActiveSpruceEquityTotal( market, strategy, this_pos_side, flux_price );
-
-        /// cancellor 4: look for active amount > order_max
-        /// this won't go off normally, only if we change the limit. then this will shave off some orders.
-        if ( active_amount > order_max )
-        {
-            // cancel a random order on that side
-            Position *const &pos_to_cancel = engine->positions->getRandomSprucePosition( market, this_pos_side );
-
-            // check badptr just incase, but should be impossible to get here
-            if ( pos_to_cancel == nullptr )
-                return;
-
-            engine->positions->cancel( pos_to_cancel, false, CANCELLING_FOR_SPRUCE_4 );
-            continue;
-        }
 
         // for cancellor 3, only try to cancel positions within the flux bounds
         if ( ( this_pos_side == SIDE_BUY  && price_actual < flux_price ) ||
@@ -808,6 +782,8 @@ void SpruceOverseer::runCancellors( Engine *engine, const QString &market, const
         const Coin nice_zero_bound = ( strategy.contains( CUSTOM_PHASE_0 ) ) ? spruce->getOrderNiceCustomZeroBound( market, this_pos_side ) :
                                                                                      spruce->getOrderNiceZeroBound( market, this_pos_side );
         const Coin zero_bound_tolerance = order_size;
+
+        const Coin active_amount = engine->positions->getActiveSpruceEquityTotal( market, strategy, this_pos_side, flux_price );
 
         /// cancellor 3: look for active amount > amount_to_shortlong + order_size_limit
         if ( ( this_pos_side == SIDE_BUY  && amount_to_shortlong.isZeroOrLess() &&

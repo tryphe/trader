@@ -291,10 +291,6 @@ QString Spruce::getSaveState()
             .arg( m_order_greed_sell_randomness )
             .arg( m_skew );
 
-    // save market max
-    ret += QString( "setsprucemarketmax %1 %2\n" ).arg( m_market_buy_max )
-                                                  .arg( m_market_sell_max );
-
     // save order size
     ret += QString( "setspruceordersize %1\n" ).arg( m_order_size );
 
@@ -415,16 +411,6 @@ QString Spruce::getSaveState()
     return ret;
 }
 
-Coin Spruce::getMarketBuyMax( QString market ) const
-{
-    return market.isEmpty() ? m_market_buy_max : std::max( m_market_buy_max * getMarketWeight( market ), m_market_buy_max * Coin( "0.01" ) );
-}
-
-Coin Spruce::getMarketSellMax( QString market ) const
-{
-    return market.isEmpty() ? m_market_sell_max : std::max( m_market_sell_max * getMarketWeight( market ), m_market_sell_max * Coin( "0.01" ) );
-
-}
 Coin Spruce::getOrderSize( QString market ) const
 {
     return market.isEmpty() ? m_order_size : std::max( m_order_size * getMarketWeight( market ), getUniversalMinOrderSize() );
