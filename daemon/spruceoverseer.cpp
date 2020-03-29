@@ -197,22 +197,15 @@ void SpruceOverseer::onSpruceUp()
                          ( !is_buy && side == SIDE_BUY ) )
                         continue;
 
-                    const Coin qty_to_shortlong_abs = qty_to_shortlong.abs();
-                    const Coin amount_to_shortlong = spruce->getCurrencyPriceByMarket( market ) * qty_to_shortlong;
-                    const Coin amount_to_shortlong_abs = amount_to_shortlong.abs();
-                    const Coin spruce_active_for_side = engine->positions->getActiveSpruceEquityTotal( market, strategy, side, Coin() );
-                    //const Coin spruce_active_for_side_up_to_flux_price = engine->positions->getActiveSpruceEquityTotal( market, side, price_to_use );
-
-                    // cache some order info
-                    const int ORDERSIZE_EXPAND_THRESH = ( market_phase == CUSTOM_PHASE_0 ) ? 4 : 15;
-                    const int ORDERSIZE_EXPAND_MAX = ( market_phase == CUSTOM_PHASE_0 ) ? 10 : 5;
+                    // cache some order settings
                     const Coin order_size_unscaled = spruce->getOrderSize( market );
-                    const Coin order_size = std::min( order_size_unscaled * ORDERSIZE_EXPAND_MAX, std::max( order_size_unscaled, amount_to_shortlong_abs / ORDERSIZE_EXPAND_THRESH ) );
-                    //const Coin order_max = is_buy ? spruce->getMarketBuyMax( market ) :
-                    //                                spruce->getMarketSellMax( market );
                     const Coin order_nice = ( market_phase == CUSTOM_PHASE_0 ) ? spruce->getOrderNiceCustom( market, side ) :
                                                                                  spruce->getOrderNice( market, side );
                     const Coin order_size_limit = order_size_unscaled * order_nice;
+
+                    // cache amount to short/long
+                    const Coin amount_to_shortlong = spruce->getCurrencyPriceByMarket( market ) * qty_to_shortlong;
+                    const Coin amount_to_shortlong_abs = amount_to_shortlong.abs();
 
                     // if we're under the nice size limit, skip conflict checks and order setting
                     if ( amount_to_shortlong_abs < order_size_limit )
@@ -274,10 +267,19 @@ void SpruceOverseer::onSpruceUp()
                         }
                     }
 
-                    // don't go over the abs value of our new projected position
+                    // check amount active
+                    const Coin spruce_active_for_side = engine->positions->getActiveSpruceEquityTotal( market, strategy, side, Coin() );
+                    //const Coin spruce_active_for_side_up_to_flux_price = engine->positions->getActiveSpruceEquityTotal( market, side, price_to_use );
+
+                    // calculate order size, prevent going over amount_to_shortlong_abs but also prevent going under order_size_unscaled
+                    const int ORDER_CHUNKS_ESTIMATE = ( market_phase == CUSTOM_PHASE_0 ) ? 4 : 14;
+                    const Coin order_size = std::min( std::max( order_size_unscaled, amount_to_shortlong_abs - spruce_active_for_side ),
+                                                      std::max( order_size_unscaled, amount_to_shortlong_abs / ORDER_CHUNKS_ESTIMATE ) );
+
+                    // don't go over the abs value of our new projected position, and also regard nice value
                     // TODO: once we use smoothing for sp3 calculation, use spruce_active_for_side_up_to_flux_price
-                    if ( spruce_active_for_side + order_size >= amount_to_shortlong_abs ||
-                         spruce_active_for_side + order_size_limit >= amount_to_shortlong_abs )
+                    if ( spruce_active_for_side + order_size > amount_to_shortlong_abs ||
+                         spruce_active_for_side + order_size_limit > amount_to_shortlong_abs )
                         continue;
 
                     kDebug() << QString( "[%1 %2] %3 | coeff %4 | qty %5 | amt %6 | active %7 | spr %8" )
