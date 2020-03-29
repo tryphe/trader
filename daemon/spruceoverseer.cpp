@@ -766,7 +766,7 @@ void SpruceOverseer::runCancellors( Engine *engine, const QString &market, const
         }
 
 
-        // for cancellor 3, only try to cancel positions within the flux bounds
+        // for cancellor 2, only try to cancel positions within the flux bounds
         if ( ( this_pos_side == SIDE_BUY  && price_actual < flux_price ) ||
              ( this_pos_side == SIDE_SELL && price_actual > flux_price ) )
             continue;
@@ -787,13 +787,13 @@ void SpruceOverseer::runCancellors( Engine *engine, const QString &market, const
 
         const Coin active_amount = engine->positions->getActiveSpruceEquityTotal( market, strategy, this_pos_side, flux_price );
 
-        /// cancellor 3: look for active amount > amount_to_shortlong + order_size_limit
+        /// cancellor 2: look for active amount > amount_to_shortlong + order_size_limit
         if ( ( this_pos_side == SIDE_BUY  && amount_to_shortlong.isZeroOrLess() &&
                 active_amount - zero_bound_tolerance > amount_to_shortlong.abs() ) ||
              ( this_pos_side == SIDE_SELL && amount_to_shortlong.isGreaterThanZero() &&
                 active_amount - zero_bound_tolerance > amount_to_shortlong.abs() ) )
         {
-            engine->positions->cancel( pos, false, CANCELLING_FOR_SPRUCE_3 );
+            engine->positions->cancel( pos, false, CANCELLING_FOR_SPRUCE_2 );
             continue;
         }
     }
