@@ -418,45 +418,64 @@ void Engine::updateStatsAndPrintFill( const QString &fill_type, Market market, c
                                       const QString &strategy_tag, Coin amount, Coin quantity, Coin price,
                                       const Coin &btc_commission )
 {
-    // one of these values should be zero, unless the exchange supplies both?
-    if ( amount.isZero() )
-        amount = quantity * price;
-    else if ( quantity.isZero() )
-        quantity = amount / price;
-
-    // if base market is not btc, but the quote is, calculate btc price with inverse
-    if ( market.getBase() != spruce->getBaseCurrency() &&
-         market.getQuote() == spruce->getBaseCurrency() )
+    // if both are zero, return
+    if ( amount.isZeroOrLess() && quantity.isZeroOrLess() )
     {
-        // invert market to make stats show properly
-        market = market.getInverse();
-
-        // invert side
-        side = ( side == SIDE_BUY ) ? SIDE_SELL : SIDE_BUY;
-
-        // invert price, recalculate amt/qty
-        const Coin amount_tmp = amount;
-
-        price = CoinAmount::COIN / price;
-        amount = quantity;
-        quantity = amount_tmp;
+        kDebug() << "engine error: amount and quantity are both <= zero for fill" << market << order_id << "amount:" << amount << "qty:" << quantity << "@" << price;
+        return;
     }
+
     // found beta level trade, convert prices and volumes to base currency (for stats consistency)
-    else if ( market.getBase() != spruce->getBaseCurrency() &&
-              market.getQuote() != spruce->getBaseCurrency() )
+    if ( market.getBase() != spruce->getBaseCurrency() &&
+         market.getQuote() != spruce->getBaseCurrency() )
     {
         const Coin price_in_btc = getMarketInfo( Market( spruce->getBaseCurrency(), market.getBase() ) ).highest_buy;
 
         if ( price_in_btc.isGreaterThanZero() )
         {
-            // leave the price alone, but change the amount into btc
-            amount = quantity * price_in_btc;
+            // if the quantity wasn't supplied, estimate it in btc
+            if ( quantity.isZeroOrLess() )
+            {
+                quantity = amount;
+                amount = quantity * price_in_btc;
+            }
+            else if ( amount.isZeroOrLess() )
+            {
+                amount = quantity;
+                quantity = amount / price_in_btc;
+            }
         }
     }
+    else
+    {
+        // one of these values should be zero, unless the exchange supplies both
+        if ( amount.isZero() )
+            amount = quantity * price;
+        else if ( quantity.isZero() )
+            quantity = amount / price;
 
-    // negate commission from final qty and calculate final amounts
-    amount = amount - btc_commission;
-    quantity = amount / price;
+        // if base market is not btc, but the quote is, calculate btc price with inverse
+        if ( market.getBase() != spruce->getBaseCurrency() &&
+             market.getQuote() == spruce->getBaseCurrency() )
+        {
+            // invert market to make stats show properly
+            market = market.getInverse();
+
+            // invert side
+            side = ( side == SIDE_BUY ) ? SIDE_SELL : SIDE_BUY;
+
+            // invert price, recalculate amt/qty
+            const Coin amount_tmp = amount;
+
+            price = CoinAmount::COIN / price;
+            amount = quantity;
+            quantity = amount_tmp;
+        }
+
+        // negate commission from final qty and calculate final amounts
+        amount = amount - btc_commission;
+        quantity = amount / price;
+    }
 
     // add stats changes to alpha tracker (note: volume before commission is used)
     alpha->addAlpha( market, side, amount, price );
