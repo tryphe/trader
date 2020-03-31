@@ -125,7 +125,8 @@ void AlphaTracker::printAlpha() const
         if ( alpha.isGreaterThanZero() )
         {
             total_volume += volume;
-            estimated_pl += significance * ( ( alpha - CoinAmount::COIN ) * volume );
+            // pl += (s*s)*vwap_difference*volume where s is the ratio of the total volume on each side (small_side/big_side)
+            estimated_pl += significance * significance * ( ( alpha - CoinAmount::COIN ) * volume );
         }
     }
 
