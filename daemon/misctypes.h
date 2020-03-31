@@ -56,6 +56,8 @@ struct TickerInfo
                                   .arg( bid_price )
                                   .arg( ask_price ); }
 
+    bool isValid() const { return bid_price.isGreaterThanZero() && ask_price.isGreaterThanZero(); }
+
     Coin bid_price;
     Coin ask_price;
 };
