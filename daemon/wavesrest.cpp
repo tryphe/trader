@@ -75,6 +75,8 @@ void WavesREST::init()
 #endif
 
     onCheckMarketData();
+
+    engine->loadSettings();
 }
 
 void WavesREST::sendNamQueue()
@@ -462,11 +464,13 @@ void WavesREST::parseMarketData( const QJsonObject &info )
         const QString price_asset_alias = market_data.value( "priceAsset" ).toString();
         const Coin price_ticksize = Coin::ticksizeFromDecimals( market_data.value( "priceAssetInfo" ).toObject().value( "decimals" ).toVariant().toULongLong() );
         const Coin amount_ticksize = Coin::ticksizeFromDecimals( market_data.value( "amountAssetInfo" ).toObject().value( "decimals" ).toVariant().toULongLong() );
+        const Coin matcher_ticksize = market_data.value( "matchingRules" ).toObject().value( "tickSize" ).toString();
 
         if ( amount_asset_alias.isEmpty() ||
              price_asset_alias.isEmpty() ||
              price_ticksize.isZeroOrLess() ||
-             amount_ticksize.isZeroOrLess() )
+             amount_ticksize.isZeroOrLess() ||
+             matcher_ticksize.isZeroOrLess() )
         {
             kDebug() << "nam reply warning: caught empty market data value";
             continue;
@@ -491,6 +495,13 @@ void WavesREST::parseMarketData( const QJsonObject &info )
         MarketInfo &market_info = engine->getMarketInfo( market );
         market_info.price_ticksize = price_ticksize;
         market_info.quantity_ticksize = amount_ticksize;
+        market_info.matcher_ticksize = matcher_ticksize;
+
+        // some of these above values seem like nonsense, but only sometimes?
+        if ( market == "USDN_BTC" )
+            market_info.price_ticksize = CoinAmount::SATOSHI *100;
+        else if ( market == "USDN_USDT" )
+            market_info.price_ticksize = CoinAmount::SATOSHI;
     }
 
     // update tickers

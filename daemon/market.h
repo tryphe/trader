@@ -37,10 +37,13 @@ struct MarketInfo
     {
     }
 
-    operator QString() const { return QString( "bid %1 ask %2 tradeable %3 order_min %4 order_max %5 order_dc %6 order_dc_nice %7 order_landmark_thresh %8 order_landmark_start %9 slippage_timeout %10 market_offset %11 market_sentiment %12" )
+    operator QString() const { return QString( "bid %1 ask %2 tradeable %3 price_tick %4 matcher_tick %5 qty_tick %6 order_min %7 order_max %8 order_dc %9 order_dc_nice %10 order_landmark_thresh %11 order_landmark_start %12 slippage_timeout %13 market_offset %14 market_sentiment %15" )
                                    .arg( highest_buy, -16 )
                                    .arg( lowest_sell, -16 )
                                    .arg( is_tradeable )
+                                   .arg( price_ticksize )
+                                   .arg( quantity_ticksize )
+                                   .arg( matcher_ticksize )
                                    .arg( order_min, -2 )
                                    .arg( order_max, -2 )
                                    .arg( order_dc, -2 )
@@ -97,6 +100,9 @@ struct MarketInfo
     Coin price_min_mul{ 0.2 };
     Coin price_max_mul{ 5.0 };
     Coin quantity_ticksize{ CoinAmount::SATOSHI }; // used to pass filter LOT_SIZE "stepSize"
+
+    // waves exchange
+    Coin matcher_ticksize{ CoinAmount::SATOSHI };
 
     // inverse market tags
     bool is_tradeable{ false };

@@ -251,6 +251,10 @@ static inline const QString getPoloniexSettingsPath()
 {
     return getTraderPath() + QDir::separator() + "poloniex.settings";
 }
+static inline const QString getWavesSettingsPath()
+{
+    return getTraderPath() + QDir::separator() + "waves.settings";
+}
 
 static inline const QString getIPCPath()
 {

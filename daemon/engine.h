@@ -53,6 +53,7 @@ public:
     QString getSettingsPath() const { return engine_type == ENGINE_BITTREX  ? Global::getBittrexSettingsPath() :
                                              engine_type == ENGINE_BINANCE  ? Global::getBinanceSettingsPath() :
                                              engine_type == ENGINE_POLONIEX ? Global::getPoloniexSettingsPath() :
+                                             engine_type == ENGINE_WAVES    ? Global::getWavesSettingsPath() :
                                                                                QString(); }
 
     void printInternal();
