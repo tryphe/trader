@@ -130,9 +130,10 @@ Coin PositionMan::getActiveSpruceEquityTotal( const Market &market, const QStrin
         {
             // for inverted markets, price = 1/price
             const Coin price_actual = ( CoinAmount::COIN / pos->price );
+            const Coin price_threshold_actual = price_threshold.isZeroOrLess() ? Coin() : ( CoinAmount::COIN / price_threshold );
 
-            if ( ( side != SIDE_BUY  && price_threshold.isGreaterThanZero() && price_actual < price_threshold ) ||
-                 ( side != SIDE_SELL && price_threshold.isGreaterThanZero() && price_actual > price_threshold ) )
+            if ( ( side != SIDE_BUY  && price_threshold_actual.isGreaterThanZero() && price_actual < price_threshold_actual ) ||
+                 ( side != SIDE_SELL && price_threshold_actual.isGreaterThanZero() && price_actual > price_threshold_actual ) )
                 continue;
 
             ret += pos->amount * price_actual;

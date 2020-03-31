@@ -711,9 +711,7 @@ void SpruceOverseer::runCancellors( Engine *engine, const QString &market, const
     for ( QVector<Position*>::const_iterator j = begin; j != end; j++ )
     {
         Position *const &pos = *j;
-
         bool is_inverse = false;
-        quint8 this_pos_side = side;
 
         // don't skip inverse markets matching this side (the inverse side)
         if (  pos->side != side &&
@@ -723,7 +721,6 @@ void SpruceOverseer::runCancellors( Engine *engine, const QString &market, const
         {
             //kDebug() << "found inverse market for cancellor for pos" << pos->stringifyOrder();
             is_inverse = true;
-            this_pos_side = ( side == SIDE_BUY ) ? SIDE_SELL : SIDE_BUY; // flip side
         }
         // skip non-qualifying position
         else if ( pos->side != side ||
@@ -751,47 +748,45 @@ void SpruceOverseer::runCancellors( Engine *engine, const QString &market, const
             sell_price_limit = spread_limit.ask_price * Coin("1.001");
         }
 
-        const Coin price_actual = is_inverse ? ( CoinAmount::COIN / pos->price ) :
-                                               pos->price;
-
-        // TODO: test cancellors for inverse markets
+        // cache actual side/price
+        const quint8 side_actual = is_inverse ? ( ( side == SIDE_BUY ) ? SIDE_SELL : SIDE_BUY ) : side;
+        const Coin price_actual = is_inverse ? ( CoinAmount::COIN / pos->price ) : pos->price;
 
         /// cancellor 1: look for prices that are trailing the spread too far
         if ( buy_price_limit.isGreaterThanZero() && sell_price_limit.isGreaterThanZero() && // ticker is valid
-             ( ( this_pos_side == SIDE_BUY  && price_actual < buy_price_limit ) ||
-               ( this_pos_side == SIDE_SELL && price_actual > sell_price_limit ) ) )
+             ( ( side_actual == SIDE_BUY  && price_actual < buy_price_limit ) ||
+               ( side_actual == SIDE_SELL && price_actual > sell_price_limit ) ) )
         {
             engine->positions->cancel( pos, false, CANCELLING_FOR_SPRUCE );
             continue;
         }
 
+        // cache actual flux price
+        const Coin flux_price_actual = is_inverse ? ( CoinAmount::COIN / flux_price ) : flux_price;
 
         // for cancellor 2, only try to cancel positions within the flux bounds
-        if ( ( this_pos_side == SIDE_BUY  && price_actual < flux_price ) ||
-             ( this_pos_side == SIDE_SELL && price_actual > flux_price ) )
+        if ( ( side_actual == SIDE_BUY  && price_actual < flux_price_actual ) ||
+             ( side_actual == SIDE_SELL && price_actual > flux_price_actual ) )
             continue;
 
         const QString exchange_market_key = QString( "%1-%2" )
                                             .arg( engine->engine_type )
                                             .arg( market );
 
-        // get market allocation for this exchange and apply to qty_to_shortlong
-        const Coin market_allocation = spruce->getExchangeAllocation( exchange_market_key );
-        const Coin amount_to_shortlong = spruce->getCurrencyPriceByMarket( market ) * spruce->getQuantityToShortLongNow( market )
-                                         * market_allocation;
+        // get market allocation
+        const Coin active_amount = engine->positions->getActiveSpruceEquityTotal( market, strategy, side_actual, flux_price );
+        const Coin amount_to_shortlong = spruce->getExchangeAllocation( exchange_market_key ) * spruce->getCurrencyPriceByMarket( market ) * spruce->getQuantityToShortLongNow( market );
 
-        const Coin order_size = spruce->getOrderSize( market );
-        const Coin nice_zero_bound = ( strategy.contains( CUSTOM_PHASE_0 ) ) ? spruce->getOrderNiceCustomZeroBound( market, this_pos_side ) :
-                                                                                     spruce->getOrderNiceZeroBound( market, this_pos_side );
-        const Coin zero_bound_tolerance = order_size;
-
-        const Coin active_amount = engine->positions->getActiveSpruceEquityTotal( market, strategy, this_pos_side, flux_price );
+        // get active tolerance
+        const Coin nice_zero_bound = ( strategy.contains( CUSTOM_PHASE_0 ) ) ? spruce->getOrderNiceCustomZeroBound( market, side_actual ) :
+                                                                                     spruce->getOrderNiceZeroBound( market, side_actual );
+        const Coin zero_bound_tolerance = spruce->getOrderSize( market ) * nice_zero_bound;
 
         /// cancellor 2: look for active amount > amount_to_shortlong + order_size_limit
-        if ( ( this_pos_side == SIDE_BUY  && amount_to_shortlong.isZeroOrLess() &&
-                active_amount - zero_bound_tolerance > amount_to_shortlong.abs() ) ||
-             ( this_pos_side == SIDE_SELL && amount_to_shortlong.isGreaterThanZero() &&
-                active_amount - zero_bound_tolerance > amount_to_shortlong.abs() ) )
+        if ( ( side_actual == SIDE_BUY  && amount_to_shortlong.isZeroOrLess() &&
+               active_amount - zero_bound_tolerance > amount_to_shortlong.abs() ) ||
+             ( side_actual == SIDE_SELL && amount_to_shortlong.isGreaterThanZero() &&
+               active_amount - zero_bound_tolerance > amount_to_shortlong.abs() ) )
         {
             engine->positions->cancel( pos, false, CANCELLING_FOR_SPRUCE_2 );
             continue;
