@@ -77,7 +77,7 @@ Position *Engine::addPosition( QString market_input, quint8 side, QString buy_pr
         return nullptr;
     }
 
-    if ( !market_info[ market ].is_tradeable )
+    if ( !getMarketInfo( market ).is_tradeable )
     {
         // invert market pair
         market = market.getInverse();
@@ -441,10 +441,17 @@ void Engine::updateStatsAndPrintFill( const QString &fill_type, Market market, c
         amount = quantity;
         quantity = amount_tmp;
     }
-    // TODO: found beta level trade, convert prices and volumes using base currency prices
+    // found beta level trade, convert prices and volumes to base currency (for stats consistency)
     else if ( market.getBase() != spruce->getBaseCurrency() &&
               market.getQuote() != spruce->getBaseCurrency() )
     {
+        const Coin price_in_btc = getMarketInfo( Market( spruce->getBaseCurrency(), market.getBase() ) ).highest_buy;
+
+        if ( price_in_btc.isGreaterThanZero() )
+        {
+            // leave the price alone, but change the amount into btc
+            amount = quantity * price_in_btc;
+        }
     }
 
     // negate commission from final qty and calculate final amounts
@@ -759,9 +766,9 @@ void Engine::processTicker( BaseREST *base_rest_module, const QMap<QString, Tick
             info_inverse.highest_buy = CoinAmount::COIN / ask;
             info_inverse.lowest_sell = CoinAmount::COIN / bid;
 
-            // cross ticksizes
-            info_inverse.price_ticksize = info.quantity_ticksize;
-            info_inverse.quantity_ticksize = info.price_ticksize;
+            // cross ticksizes (probably not needed)
+//            info_inverse.price_ticksize = info.quantity_ticksize;
+//            info_inverse.quantity_ticksize = info.price_ticksize;
         }
     }
 
