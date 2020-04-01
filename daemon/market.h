@@ -4,6 +4,7 @@
 #include "global.h"
 #include "positiondata.h"
 #include "coinamount.h"
+#include "misctypes.h"
 
 #include <QVector>
 #include <QString>
@@ -38,8 +39,8 @@ struct MarketInfo
     }
 
     operator QString() const { return QString( "bid %1 ask %2 tradeable %3 price_tick %4 matcher_tick %5 qty_tick %6 order_min %7 order_max %8 order_dc %9 order_dc_nice %10 order_landmark_thresh %11 order_landmark_start %12 slippage_timeout %13 market_offset %14 market_sentiment %15" )
-                                   .arg( highest_buy, -16 )
-                                   .arg( lowest_sell, -16 )
+                                   .arg( ticker.bid, -16 )
+                                   .arg( ticker.ask, -16 )
                                    .arg( is_tradeable )
                                    .arg( price_ticksize )
                                    .arg( quantity_ticksize )
@@ -58,28 +59,27 @@ struct MarketInfo
     {
         arr += "t";
         arr += market;
-        arr += highest_buy.toAmountString();
-        arr += lowest_sell.toAmountString();
+        arr += ticker.bid.toAmountString();
+        arr += ticker.ask.toAmountString();
     }
     void jsonifyBid( QJsonArray &arr, const QString &market ) const
     {
         arr += "b";
         arr += market;
-        arr += highest_buy.toAmountString();
+        arr += ticker.bid.toAmountString();
     }
     void jsonifyAsk( QJsonArray &arr, const QString &market ) const
     {
         arr += "a";
         arr += market;
-        arr += lowest_sell.toAmountString();
+        arr += ticker.ask.toAmountString();
     }
 
     // prices for this market
     QVector<QString> order_prices;
 
     // internal ticker
-    Coin highest_buy;
-    Coin lowest_sell;
+    TickerInfo ticker;
 
     // ping-pong settings
     QVector<PositionData> /*position_index*/ position_index;

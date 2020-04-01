@@ -113,13 +113,13 @@ void SpruceOverseer::onSpruceUp()
                     }
                 }
 
-                Coin flux_price = ( side == SIDE_BUY ) ? mid_spread.value( market ).bid_price :
-                                                         mid_spread.value( market ).ask_price;
+                Coin flux_price = ( side == SIDE_BUY ) ? mid_spread.value( market ).bid :
+                                                         mid_spread.value( market ).ask;
 
                 // these prices should be equal
-                if ( mid_spread.value( market ).bid_price != mid_spread.value( market ).ask_price )
+                if ( mid_spread.value( market ).bid != mid_spread.value( market ).ask )
                 {
-                    kDebug() << "local error: midspread bid" << mid_spread.value( market ).bid_price << "!= ask" << mid_spread.value( market ).ask_price;
+                    kDebug() << "local error: midspread bid" << mid_spread.value( market ).bid << "!= ask" << mid_spread.value( market ).ask;
                     return;
                 }
 
@@ -138,8 +138,8 @@ void SpruceOverseer::onSpruceUp()
                      market_phase != CUSTOM_PHASE_0 ) // on custom iteration, skip this step
                 {
                     // set the most optimistic price to use, either the midprice or duplicity price
-                    flux_price = ( side == SIDE_BUY ) ? std::min( flux_price, spread_duplicity.bid_price ) :
-                                                        std::max( flux_price, spread_duplicity.ask_price );
+                    flux_price = ( side == SIDE_BUY ) ? std::min( flux_price, spread_duplicity.bid ) :
+                                                        std::max( flux_price, spread_duplicity.ask );
                 }
 
                 spread_price.insert( currency, flux_price );
@@ -186,8 +186,8 @@ void SpruceOverseer::onSpruceUp()
                     // set price for order
                     if ( market_phase == CUSTOM_PHASE_0 )
                     {
-                        buy_price = mid_spread.value( market ).bid_price;
-                        sell_price = mid_spread.value( market ).ask_price;
+                        buy_price = mid_spread.value( market ).bid;
+                        sell_price = mid_spread.value( market ).ask;
 
                         // set local taker mode to disable local spread collision detection which would modify the price
                         order_type += "-taker";
@@ -197,8 +197,8 @@ void SpruceOverseer::onSpruceUp()
                     }
                     else
                     {
-                        buy_price = spread_duplicity.bid_price;
-                        sell_price = spread_duplicity.ask_price;
+                        buy_price = spread_duplicity.bid;
+                        sell_price = spread_duplicity.ask;
                     }
 
                     // run cancellors for this phase every iteration
@@ -245,8 +245,8 @@ void SpruceOverseer::onSpruceUp()
                             const TickerInfo collapsed_spread = getSpreadForSide( market, side, true, false, true, true, spread_reduce );
                             if ( collapsed_spread.isValid() )
                             {
-                                buy_price = collapsed_spread.bid_price;
-                                sell_price = collapsed_spread.ask_price;
+                                buy_price = collapsed_spread.bid;
+                                sell_price = collapsed_spread.ask;
                             }
                             else
                             {
@@ -295,7 +295,7 @@ void SpruceOverseer::onSpruceUp()
                     //const Coin spruce_active_for_side_up_to_flux_price = engine->positions->getActiveSpruceEquityTotal( market, side, price_to_use );
 
                     // calculate order size, prevent going over amount_to_shortlong_abs but also prevent going under order_size_unscaled
-                    const int ORDER_CHUNKS_ESTIMATE = 13;
+                    const int ORDER_CHUNKS_ESTIMATE = 10;
                     const Coin order_size = ( market_phase == CUSTOM_PHASE_0 ) ? amount_to_shortlong_abs - order_size_limit - spruce_active_for_side:
                                             std::min( std::max( order_size_unscaled, amount_to_shortlong_abs - spruce_active_for_side ),
                                                       std::max( order_size_unscaled, amount_to_shortlong_abs / ORDER_CHUNKS_ESTIMATE ) );
@@ -345,23 +345,23 @@ void SpruceOverseer::adjustSpread( TickerInfo &spread, Coin limit, quint8 side, 
         moved = Coin();
         ticksize = -ticksize;
 
-        const Coin diff = std::max( spread.bid_price, spread.ask_price ) - std::min( spread.bid_price, spread.ask_price );
+        const Coin diff = std::max( spread.bid, spread.ask ) - std::min( spread.bid, spread.ask );
         diff_threshold = diff * CONTRACT_RATIO;
     }
 
     quint32 j = ( side == SIDE_BUY ) ? 0 : 1;
-    quint32 debug_reset_count = 0;
+//    quint32 debug_reset_count = 0;
 
-    while ( expand ? spread.bid_price > spread.ask_price * limit :
-                     spread.bid_price < spread.ask_price * limit )
+    while ( expand ? spread.bid > spread.ask * limit :
+                     spread.bid < spread.ask * limit )
     {
         // if the side is buy, expand down, otherwise expand outwards
         j++;
         if ( ( side == SIDE_BUY && expand_spread_buys && j % 4 < 3 ) || // if expanding down, only expand down 60% of the time
              ( j % 2 == 1 ) ) // if not expanding down, expand 50/50
-            spread.bid_price -= ticksize;
+            spread.bid -= ticksize;
         else
-            spread.ask_price += ticksize;
+            spread.ask += ticksize;
 
         // only collapse the spread by up to half the distance
         if ( !expand )
@@ -372,20 +372,20 @@ void SpruceOverseer::adjustSpread( TickerInfo &spread, Coin limit, quint8 side, 
         }
 
         // TODO: NOTE: if the trader doesn't freeze, this prevents an almost infinite loop
-        if ( j > 2000 )
-        {
-            ticksize *= Coin("1.5");
-            j = 0;
+//        if ( j > 2000 )
+//        {
+//            ticksize *= Coin("1.5");
+//            j = 0;
 
-            if ( ++debug_reset_count > 50 )
-                kDebug() << "local warning: increased ticksize 50 times for spread" << spread;
-        }
+//            if ( ++debug_reset_count > 50 )
+//                kDebug() << "local warning: increased ticksize 50 times for spread" << spread;
+//        }
     }
 }
 
 void SpruceOverseer::adjustTicksizeToSpread( Coin &ticksize, TickerInfo &spread, const Coin &ticksize_minimum )
 {
-    const Coin diff = std::max( spread.bid_price, spread.ask_price ) - std::min( spread.bid_price, spread.ask_price );
+    const Coin diff = std::max( spread.bid, spread.ask ) - std::min( spread.bid, spread.ask );
     if ( diff > ticksize * 1000 )
         ticksize = std::max( diff / 1000, ticksize_minimum );
 }
@@ -397,7 +397,6 @@ TickerInfo SpruceOverseer::getSpreadLimit( const QString &market, bool order_dup
     const Coin trailing_limit_sell = spruce->getOrderTrailingLimit( SIDE_SELL );
 
     // get price ticksize
-    // TODO: fix this by reading price matcher ticksize from exchange
     const Coin ticksize_minimum = getPriceTicksizeForMarket( market );
     Coin ticksize = ticksize_minimum;
 
@@ -406,7 +405,7 @@ TickerInfo SpruceOverseer::getSpreadLimit( const QString &market, bool order_dup
     TickerInfo ticker_sell = getSpreadForSide( market, SIDE_SELL, order_duplicity, false, true );
 
     // first, vibrate one way
-    TickerInfo spread1 = TickerInfo( ticker_buy.bid_price, ticker_buy.ask_price );
+    TickerInfo spread1 = TickerInfo( ticker_buy.bid, ticker_buy.ask );
 
     // adjust ticksize
     adjustTicksizeToSpread( ticksize, ticker_buy, ticksize_minimum );
@@ -415,7 +414,7 @@ TickerInfo SpruceOverseer::getSpreadLimit( const QString &market, bool order_dup
     adjustSpread( spread1, trailing_limit_buy, SIDE_BUY, ticksize );
 
     // vibrate the other way
-    TickerInfo spread2 = TickerInfo( ticker_sell.bid_price, ticker_sell.ask_price );
+    TickerInfo spread2 = TickerInfo( ticker_sell.bid, ticker_sell.ask );
 
     // adjust ticksize
     adjustTicksizeToSpread( ticksize, ticker_buy, ticksize_minimum );
@@ -424,13 +423,13 @@ TickerInfo SpruceOverseer::getSpreadLimit( const QString &market, bool order_dup
     adjustSpread( spread2, trailing_limit_sell, SIDE_SELL, ticksize );
 
     // combine vibrations
-    TickerInfo combined_spread = TickerInfo( spread1.bid_price, spread2.ask_price );
+    TickerInfo combined_spread = TickerInfo( spread1.bid, spread2.ask );
 
     if ( !order_duplicity )
     {
-        Coin midprice = ( combined_spread.ask_price + combined_spread.bid_price ) / 2;
-        combined_spread.bid_price = midprice;
-        combined_spread.ask_price = midprice;
+        const Coin midprice = combined_spread.getMidPrice();
+        combined_spread.bid = midprice;
+        combined_spread.ask = midprice;
     }
 
     //kDebug() << "spread for" << market << ":" << combined_spread;
@@ -462,7 +461,7 @@ TickerInfo SpruceOverseer::getMidSpread( const QString &market )
         const MarketInfo &info = engine->market_info[ market ];
 
         // ensure prices are valid
-        if ( info.highest_buy.isZeroOrLess() || info.lowest_sell.isZeroOrLess() )
+        if ( !info.ticker.isValid() )
             continue;
 
         // use avg spread
@@ -471,21 +470,21 @@ TickerInfo SpruceOverseer::getMidSpread( const QString &market )
             samples++;
 
             // incorporate prices of this exchange
-            ret.bid_price += info.highest_buy;
-            ret.ask_price += info.lowest_sell;
+            ret.bid += info.ticker.bid;
+            ret.ask += info.ticker.ask;
         }
         // or, use combined spread edges
         else
         {
             // incorporate bid price of this exchange
-            if ( ret.bid_price.isZeroOrLess() || // bid doesn't exist yet
-                 ret.bid_price > info.highest_buy ) // bid is higher than the exchange bid
-                ret.bid_price = info.highest_buy;
+            if ( ret.bid.isZeroOrLess() || // bid doesn't exist yet
+                 ret.bid > info.ticker.bid ) // bid is higher than the exchange bid
+                ret.bid = info.ticker.bid;
 
             // incorporate ask price of this exchange
-            if ( ret.ask_price.isZeroOrLess() || // ask doesn't exist yet
-                 ret.ask_price < info.lowest_sell ) // ask is lower than the exchange ask
-                ret.ask_price = info.lowest_sell;
+            if ( ret.ask.isZeroOrLess() || // ask doesn't exist yet
+                 ret.ask < info.ticker.ask ) // ask is lower than the exchange ask
+                ret.ask = info.ticker.ask;
         }
     }
 
@@ -498,16 +497,16 @@ TickerInfo SpruceOverseer::getMidSpread( const QString &market )
         // divide by num of samples if necessary
         if ( samples > 1 )
         {
-            ret.bid_price /= samples;
-            ret.ask_price /= samples;
+            ret.bid /= samples;
+            ret.ask /= samples;
         }
     }
     else if ( !ret.isValid() )
         return TickerInfo();
 
-    Coin midprice = ( ret.ask_price + ret.bid_price ) / 2;
-    ret.bid_price = midprice;
-    ret.ask_price = midprice;
+    const Coin midprice = ret.getMidPrice();
+    ret.bid = midprice;
+    ret.ask = midprice;
 
     return ret;
 }
@@ -522,7 +521,6 @@ TickerInfo SpruceOverseer::getSpreadForSide( const QString &market, quint8 side,
 
     /// step 2: apply base greed value to spread
     // get price ticksize
-    // TODO: fix this by reading price matcher ticksize from exchange
     const Coin ticksize_minimum = getPriceTicksizeForMarket( market );
     Coin ticksize = ticksize_minimum;
 
@@ -563,22 +561,22 @@ TickerInfo SpruceOverseer::getSpreadForSide( const QString &market, quint8 side,
         // the ask price, etc.
         if ( taker_mode )
         {
-            Coin tmp = ret.ask_price;
-            ret.ask_price = ret.bid_price;
-            ret.bid_price = tmp;
+            const Coin tmp = ret.ask;
+            ret.ask = ret.bid;
+            ret.bid = tmp;
         }
     }
     else // if order duplicity is off, run divide-conquer on the price at the center of the spread
     {
-        Coin midprice = ( ret.ask_price + ret.bid_price ) / 2;
-        ret.bid_price = midprice;
-        ret.ask_price = midprice;
+        const Coin midprice = ret.getMidPrice();
+        ret.bid = midprice;
+        ret.ask = midprice;
     }
 
     return ret;
 }
 
-Coin SpruceOverseer::getPriceTicksizeForMarket( const Market &market )
+Coin SpruceOverseer::getPriceTicksizeForMarket( const Market &market ) const
 {
     for ( QMap<quint8, Engine*>::const_iterator i = engine_map.begin(); i != engine_map.end(); i++ )
     {
@@ -590,7 +588,8 @@ Coin SpruceOverseer::getPriceTicksizeForMarket( const Market &market )
 
         const MarketInfo &info = engine->getMarketInfo( market );
 
-        return std::max( CoinAmount::SATOSHI, info.highest_buy / 100000 );
+        return std::max( info.matcher_ticksize,
+                         Coin( info.ticker.bid / 20000 ).truncatedByTicksize( info.matcher_ticksize ) );
     }
 
     return CoinAmount::SATOSHI;
@@ -763,14 +762,14 @@ void SpruceOverseer::runCancellors( Engine *engine, const QString &market, const
         Coin buy_price_limit, sell_price_limit;
         if ( phase_name.contains( CUSTOM_PHASE_0 ) )
         {
-            TickerInfo mid_spread = getMidSpread( market );
-            buy_price_limit = mid_spread.bid_price * Coin("0.99");
-            sell_price_limit = mid_spread.ask_price * Coin("1.01");
+            const TickerInfo mid_spread = getMidSpread( market );
+            buy_price_limit = mid_spread.bid * Coin("0.99");
+            sell_price_limit = mid_spread.ask * Coin("1.01");
         }
         else
         {
-            buy_price_limit = spread_limit.bid_price * Coin("0.999");
-            sell_price_limit = spread_limit.ask_price * Coin("1.001");
+            buy_price_limit = spread_limit.bid * Coin("0.999");
+            sell_price_limit = spread_limit.ask * Coin("1.001");
         }
 
         // cache actual side/price

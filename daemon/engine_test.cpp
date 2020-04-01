@@ -115,8 +115,8 @@ void EngineTest::test( Engine *e )
     assert( p3.sell_price == "0.00000063" );
 
     // insert ticker price to pass sanity check
-    e->market_info[ TEST_MARKET ].highest_buy = "0.00000001";
-    e->market_info[ TEST_MARKET ].lowest_sell = "0.00000100";
+    e->market_info[ TEST_MARKET ].ticker.bid = "0.00000001";
+    e->market_info[ TEST_MARKET ].ticker.ask = "0.00000100";
 
     // test addPosition()
     assert( e->positions->all().size() == 0 );
@@ -155,8 +155,8 @@ void EngineTest::test( Engine *e )
     ///
     /// if bid|asks are at 83|84, our buy fill at 83 goes to 84
     QVector<Position*> pp;
-    e->market_info[ TEST_MARKET ].highest_buy = "0.00000083";
-    e->market_info[ TEST_MARKET ].lowest_sell = "0.00000084";
+    e->market_info[ TEST_MARKET ].ticker.bid = "0.00000083";
+    e->market_info[ TEST_MARKET ].ticker.ask = "0.00000084";
 
     pp += e->addPosition( TEST_MARKET, SIDE_BUY,  "0.00000083", "0.00000084", "0.1", ACTIVE ); // 0
 
@@ -176,8 +176,8 @@ void EngineTest::test( Engine *e )
     ///
     /// if asks are at 100, our bid at 105 goes to 99
     pp.clear();
-    e->market_info[ TEST_MARKET ].highest_buy = "0.00000095";
-    e->market_info[ TEST_MARKET ].lowest_sell = "0.00000100";
+    e->market_info[ TEST_MARKET ].ticker.bid = "0.00000095";
+    e->market_info[ TEST_MARKET ].ticker.ask = "0.00000100";
 
     pp += e->addPosition( TEST_MARKET, SIDE_BUY,  "0.00000105", "0.00000200", "0.1", ACTIVE ); // 0
 
@@ -191,8 +191,8 @@ void EngineTest::test( Engine *e )
     ///
     /// if bids are at 50, our ask at 45 goes to 51
     pp.clear();
-    e->market_info[ TEST_MARKET ].highest_buy = "0.00000050";
-    e->market_info[ TEST_MARKET ].lowest_sell = "0.00000055";
+    e->market_info[ TEST_MARKET ].ticker.bid = "0.00000050";
+    e->market_info[ TEST_MARKET ].ticker.ask = "0.00000055";
 
     pp += e->addPosition( TEST_MARKET, SIDE_SELL,  "0.00000030", "0.00000045", "0.1", ACTIVE ); // 0
 
@@ -210,8 +210,8 @@ void EngineTest::test( Engine *e )
     ///
     /// 4 4 4 4 | 5 5 5
     ///
-    e->market_info[ TEST_MARKET ].highest_buy = "0.00000004";
-    e->market_info[ TEST_MARKET ].lowest_sell = "0.00000005";
+    e->market_info[ TEST_MARKET ].ticker.bid = "0.00000004";
+    e->market_info[ TEST_MARKET ].ticker.ask = "0.00000005";
     pp.clear();
     pp += e->addPosition( TEST_MARKET, SIDE_BUY,  "0.00000001", "0.00000002", "0.1", ACTIVE ); // 0
     pp += e->addPosition( TEST_MARKET, SIDE_BUY,  "0.00000002", "0.00000003", "0.1", ACTIVE ); // 1
@@ -240,8 +240,8 @@ void EngineTest::test( Engine *e )
     /// suppose our spread simultaneously fills at 55|60 and we set 55->57 and 60->58, ->58 slips to 56(57-1)
     /// we should get 56|57 and not fill our own orders
     ///
-    e->market_info[ TEST_MARKET ].highest_buy = "0.00000055";
-    e->market_info[ TEST_MARKET ].lowest_sell = "0.00000060";
+    e->market_info[ TEST_MARKET ].ticker.bid = "0.00000055";
+    e->market_info[ TEST_MARKET ].ticker.ask = "0.00000060";
     pp.clear();
     pp += e->addPosition( TEST_MARKET, SIDE_BUY,  "0.00000055", "0.00000057", "0.1", ACTIVE ); // 0
     pp += e->addPosition( TEST_MARKET, SIDE_SELL, "0.00000058", "0.00000060", "0.1", ACTIVE ); // 2
@@ -272,8 +272,8 @@ void EngineTest::test( Engine *e )
     ///
     /// hi/lo sort method would converge at 6|7 which would be suboptimal, 8|9 is much better
     ///
-    e->market_info[ TEST_MARKET ].highest_buy = "0.00000004";
-    e->market_info[ TEST_MARKET ].lowest_sell = "0.00000010";
+    e->market_info[ TEST_MARKET ].ticker.bid = "0.00000004";
+    e->market_info[ TEST_MARKET ].ticker.ask = "0.00000010";
     pp.clear();
     pp += e->addPosition( TEST_MARKET, SIDE_BUY,  "0.00000001", "0.00000007", "0.1", ACTIVE ); // 0
     pp += e->addPosition( TEST_MARKET, SIDE_BUY,  "0.00000002", "0.00000008", "0.1", ACTIVE ); // 1
@@ -307,8 +307,8 @@ void EngineTest::test( Engine *e )
 //    e->market_info[ TEST_MARKET ].order_landmark_thresh = 2;
 //    e->market_info[ TEST_MARKET ].order_max = 40;
 //    e->market_info[ TEST_MARKET ].order_min = 15;
-//    e->market_info[ TEST_MARKET ].highest_buy = "0.00000023";
-//    e->market_info[ TEST_MARKET ].lowest_sell = "0.00000033";
+//    e->market_info[ TEST_MARKET ].ticker.bid = "0.00000023";
+//    e->market_info[ TEST_MARKET ].ticker.ask = "0.00000033";
 //    pp.clear();
 //    pp += e->addPosition( TEST_MARKET, SIDE_BUY,  "0.00000006", "0.00000015", "0.1", ACTIVE ); // 0
 //    pp += e->addPosition( TEST_MARKET, SIDE_BUY,  "0.00000007", "0.00000016", "0.1", ACTIVE );

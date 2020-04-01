@@ -48,18 +48,19 @@ struct TickerInfo
     explicit TickerInfo( const Coin &_bid_price,
                          const Coin &_ask_price )
     {
-        bid_price = _bid_price;
-        ask_price = _ask_price;
+        bid = _bid_price;
+        ask = _ask_price;
     }
 
     operator QString() const { return QString( "bid: %1 ask: %2" )
-                                  .arg( bid_price )
-                                  .arg( ask_price ); }
+                                  .arg( bid )
+                                  .arg( ask ); }
 
-    bool isValid() const { return bid_price.isGreaterThanZero() && ask_price.isGreaterThanZero(); }
+    bool isValid() const { return bid.isGreaterThanZero() && ask.isGreaterThanZero(); }
+    Coin getMidPrice() const { return ( ask + bid ) / 2; }
 
-    Coin bid_price;
-    Coin ask_price;
+    Coin bid;
+    Coin ask;
 };
 
 class AvgResponseTime

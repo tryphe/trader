@@ -555,8 +555,8 @@ void CommandRunner::command_gethibuylosell( QStringList &args )
 
     for ( QHash<QString, MarketInfo>::const_iterator i = engine->getMarketInfoStructure().begin(); i != engine->getMarketInfoStructure().end(); i++ )
     {
-        const Coin &hi_buy  = i.value().highest_buy;
-        const Coin &lo_sell = i.value().lowest_sell;
+        const Coin &hi_buy  = i.value().ticker.bid;
+        const Coin &lo_sell = i.value().ticker.ask;
 
         // calculate pct difference
         Coin pct_diff = ( Coin( 1 ) - ( hi_buy / lo_sell ) ) * 100;

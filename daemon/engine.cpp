@@ -105,7 +105,7 @@ Position *Engine::addPosition( QString market_input, quint8 side, QString buy_pr
     MarketInfo &info = market_info[ market ];
 
     // check if bid/ask price exists
-    if ( info.highest_buy.isZeroOrLess() || info.lowest_sell.isZeroOrLess() )
+    if ( !info.ticker.isValid() )
     {
         kDebug() << "local error: ticker has not been read yet. (try again)";
         return nullptr;
@@ -190,10 +190,10 @@ Position *Engine::addPosition( QString market_input, quint8 side, QString buy_pr
 
     // anti-stupid check: did we put in a taker price that's <>10% of the current bid/ask?
     if ( !is_override && is_taker &&
-        ( ( side == SIDE_SELL && info.highest_buy.ratio( 0.9 ) > Coin( sell_price ) ) ||  // bid * 0.9 > sell_price
-          ( side == SIDE_SELL && info.highest_buy.ratio( 1.1 ) < Coin( sell_price ) ) ||  // bid * 1.1 < sell_price
-          ( side == SIDE_BUY && info.lowest_sell.ratio( 1.1 ) < Coin( buy_price ) ) ||  // ask * 1.1 < buy_price
-          ( side == SIDE_BUY && info.lowest_sell.ratio( 0.9 ) > Coin( buy_price ) ) ) ) // ask * 0.9 > buy_price
+        ( ( side == SIDE_SELL && info.ticker.bid.ratio( 0.9 ) > Coin( sell_price ) ) ||  // bid * 0.9 > sell_price
+          ( side == SIDE_SELL && info.ticker.bid.ratio( 1.1 ) < Coin( sell_price ) ) ||  // bid * 1.1 < sell_price
+          ( side == SIDE_BUY && info.ticker.ask.ratio( 1.1 ) < Coin( buy_price ) ) ||  // ask * 1.1 < buy_price
+          ( side == SIDE_BUY && info.ticker.ask.ratio( 0.9 ) > Coin( buy_price ) ) ) ) // ask * 0.9 > buy_price
     {
         kDebug() << "local error: taker sell_price:" << sell_price << "buy_price:" << buy_price << "is >10% from spread, aborting order. add '-override' if intentional.";
         return nullptr;
@@ -247,8 +247,8 @@ Position *Engine::addPosition( QString market_input, quint8 side, QString buy_pr
     if ( engine_type == ENGINE_BINANCE )
     {
         // respect the binance limits with a 20% padding (we don't know what the 5min avg is, so we'll just compress the range)
-        Coin buy_limit = ( info.highest_buy * info.price_min_mul.ratio( 1.2 ) ).truncatedByTicksize( "0.00000001" );
-        Coin sell_limit = ( info.lowest_sell * info.price_max_mul.ratio( 0.8 ) ).truncatedByTicksize( "0.00000001" );
+        Coin buy_limit = ( info.ticker.bid * info.price_min_mul.ratio( 1.2 ) ).truncatedByTicksize( "0.00000001" );
+        Coin sell_limit = ( info.ticker.ask * info.price_max_mul.ratio( 0.8 ) ).truncatedByTicksize( "0.00000001" );
 
         // regardless of the order type, enforce lo/hi price >0 to be in bounds
         if ( ( pos->side == SIDE_BUY  && pos->buy_price.isGreaterThanZero() && buy_limit.isGreaterThanZero() && pos->buy_price < buy_limit ) ||
@@ -277,7 +277,7 @@ Position *Engine::addPosition( QString market_input, quint8 side, QString buy_pr
 
     // TODO: if the positon is simulated in an inverted market, don't run this. otherwise, run it
     // if it's not a taker order, enable local post-only mode
-//    if ( !is_taker )
+//    if ( info.is_tradeable && !is_taker )
 //    {
 //        // if we are setting a new position, try to obtain a better price
 //        if ( tryMoveOrder( pos ) )
@@ -285,22 +285,22 @@ Position *Engine::addPosition( QString market_input, quint8 side, QString buy_pr
 //            pos->applyOffset();
 //        }
 
-//        if ( pos->side == SIDE_SELL && pos->sell_price < info.lowest_sell )
+//        if ( pos->side == SIDE_SELL && pos->sell_price < info.ticker.ask )
 //        {
-//            info.lowest_sell = pos->sell_price;
+//            info.ticker.ask = pos->sell_price;
 
 //            // avoid collision
-//            if ( info.lowest_sell <= info.highest_buy )
-//                info.highest_buy = info.lowest_sell - info.price_ticksize;
+//            if ( info.lowest_sell <= info.bid )
+//                info.bid = info.ticker.ask - info.price_ticksize;
 //        }
 
-//        if ( pos->side == SIDE_BUY  && pos->buy_price > info.highest_buy )
+//        if ( pos->side == SIDE_BUY  && pos->buy_price > info.bid )
 //        {
-//            info.highest_buy = pos->buy_price;
+//            info.bid = pos->buy_price;
 
 //            // avoid collision
-//            if ( info.highest_buy >= info.lowest_sell )
-//                info.lowest_sell = info.highest_buy + info.price_ticksize;
+//            if ( info.bid >= info.ticker.ask )
+//                info.ticker.ask = info.bid + info.price_ticksize;
 //        }
 //    }
 
@@ -371,17 +371,17 @@ void Engine::fillNQ( const QString &order_id, qint8 fill_type , quint8 extra_dat
 #if defined(SPREAD_EXPAND_FULL)
     new_price = pos->price;
 #elif defined(SPREAD_EXPAND_HALF)
-    new_price = pos->side == SIDE_SELL ? ( pos->price + info.lowest_sell ) /2 :
-                                         ( pos->price + info.highest_buy ) /2;
+    new_price = pos->side == SIDE_SELL ? ( pos->price + info.ticker.ask ) /2 :
+                                         ( pos->price + info.bid ) /2;
 #endif
 
     // widen spread if we filled a buy < bid_price or sell > ask_price
     if ( new_price.isGreaterThanZero() )
     {
-        if      ( pos->side == SIDE_BUY  && pos->price < info.highest_buy )
-            info.highest_buy = new_price;
-        else if ( pos->side == SIDE_SELL && pos->price > info.lowest_sell )
-            info.lowest_sell = new_price;
+        if      ( pos->side == SIDE_BUY  && pos->price < info.ticker.bid )
+            info.ticker.bid = new_price;
+        else if ( pos->side == SIDE_SELL && pos->price > info.ticker.ask )
+            info.ticker.ask = new_price;
     }
 
     // increment ping-pong "alternate_size" variable to take the place of order_size after 1 fill
@@ -418,34 +418,45 @@ void Engine::updateStatsAndPrintFill( const QString &fill_type, Market market, c
                                       const QString &strategy_tag, Coin amount, Coin quantity, Coin price,
                                       const Coin &btc_commission )
 {
-    // if both are zero, return
+    // check for valid inputs. amount or quantity must exist, and all others must be valid
     if ( amount.isZeroOrLess() && quantity.isZeroOrLess() )
     {
-        kDebug() << "engine error: amount and quantity are both <= zero for fill" << market << order_id << "amount:" << amount << "qty:" << quantity << "@" << price;
+        kDebug() << "engine error: amount and quantity are both <= zero for" << market << order_id << "amount:" << amount << "qty:" << quantity << "@" << price;
+        return;
+    }
+    else if ( price.isZeroOrLess() )
+    {
+        kDebug() << "engine error: price is <= zero for" << market << order_id << "amount:" << amount << "qty:" << quantity << "@" << price;
         return;
     }
 
-    // found beta level trade, convert prices and volumes to base currency (for stats consistency)
+    /// found beta level trade, convert prices and volumes to base currency using an estimated conversion rate
     if ( market.getBase() != spruce->getBaseCurrency() &&
          market.getQuote() != spruce->getBaseCurrency() )
     {
-        const Coin price_in_btc = getMarketInfo( Market( spruce->getBaseCurrency(), market.getBase() ) ).highest_buy;
+        const Coin price_in_btc = getMarketInfo( Market( spruce->getBaseCurrency(), market.getBase() ) ).ticker.bid;
 
-        if ( price_in_btc.isGreaterThanZero() )
+        // check for valid price
+        if ( !price_in_btc.isGreaterThanZero() )
         {
-            // if the quantity wasn't supplied, estimate it in btc
-            if ( quantity.isZeroOrLess() )
-            {
-                quantity = amount;
-                amount = quantity * price_in_btc;
-            }
-            else if ( amount.isZeroOrLess() )
-            {
-                amount = quantity;
-                quantity = amount / price_in_btc;
-            }
+            kDebug() << "engine error: ticker price is <= zero for" << market << order_id << "amount:" << amount << "qty:" << quantity << "@" << price << "ticker:" << price_in_btc;
+            return;
+        }
+
+        // if the quantity wasn't supplied, transform qty to the market base
+        if ( quantity.isZeroOrLess() )
+        {
+            quantity = amount / price;
+            amount = quantity * price_in_btc;
+        }
+        // vice versa, do the opposite
+        else if ( amount.isZeroOrLess() )
+        {
+            amount = quantity * price;
+            quantity = amount / price_in_btc;
         }
     }
+    /// found a market with our base currency in it, use direct conversion rate
     else
     {
         // one of these values should be zero, unless the exchange supplies both
@@ -759,8 +770,8 @@ void Engine::processTicker( BaseREST *base_rest_module, const QMap<QString, Tick
     {
         const Market market = i.key();
         const TickerInfo &ticker = i.value();
-        const Coin &ask = ticker.ask_price;
-        const Coin &bid = ticker.bid_price;
+        const Coin &ask = ticker.ask;
+        const Coin &bid = ticker.bid;
 
         // check for missing information
         if ( ask.isZeroOrLess() || bid.isZeroOrLess() )
@@ -769,8 +780,8 @@ void Engine::processTicker( BaseREST *base_rest_module, const QMap<QString, Tick
         // update values for market
         MarketInfo &info = market_info[ market ];
 
-        info.highest_buy = bid;
-        info.lowest_sell = ask;
+        info.ticker.bid = bid;
+        info.ticker.ask = ask;
         info.is_tradeable = true;
 
         // TODO: make this faster
@@ -782,8 +793,8 @@ void Engine::processTicker( BaseREST *base_rest_module, const QMap<QString, Tick
         if ( !info_inverse.is_tradeable )
         {
             // cross prices
-            info_inverse.highest_buy = CoinAmount::COIN / ask;
-            info_inverse.lowest_sell = CoinAmount::COIN / bid;
+            info_inverse.ticker.bid = CoinAmount::COIN / ask;
+            info_inverse.ticker.ask = CoinAmount::COIN / bid;
 
             // cross ticksizes (probably not needed)
 //            info_inverse.price_ticksize = info.quantity_ticksize;
@@ -826,8 +837,8 @@ void Engine::processTicker( BaseREST *base_rest_module, const QMap<QString, Tick
 
             const TickerInfo &ticker = ticker_data[ market ];
 
-            const Coin &ask = ticker.ask_price;
-            const Coin &bid = ticker.bid_price;
+            const Coin &ask = ticker.ask;
+            const Coin &bid = ticker.bid;
 
             // check for equal bid/ask
             if ( ask <= bid )
@@ -1238,8 +1249,8 @@ void Engine::findBetterPrice( Position *const &pos )
     bool is_buy = ( pos->side == SIDE_BUY );
     const QString &market = pos->market;
     MarketInfo &info = market_info[ market ];
-    Coin &hi_buy = info.highest_buy;
-    Coin &lo_sell = info.lowest_sell;
+    Coin &hi_buy = info.ticker.bid;
+    Coin &lo_sell = info.ticker.ask;
     Coin ticksize;
 
     if ( engine_type == ENGINE_BINANCE )
@@ -1270,12 +1281,12 @@ void Engine::findBetterPrice( Position *const &pos )
                      << "with lo_sell at" << lo_sell;
 
         // set new boundary
-        info.lowest_sell = pos->buy_price;
+        info.ticker.ask = pos->buy_price;
         lo_sell = pos->buy_price;
 
         // avoid collision
-        if ( info.lowest_sell <= info.highest_buy )
-            info.highest_buy = info.lowest_sell - info.price_ticksize;
+        if ( info.ticker.ask <= info.ticker.bid )
+            info.ticker.bid = info.ticker.ask - info.price_ticksize;
     }
     // adjust hi_buy
     else if ( settings->should_adjust_hibuy_losell &&
@@ -1288,12 +1299,12 @@ void Engine::findBetterPrice( Position *const &pos )
                      << "with hi_buy at" << hi_buy;
 
         // set new boundary
-        info.highest_buy = pos->sell_price;
+        info.ticker.bid = pos->sell_price;
         hi_buy = pos->sell_price;
 
         // avoid collision
-        if ( info.highest_buy >= info.lowest_sell )
-            info.lowest_sell = info.highest_buy + info.price_ticksize;
+        if ( info.ticker.bid >= info.ticker.ask )
+            info.ticker.ask = info.ticker.bid + info.price_ticksize;
     }
 
     quint8 haggle_type = 0;
@@ -1417,8 +1428,8 @@ bool Engine::tryMoveOrder( Position* const &pos )
 
     const QString &market = pos->market;
     MarketInfo &info = market_info[ market ];
-    Coin &hi_buy = info.highest_buy;
-    Coin &lo_sell = info.lowest_sell;
+    Coin &hi_buy = info.ticker.bid;
+    Coin &lo_sell = info.ticker.ask;
 
     // return early when no ticker is set
     if ( hi_buy.isZeroOrLess() || lo_sell.isZeroOrLess() )
