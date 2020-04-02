@@ -430,14 +430,14 @@ void Engine::updateStatsAndPrintFill( const QString &fill_type, Market market, c
         return;
     }
 
-    Market beta_market_0, beta_market_1;
+    Market alpha_market_0, alpha_market_1;
     Coin market_0_quantity;
     /// found beta level trade, convert prices and volumes to base currency using an estimated conversion rate
     if ( market.getBase() != spruce->getBaseCurrency() &&
          market.getQuote() != spruce->getBaseCurrency() )
     {
-        beta_market_0 = Market( spruce->getBaseCurrency(), market.getBase() );
-        beta_market_1 = Market( spruce->getBaseCurrency(), market.getQuote() );
+        alpha_market_0 = Market( spruce->getBaseCurrency(), market.getBase() );
+        alpha_market_1 = Market( spruce->getBaseCurrency(), market.getQuote() );
 
         const Coin price_in_btc = getMarketInfo( Market( spruce->getBaseCurrency(), market.getBase() ) ).ticker.bid;
 
@@ -502,15 +502,15 @@ void Engine::updateStatsAndPrintFill( const QString &fill_type, Market market, c
     if ( strategy_tag.startsWith( "spruce" ) )
     {
         // beta order, adjust both quantities
-        if ( beta_market_0.isValid() && beta_market_1.isValid() )
+        if ( alpha_market_0.isValid() && alpha_market_1.isValid() )
         {
             const Coin quantity_offset_0 = ( side == SIDE_BUY ) ? -market_0_quantity
                                                                 :  market_0_quantity;
             const Coin quantity_offset_1 = ( side == SIDE_BUY ) ?  quantity
                                                                 : -quantity;
 
-            spruce->addToShortLonged( beta_market_0, quantity_offset_0 );
-            spruce->addToShortLonged( beta_market_1, quantity_offset_1 );
+            spruce->addToShortLonged( alpha_market_0, quantity_offset_0 );
+            spruce->addToShortLonged( alpha_market_1, quantity_offset_1 );
         }
         // normal order, subtract the qty of the alt (base doesn't need changing)
         else
