@@ -442,9 +442,9 @@ void Engine::updateStatsAndPrintFill( const QString &fill_type, Market market, c
         const Coin price_in_btc = getMarketInfo( Market( spruce->getBaseCurrency(), market.getBase() ) ).ticker.bid;
 
         // check for valid price
-        if ( !price_in_btc.isGreaterThanZero() )
+        if ( !is_testing && !price_in_btc.isGreaterThanZero() )
         {
-            kDebug() << "engine error: ticker price is <= zero for" << market << order_id << "amount:" << amount << "qty:" << quantity << "@" << price << "ticker:" << price_in_btc;
+            kDebug() << "engine error: ticker price is <= zero for" << Market( spruce->getBaseCurrency(), market.getBase() ) << order_id << "amount:" << amount << "qty:" << quantity << "@" << price << "ticker:" << price_in_btc;
             return;
         }
 
