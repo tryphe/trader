@@ -215,10 +215,10 @@ void SpruceOverseer::onSpruceUp()
                         continue;
 
                     // cache some order settings
-                    const Coin order_size_unscaled = spruce->getOrderSize( market );
+                    const Coin order_size_default = spruce->getOrderSize( market );
                     const Coin order_nice = ( market_phase == CUSTOM_PHASE_0 ) ? spruce->getOrderNiceCustom( market, side ) :
                                                                                  spruce->getOrderNice( market, side );
-                    const Coin order_size_limit = order_size_unscaled * order_nice;
+                    const Coin order_size_limit = order_size_default * order_nice;
 
                     // cache amount to short/long
                     const Coin amount_to_shortlong = spruce->getCurrencyPriceByMarket( market ) * qty_to_shortlong;
@@ -233,7 +233,7 @@ void SpruceOverseer::onSpruceUp()
                     /// for duplicity phases, detect conflicting positions for this market within the spread distance limit
                     if ( market_phase != CUSTOM_PHASE_0 )
                     {
-                        const Coin spread_put_threshold = order_size_unscaled * spruce->getOrderNiceSpreadPut( side );
+                        const Coin spread_put_threshold = order_size_default * spruce->getOrderNiceSpreadPut( side );
 
                         // declare spread reduce here so we can print/evalulate it after
                         Coin spread_reduce;
@@ -296,16 +296,15 @@ void SpruceOverseer::onSpruceUp()
                     const Coin spruce_active_for_side = engine->positions->getActiveSpruceEquityTotal( market, phase_name, side, Coin() );
                     //const Coin spruce_active_for_side_up_to_flux_price = engine->positions->getActiveSpruceEquityTotal( market, side, price_to_use );
 
-                    // calculate order size, prevent going over amount_to_shortlong_abs but also prevent going under order_size_unscaled
+                    // calculate order size, prevent going over amount_to_shortlong_abs but also prevent going under order_size_default
                     const int ORDER_CHUNKS_ESTIMATE = 10;
-                    const Coin order_size = ( market_phase == CUSTOM_PHASE_0 ) ? amount_to_shortlong_abs - order_size_limit - spruce_active_for_side:
-                                            std::min( std::max( order_size_unscaled, amount_to_shortlong_abs - spruce_active_for_side ),
-                                                      std::max( order_size_unscaled, amount_to_shortlong_abs / ORDER_CHUNKS_ESTIMATE ) );
+                    const Coin order_size = ( market_phase == CUSTOM_PHASE_0 ) ? std::max( order_size_default, amount_to_shortlong_abs - order_size_limit - spruce_active_for_side ):
+                                            std::min( std::max( order_size_default, amount_to_shortlong_abs - spruce_active_for_side ),
+                                                      std::max( order_size_default, amount_to_shortlong_abs / ORDER_CHUNKS_ESTIMATE ) );
 
                     // don't go over the abs value of our new projected position, and also regard nice value
                     // TODO: once we use smoothing for sp3 calculation, use spruce_active_for_side_up_to_flux_price
-                    if ( order_size < order_size_unscaled ||
-                         spruce_active_for_side + order_size > amount_to_shortlong_abs ||
+                    if ( spruce_active_for_side + order_size > amount_to_shortlong_abs ||
                          spruce_active_for_side + order_size_limit > amount_to_shortlong_abs )
                         continue;
 
