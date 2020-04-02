@@ -498,6 +498,7 @@ void WavesREST::parseMarketData( const QJsonObject &info )
         market_info.matcher_ticksize = matcher_ticksize;
 
         // some of these above values seem like nonsense, but only sometimes?
+        // TODO: fix a bug so we don't have to do this
         if ( market == "USDN_BTC" )
             market_info.price_ticksize = CoinAmount::SATOSHI *100;
         else if ( market == "USDN_USDT" )
