@@ -202,7 +202,9 @@ void SpruceOverseer::onSpruceUp()
                     }
 
                     // run cancellors for this phase every iteration
-                    runCancellors( engine, market, side, phase_name, side == SIDE_BUY ? buy_price : sell_price );
+                    const Coin cancel_thresh_price = ( market_phase == CUSTOM_PHASE_0 ) ? Coin() :
+                                                     ( side == SIDE_BUY ) ? buy_price : sell_price;
+                    runCancellors( engine, market, side, phase_name, cancel_thresh_price );
 
                     const Coin qty_to_shortlong = i.value() * market_allocation;
                     const bool is_buy = qty_to_shortlong.isZeroOrLess();
@@ -785,13 +787,16 @@ void SpruceOverseer::runCancellors( Engine *engine, const QString &market, const
             continue;
         }
 
-        // cache actual flux price
-        const Coin flux_price_actual = is_inverse ? ( CoinAmount::COIN / flux_price ) : flux_price;
+        // skip orders outside flux price
+        if ( flux_price.isGreaterThanZero() )
+        {
+            const Coin flux_price_actual = is_inverse ? ( CoinAmount::COIN / flux_price ) : flux_price;
 
-        // for cancellor 2, only try to cancel positions within the flux bounds
-        if ( ( side_actual == SIDE_BUY  && price_actual < flux_price_actual ) ||
-             ( side_actual == SIDE_SELL && price_actual > flux_price_actual ) )
-            continue;
+            // for cancellor 2, only try to cancel positions within the flux bounds
+            if ( ( side_actual == SIDE_BUY  && price_actual < flux_price_actual ) ||
+                 ( side_actual == SIDE_SELL && price_actual > flux_price_actual ) )
+                continue;
+        }
 
         const QString exchange_market_key = QString( "%1-%2" )
                                             .arg( engine->engine_type )
