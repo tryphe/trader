@@ -231,13 +231,13 @@ Position *Engine::addPosition( QString market_input, quint8 side, QString buy_pr
     }
 
     // check for minimum position size
-    const Coin minimum_order_size = engine_type == ENGINE_BITTREX  ? Coin( BITTREX_MINIMUM_ORDER_SIZE ) :
-                                    engine_type == ENGINE_BINANCE  ? Coin( BINANCE_MINIMUM_ORDER_SIZE ) :
-                                    engine_type == ENGINE_POLONIEX ? Coin( POLONIEX_MINIMUM_ORDER_SIZE ) :
-                                    engine_type == ENGINE_WAVES    ? Coin( WAVES_MINIMUM_ORDER_SIZE ) :
-                                                                    Coin();
+    static const Coin minimum_order_size = engine_type == ENGINE_BITTREX  ? Coin( BITTREX_MINIMUM_ORDER_SIZE ) :
+                                           engine_type == ENGINE_BINANCE  ? Coin( BINANCE_MINIMUM_ORDER_SIZE ) :
+                                           engine_type == ENGINE_POLONIEX ? Coin( POLONIEX_MINIMUM_ORDER_SIZE ) :
+                                           engine_type == ENGINE_WAVES    ? Coin( WAVES_MINIMUM_ORDER_SIZE ) :
+                                                                            Coin();
 
-    if ( pos->amount < Coin( minimum_order_size ) - CoinAmount::SATOSHI )
+    if ( pos->amount < minimum_order_size - CoinAmount::SATOSHI )
     {
         kDebug() << "local warning: failed to set order: size" << pos->amount << "is under the minimum size" << minimum_order_size;
         return nullptr;
@@ -1433,11 +1433,8 @@ void Engine::sendCancel( const QString &order_number, Position * const &pos, con
 
 bool Engine::yieldToFlowControl()
 {
-    return engine_type == ENGINE_BITTREX  ? rest_arr.value( ENGINE_BITTREX  )->yieldToFlowControl() :
-           engine_type == ENGINE_BINANCE  ? rest_arr.value( ENGINE_BINANCE  )->yieldToFlowControl() :
-           engine_type == ENGINE_POLONIEX ? rest_arr.value( ENGINE_POLONIEX )->yieldToFlowControl() :
-           engine_type == ENGINE_WAVES    ? rest_arr.value( ENGINE_WAVES    )->yieldToFlowControl() :
-                                            false;
+    return rest_arr.value( engine_type ) != nullptr ? rest_arr.value( engine_type )->yieldToFlowControl() :
+                                                      false;
 }
 
 void Engine::onEngineMaintenance()
