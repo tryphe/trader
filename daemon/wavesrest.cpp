@@ -630,7 +630,7 @@ void WavesREST::parseOrderStatus( const QJsonObject &info, Request *const &reque
     MarketInfo &market_info = engine->getMarketInfo( pos->market );
 
     const QString &order_status = info.value( "status" ).toString();
-    const Coin filled_quantity = market_info.quantity_ticksize * info.value( "filledAmount" ).toVariant().toULongLong();
+    Coin filled_quantity = market_info.quantity_ticksize * info.value( "filledAmount" ).toVariant().toULongLong();
     //const Coin filled_fee = CoinAmount::SATOSHI * info.value( "filledFee" ).toVariant().toULongLong();
 
     //kDebug() << "order status" << order_id << ":" << order_status;
@@ -650,7 +650,14 @@ void WavesREST::parseOrderStatus( const QJsonObject &info, Request *const &reque
     // we cancelled the order out but it got filled or cancelled
     else if ( order_status == "Cancelled" )
     {
-        // order might be partially filled in this state
+        // clamp qty to original amount
+        if ( filled_quantity > pos->quantity )
+        {
+            filled_quantity = pos->quantity;
+            kDebug() << "local warning: processed filled quantity" << filled_quantity << "greater than position quantity" << pos->quantity << ", clamping to position quantity";
+        }
+
+        // process partially filled amount
         if ( filled_quantity.isGreaterThanZero() )
             engine->updateStatsAndPrintFill( "getorder", pos->market, pos->order_number, pos->side, pos->strategy_tag, Coin(), filled_quantity, pos->price, Coin() );
 
