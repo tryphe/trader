@@ -123,8 +123,8 @@ Position *Engine::addPosition( QString market_input, quint8 side, QString buy_pr
 
     const bool is_onetime = type.startsWith( "onetime" );
     const bool is_taker = type.contains( "-taker" );
-    const bool is_ghost = type == GHOST;
-    const bool is_active = type == ACTIVE;
+    const bool is_ghost = type.startsWith( GHOST );
+    const bool is_active = type.startsWith( ACTIVE );
     const bool is_override = type.contains( "-override" );
 
     // check for incorrect order type
@@ -167,7 +167,6 @@ Position *Engine::addPosition( QString market_input, quint8 side, QString buy_pr
                  << sell_price << "lo price" << buy_price << "size" << order_size << "alternate size" << alternate_size;
         return nullptr;
     }
-
     // reformat strings
     QString formatted_buy_price = Coin( buy_price );
     QString formatted_sell_price = Coin( sell_price );
@@ -265,7 +264,7 @@ Position *Engine::addPosition( QString market_input, quint8 side, QString buy_pr
     pos->is_taker = is_taker;
 
     // allow one-time orders to set a timeout
-    if ( is_onetime && type.contains( "-timeout" ) )
+    if ( type.contains( "-timeout" ) )
     {
         bool ok = true;
         int read_from = type.indexOf( "-timeout" ) + 8;
