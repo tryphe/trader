@@ -918,8 +918,9 @@ void Engine::processCancelledOrder( Position * const &pos )
 {
     // pos must be valid!
 
-    // we succeeded at resetting(cancelling) a slippage position, now put it back to the -same side- and at its original prices
-    if ( pos->is_slippage && pos->cancel_reason == CANCELLING_FOR_SLIPPAGE_RESET )
+    // we succeeded at cancelling a slippage position or timed out position, now put it back to the -same side- and at its original prices
+    if ( ( pos->is_slippage && pos->cancel_reason == CANCELLING_FOR_SLIPPAGE_RESET ) ||
+         ( !pos->is_onetime && pos->cancel_reason == CANCELLING_FOR_MAX_AGE ) )
     {
         if ( pos->strategy_tag.startsWith( "spruce" ) )
         {
@@ -1609,7 +1610,6 @@ void Engine::onCheckTimeouts()
 
         // search for one-time order with age > max_age_minutes
         if ( !pos->is_cancelling &&
-              pos->is_onetime &&
               pos->order_set_time > 0 &&
               pos->max_age_epoch > 0 &&
               current_time >= pos->max_age_epoch )
