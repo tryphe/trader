@@ -351,7 +351,6 @@ void SpruceOverseer::adjustSpread( TickerInfo &spread, Coin limit, quint8 side, 
     }
 
     quint32 j = ( side == SIDE_BUY ) ? 0 : 1;
-//    quint32 debug_reset_count = 0;
 
     while ( expand ? spread.bid > spread.ask * limit :
                      spread.bid < spread.ask * limit )
@@ -371,22 +370,14 @@ void SpruceOverseer::adjustSpread( TickerInfo &spread, Coin limit, quint8 side, 
             if ( moved >= diff_threshold )
                 break;
         }
-
-        // TODO: NOTE: if the trader doesn't freeze, this prevents an almost infinite loop
-//        if ( j > 2000 )
-//        {
-//            ticksize *= Coin("1.5");
-//            j = 0;
-
-//            if ( ++debug_reset_count > 50 )
-//                kDebug() << "local warning: increased ticksize 50 times for spread" << spread;
-//        }
     }
 }
 
 void SpruceOverseer::adjustTicksizeToSpread( Coin &ticksize, TickerInfo &spread, const Coin &ticksize_minimum )
 {
     const Coin diff = std::max( spread.bid, spread.ask ) - std::min( spread.bid, spread.ask );
+
+    // clamp adjustSpread() to 1000 iterations
     if ( diff > ticksize * 1000 )
         ticksize = std::max( diff / 1000, ticksize_minimum );
 }
