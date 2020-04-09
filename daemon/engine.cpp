@@ -529,14 +529,14 @@ void Engine::updateStatsAndPrintFill( const QString &fill_type, Market market, c
                                  .arg( is_buy ? ">>>grn<<<" : ">>>red<<<" )
                                  .arg( is_buy ? "buy " : "sell" );
 
-        kDebug() << QString( "fill-%1: %2 %3 %4 (c %5 (q %6 @ %7 o %8" )
+        kDebug() << QString( "fill-%1: %2 %3 a %4 q %5 @ %6 s %7 o %8" )
                     .arg( fill_type, -8 )
                     .arg( side_str )
-                    .arg( market, MARKET_STRING_WIDTH )
-                    .arg( amount, PRICE_WIDTH )
-                    .arg( btc_commission + ")", -PRICE_WIDTH -1 )
-                    .arg( quantity + ")", -PRICE_WIDTH -1 )
+                    .arg( market, -MARKET_STRING_WIDTH )
+                    .arg( amount, -PRICE_WIDTH )
+                    .arg( quantity, -PRICE_WIDTH )
                     .arg( price, -PRICE_WIDTH )
+                    .arg( strategy_tag, -9 - MARKET_STRING_WIDTH )
                     .arg( order_id );
     }
 }
