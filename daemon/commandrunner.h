@@ -64,6 +64,7 @@ private:
     void command_getdailyvolume( QStringList &args );
     void command_getdailyfills( QStringList &args );
     void command_getalpha( QStringList &args );
+    void command_setalphamanual( QStringList &args );
     void command_getdailymarketvolume( QStringList &args );
     void command_getshortlong( QStringList &args );
     void command_gethibuylosell( QStringList &args );

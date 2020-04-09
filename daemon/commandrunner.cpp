@@ -53,6 +53,7 @@ CommandRunner::CommandRunner( const quint8 _engine_type, Engine *_e, QVector<Bas
     command_map.insert( "getdailyvolume", std::bind( &CommandRunner::command_getdailyvolume, this, _1 ) );
     command_map.insert( "getdailyfills", std::bind( &CommandRunner::command_getdailyfills, this, _1 ) );
     command_map.insert( "getalpha", std::bind( &CommandRunner::command_getalpha, this, _1 ) );
+    command_map.insert( "setalphamanual", std::bind( &CommandRunner::command_setalphamanual, this, _1 ) );
     command_map.insert( "getdailymarketvolume", std::bind( &CommandRunner::command_getdailymarketvolume, this, _1 ) );
     command_map.insert( "getshortlong", std::bind( &CommandRunner::command_getshortlong, this, _1 ) );
     command_map.insert( "gethibuylosell", std::bind( &CommandRunner::command_gethibuylosell, this, _1 ) );
@@ -534,6 +535,37 @@ void CommandRunner::command_getalpha( QStringList &args )
 {
     Q_UNUSED( args )
     engine->alpha->printAlpha();
+}
+
+void CommandRunner::command_setalphamanual( QStringList &args )
+{
+    if ( !checkArgs( args, 5 ) ) return;
+
+    const Market market = Market( args.value( 1 ) );
+    const quint8 side = args.value( 2 ).toLower() == "buy" ? SIDE_BUY : SIDE_SELL;
+    const Coin amt = args.value( 3 );
+    const Coin qty = args.value( 4 );
+    const Coin price = args.value( 5 );
+
+    if ( !market.isValid() )
+    {
+        kDebug() << "setalphamanual: invalid market" << market;
+        return;
+    }
+
+    if ( amt.isZeroOrLess() && qty.isZeroOrLess() )
+    {
+        kDebug() << "setalphamanual: invalid amount" << amt << "or quantity" << qty << "(one can be zero)";
+        return;
+    }
+
+    if ( price.isZeroOrLess() )
+    {
+        kDebug() << "setalphamanual: invalid price" << price;
+        return;
+    }
+
+    engine->updateStatsAndPrintFill( "extern", market, "external_order", side, "spruce_external", amt, qty, price, Coin() );
 }
 
 void CommandRunner::command_getdailymarketvolume( QStringList &args )
