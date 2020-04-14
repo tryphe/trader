@@ -193,7 +193,7 @@ void SpruceOverseer::onSpruceUp()
                         order_type += "-taker";
 
                         // set fast timeout
-                        order_type += "-timeout3";
+                        order_type += "-timeout5";
                     }
                     else
                     {
@@ -255,10 +255,6 @@ void SpruceOverseer::onSpruceUp()
                                 kDebug() << "spruceoverseer error: collapsed spread was not valid for phase" << phase_name;
                                 return;
                             }
-
-                            // set slow timeout
-                            order_type += QString( "-timeout%1" )
-                                          .arg( Global::getSecureRandomRange32( 120, 200 ) );
                         }
 
                         // cache spread distance limit for this side
@@ -292,15 +288,24 @@ void SpruceOverseer::onSpruceUp()
                         }
                     }
 
+                    // set slow timeout
+                    if ( !order_type.contains( "timeout" ) )
+                        order_type += QString( "-timeout%1" )
+                                      .arg( Global::getSecureRandomRange32( 60, 90 ) );
+
                     // check amount active
                     const Coin spruce_active_for_side = engine->positions->getActiveSpruceEquityTotal( market, phase_name, side, Coin() );
                     //const Coin spruce_active_for_side_up_to_flux_price = engine->positions->getActiveSpruceEquityTotal( market, side, price_to_use );
 
                     // calculate order size, prevent going over amount_to_shortlong_abs but also prevent going under order_size_default
-                    const int ORDER_CHUNKS_ESTIMATE = 10;
-                    const Coin order_size = ( market_phase == CUSTOM_PHASE_0 ) ? std::max( order_size_default, amount_to_shortlong_abs - order_size_limit - spruce_active_for_side ):
-                                            std::min( std::max( order_size_default, amount_to_shortlong_abs - spruce_active_for_side ),
-                                                      std::max( order_size_default, amount_to_shortlong_abs / ORDER_CHUNKS_ESTIMATE ) );
+                    const int ORDER_CHUNKS_ESTIMATE_PER_SIDE = 8;
+                    const Coin order_size = ( market_phase == CUSTOM_PHASE_0 ) ? std::max( order_size_default, amount_to_shortlong_abs - order_size_limit - spruce_active_for_side ) :
+                                            std::min( amount_to_shortlong_abs - order_size_limit - spruce_active_for_side,
+                                                      order_size_default + ( amount_to_shortlong_abs - order_size_limit ) / ORDER_CHUNKS_ESTIMATE_PER_SIDE );
+
+                    // don't go under the default order size
+                    if ( order_size < order_size_default )
+                        continue;
 
                     // don't go over the abs value of our new projected position, and also regard nice value
                     // TODO: once we use smoothing for sp3 calculation, use spruce_active_for_side_up_to_flux_price
