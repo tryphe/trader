@@ -763,10 +763,11 @@ void Engine::processOpenOrders( QVector<QString> &order_numbers, QMultiHash<QStr
             if ( pos->order_set_time >= request_time_sent_ms )
                 continue;
 
-            // on binance, just call getorder
-            if ( engine_type == ENGINE_BINANCE )
+            // on waves, just call getorder
+            if ( engine_type == ENGINE_WAVES )
             {
-                orders_for_polling += pos->order_number;
+                if ( !orders_for_polling.contains( pos->order_number ) )
+                    orders_for_polling += pos->order_number;
             }
             // add orders to process
             else

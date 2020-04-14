@@ -78,22 +78,22 @@ void TrexREST::init()
 
 void TrexREST::sendNamQueue()
 {
-    // check for cancelled orders that we should poll for partial fills
-    if ( nam_queue.isEmpty() &&
-         engine->orders_for_polling.size() > 0 )
-    {
-        const QString order_number = engine->orders_for_polling.takeFirst();
+    // stop sending commands if server is unresponsive
+    if ( yieldToServer() )
+        return;
 
-        // queue one request
-        sendRequest( TREX_COMMAND_GET_ORDER, "uuid=" + order_number, nullptr );
-    }
+    // check for cancelled orders that we should poll for partial fills
+//    if ( nam_queue.isEmpty() &&
+//         engine->orders_for_polling.size() > 0 )
+//    {
+//        const QString order_number = engine->orders_for_polling.takeFirst();
+
+//        // queue one request
+//        sendRequest( TREX_COMMAND_GET_ORDER, "uuid=" + order_number, nullptr );
+//    }
 
     // check for requests
     if ( nam_queue.isEmpty() )
-        return;
-
-    // stop sending commands if server is unresponsive
-    if ( yieldToServer() )
         return;
 
     QMultiMap<Coin/*weight*/,Request*> sorted_nam_queue;

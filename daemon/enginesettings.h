@@ -26,6 +26,11 @@ struct EngineSettings
             safety_delay_time = POLONIEX_SAFETY_DELAY;
             ticker_safety_delay_time = POLONIEX_SAFETY_DELAY;
         }
+        else if ( _engine_type == ENGINE_WAVES )
+        {
+            safety_delay_time = 5000;
+            ticker_safety_delay_time = 5000;
+        }
     }
     ~EngineSettings() {}
 

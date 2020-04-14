@@ -85,6 +85,22 @@ void WavesREST::sendNamQueue()
     if ( yieldToServer() )
         return;
 
+    // check for orders that we should poll
+    if ( nam_queue.isEmpty() )
+    {
+        while ( engine->orders_for_polling.size() > 0 )
+        {
+            const QString order_number = engine->orders_for_polling.takeFirst();
+
+            // if it's invalid, just toss it and goto the next id
+            if ( !engine->getPositionMan()->isValidOrderID( order_number ) )
+                continue;
+
+            getOrderStatus( engine->getPositionMan()->getByOrderID( order_number ) );
+            break;
+        }
+    }
+
     // optimistically query cancelling/cancelled orders
     if ( nam_queue.isEmpty() )
         onCheckCancellingOrders();
@@ -635,8 +651,12 @@ void WavesREST::parseOrderStatus( const QJsonObject &info, Request *const &reque
 
     //kDebug() << "order status" << order_id << ":" << order_status;
 
+    // clamp qty to original amount
     if ( filled_quantity > pos->quantity )
-        kDebug() << "local waves warning: filled quantity" << filled_quantity << "> pos quantity" << pos->quantity;
+    {
+        kDebug() << "local warning: processed filled quantity" << filled_quantity << "greater than position quantity" << pos->quantity << ", clamping to position quantity. ticksize" << market_info.quantity_ticksize << "filled_amount" << info.value( "filledAmount" ).toVariant().toULongLong();
+        filled_quantity = pos->quantity;
+    }
 
     // remove it from pending status orders
     if ( pos->is_cancelling )
@@ -650,13 +670,6 @@ void WavesREST::parseOrderStatus( const QJsonObject &info, Request *const &reque
     // we cancelled the order out but it got filled or cancelled
     else if ( order_status == "Cancelled" )
     {
-        // clamp qty to original amount
-        if ( filled_quantity > pos->quantity )
-        {
-            filled_quantity = pos->quantity;
-            kDebug() << "local warning: processed filled quantity" << filled_quantity << "greater than position quantity" << pos->quantity << ", clamping to position quantity";
-        }
-
         // process partially filled amount
         if ( filled_quantity.isGreaterThanZero() )
             engine->updateStatsAndPrintFill( "getorder", pos->market, pos->order_number, pos->side, pos->strategy_tag, Coin(), filled_quantity, pos->price, Coin() );
