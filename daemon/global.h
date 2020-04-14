@@ -43,6 +43,7 @@ static const quint8 FILL_HISTORY                            ( 2 );
 static const quint8 FILL_TICKER                             ( 3 );
 static const quint8 FILL_CANCEL                             ( 4 );
 static const quint8 FILL_WSS                                ( 5 );
+static const quint8 FILL_ORDERLIST                          ( 6 );
 
 static const QLatin1String BUY                              ( "buy" );
 static const QLatin1String SELL                             ( "sell" );

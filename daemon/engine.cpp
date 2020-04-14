@@ -333,13 +333,15 @@ void Engine::fillNQ( const QString &order_id, qint8 fill_type , quint8 extra_dat
     // 3 = ticker
     // 4 = cancel
     // 5 = wss
+    // 6 = order list
 
     static const QStringList fill_strings = QStringList()
             << "getorder"
             << "history"
             << "ticker"
             << "cancel"
-            << "wss";
+            << "wss"
+            << "ordlist";
 
     // check for correct value
     if ( fill_type < 1 || fill_type > 5 )
@@ -777,7 +779,7 @@ void Engine::processOpenOrders( QVector<QString> &order_numbers, QMultiHash<QStr
         }
 
         // on other exchanges, process filled order
-        processFilledOrders( filled_orders, FILL_GETORDER );
+        processFilledOrders( filled_orders, FILL_ORDERLIST );
     }
 }
 
