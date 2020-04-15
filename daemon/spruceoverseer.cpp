@@ -298,10 +298,11 @@ void SpruceOverseer::onSpruceUp()
                     //const Coin spruce_active_for_side_up_to_flux_price = engine->positions->getActiveSpruceEquityTotal( market, side, price_to_use );
 
                     // calculate order size, prevent going over amount_to_shortlong_abs but also prevent going under order_size_default
-                    const int ORDER_CHUNKS_ESTIMATE_PER_SIDE = 8;
-                    const Coin order_size = ( market_phase == CUSTOM_PHASE_0 ) ? std::max( order_size_default, amount_to_shortlong_abs - order_size_limit - spruce_active_for_side ) :
-                                            std::min( amount_to_shortlong_abs - order_size_limit - spruce_active_for_side,
-                                                      order_size_default + ( amount_to_shortlong_abs - order_size_limit ) / ORDER_CHUNKS_ESTIMATE_PER_SIDE );
+                    const int ORDER_CHUNKS_ESTIMATE_PER_SIDE = 9;
+                    const Coin order_size = ( market_phase == CUSTOM_PHASE_0 ) ?
+                                std::max( order_size_default, amount_to_shortlong_abs - order_size_limit - spruce_active_for_side ) :
+                                std::min( std::max( order_size_default, amount_to_shortlong_abs - order_size_limit - spruce_active_for_side ),
+                                          std::max( order_size_default, amount_to_shortlong_abs / ORDER_CHUNKS_ESTIMATE_PER_SIDE ) );
 
                     // don't go under the default order size
                     if ( order_size < order_size_default )
