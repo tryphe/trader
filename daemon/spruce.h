@@ -134,10 +134,17 @@ public:
     // snapback settings
     void setSnapbackState( const QString &market, const quint8 side, const bool state )
     {
+        // if the state of the other side of this market is enabled, disable that side
+        const bool opposite_side = ( side == SIDE_BUY ) ? SIDE_SELL : SIDE_BUY;
+        if ( getSnapbackState( market, opposite_side ) )
+            setSnapbackState( market, opposite_side, false );
+
+        // set state
         ( side == SIDE_BUY ) ? m_snapback_state_buys[ market ] = state :
                                m_snapback_state_sells[ market ] = state;
 
-        if ( state == true )
+        // if enabled, set the expiry time
+        if ( state )
         {
             const qint64 expiry_secs = QDateTime::currentSecsSinceEpoch() + m_snapback_expiry_secs;
 
