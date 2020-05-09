@@ -25,8 +25,6 @@ Spruce::Spruce()
     m_market_buy_max = "0.20000000";
     m_market_sell_max = "0.20000000";
     m_amplification = CoinAmount::COIN;
-
-    m_agitator_last_tick = QDateTime::currentSecsSinceEpoch();
 }
 
 Spruce::~Spruce()
@@ -121,44 +119,6 @@ Coin Spruce::getOrderGreedRandom( quint8 side ) const
 
     // don't return negative or zero greed value
     return ret.isZeroOrLess() ? m_order_greed : ret;
-}
-
-void Spruce::setAgitator( Coin start, Coin stop, Coin increment )
-{
-    m_amplification_start = start;
-    m_amplification_stop = stop;
-    m_amplification_increment = increment;
-}
-
-void Spruce::runAgitator()
-{
-    // check for hourly tick
-    if ( m_agitator_last_tick > QDateTime::currentSecsSinceEpoch() - 3600 )
-        return;
-
-    // refresh tick
-    m_agitator_last_tick = QDateTime::currentSecsSinceEpoch();
-
-    // check for valid variables
-    if ( m_amplification_start >= m_amplification_stop ||
-         m_amplification_start.isZeroOrLess() ||
-         m_amplification_stop.isZeroOrLess() ||
-         m_amplification_increment.isZero() )
-        return;
-
-    // if we're about to go over the stop, reverse polarity of increment
-    if ( m_amplification >= m_amplification_stop )
-        m_amplification_increment = -m_amplification_increment;
-
-    // if we're about to go under the start, reverse polarity of increment
-    if ( m_amplification <= m_amplification_start )
-        m_amplification_increment = -m_amplification_increment;
-
-    // agitate
-    const Coin old_amplification = m_amplification;
-    m_amplification += m_amplification_increment;
-
-    kDebug() << "[Spruce] agitator active, amplification" << old_amplification << "->" << m_amplification << ", increment" << m_amplification_increment;
 }
 
 void Spruce::addStartNode( QString _currency, QString _quantity, QString _price )
@@ -305,11 +265,6 @@ QString Spruce::getSaveState()
                                                     .arg( m_order_nice_custom_zerobound_buys )
                                                     .arg( m_order_nice_custom_sells )
                                                     .arg( m_order_nice_custom_zerobound_sells );
-
-    // save agitator
-    ret += QString( "setspruceagitator %1 %2 %3\n" ).arg( m_amplification_start )
-                                                    .arg( m_amplification_stop )
-                                                    .arg( m_amplification_increment );
 
     // save order nice market offsets
     for ( QMap<QString,Coin>::const_iterator i = m_order_nice_market_offset_buys.begin(); i != m_order_nice_market_offset_buys.end(); i++ )

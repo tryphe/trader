@@ -97,7 +97,6 @@ CommandRunner::CommandRunner( const quint8 _engine_type, Engine *_e, QVector<Bas
     command_map.insert( "setspruceordernicecustom", std::bind( &CommandRunner::command_setspruceordernicecustom, this, _1 ) );
     command_map.insert( "setspruceordernicemarketoffset", std::bind( &CommandRunner::command_setspruceordernicemarketoffset, this, _1 ) );
     command_map.insert( "setspruceallocation", std::bind( &CommandRunner::command_setspruceallocation, this, _1 ) );
-    command_map.insert( "setspruceagitator", std::bind( &CommandRunner::command_setspruceagitator, this, _1 ) );
     command_map.insert( "setsprucesnapback", std::bind( &CommandRunner::command_setsprucesnapback, this, _1 ) );
     command_map.insert( "getstatus", std::bind( &CommandRunner::command_getstatus, this, _1 ) );
     command_map.insert( "getconfig", std::bind( &CommandRunner::command_getconfig, this, _1 ) );
@@ -985,16 +984,6 @@ void CommandRunner::command_setspruceallocation( QStringList &args )
 
     spruce_overseer->spruce->setExchangeAllocation( args.value( 1 ),
                                                     Coin( args.value( 2 ) ) );
-}
-
-void CommandRunner::command_setspruceagitator( QStringList &args )
-{
-    if ( !checkArgs( args, 3 ) ) return;
-
-    spruce_overseer->spruce->setAgitator( args.value( 1 ), args.value( 2 ), args.value( 3 ) );
-    kDebug() << "spruce agitator start" << args.value( 1 )
-                              << "stop" << args.value( 2 )
-                              << "increment" << args.value( 3 );
 }
 
 void CommandRunner::command_setsprucesnapback( QStringList &args )

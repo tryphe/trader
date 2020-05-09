@@ -157,9 +157,6 @@ public:
     void setSnapbackExpiry( const qint64 secs ) { m_snapback_expiry_secs = secs; }
     qint64 getSnapbackExpiry() const { return m_snapback_expiry_secs; }
 
-    void setAgitator( Coin start, Coin stop, Coin increment );
-    void runAgitator();
-
     void addStartNode( QString _currency, QString _quantity, QString _price );
     void addLiveNode( QString _currency, QString _price );
     void addMarketBeta( Market m );
@@ -247,9 +244,7 @@ private:
     qint64 m_snapback_expiry_secs{ 60 * 60 * 24 }; // 1 day default
 
     Coin m_amplification;
-    Coin m_amplification_start, m_amplification_stop, m_amplification_increment; // agitator variables
     qint64 m_interval_secs{ 60 * 2 }; // 2min default
-    qint64 m_agitator_last_tick{ 0 }; // timestamp state for last agitator tick
     bool m_order_cancel_mode{ false }; // false = cancel edges, true = cancel random
 };
 
