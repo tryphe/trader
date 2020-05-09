@@ -59,9 +59,6 @@ void SpruceOverseer::onSpruceUp()
     if ( !spruce->isActive() )
         return;
 
-    // agitate
-    spruce->runAgitator();
-
     QMap<QString/*market*/,Coin> spread_price;
     const QList<QString> currencies = spruce->getCurrencies();
     QList<QString> markets;
