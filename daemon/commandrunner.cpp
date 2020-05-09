@@ -906,18 +906,17 @@ void CommandRunner::command_setsprucereserve( QStringList &args )
 
 void CommandRunner::command_setspruceordergreed( QStringList &args )
 {
-    if ( !checkArgs( args, 5 ) ) return;
+    if ( !checkArgs( args, 4 ) ) return;
 
     spruce_overseer->spruce->setOrderGreed( args.value( 1 ) );
     spruce_overseer->spruce->setOrderGreedMinimum( args.value( 2 ) );
     spruce_overseer->spruce->setOrderRandomBuy( args.value( 3 ) );
     spruce_overseer->spruce->setOrderRandomSell( args.value( 4 ) );
-    spruce_overseer->spruce->setSkew( args.value( 5 ) );
+
     kDebug() << "spruce order greed:" << spruce_overseer->spruce->getOrderGreed()
              << "greed minimum:" << spruce_overseer->spruce->getOrderGreedMinimum()
              << "buy random:" << spruce_overseer->spruce->getOrderRandomBuy()
-             << "sell random:" << spruce_overseer->spruce->getOrderRandomSell()
-             << "alpha skew:" << spruce_overseer->spruce->getSkew();
+             << "sell random:" << spruce_overseer->spruce->getOrderRandomSell();
 }
 
 void CommandRunner::command_setspruceordersize( QStringList &args )

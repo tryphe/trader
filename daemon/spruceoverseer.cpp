@@ -130,9 +130,6 @@ void SpruceOverseer::onSpruceUp()
                     return;
                 }
 
-                // adjust all other prices by surface skew
-                flux_price *= spruce->getSkew();
-
                 // if market matches selected market, select best price from duplicity price or mid price
                 if ( market == market_phase &&
                      market_phase != CUSTOM_PHASE_0 ) // on custom iteration, skip this step
@@ -299,9 +296,10 @@ void SpruceOverseer::onSpruceUp()
 
                     // calculate order size, prevent going over amount_to_shortlong_abs but also prevent going under order_size_default
                     const int ORDER_CHUNKS_ESTIMATE_PER_SIDE = 9;
+                    const int ORDER_SCALING_PHASE_0 = 3;
                     const Coin order_size = ( market_phase == CUSTOM_PHASE_0 ) ?
-                                std::max( order_size_default, amount_to_shortlong_abs - order_size_limit - spruce_active_for_side ) :
-                                std::min( std::max( order_size_default, amount_to_shortlong_abs - order_size_limit - spruce_active_for_side ),
+                                std::max( order_size_default * ORDER_SCALING_PHASE_0, ( amount_to_shortlong_abs - order_size_limit - spruce_active_for_side ) / ORDER_SCALING_PHASE_0 ) :
+                                std::min( std::max( order_size_default, amount_to_shortlong_abs - spruce_active_for_side ),
                                           std::max( order_size_default, amount_to_shortlong_abs / ORDER_CHUNKS_ESTIMATE_PER_SIDE ) );
 
                     // don't go under the default order size
@@ -314,13 +312,14 @@ void SpruceOverseer::onSpruceUp()
                          spruce_active_for_side + order_size_limit > amount_to_shortlong_abs )
                         continue;
 
-                    kDebug() << QString( "[%1 %2] %3 | coeff %4 | qty %5 | amt %6 | active %7 | spr %8" )
+                    kDebug() << QString( "[%1 %2] %3 | co %4 | q %5 | a %6[%7] | act %8 | dst %9" )
                                    .arg( phase_name, -MARKET_STRING_WIDTH - 9 )
                                    .arg( market, MARKET_STRING_WIDTH )
                                    .arg( side == SIDE_BUY ? buy_price : sell_price )
                                    .arg( spruce->getLastCoeffForMarket( market ).toString( 4 ), 7 )
-                                   .arg( qty_to_shortlong, 20 )
+                                   .arg( qty_to_shortlong, 16 )
                                    .arg( amount_to_shortlong, 13 )
+                                   .arg( amount_to_shortlong + ( is_buy ? order_size_limit : -order_size_limit ), 13 )
                                    .arg( spruce_active_for_side, 12 )
                                    .arg( spread_distance_limit.toString( 4 ) );
 

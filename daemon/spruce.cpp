@@ -21,7 +21,6 @@ Spruce::Spruce()
     m_order_greed_minimum = "0.975"; // contract greed up to this value
     m_order_greed_buy_randomness = "0.05";
     m_order_greed_sell_randomness = "0.05"; // randomly subtract tenths of a pct from greed up to this amount
-    m_skew = CoinAmount::COIN;
 
     m_market_buy_max = "0.20000000";
     m_market_sell_max = "0.20000000";
@@ -284,12 +283,11 @@ QString Spruce::getSaveState()
     ret += QString( "setspruceamplification %1\n" ).arg( m_amplification );
 
     // save spread tolerances
-    ret += QString( "setspruceordergreed %1 %2 %3 %4 %5\n" )
+    ret += QString( "setspruceordergreed %1 %2 %3 %4\n" )
             .arg( m_order_greed )
             .arg( m_order_greed_minimum )
             .arg( m_order_greed_buy_randomness )
-            .arg( m_order_greed_sell_randomness )
-            .arg( m_skew );
+            .arg( m_order_greed_sell_randomness );
 
     // save order size
     ret += QString( "setspruceordersize %1\n" ).arg( m_order_size );
