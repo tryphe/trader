@@ -296,22 +296,19 @@ void SpruceOverseer::onSpruceUp()
 
                     // check amount active
                     const Coin spruce_active_for_side = engine->positions->getActiveSpruceEquityTotal( market, phase_name, side, Coin() );
-                    //const Coin spruce_active_for_side_up_to_flux_price = engine->positions->getActiveSpruceEquityTotal( market, side, price_to_use );
 
                     // calculate order size, prevent going over amount_to_shortlong_abs but also prevent going under order_size_default
-                    const int ORDER_CHUNKS_ESTIMATE_PER_SIDE = 9;
+                    const int ORDER_CHUNKS_ESTIMATE_PER_SIDE = 10;
                     const int ORDER_SCALING_PHASE_0 = 3;
                     const Coin order_size = ( market_phase == MIDSPREAD_PHASE ) ?
-                                std::max( order_size_default * ORDER_SCALING_PHASE_0, ( amount_to_shortlong_abs - order_size_limit - spruce_active_for_side ) / ORDER_SCALING_PHASE_0 ) :
-                                std::min( std::max( order_size_default, amount_to_shortlong_abs - spruce_active_for_side ),
-                                          std::max( order_size_default, amount_to_shortlong_abs / ORDER_CHUNKS_ESTIMATE_PER_SIDE ) );
+                                std::max( order_size_default * ORDER_SCALING_PHASE_0, ( amount_to_shortlong_abs - spruce_active_for_side ) / ORDER_SCALING_PHASE_0 ) :
+                                std::max( order_size_default, ( amount_to_shortlong_abs - spruce_active_for_side ) / ORDER_CHUNKS_ESTIMATE_PER_SIDE );
 
                     // don't go under the default order size
                     if ( order_size < order_size_default )
                         continue;
 
                     // don't go over the abs value of our new projected position, and also regard nice value
-                    // TODO: once we use smoothing for sp3 calculation, use spruce_active_for_side_up_to_flux_price
                     if ( spruce_active_for_side + order_size > amount_to_shortlong_abs ||
                          spruce_active_for_side + order_size_limit > amount_to_shortlong_abs )
                         continue;
@@ -322,8 +319,8 @@ void SpruceOverseer::onSpruceUp()
                                    .arg( side == SIDE_BUY ? buy_price : sell_price )
                                    .arg( spruce->getLastCoeffForMarket( market ).toString( 4 ), 7 )
                                    .arg( qty_to_shortlong, 16 )
-                                   .arg( amount_to_shortlong, 13 )
-                                   .arg( amount_to_shortlong + ( is_buy ? order_size_limit : -order_size_limit ), 13 )
+                                   .arg( amount_to_shortlong, 13 ) // print amount to s/l
+                                   .arg( amount_to_shortlong + ( is_buy ? order_size_limit : -order_size_limit ), 13 ) // print amount to s/l less the nice buffer (the actionable amount)
                                    .arg( spruce_active_for_side, 12 )
                                    .arg( spread_distance_limit.toString( 4 ) );
 
