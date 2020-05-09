@@ -109,6 +109,7 @@ private:
     void command_setspruceordernicemarketoffset( QStringList &args );
     void command_setspruceallocation( QStringList &args );
     void command_setspruceagitator( QStringList &args );
+    void command_setsprucesnapback( QStringList &args );
     void command_spruceup( QStringList &args );
 
     void command_getstatus( QStringList &args );

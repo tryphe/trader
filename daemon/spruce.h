@@ -10,6 +10,7 @@
 #include <QMultiMap>
 #include <QVector>
 #include <QList>
+#include <QDebug>
 
 static const Coin DEFAULT_PROFILE_U = Coin("10");
 static const Coin DEFAULT_RESERVE = Coin("0.01");
@@ -69,18 +70,50 @@ public:
     Coin getOrderGreedMinimum() const { return m_order_greed_minimum; }
     Coin getOrderTrailingLimit( quint8 side ) const { return side == SIDE_BUY ? ( m_order_greed - m_order_greed_buy_randomness ) : CoinAmount::COIN - m_order_greed_sell_randomness; }
 
-    void setOrderNice( const quint8 side, Coin nice ) { ( side == SIDE_BUY ) ? m_order_nice_buys = nice :
-                                                                               m_order_nice_sells = nice ; }
-    Coin getOrderNice( const QString &market, const quint8 side ) const
+    void setOrderNice( const quint8 side, Coin nice, bool midspread_phase )
     {
-        return ( side == SIDE_BUY ) ? m_order_nice_buys + m_order_nice_market_offset_buys.value( market ) :
-                                      m_order_nice_sells + m_order_nice_market_offset_sells.value( market );
+        ( midspread_phase ) ? ( side == SIDE_BUY ) ? m_order_nice_custom_buys = nice : m_order_nice_custom_sells = nice :
+                              ( side == SIDE_BUY ) ? m_order_nice_buys = nice : m_order_nice_sells = nice;
+    }
+    Coin getOrderNice( const QString &market, const quint8 side, bool midspread_phase )
+    {
+        // if snapback is enabled, check to automatically disable snapback
+        const bool snapback_state = getSnapbackState( market, side );
+        if ( snapback_state )
+        {
+            const qint64 expiry_epoch = ( side == SIDE_BUY ) ? m_snapback_state_buys_expiry_secs.value( market ) :
+                                                               m_snapback_state_sells_expiry_secs.value( market );
+
+            if ( QDateTime::currentSecsSinceEpoch() >= expiry_epoch )
+                setSnapbackState( market, side, false );
+        }
+
+        // get base nice value for side
+        const Coin base = ( midspread_phase ) ? ( side == SIDE_BUY ) ? m_order_nice_custom_buys : m_order_nice_custom_sells :
+                                                ( side == SIDE_BUY ) ? m_order_nice_buys : m_order_nice_sells;
+
+        // apply per-market offset to side base
+        const Coin base_with_offset = ( side == SIDE_BUY ) ? base + m_order_nice_market_offset_buys.value( market ) :
+                                                             base + m_order_nice_market_offset_sells.value( market );
+
+        // apply snapback ratio (or not) to base+offset
+        return ( snapback_state ) ? base_with_offset * m_snapback_ratio :
+                                    base_with_offset;
     }
 
-    void setOrderNiceZeroBound( const quint8 side, Coin nice ) { ( side == SIDE_BUY ) ? m_order_nice_zerobound_buys = nice :
-                                                                                        m_order_nice_zerobound_sells = nice; }
-    Coin getOrderNiceZeroBound( const QString &market, const quint8 side ) const { return ( side == SIDE_BUY ) ? m_order_nice_zerobound_buys + m_order_nice_market_offset_zerobound_buys.value( market ) :
-                                                                                                                 m_order_nice_zerobound_sells + m_order_nice_market_offset_zerobound_sells.value( market ); }
+    void setOrderNiceZeroBound( const quint8 side, Coin nice, bool midspread_phase )
+    {
+        ( midspread_phase ) ? ( side == SIDE_BUY ) ? m_order_nice_custom_zerobound_buys = nice : m_order_nice_custom_zerobound_sells = nice :
+                              ( side == SIDE_BUY ) ? m_order_nice_zerobound_buys = nice : m_order_nice_zerobound_sells = nice;
+    }
+    Coin getOrderNiceZeroBound( const QString &market, const quint8 side, bool midspread_phase ) const
+    {
+        const Coin base = ( midspread_phase ) ? ( side == SIDE_BUY ) ? m_order_nice_custom_zerobound_buys : m_order_nice_custom_zerobound_sells :
+                                                ( side == SIDE_BUY ) ? m_order_nice_zerobound_buys : m_order_nice_zerobound_sells;
+
+        return ( side == SIDE_BUY ) ? base + m_order_nice_market_offset_zerobound_buys.value( market ) :
+                                      base + m_order_nice_market_offset_zerobound_sells.value( market );
+    }
 
     // spread reduction sensitivity
     void setOrderNiceSpreadPut( const quint8 side, Coin nice ) { ( side == SIDE_BUY ) ? m_order_nice_spreadput_buys = nice :
@@ -88,17 +121,7 @@ public:
     Coin getOrderNiceSpreadPut( const quint8 side ) const { return ( side == SIDE_BUY ) ? m_order_nice_spreadput_buys :
                                                                                           m_order_nice_spreadput_sells; }
 
-    // midspread nice values
-    void setOrderNiceCustom( const quint8 side, Coin nice ) { ( side == SIDE_BUY ) ? m_order_nice_custom_buys = nice :
-                                                                                     m_order_nice_custom_sells = nice ; }
-    Coin getOrderNiceCustom( const QString &market, const quint8 side ) const { return ( side == SIDE_BUY ) ? m_order_nice_custom_buys + m_order_nice_market_offset_buys.value( market ):
-                                                                                                              m_order_nice_custom_sells + m_order_nice_market_offset_sells.value( market ); }
-    void setOrderNiceCustomZeroBound( const quint8 side, Coin nice ) { ( side == SIDE_BUY ) ? m_order_nice_custom_zerobound_buys = nice :
-                                                                                              m_order_nice_custom_zerobound_sells = nice; }
-    Coin getOrderNiceCustomZeroBound( const QString &market, const quint8 side ) const { return ( side == SIDE_BUY ) ? m_order_nice_custom_zerobound_buys + m_order_nice_market_offset_zerobound_buys.value( market ) :
-                                                                                                                       m_order_nice_custom_zerobound_sells + m_order_nice_market_offset_zerobound_sells.value( market ); }
-
-    // nice+zero bound offets for each market+side
+    // nice+zero bound offets for each market+side on all phases
     void setOrderNiceMarketOffset( const QString &market, const quint8 side, Coin offset ) { ( side == SIDE_BUY ) ? m_order_nice_market_offset_buys[ market ] = offset :
                                                                                                                     m_order_nice_market_offset_sells[ market ] = offset; }
     Coin getOrderNiceMarketOffset( const QString &market, const quint8 side ) { return ( side == SIDE_BUY ) ? m_order_nice_market_offset_buys.value( market ) :
@@ -108,6 +131,31 @@ public:
     Coin getOrderNiceZeroBoundMarketOffset( const QString &market, const quint8 side ) { return ( side == SIDE_BUY ) ? m_order_nice_market_offset_zerobound_buys.value( market ) :
                                                                                                                        m_order_nice_market_offset_zerobound_sells.value( market ); }
 
+    // snapback settings
+    void setSnapbackState( const QString &market, const quint8 side, const bool state )
+    {
+        ( side == SIDE_BUY ) ? m_snapback_state_buys[ market ] = state :
+                               m_snapback_state_sells[ market ] = state;
+
+        if ( state == true )
+        {
+            const qint64 expiry_secs = QDateTime::currentSecsSinceEpoch() + m_snapback_expiry_secs;
+
+            ( side == SIDE_BUY ) ? m_snapback_state_buys_expiry_secs[ market ] = expiry_secs :
+                                   m_snapback_state_sells_expiry_secs[ market ] = expiry_secs;
+        }
+
+        kDebug() << "[Diffusion] Snapback" << ( ( state ) ? "enabled" : "disabled" ) << "for" << market << ( ( side == SIDE_BUY ) ? "buys" : "sells" );
+    }
+    bool getSnapbackState( const QString &market, const quint8 side ) const
+    {
+        return ( side == SIDE_BUY ) ? m_snapback_state_buys.value( market, false ) :
+                                      m_snapback_state_sells.value( market, false );
+    }
+    void setSnapbackRatio( const Coin &r ) { m_snapback_ratio = r; }
+    Coin getSnapbackRatio() const { return m_snapback_ratio; }
+    void setSnapbackExpiry( const qint64 secs ) { m_snapback_expiry_secs = secs; }
+    qint64 getSnapbackExpiry() const { return m_snapback_expiry_secs; }
 
     void setAgitator( Coin start, Coin stop, Coin increment );
     void runAgitator();
@@ -192,6 +240,11 @@ private:
     QMap<QString/*currency*/,Coin> m_last_coeffs;
     QVector<QMap<QString/*currency*/,Coin>> m_qtys;
     QList<Market> m_markets_beta;
+
+    QMap<QString, bool> m_snapback_state_buys, m_snapback_state_sells;
+    QMap<QString, qint64> m_snapback_state_buys_expiry_secs, m_snapback_state_sells_expiry_secs;
+    Coin m_snapback_ratio{ "0.1" }; // 0.1 default
+    qint64 m_snapback_expiry_secs{ 60 * 60 * 24 }; // 1 day default
 
     Coin m_amplification;
     Coin m_amplification_start, m_amplification_stop, m_amplification_increment; // agitator variables

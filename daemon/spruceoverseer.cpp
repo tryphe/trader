@@ -213,8 +213,7 @@ void SpruceOverseer::onSpruceUp()
 
                     // cache some order settings
                     const Coin order_size_default = spruce->getOrderSize( market );
-                    const Coin order_nice = ( market_phase == MIDSPREAD_PHASE ) ? spruce->getOrderNiceCustom( market, side ) :
-                                                                                 spruce->getOrderNice( market, side );
+                    const Coin order_nice = spruce->getOrderNice( market, side, market_phase == MIDSPREAD_PHASE );
                     const Coin order_size_limit = order_size_default * order_nice;
 
                     // cache amount to short/long
@@ -224,6 +223,14 @@ void SpruceOverseer::onSpruceUp()
                     // if we're under the nice size limit, skip conflict checks and order setting
                     if ( amount_to_shortlong_abs < order_size_limit )
                         continue;
+
+                    // we're over the nice value for the midspread phase.
+                    // this will modify nice values for all phases on this side on the next round of onSpruceUp() call to getOrderNice()
+                    if (  market_phase == MIDSPREAD_PHASE &&
+                         !spruce->getSnapbackState( market, side ) )
+                    {
+                        spruce->setSnapbackState( market, side, true );
+                    }
 
                     Coin spread_distance_limit;
 
@@ -802,8 +809,8 @@ void SpruceOverseer::runCancellors( Engine *engine, const QString &market, const
         const Coin amount_to_shortlong = spruce->getExchangeAllocation( exchange_market_key ) * spruce->getCurrencyPriceByMarket( market ) * spruce->getQuantityToShortLongNow( market );
 
         // get active tolerance
-        const Coin nice_zero_bound = ( phase_name.contains( MIDSPREAD_PHASE ) ) ? spruce->getOrderNiceCustomZeroBound( market, side_actual ) :
-                                                                                 spruce->getOrderNiceZeroBound( market, side_actual );
+        const bool is_midspread_phase = phase_name.contains( MIDSPREAD_PHASE );
+        const Coin nice_zero_bound = spruce->getOrderNiceZeroBound( market, side_actual, is_midspread_phase );
         const Coin zero_bound_tolerance = spruce->getOrderSize( market ) * nice_zero_bound;
 
         /// cancellor 2: look for active amount > amount_to_shortlong + order_size_limit
