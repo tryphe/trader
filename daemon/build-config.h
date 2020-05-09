@@ -1,7 +1,7 @@
 #ifndef BUILDCONFIG_H
 #define BUILDCONFIG_H
 
-#define BUILD_VERSION "1.79x10"
+#define BUILD_VERSION "1.79y"
 
 /// select your exchanges
 #define BITTREX_ENABLED
