@@ -17,7 +17,6 @@ class SpruceOverseer : public QObject
 {
     Q_OBJECT
 
-    friend class CommandRunner;
     friend class SpruceOverseerTest;
 
 public:
@@ -35,6 +34,7 @@ public:
     QMap<quint8, Engine*> engine_map;
     AlphaTracker *alpha{ nullptr };
     Spruce *spruce{ nullptr };
+    QTimer *spruce_timer{ nullptr };
 
 signals:
     void gotUserCommandChunk( QString &s ); // loaded settings file
@@ -56,7 +56,6 @@ private:
 
     QString m_last_midspread_output;
 
-    QTimer *spruce_timer{ nullptr };
     QTimer *autosave_timer{ nullptr };
 };
 
