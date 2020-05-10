@@ -252,6 +252,10 @@ QString Spruce::getSaveState()
     // save order size
     ret += QString( "setspruceordersize %1\n" ).arg( m_order_size );
 
+    // save order count
+    ret += QString( "setspruceordercount %1 %2\n" ).arg( m_orders_per_side_flux )
+                                                   .arg( m_orders_per_side_midspread );
+
     // save order size for normal phases
     ret += QString( "setspruceordernice %1 %2 %3 %4 %5 %6\n" ).arg( m_order_nice_buys )
                                                     .arg( m_order_nice_zerobound_buys )
