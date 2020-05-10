@@ -98,6 +98,7 @@ CommandRunner::CommandRunner( const quint8 _engine_type, Engine *_e, QVector<Bas
     command_map.insert( "setspruceordernicemarketoffset", std::bind( &CommandRunner::command_setspruceordernicemarketoffset, this, _1 ) );
     command_map.insert( "setspruceallocation", std::bind( &CommandRunner::command_setspruceallocation, this, _1 ) );
     command_map.insert( "setsprucesnapback", std::bind( &CommandRunner::command_setsprucesnapback, this, _1 ) );
+    command_map.insert( "getmidspreadstatus", std::bind( &CommandRunner::command_getmidspreadstatus, this, _1 ) );
     command_map.insert( "getstatus", std::bind( &CommandRunner::command_getstatus, this, _1 ) );
     command_map.insert( "getconfig", std::bind( &CommandRunner::command_getconfig, this, _1 ) );
     command_map.insert( "getinternal", std::bind( &CommandRunner::command_getinternal, this, _1 ) );
@@ -1000,6 +1001,13 @@ void CommandRunner::command_setsprucesnapback( QStringList &args )
 void CommandRunner::command_spruceup( QStringList & )
 {
     spruce_overseer->onSpruceUp();
+}
+
+void CommandRunner::command_getmidspreadstatus( QStringList &args )
+{
+    Q_UNUSED( args )
+
+    kDebug() << "Last midspread state:\n" + spruce_overseer->getLastMidphaseOutput();
 }
 
 void CommandRunner::command_getstatus( QStringList &args )

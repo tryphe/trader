@@ -30,6 +30,8 @@ public:
     void loadStats();
     void saveStats();
 
+    const QString &getLastMidphaseOutput() const { return m_last_midspread_output; }
+
     QMap<quint8, Engine*> engine_map;
     AlphaTracker *alpha{ nullptr };
     Spruce *spruce{ nullptr };
@@ -51,6 +53,8 @@ private:
     TickerInfo getMidSpread( const QString &market );
     TickerInfo getSpreadForSide( const QString &market, quint8 side, bool order_duplicity = false, bool taker_mode = false, bool include_limit_for_side = false, bool is_randomized = false, Coin greed_reduce = Coin() );
     Coin getPriceTicksizeForMarket( const Market &market ) const;
+
+    QString m_last_midspread_output;
 
     QTimer *spruce_timer{ nullptr };
     QTimer *autosave_timer{ nullptr };

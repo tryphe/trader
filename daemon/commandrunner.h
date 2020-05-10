@@ -111,6 +111,7 @@ private:
     void command_setsprucesnapback( QStringList &args );
     void command_spruceup( QStringList &args );
 
+    void command_getmidspreadstatus( QStringList &args );
     void command_getstatus( QStringList &args );
     void command_getconfig( QStringList &args );
     void command_getinternal( QStringList &args );

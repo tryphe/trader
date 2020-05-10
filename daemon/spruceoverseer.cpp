@@ -59,6 +59,8 @@ void SpruceOverseer::onSpruceUp()
     if ( !spruce->isActive() )
         return;
 
+    m_last_midspread_output.clear();
+
     QMap<QString/*market*/,Coin> spread_price;
     const QList<QString> currencies = spruce->getCurrencies();
     QList<QString> markets;
@@ -71,6 +73,7 @@ void SpruceOverseer::onSpruceUp()
         QMap<QString,TickerInfo> mid_spread;
 
         const Market market_phase = *m;
+        const bool is_midspread_phase = ( market_phase == MIDSPREAD_PHASE );
 
         // one pass in each phase for buys and sells
         for ( quint8 side = SIDE_BUY; side < SIDE_SELL +1; side++ )
@@ -81,7 +84,7 @@ void SpruceOverseer::onSpruceUp()
 
             // initialize duplicity spread (used only after custom phase)
             TickerInfo spread_duplicity;
-            if ( market_phase != MIDSPREAD_PHASE )
+            if ( !is_midspread_phase )
             {
                 spread_duplicity = getSpreadForSide( market_phase, side, true, false, true, true );
 
@@ -127,9 +130,8 @@ void SpruceOverseer::onSpruceUp()
                     return;
                 }
 
-                // if market matches selected market, select best price from duplicity price or mid price
-                if ( market == market_phase &&
-                     market_phase != MIDSPREAD_PHASE ) // on custom iteration, skip this step
+                // except for midspread phase, if market matches selected market, select best price from duplicity price or mid price
+                if ( market == market_phase && !is_midspread_phase )
                 {
                     // set the most optimistic price to use, either the midprice or duplicity price
                     flux_price = ( side == SIDE_BUY ) ? std::min( flux_price, spread_duplicity.bid ) :
@@ -141,7 +143,7 @@ void SpruceOverseer::onSpruceUp()
             }
 
             // on the sell side of custom iteration 0, the result is the same as the buy side, so skip it
-            if ( !( side == SIDE_SELL && market_phase == MIDSPREAD_PHASE ) )
+            if ( !( side == SIDE_SELL && is_midspread_phase ) )
             {
                 // calculate amount to short/long, and fail if necessary
                 if ( !spruce->calculateAmountToShortLong() )
@@ -158,9 +160,8 @@ void SpruceOverseer::onSpruceUp()
                 {
                     const QString &market = i.key();
 
-                    // skip market unless it's selected
-                    if ( market != market_phase &&
-                         market_phase != MIDSPREAD_PHASE ) // on custom iteration, set an order for every market
+                    // skip market unless it's selected, except for midspread phase which can set every market
+                    if ( market != market_phase && !is_midspread_phase )
                         continue;
 
                     const QString exchange_market_key = QString( "%1-%2" )
@@ -178,7 +179,7 @@ void SpruceOverseer::onSpruceUp()
                     Coin buy_price, sell_price;
 
                     // set price for order
-                    if ( market_phase == MIDSPREAD_PHASE )
+                    if ( is_midspread_phase )
                     {
                         buy_price = mid_spread.value( market ).bid;
                         sell_price = mid_spread.value( market ).ask;
@@ -196,7 +197,7 @@ void SpruceOverseer::onSpruceUp()
                     }
 
                     // run cancellors for this phase every iteration
-                    const Coin cancel_thresh_price = ( market_phase == MIDSPREAD_PHASE ) ? Coin() :
+                    const Coin cancel_thresh_price = ( is_midspread_phase ) ? Coin() :
                                                      ( side == SIDE_BUY ) ? buy_price : sell_price;
                     runCancellors( engine, market, side, phase_name, cancel_thresh_price );
 
@@ -210,12 +211,28 @@ void SpruceOverseer::onSpruceUp()
 
                     // cache some order settings
                     const Coin order_size_default = spruce->getOrderSize( market );
-                    const Coin order_nice = spruce->getOrderNice( market, side, market_phase == MIDSPREAD_PHASE );
+                    const Coin order_nice = spruce->getOrderNice( market, side, is_midspread_phase );
                     const Coin order_size_limit = order_size_default * order_nice;
 
                     // cache amount to short/long
                     const Coin amount_to_shortlong = spruce->getCurrencyPriceByMarket( market ) * qty_to_shortlong;
                     const Coin amount_to_shortlong_abs = amount_to_shortlong.abs();
+
+                    // check amount active
+                    const Coin spruce_active_for_side = engine->positions->getActiveSpruceEquityTotal( market, phase_name, side, Coin() );
+
+                    QString message_out = QString( "[%1 %2] %3 | co %4 | q %5 | a %6 | n %7 | act %8" )
+                            .arg( phase_name, -MARKET_STRING_WIDTH - 9 )
+                            .arg( market, MARKET_STRING_WIDTH )
+                            .arg( side == SIDE_BUY ? buy_price : sell_price )
+                            .arg( spruce->getLastCoeffForMarket( market ).toString( 4 ), 7 )
+                            .arg( qty_to_shortlong, 16 )
+                            .arg( amount_to_shortlong, 13 ) // print amount to s/l
+                            .arg( ( is_buy ? -order_size_limit : order_size_limit ), 13 ) // print amount to s/l less the nice buffer (the actionable amount)
+                            .arg( spruce_active_for_side, 12 );
+
+                    if ( is_midspread_phase )
+                        m_last_midspread_output += message_out + "\n";
 
                     // if we're under the nice size limit, skip conflict checks and order setting
                     if ( amount_to_shortlong_abs < order_size_limit )
@@ -223,8 +240,7 @@ void SpruceOverseer::onSpruceUp()
 
                     // we're over the nice value for the midspread phase.
                     // this will modify nice values for all phases on this side on the next round of onSpruceUp() call to getOrderNice()
-                    if (  market_phase == MIDSPREAD_PHASE &&
-                         !spruce->getSnapbackState( market, side ) )
+                    if ( is_midspread_phase && !spruce->getSnapbackState( market, side ) )
                     {
                         spruce->setSnapbackState( market, side, true );
                     }
@@ -232,7 +248,7 @@ void SpruceOverseer::onSpruceUp()
                     Coin spread_distance_limit;
 
                     /// for duplicity phases, detect conflicting positions for this market within the spread distance limit
-                    if ( market_phase != MIDSPREAD_PHASE )
+                    if ( !is_midspread_phase )
                     {
                         const Coin spread_put_threshold = order_size_default * spruce->getOrderNiceSpreadPut( side );
 
@@ -294,13 +310,10 @@ void SpruceOverseer::onSpruceUp()
                         order_type += QString( "-timeout%1" )
                                       .arg( Global::getSecureRandomRange32( 60, 90 ) );
 
-                    // check amount active
-                    const Coin spruce_active_for_side = engine->positions->getActiveSpruceEquityTotal( market, phase_name, side, Coin() );
-
                     // calculate order size, prevent going over amount_to_shortlong_abs but also prevent going under order_size_default
                     const int ORDER_CHUNKS_ESTIMATE_PER_SIDE = 10;
                     const int ORDER_SCALING_PHASE_0 = 3;
-                    const Coin order_size = ( market_phase == MIDSPREAD_PHASE ) ?
+                    const Coin order_size = ( is_midspread_phase ) ?
                                 std::max( order_size_default * ORDER_SCALING_PHASE_0, ( amount_to_shortlong_abs - spruce_active_for_side ) / ORDER_SCALING_PHASE_0 ) :
                                 std::max( order_size_default, ( amount_to_shortlong_abs - spruce_active_for_side ) / ORDER_CHUNKS_ESTIMATE_PER_SIDE );
 
@@ -313,16 +326,11 @@ void SpruceOverseer::onSpruceUp()
                          spruce_active_for_side + order_size_limit > amount_to_shortlong_abs )
                         continue;
 
-                    kDebug() << QString( "[%1 %2] %3 | co %4 | q %5 | a %6[%7] | act %8 | dst %9" )
-                                   .arg( phase_name, -MARKET_STRING_WIDTH - 9 )
-                                   .arg( market, MARKET_STRING_WIDTH )
-                                   .arg( side == SIDE_BUY ? buy_price : sell_price )
-                                   .arg( spruce->getLastCoeffForMarket( market ).toString( 4 ), 7 )
-                                   .arg( qty_to_shortlong, 16 )
-                                   .arg( amount_to_shortlong, 13 ) // print amount to s/l
-                                   .arg( amount_to_shortlong + ( is_buy ? order_size_limit : -order_size_limit ), 13 ) // print amount to s/l less the nice buffer (the actionable amount)
-                                   .arg( spruce_active_for_side, 12 )
-                                   .arg( spread_distance_limit.toString( 4 ) );
+                    // append spread distance to message
+                    message_out += QString( " | dst %1" )
+                                    .arg( spread_distance_limit.toString( 4 ) );
+
+                    kDebug() << message_out;
 
                     // queue the order if we aren't paper trading
 #if !defined(PAPER_TRADE)
@@ -724,6 +732,8 @@ void SpruceOverseer::onSaveSpruceSettings()
 
 void SpruceOverseer::runCancellors( Engine *engine, const QString &market, const quint8 side, const QString &phase_name, const Coin &flux_price )
 {
+    const bool is_midspread_phase = phase_name.contains( MIDSPREAD_PHASE );
+
     // sort active positions by longest active first, shortest active last
     const QVector<Position*> active_by_set_time = engine->positions->activeBySetTime();
 
@@ -758,7 +768,7 @@ void SpruceOverseer::runCancellors( Engine *engine, const QString &market, const
 
         // set sp1 price
         Coin buy_price_limit, sell_price_limit;
-        if ( phase_name.contains( MIDSPREAD_PHASE ) )
+        if ( is_midspread_phase )
         {
             const TickerInfo mid_spread = getMidSpread( market );
             buy_price_limit = mid_spread.bid * Coin("0.99");
@@ -803,7 +813,6 @@ void SpruceOverseer::runCancellors( Engine *engine, const QString &market, const
         const Coin amount_to_shortlong = spruce->getExchangeAllocation( exchange_market_key ) * spruce->getCurrencyPriceByMarket( market ) * spruce->getQuantityToShortLongNow( market );
 
         // get active tolerance
-        const bool is_midspread_phase = phase_name.contains( MIDSPREAD_PHASE );
         const Coin nice_zero_bound = spruce->getOrderNiceZeroBound( market, side_actual, is_midspread_phase );
         const Coin zero_bound_tolerance = spruce->getOrderSize( market ) * nice_zero_bound;
 
