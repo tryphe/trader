@@ -311,19 +311,14 @@ void SpruceOverseer::onSpruceUp()
                                       .arg( Global::getSecureRandomRange32( 60, 90 ) );
 
                     // calculate order size, prevent going over amount_to_shortlong_abs but also prevent going under order_size_default
-                    const int ORDER_CHUNKS_ESTIMATE_PER_SIDE = 10;
-                    const int ORDER_SCALING_PHASE_0 = 3;
+                    const quint16 ORDER_CHUNKS_FLUX = spruce->getOrdersPerSideFlux();
+                    const quint16 ORDER_CHUNKS_MIDSPREAD = spruce->getOrdersPerSideMidspread();
                     const Coin order_size = ( is_midspread_phase ) ?
-                                std::max( order_size_default * ORDER_SCALING_PHASE_0, ( amount_to_shortlong_abs - spruce_active_for_side ) / ORDER_SCALING_PHASE_0 ) :
-                                std::max( order_size_default, ( amount_to_shortlong_abs - spruce_active_for_side ) / ORDER_CHUNKS_ESTIMATE_PER_SIDE );
-
-                    // don't go under the default order size
-                    if ( order_size < order_size_default )
-                        continue;
+                                std::max( order_size_default * ORDER_CHUNKS_MIDSPREAD, ( amount_to_shortlong_abs - spruce_active_for_side - order_size_limit ) / ORDER_CHUNKS_MIDSPREAD ) :
+                                std::max( order_size_default, ( amount_to_shortlong_abs - order_size_limit ) / ORDER_CHUNKS_FLUX ); // note: spruce_active_for_side is excluded here because the flux is variant
 
                     // don't go over the abs value of our new projected position, and also regard nice value
-                    if ( spruce_active_for_side + order_size > amount_to_shortlong_abs ||
-                         spruce_active_for_side + order_size_limit > amount_to_shortlong_abs )
+                    if ( spruce_active_for_side + order_size > amount_to_shortlong_abs - order_size_limit )
                         continue;
 
                     // append spread distance to message

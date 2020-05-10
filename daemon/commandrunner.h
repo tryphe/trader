@@ -104,6 +104,7 @@ private:
     void command_setsprucereserve( QStringList &args );
     void command_setspruceordergreed( QStringList &args );
     void command_setspruceordersize( QStringList &args );
+    void command_setspruceordercount( QStringList &args );
     void command_setspruceordernice( QStringList &args );
     void command_setspruceordernicecustom( QStringList &args );
     void command_setspruceordernicemarketoffset( QStringList &args );

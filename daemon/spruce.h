@@ -164,6 +164,12 @@ public:
     void setSnapbackExpiry( const qint64 secs ) { m_snapback_expiry_secs = secs; }
     qint64 getSnapbackExpiry() const { return m_snapback_expiry_secs; }
 
+    void setOrdersPerSideFlux( quint16 orders ) { m_orders_per_side_flux = orders; }
+    quint16 getOrdersPerSideFlux() const { return m_orders_per_side_flux; }
+
+    void setOrdersPerSideMidspread( quint16 orders ) { m_orders_per_side_midspread = orders; }
+    quint16 getOrdersPerSideMidspread() const { return m_orders_per_side_midspread; }
+
     void addStartNode( QString _currency, QString _quantity, QString _price );
     void addLiveNode( QString _currency, QString _price );
     void addMarketBeta( Market m );
@@ -245,10 +251,15 @@ private:
     QVector<QMap<QString/*currency*/,Coin>> m_qtys;
     QList<Market> m_markets_beta;
 
+    // snapback settings
     QMap<QString, bool> m_snapback_state_buys, m_snapback_state_sells;
     QMap<QString, qint64> m_snapback_state_buys_expiry_secs, m_snapback_state_sells_expiry_secs;
     Coin m_snapback_ratio{ "0.1" }; // 0.1 default
     qint64 m_snapback_expiry_secs{ 60 * 60 * 24 }; // 1 day default
+
+    // order scaling settings
+    quint16 m_orders_per_side_flux{ 10 },
+            m_orders_per_side_midspread{ 3 };
 
     Coin m_amplification;
     qint64 m_interval_secs{ 60 * 2 }; // 2min default
