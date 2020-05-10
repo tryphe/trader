@@ -1007,7 +1007,7 @@ void CommandRunner::command_getmidspreadstatus( QStringList &args )
 {
     Q_UNUSED( args )
 
-    kDebug() << "Last midspread state:\n" + spruce_overseer->getLastMidphaseOutput();
+    kDebug() << "Last midspread state:\n" + spruce_overseer->getLastMidspreadPhaseOutput();
 }
 
 void CommandRunner::command_getstatus( QStringList &args )

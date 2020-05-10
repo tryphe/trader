@@ -29,7 +29,7 @@ public:
     void loadStats();
     void saveStats();
 
-    const QString &getLastMidphaseOutput() const { return m_last_midspread_output; }
+    const QString &getLastMidspreadPhaseOutput() const { return m_last_midspread_output; }
 
     QMap<quint8, Engine*> engine_map;
     AlphaTracker *alpha{ nullptr };
