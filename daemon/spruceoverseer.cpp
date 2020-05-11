@@ -322,8 +322,9 @@ void SpruceOverseer::onSpruceUp()
                         continue;
 
                     // append spread distance to message
-                    message_out += QString( " | dst %1" )
-                                    .arg( spread_distance_limit.toString( 4 ) );
+                    if ( is_midspread_phase )
+                        message_out += QString( " | dst %1" )
+                                        .arg( spread_distance_limit.toString( 4 ) );
 
                     kDebug() << message_out;
 
