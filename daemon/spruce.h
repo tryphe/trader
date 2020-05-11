@@ -106,6 +106,14 @@ public:
     void setOrdersPerSideMidspread( quint16 orders ) { m_orders_per_side_midspread = orders; }
     quint16 getOrdersPerSideMidspread() const { return m_orders_per_side_midspread; }
 
+    // order timeout settings
+    void setOrderTimeoutFlux( quint16 minutes_min, quint16 minutes_max ) { m_order_timeout_flux_min = minutes_min;
+                                                                           m_order_timeout_flux_max = minutes_max; }
+    QPair<quint16,quint16> getOrderTimeoutFlux() const { return qMakePair( m_order_timeout_flux_min, m_order_timeout_flux_max ); }
+
+    void setOrderTimeoutMidspread( quint16 minutes ) { m_order_timeout_midspread = minutes; }
+    quint16 getOrderTimeoutMidspread() const { return m_order_timeout_midspread; }
+
     void addStartNode( QString _currency, QString _quantity, QString _price );
     void addLiveNode( QString _currency, QString _price );
     void addMarketBeta( Market m );
@@ -196,6 +204,11 @@ private:
     // order scaling settings
     quint16 m_orders_per_side_flux{ 10 },
             m_orders_per_side_midspread{ 3 };
+
+    // order timeout settings
+    quint16 m_order_timeout_flux_min{ 60 },
+            m_order_timeout_flux_max{ 90 },
+            m_order_timeout_midspread{ 5 };
 
     Coin m_amplification;
     qint64 m_interval_secs{ 60 * 2 }; // 2min default

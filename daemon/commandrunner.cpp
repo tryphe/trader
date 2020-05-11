@@ -94,6 +94,7 @@ CommandRunner::CommandRunner( const quint8 _engine_type, Engine *_e, QVector<Bas
     command_map.insert( "setspruceordergreed", std::bind( &CommandRunner::command_setspruceordergreed, this, _1 ) );
     command_map.insert( "setspruceordersize", std::bind( &CommandRunner::command_setspruceordersize, this, _1 ) );
     command_map.insert( "setspruceordercount", std::bind( &CommandRunner::command_setspruceordercount, this, _1 ) );
+    command_map.insert( "setspruceordertimeout", std::bind( &CommandRunner::command_setspruceordertimeout, this, _1 ) );
     command_map.insert( "setspruceordernice", std::bind( &CommandRunner::command_setspruceordernice, this, _1 ) );
     command_map.insert( "setspruceordernicecustom", std::bind( &CommandRunner::command_setspruceordernicecustom, this, _1 ) );
     command_map.insert( "setspruceordernicemarketoffset", std::bind( &CommandRunner::command_setspruceordernicemarketoffset, this, _1 ) );
@@ -937,7 +938,18 @@ void CommandRunner::command_setspruceordercount( QStringList &args )
     spruce_overseer->spruce->setOrdersPerSideMidspread( args.value( 2 ).toUShort() );
 
     kDebug() << "spruce order count for flux:" << spruce_overseer->spruce->getOrdersPerSideFlux()
-                               << "midspread:" << spruce_overseer->spruce->getOrdersPerSideMidspread();
+             << "midspread:" << spruce_overseer->spruce->getOrdersPerSideMidspread();
+}
+
+void CommandRunner::command_setspruceordertimeout( QStringList &args )
+{
+    if ( !checkArgs( args, 3 ) ) return;
+
+    spruce_overseer->spruce->setOrderTimeoutFlux( args.value( 1 ).toUShort(), args.value( 2 ).toUShort() );
+    spruce_overseer->spruce->setOrderTimeoutMidspread( args.value( 3 ).toUShort() );
+
+    kDebug() << "spruce order timeout for flux:" << spruce_overseer->spruce->getOrderTimeoutFlux()
+             << "midspread:" << spruce_overseer->spruce->getOrderTimeoutMidspread();
 }
 
 void CommandRunner::command_setspruceordernice( QStringList &args )

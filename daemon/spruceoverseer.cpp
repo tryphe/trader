@@ -188,7 +188,7 @@ void SpruceOverseer::onSpruceUp()
                         order_type += "-taker";
 
                         // set fast timeout
-                        order_type += "-timeout5";
+                        order_type += QString( "-timeout%1" ).arg( spruce->getOrderTimeoutMidspread() );
                     }
                     else
                     {
@@ -307,8 +307,12 @@ void SpruceOverseer::onSpruceUp()
 
                     // set slow timeout
                     if ( !order_type.contains( "timeout" ) )
+                    {
+                        QPair<quint16,quint16> timeout_flux = spruce->getOrderTimeoutFlux();
+
                         order_type += QString( "-timeout%1" )
-                                      .arg( Global::getSecureRandomRange32( 60, 90 ) );
+                                      .arg( Global::getSecureRandomRange32( timeout_flux.first, timeout_flux.second ) );
+                    }
 
                     // calculate order size, prevent going over amount_to_shortlong_abs but also prevent going under order_size_default
                     const quint16 ORDER_CHUNKS_FLUX = spruce->getOrdersPerSideFlux();
@@ -321,7 +325,7 @@ void SpruceOverseer::onSpruceUp()
                     if ( spruce_active_for_side + order_size > amount_to_shortlong_abs - order_size_limit )
                         continue;
 
-                    // append spread distance to message
+                    // append minimum spread distance to message (there is no distance for the midspread phase)
                     if ( is_midspread_phase )
                         message_out += QString( " | dst %1" )
                                         .arg( spread_distance_limit.toString( 4 ) );
