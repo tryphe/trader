@@ -129,17 +129,6 @@ void Spruce::setOrderNice( const quint8 side, Coin nice, bool midspread_phase )
 
 Coin Spruce::getOrderNice( const QString &market, const quint8 side, bool midspread_phase )
 {
-    // if snapback is enabled, check to automatically disable snapback
-    const bool snapback_state = getSnapbackState( market, side );
-    if ( snapback_state )
-    {
-        const qint64 expiry_epoch = ( side == SIDE_BUY ) ? m_snapback_state_buys_expiry_secs.value( market ) :
-                                                           m_snapback_state_sells_expiry_secs.value( market );
-
-        if ( QDateTime::currentSecsSinceEpoch() >= expiry_epoch )
-            setSnapbackState( market, side, false );
-    }
-
     // get base nice value for side
     const Coin base = ( midspread_phase ) ? ( side == SIDE_BUY ) ? m_order_nice_custom_buys : m_order_nice_custom_sells :
                                             ( side == SIDE_BUY ) ? m_order_nice_buys : m_order_nice_sells;
@@ -149,8 +138,8 @@ Coin Spruce::getOrderNice( const QString &market, const quint8 side, bool midspr
                                                          base + m_order_nice_market_offset_sells.value( market );
 
     // apply snapback ratio (or not) to base+offset
-    return ( snapback_state ) ? base_with_offset * m_snapback_ratio :
-                                base_with_offset;
+    return ( getSnapbackState( market, side ) ) ? base_with_offset * m_snapback_ratio :
+                                                  base_with_offset;
 }
 
 void Spruce::setOrderNiceZeroBound( const quint8 side, Coin nice, bool midspread_phase )
@@ -168,27 +157,84 @@ Coin Spruce::getOrderNiceZeroBound( const QString &market, const quint8 side, bo
                                   base + m_order_nice_market_offset_zerobound_sells.value( market );
 }
 
-void Spruce::setSnapbackState( const QString &market, const quint8 side, const bool state )
+void Spruce::setSnapbackState( const QString &market, const quint8 side, const bool state, const Coin price )
 {
-    // if the state of the other side of this market is enabled, disable that side
     const bool opposite_side = ( side == SIDE_BUY ) ? SIDE_SELL : SIDE_BUY;
-    if ( getSnapbackState( market, opposite_side ) )
-        setSnapbackState( market, opposite_side, false );
+    const bool other_side_state = getSnapbackState( market, opposite_side );
 
-    // set state
-    ( side == SIDE_BUY ) ? m_snapback_state_buys[ market ] = state :
-                           m_snapback_state_sells[ market ] = state;
-
-    // if enabled, set the expiry time
-    if ( state )
+    // if we are turning the state on, and the state of the other side of this market is enabled, disable it directly
+    // note: this should almost never happen realistically, as once the amount_to_sl is under the nice limit, snapback
+    //       will disable instantly. however if it flips to the other side, it won't catch the check, and we must disable is here.
+    if ( state && other_side_state )
     {
-        const qint64 expiry_secs = QDateTime::currentSecsSinceEpoch() + m_snapback_expiry_secs;
+        opposite_side == SIDE_BUY ? m_snapback_state_buys[ market ] = false :
+                                    m_snapback_state_sells[ market ] = false;
 
-        ( side == SIDE_BUY ) ? m_snapback_state_buys_expiry_secs[ market ] = expiry_secs :
-                               m_snapback_state_sells_expiry_secs[ market ] = expiry_secs;
+        const QString description_str_disable = QString( "%1 %2 @ %3" )
+                                                 .arg( market )
+                                                 .arg( ( opposite_side == SIDE_BUY ) ? "buys" : "sells" )
+                                                 .arg( price );
+
+        kDebug() << "[Diffusion] Snapback disabled for opposite side" << description_str_disable;
     }
 
-    kDebug() << "[Diffusion] Snapback" << ( ( state ) ? "enabled" : "disabled" ) << "for" << market << ( ( side == SIDE_BUY ) ? "buys" : "sells" );
+    const qint64 current_time = QDateTime::currentSecsSinceEpoch();
+
+    const QString description_str = QString( "for %1 %2 @ %3" )
+                                     .arg( market )
+                                     .arg( ( side == SIDE_BUY ) ? "buys" : "sells" )
+                                     .arg( price );
+
+    // prevent bad ref
+    if ( side == SIDE_BUY && !m_snapback_triggertime_buys.contains( market ) )
+    {
+        m_snapback_triggertime_buys.insert( market, 0 );
+        m_snapback_triggercount_buys.insert( market, 0 );
+    }
+    else if ( side == SIDE_SELL && !m_snapback_triggertime_sells.contains( market ) )
+    {
+        m_snapback_triggertime_sells.insert( market, 0 );
+        m_snapback_triggercount_sells.insert( market, 0 );
+    }
+
+    // the key for incrementing to the next step is quotient = current secs / 600
+    qint64 &last_time_quotient = ( side == SIDE_BUY ) ? m_snapback_triggertime_buys[ market ] :
+                                                        m_snapback_triggertime_sells[ market ];
+    qint64 &trigger_count = ( side == SIDE_BUY ) ? m_snapback_triggercount_buys[ market ] :
+                                                   m_snapback_triggercount_sells[ market ];
+    const qint64 current_time_quotient = current_time / SNAPBACK_TIME_WINDOW_SECS;
+
+    // to stop constant enabling/disabling - if we are disabling and our current time quotient matches
+    // the last time quotient, don't disable, just return
+    if ( !other_side_state && !state && current_time_quotient == last_time_quotient )
+        return;
+
+    // set new time quotient
+    if ( state && last_time_quotient < current_time_quotient )
+    {
+        last_time_quotient = current_time_quotient;
+        trigger_count = 0;
+
+        // set expire start time
+        side == SIDE_BUY ? m_snapback_state_buys_start[ market ] = current_time :
+                           m_snapback_state_sells_start[ market ] = current_time;
+    }
+
+    // do iteration
+    if ( state )
+    {
+        kDebug() << "[Diffusion] Snapback iteration" << trigger_count << description_str;
+
+        // after 10 iterations in a 10 minute period, trigger snapback
+        if ( ++trigger_count < SNAPBACK_TRIGGER_ITERATIONS )
+            return;
+    }
+
+    // set state
+    side == SIDE_BUY ? m_snapback_state_buys[ market ] = state :
+                       m_snapback_state_sells[ market ] = state;
+
+    kDebug() << "[Diffusion] Snapback" << ( ( state ) ? "enabled" : "disabled" ) << description_str;
 }
 
 bool Spruce::getSnapbackState( const QString &market, const quint8 side ) const

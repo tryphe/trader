@@ -221,9 +221,24 @@ void SpruceOverseer::onSpruceUp()
                     // check amount active
                     const Coin spruce_active_for_side = engine->positions->getActiveSpruceEquityTotal( market, phase_name, side, Coin() );
 
-                    QString message_out = QString( "[%1 %2] %3 | co %4 | q %5 | a %6 | n %7 | act %8" )
+                    // cache snapback states to print which side is active
+                    const bool is_snapback_buys_enabled = spruce->getSnapbackState( market, SIDE_BUY );
+                    const bool is_snapback_sells_enabled = spruce->getSnapbackState( market, SIDE_SELL );
+
+                    QString message_out = QString( "[%1 %2%3] %4 | co %5 | q %6 | a %7 | n %8 | act %9" )
                             .arg( phase_name, -MARKET_STRING_WIDTH - 9 )
-                            .arg( market, MARKET_STRING_WIDTH )
+                            // print the market name in the color of the position to be taken
+                            .arg( QString( "%1%2%3" ).arg( amount_to_shortlong.isGreaterThanZero() ? COLOR_RED : COLOR_GREEN )
+                                                     .arg( market, MARKET_STRING_WIDTH )
+                                                     .arg( COLOR_NONE ) )
+                            // if flux phase, print nothing. if midstate, print spaces if snapback disabled,
+                            // if snapback is enabled, print "snap" with the color of the side with snapback active
+                            .arg( !is_midspread_phase ? QString() :
+                                  QString( "%1%2%3" ).arg( is_snapback_buys_enabled ? COLOR_GREEN :
+                                                           is_snapback_sells_enabled ? COLOR_RED :
+                                                                                       COLOR_NONE )
+                                                     .arg( is_snapback_buys_enabled || is_snapback_sells_enabled ? " snap" : "     " )
+                                                     .arg( COLOR_NONE ) )
                             .arg( side == SIDE_BUY ? buy_price : sell_price )
                             .arg( spruce->getLastCoeffForMarket( market ).toString( 4 ), 7 )
                             .arg( qty_to_shortlong, 16 )
@@ -234,15 +249,32 @@ void SpruceOverseer::onSpruceUp()
                     if ( is_midspread_phase )
                         m_last_midspread_output += message_out + "\n";
 
+                    const bool snapback_state = spruce->getSnapbackState( market, side );
+
+                    // if snapback is enabled, check to automatically disable snapback
+                    if ( is_midspread_phase && snapback_state )
+                    {
+                        const qint64 current_time = QDateTime::currentSecsSinceEpoch();
+                        const qint64 trigger_time = ( side == SIDE_BUY ) ? spruce->m_snapback_state_buys_start.value( market ) : spruce->m_snapback_state_sells_start.value( market );
+                        const qint64 expiry_epoch = trigger_time + spruce->m_snapback_expiry_secs;
+
+                        if ( current_time >= expiry_epoch &&
+                             amount_to_shortlong_abs < order_size_limit ) // make sure we are under the limit if we are disabling, to avoid enable/disable loop
+                        {
+                            spruce->setSnapbackState( market, side, false, buy_price );
+                        }
+                    }
+
                     // if we're under the nice size limit, skip conflict checks and order setting
                     if ( amount_to_shortlong_abs < order_size_limit )
                         continue;
 
                     // we're over the nice value for the midspread phase.
                     // this will modify nice values for all phases on this side on the next round of onSpruceUp() call to getOrderNice()
-                    if ( is_midspread_phase && !spruce->getSnapbackState( market, side ) )
+                    if ( is_midspread_phase && !snapback_state )
                     {
-                        spruce->setSnapbackState( market, side, true );
+                        spruce->setSnapbackState( market, side, true, buy_price ); // note: buy price == sell price
+                        continue; // note: continue here, we only want to set an order in the midspread phase if snapback is completely enabled (takes 10 calls)
                     }
 
                     Coin spread_distance_limit;
@@ -326,7 +358,7 @@ void SpruceOverseer::onSpruceUp()
                         continue;
 
                     // append minimum spread distance to message (there is no distance for the midspread phase)
-                    if ( is_midspread_phase )
+                    if ( !is_midspread_phase )
                         message_out += QString( " | dst %1" )
                                         .arg( spread_distance_limit.toString( 4 ) );
 

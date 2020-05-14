@@ -15,6 +15,9 @@
 static const Coin DEFAULT_PROFILE_U = Coin("10");
 static const Coin DEFAULT_RESERVE = Coin("0.01");
 
+static const qint64 SNAPBACK_TIME_WINDOW_SECS = 600;
+static const qint64 SNAPBACK_TRIGGER_ITERATIONS = 10;
+
 struct Node
 {
     QString currency;
@@ -42,6 +45,8 @@ struct RelativeCoeffs // tracks hi/lo coeffs with their corresponding markets
 
 class Spruce
 {
+    friend class SpruceOverseer;
+
 public:
     explicit Spruce();
     ~Spruce();
@@ -93,7 +98,7 @@ public:
                                                                                                                        m_order_nice_market_offset_zerobound_sells.value( market ); }
 
     // snapback settings
-    void setSnapbackState( const QString &market, const quint8 side, const bool state );
+    void setSnapbackState( const QString &market, const quint8 side, const bool state , const Coin price = Coin() );
     bool getSnapbackState( const QString &market, const quint8 side ) const;
     void setSnapbackRatio( const Coin &r ) { m_snapback_ratio = r; }
     Coin getSnapbackRatio() const { return m_snapback_ratio; }
@@ -197,7 +202,9 @@ private:
 
     // snapback settings
     QMap<QString, bool> m_snapback_state_buys, m_snapback_state_sells;
-    QMap<QString, qint64> m_snapback_state_buys_expiry_secs, m_snapback_state_sells_expiry_secs;
+    QMap<QString, qint64> m_snapback_state_buys_start, m_snapback_state_sells_start,
+                          m_snapback_triggertime_buys, m_snapback_triggertime_sells,
+                          m_snapback_triggercount_buys, m_snapback_triggercount_sells;
     Coin m_snapback_ratio{ "0.1" }; // 0.1 default
     qint64 m_snapback_expiry_secs{ 60 * 60 * 24 }; // 1 day default
 
