@@ -1031,7 +1031,10 @@ void CommandRunner::command_getmidspreadstatus( QStringList &args )
 {
     Q_UNUSED( args )
 
-    kDebug() << "Last midspread state:\n" + spruce_overseer->getLastMidspreadPhaseOutput();
+    QString midspread_state = spruce_overseer->getLastMidspreadPhaseOutput();
+    midspread_state.chop( 1 ); // chop the last line break
+
+    kDebug() << QString( "Last midspread state:\n%1" ).arg( midspread_state );
 }
 
 void CommandRunner::command_getstatus( QStringList &args )
