@@ -255,7 +255,7 @@ void SpruceOverseer::onSpruceUp()
                     if ( is_midspread_phase && snapback_state )
                     {
                         const qint64 current_time = QDateTime::currentSecsSinceEpoch();
-                        const qint64 trigger_time = ( side == SIDE_BUY ) ? spruce->m_snapback_state_buys_start.value( market ) : spruce->m_snapback_state_sells_start.value( market );
+                        const qint64 trigger_time = ( side == SIDE_BUY ) ? spruce->m_snapback_trigger1_timestart_buys.value( market ) : spruce->m_snapback_trigger1_timestart_sells.value( market );
                         const qint64 expiry_epoch = trigger_time + spruce->m_snapback_expiry_secs;
 
                         if ( current_time >= expiry_epoch &&
@@ -273,7 +273,7 @@ void SpruceOverseer::onSpruceUp()
                     // this will modify nice values for all phases on this side on the next round of onSpruceUp() call to getOrderNice()
                     if ( is_midspread_phase && !snapback_state )
                     {
-                        spruce->setSnapbackState( market, side, true, buy_price ); // note: buy price == sell price
+                        spruce->setSnapbackState( market, side, true, buy_price, amount_to_shortlong_abs ); // note: buy price == sell price
                         continue; // note: continue here, we only want to set an order in the midspread phase if snapback is completely enabled (takes 10 calls)
                     }
 

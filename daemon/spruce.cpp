@@ -157,7 +157,7 @@ Coin Spruce::getOrderNiceZeroBound( const QString &market, const quint8 side, bo
                                   base + m_order_nice_market_offset_zerobound_sells.value( market );
 }
 
-void Spruce::setSnapbackState( const QString &market, const quint8 side, const bool state, const Coin price )
+void Spruce::setSnapbackState( const QString &market, const quint8 side, const bool state, const Coin price, const Coin amount_to_shortlong_abs )
 {
     const bool opposite_side = ( side == SIDE_BUY ) ? SIDE_SELL : SIDE_BUY;
     const bool other_side_state = getSnapbackState( market, opposite_side );
@@ -186,48 +186,95 @@ void Spruce::setSnapbackState( const QString &market, const quint8 side, const b
                                      .arg( price );
 
     // prevent bad ref
-    if ( side == SIDE_BUY && !m_snapback_triggertime_buys.contains( market ) )
+    if ( side == SIDE_BUY && !m_snapback_trigger1_timequotient_buys.contains( market ) )
     {
-        m_snapback_triggertime_buys.insert( market, 0 );
-        m_snapback_triggercount_buys.insert( market, 0 );
+        m_snapback_trigger1_timequotient_buys.insert( market, 0 );
+        m_snapback_trigger1_count_buys.insert( market, 0 );
     }
-    else if ( side == SIDE_SELL && !m_snapback_triggertime_sells.contains( market ) )
+    else if ( side == SIDE_SELL && !m_snapback_trigger1_timequotient_sells.contains( market ) )
     {
-        m_snapback_triggertime_sells.insert( market, 0 );
-        m_snapback_triggercount_sells.insert( market, 0 );
+        m_snapback_trigger1_timequotient_sells.insert( market, 0 );
+        m_snapback_trigger1_count_sells.insert( market, 0 );
     }
 
+    // cache trigger1 refs so we can easily check/modify them
+    qint64 &trigger1_last_time_quotient = ( side == SIDE_BUY ) ? m_snapback_trigger1_timequotient_buys[ market ] :
+                                                                 m_snapback_trigger1_timequotient_sells[ market ];
+    qint64 &trigger1_count = ( side == SIDE_BUY ) ? m_snapback_trigger1_count_buys[ market ] :
+                                                    m_snapback_trigger1_count_sells[ market ];
+
     // the key for incrementing to the next step is quotient = current secs / 600
-    qint64 &last_time_quotient = ( side == SIDE_BUY ) ? m_snapback_triggertime_buys[ market ] :
-                                                        m_snapback_triggertime_sells[ market ];
-    qint64 &trigger_count = ( side == SIDE_BUY ) ? m_snapback_triggercount_buys[ market ] :
-                                                   m_snapback_triggercount_sells[ market ];
-    const qint64 current_time_quotient = current_time / SNAPBACK_TIME_WINDOW_SECS;
+    const qint64 current_time_quotient = current_time / SNAPBACK_TRIGGER1_TIME_WINDOW_SECS;
+
+    // cache trigger2 count, the number of amount_to_sl_abs samples
+    const int trigger2_count = ( side == SIDE_BUY ) ? m_snapback_trigger2_sl_abs_ma_buys.value( market ).getCurrentSamples() :
+                                                      m_snapback_trigger2_sl_abs_ma_sells.value( market ).getCurrentSamples();
 
     // to stop constant enabling/disabling - if we are disabling and our current time quotient matches
     // the last time quotient, don't disable, just return
-    if ( !other_side_state && !state && current_time_quotient == last_time_quotient )
+    if ( !other_side_state && !state && current_time_quotient == trigger1_last_time_quotient )
         return;
 
-    // set new time quotient
-    if ( state && last_time_quotient < current_time_quotient )
+    // reset mechanisms if we have a new time quotient, except if we triggered mechanism #2, then just wait for pullback below ma
+    if ( state && trigger1_last_time_quotient < current_time_quotient && trigger2_count == 0 )
     {
-        last_time_quotient = current_time_quotient;
-        trigger_count = 0;
+        // reset trigger mechanism #1
+        trigger1_last_time_quotient = current_time_quotient;
+        trigger1_count = 0;
+
+        // reset trigger mechanism #2
+        side == SIDE_BUY ? m_snapback_trigger2_sl_abs_ma_buys[ market ] = CoinMovingAverage( SNAPBACK_TRIGGER2_MA_SAMPLES ) :
+                           m_snapback_trigger2_sl_abs_ma_sells[ market ] = CoinMovingAverage( SNAPBACK_TRIGGER2_MA_SAMPLES );
 
         // set expire start time
-        side == SIDE_BUY ? m_snapback_state_buys_start[ market ] = current_time :
-                           m_snapback_state_sells_start[ market ] = current_time;
+        side == SIDE_BUY ? m_snapback_trigger1_timestart_buys[ market ] = current_time :
+                           m_snapback_trigger1_timestart_sells[ market ] = current_time;
     }
 
-    // do iteration
+    // do trigger
     if ( state )
     {
-        kDebug() << "[Diffusion] Snapback iteration" << trigger_count << description_str;
+        CoinMovingAverage &amount_to_sl_abs_ma = ( side == SIDE_BUY ) ? m_snapback_trigger2_sl_abs_ma_buys[ market ] :
+                                                                        m_snapback_trigger2_sl_abs_ma_sells[ market ];
 
-        // after 10 iterations in a 10 minute period, trigger snapback
-        if ( ++trigger_count < SNAPBACK_TRIGGER_ITERATIONS )
+        // iterate trigger mechanism #1 and return if we didn't hit the threshold
+        if ( trigger1_count < SNAPBACK_TRIGGER1_ITERATIONS )
+        {
+            trigger1_count++;
+            kDebug() << "[Diffusion] Snapback trigger #1 iteration" << trigger1_count << description_str;
             return;
+        }
+        // after 10 iterations in a 10 minute period for mechanism #1, wait for amount_to_sl pullback trigger mechanism #2
+        else
+        {
+            // add sample
+            amount_to_sl_abs_ma.addSample( amount_to_shortlong_abs );
+
+            // check if current amount to shortlong abs < average of the last SNAPBACK_TRIGGER2_MA_SAMPLES * SNAPBACK_TRIGGER2_RATIO
+            QString trigger2_description_str;
+            bool trigger2 = false;
+            const Coin threshold = amount_to_sl_abs_ma.getAverage() * SNAPBACK_TRIGGER2_RATIO;
+            if ( amount_to_shortlong_abs < threshold )
+            {
+                trigger2 = true;
+                trigger2_description_str = "crossed threshold";
+
+                // clear samples so the next time we trigger mechanism #1, #2 trigger2_count check above is zero and we reset both mechanisms
+                amount_to_sl_abs_ma.clear();
+            }
+            else
+            {
+                trigger2_description_str = "is still above threshold";
+            }
+
+            kDebug() << "[Diffusion] Snapback trigger #2" << trigger2_description_str
+                     << QString( "%1 with amount to sl abs %2" ).arg( threshold )
+                                                                .arg( amount_to_shortlong_abs );
+
+            // if we didn't trigger the mechanism, return early
+            if ( !trigger2 )
+                return;
+        }
     }
 
     // set state

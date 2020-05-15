@@ -4,19 +4,22 @@
 #include "coinamount.h"
 #include "costfunctioncache.h"
 #include "market.h"
+#include "misctypes.h"
 
 #include <QString>
 #include <QMap>
 #include <QMultiMap>
 #include <QVector>
 #include <QList>
-#include <QDebug>
 
 static const Coin DEFAULT_PROFILE_U = Coin("10");
 static const Coin DEFAULT_RESERVE = Coin("0.01");
 
-static const qint64 SNAPBACK_TIME_WINDOW_SECS = 600;
-static const qint64 SNAPBACK_TRIGGER_ITERATIONS = 10;
+static const qint64 SNAPBACK_TRIGGER1_TIME_WINDOW_SECS = 600;
+static const qint64 SNAPBACK_TRIGGER1_ITERATIONS = 10;
+
+static const int SNAPBACK_TRIGGER2_MA_SAMPLES = 10;
+static const Coin SNAPBACK_TRIGGER2_RATIO = Coin("0.90");
 
 struct Node
 {
@@ -98,7 +101,7 @@ public:
                                                                                                                        m_order_nice_market_offset_zerobound_sells.value( market ); }
 
     // snapback settings
-    void setSnapbackState( const QString &market, const quint8 side, const bool state , const Coin price = Coin() );
+    void setSnapbackState( const QString &market, const quint8 side, const bool state, const Coin price = Coin(), const Coin amount_to_shortlong_abs = Coin() );
     bool getSnapbackState( const QString &market, const quint8 side ) const;
     void setSnapbackRatio( const Coin &r ) { m_snapback_ratio = r; }
     Coin getSnapbackRatio() const { return m_snapback_ratio; }
@@ -202,9 +205,15 @@ private:
 
     // snapback settings
     QMap<QString, bool> m_snapback_state_buys, m_snapback_state_sells;
-    QMap<QString, qint64> m_snapback_state_buys_start, m_snapback_state_sells_start,
-                          m_snapback_triggertime_buys, m_snapback_triggertime_sells,
-                          m_snapback_triggercount_buys, m_snapback_triggercount_sells;
+
+    // note: trigger mechanism #1 has a start time, a time quotient window, and a counter that's valid within the window and triggers above SNAPBACK_TRIGGER1_ITERATIONS
+    QMap<QString, qint64> m_snapback_trigger1_timestart_buys, m_snapback_trigger1_timestart_sells,
+                          m_snapback_trigger1_timequotient_buys, m_snapback_trigger1_timequotient_sells,
+                          m_snapback_trigger1_count_buys, m_snapback_trigger1_count_sells;
+
+    // note: trigger mechanism #2 has an amount_to_sl_ma that triggers when it crosses under ma * SNAPBACK_TRIGGER2_RATIO
+    QMap<QString, CoinMovingAverage> m_snapback_trigger2_sl_abs_ma_buys, m_snapback_trigger2_sl_abs_ma_sells;
+
     Coin m_snapback_ratio{ "0.1" }; // 0.1 default
     qint64 m_snapback_expiry_secs{ 60 * 60 * 24 }; // 1 day default
 
