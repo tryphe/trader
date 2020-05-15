@@ -147,6 +147,9 @@ Trader::Trader( QObject *parent )
     CoinAmountTest coin_test;
     coin_test.test();
 
+    CoinAverageTester coinavg_test;
+    coinavg_test.test();
+
     EngineTest engine_test;
     if ( bittrex  ) engine_test.test( engine_trex );
     if ( binance  ) engine_test.test( engine_bnc );
