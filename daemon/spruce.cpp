@@ -159,6 +159,9 @@ Coin Spruce::getOrderNiceZeroBound( const QString &market, const quint8 side, bo
 
 void Spruce::setSnapbackState( const QString &market, const quint8 side, const bool state, const Coin price, const Coin amount_to_shortlong_abs )
 {
+    // store last trigger2 failure message, but clear when the entire mechanism resets below
+    static QMap<QString, qint64> last_trigger2_message;
+
     const bool opposite_side = ( side == SIDE_BUY ) ? SIDE_SELL : SIDE_BUY;
     const bool other_side_state = getSnapbackState( market, opposite_side );
 
@@ -218,13 +221,16 @@ void Spruce::setSnapbackState( const QString &market, const quint8 side, const b
     // reset mechanisms if we have a new time quotient, except if we triggered mechanism #2, then just wait for pullback below ma
     if ( state && trigger1_last_time_quotient < current_time_quotient && trigger2_count == 0 )
     {
-        // reset trigger mechanism #1
+        // reset trigger #1
         trigger1_last_time_quotient = current_time_quotient;
         trigger1_count = 0;
 
-        // reset trigger mechanism #2
+        // reset trigger #2
         side == SIDE_BUY ? m_snapback_trigger2_sl_abs_ma_buys[ market ] = CoinMovingAverage( SNAPBACK_TRIGGER2_MA_SAMPLES ) :
                            m_snapback_trigger2_sl_abs_ma_sells[ market ] = CoinMovingAverage( SNAPBACK_TRIGGER2_MA_SAMPLES );
+
+        // reset trigger #2 failure message
+        last_trigger2_message[ market ] = 0;
 
         // set expire start time
         side == SIDE_BUY ? m_snapback_trigger1_timestart_buys[ market ] = current_time :
@@ -267,8 +273,18 @@ void Spruce::setSnapbackState( const QString &market, const quint8 side, const b
                 trigger2_description_str = "is still above threshold";
             }
 
-            kDebug() << "[Diffusion] Snapback trigger #2" << trigger2_description_str
-                     << QString( "%1 with amount to sl abs %2" ).arg( threshold )
+            // measure the last time we printed a trigger2 failure message, and show the message if it's too old
+            bool show_trigger2_message = false;
+            if ( !trigger2 && last_trigger2_message.value( market, 0 ) < current_time - SNAPBACK_TRIGGER2_MESSAGE_RATE )
+            {
+                last_trigger2_message[ market ] = current_time;
+                show_trigger2_message = true;
+            }
+
+            // don't show the message every time unless trigger2 is true, otherwise show every 5 minutes
+            if ( trigger2 || show_trigger2_message )
+                kDebug() << "[Diffusion] Snapback trigger #2" << trigger2_description_str
+                         << QString( "%1 with amount to sl abs %2" ).arg( threshold )
                                                                 .arg( amount_to_shortlong_abs );
 
             // if we didn't trigger the mechanism, return early

@@ -18,8 +18,9 @@ static const Coin DEFAULT_RESERVE = Coin("0.01");
 static const qint64 SNAPBACK_TRIGGER1_TIME_WINDOW_SECS = 600;
 static const qint64 SNAPBACK_TRIGGER1_ITERATIONS = 10;
 
-static const int SNAPBACK_TRIGGER2_MA_SAMPLES = 10;
+static const int SNAPBACK_TRIGGER2_MA_SAMPLES = 100;
 static const Coin SNAPBACK_TRIGGER2_RATIO = Coin("0.90");
+static const qint64 SNAPBACK_TRIGGER2_MESSAGE_RATE = 300; // 1 trigger2 message every x seconds
 
 struct Node
 {
