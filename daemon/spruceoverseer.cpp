@@ -218,6 +218,9 @@ void SpruceOverseer::onSpruceUp()
                     const Coin amount_to_shortlong = spruce->getCurrencyPriceByMarket( market ) * qty_to_shortlong;
                     const Coin amount_to_shortlong_abs = amount_to_shortlong.abs();
 
+                    // measure how close amount_to_sl is to hitting the limit
+                    const Coin pct_progress = ( order_size_limit.abs() / amount_to_shortlong_abs ) * 100;
+
                     // check amount active
                     const Coin spruce_active_for_side = engine->positions->getActiveSpruceEquityTotal( market, phase_name, side, Coin() );
 
@@ -225,7 +228,7 @@ void SpruceOverseer::onSpruceUp()
                     const bool is_snapback_buys_enabled = spruce->getSnapbackState( market, SIDE_BUY );
                     const bool is_snapback_sells_enabled = spruce->getSnapbackState( market, SIDE_SELL );
 
-                    QString message_out = QString( "[%1 %2%3] %4 | co %5 | q %6 | a %7 | n %8 | act %9" )
+                    QString message_out = QString( "[%1 %2%3] %4 | co %5 | q %6 | a %7/%8 (%9%) | act %10" )
                             .arg( phase_name, -MARKET_STRING_WIDTH - 9 )
                             // print the market name in the color of the position to be taken
                             .arg( QString( "%1%2%3" ).arg( amount_to_shortlong.isGreaterThanZero() ? COLOR_RED : COLOR_GREEN )
@@ -241,10 +244,11 @@ void SpruceOverseer::onSpruceUp()
                                                      .arg( COLOR_NONE ) )
                             .arg( side == SIDE_BUY ? buy_price : sell_price )
                             .arg( spruce->getLastCoeffForMarket( market ).toString( 4 ), 7 )
-                            .arg( qty_to_shortlong, 16 )
-                            .arg( amount_to_shortlong, 13 ) // print amount to s/l
-                            .arg( ( is_buy ? -order_size_limit : order_size_limit ), 13 ) // print amount to s/l less the nice buffer (the actionable amount)
-                            .arg( spruce_active_for_side, 12 );
+                            .arg( qty_to_shortlong.toString( 4 ), 12 )
+                            .arg( amount_to_shortlong.toString( 4 ), 9 ) // print amount to s/l
+                            .arg( ( is_buy ? -order_size_limit : order_size_limit ).toString( 4 ), -13 ) // print amount to s/l less the nice buffer (the actionable amount)
+                            .arg( pct_progress.toString( 1 ), 5 )
+                            .arg( spruce_active_for_side.toString( 4 ), 8 );
 
                     if ( is_midspread_phase )
                         m_last_midspread_output += message_out + "\n";
