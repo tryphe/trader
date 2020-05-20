@@ -16,7 +16,7 @@ static const Coin DEFAULT_PROFILE_U = Coin("10");
 static const Coin DEFAULT_RESERVE = Coin("0.01");
 
 static const qint64 SNAPBACK_TRIGGER1_TIME_WINDOW_SECS = 600;
-static const qint64 SNAPBACK_TRIGGER1_ITERATIONS = 10;
+static const qint64 SNAPBACK_TRIGGER1_ITERATIONS = 5;
 
 static const int SNAPBACK_TRIGGER2_MA_SAMPLES = 100;
 static const Coin SNAPBACK_TRIGGER2_RATIO = Coin("0.90");
@@ -108,6 +108,7 @@ public:
     Coin getSnapbackRatio() const { return m_snapback_ratio; }
     void setSnapbackExpiry( const qint64 secs ) { m_snapback_expiry_secs = secs; }
     qint64 getSnapbackExpiry() const { return m_snapback_expiry_secs; }
+    bool getSnapbackStateTrigger1( const QString &market, const quint8 side ) const { return ( ( side == SIDE_BUY ) ? m_snapback_trigger1_count_buys.value( market ) : m_snapback_trigger1_count_sells.value( market ) ) >= SNAPBACK_TRIGGER1_ITERATIONS; }
 
     void setOrdersPerSideFlux( quint16 orders ) { m_orders_per_side_flux = orders; }
     quint16 getOrdersPerSideFlux() const { return m_orders_per_side_flux; }

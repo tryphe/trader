@@ -219,7 +219,7 @@ void SpruceOverseer::onSpruceUp()
                     const Coin amount_to_shortlong_abs = amount_to_shortlong.abs();
 
                     // measure how close amount_to_sl is to hitting the limit
-                    const Coin pct_progress = ( order_size_limit.abs() / amount_to_shortlong_abs ) * 100;
+                    const Coin pct_progress = ( amount_to_shortlong_abs / order_size_limit.abs() ) * 100;
 
                     // check amount active
                     const Coin spruce_active_for_side = engine->positions->getActiveSpruceEquityTotal( market, phase_name, side, Coin() );
@@ -269,17 +269,19 @@ void SpruceOverseer::onSpruceUp()
                         }
                     }
 
-                    // if we're under the nice size limit, skip conflict checks and order setting
-                    if ( amount_to_shortlong_abs < order_size_limit )
-                        continue;
+                    const bool over_the_limit = amount_to_shortlong_abs < order_size_limit;
 
-                    // we're over the nice value for the midspread phase.
+                    // we're over the nice value for the midspread phase OR snapback trigger #1 already went off
                     // this will modify nice values for all phases on this side on the next round of onSpruceUp() call to getOrderNice()
-                    if ( is_midspread_phase && !snapback_state )
+                    if ( is_midspread_phase && !snapback_state && ( !over_the_limit || spruce->getSnapbackStateTrigger1( market, side ) ) )
                     {
                         spruce->setSnapbackState( market, side, true, buy_price, amount_to_shortlong_abs ); // note: buy price == sell price
                         continue; // note: continue here, we only want to set an order in the midspread phase if snapback is completely enabled (takes 10 calls)
                     }
+
+                    // if we're under the nice size limit, skip conflict checks and order setting
+                    if ( over_the_limit )
+                        continue;
 
                     Coin spread_distance_limit;
 

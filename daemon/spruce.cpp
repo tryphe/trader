@@ -235,6 +235,8 @@ void Spruce::setSnapbackState( const QString &market, const quint8 side, const b
         // set expire start time
         side == SIDE_BUY ? m_snapback_trigger1_timestart_buys[ market ] = current_time :
                            m_snapback_trigger1_timestart_sells[ market ] = current_time;
+
+        kDebug() << "[Diffusion] Snapback triggers reset for" << market;
     }
 
     // do trigger
