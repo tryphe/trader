@@ -173,17 +173,17 @@ void Spruce::setSnapbackState( const QString &market, const quint8 side, const b
         opposite_side == SIDE_BUY ? m_snapback_state_buys[ market ] = false :
                                     m_snapback_state_sells[ market ] = false;
 
-        const QString description_str_disable = QString( "%1 %2 @ %3" )
+        const QString description_str_disable = QString( "[%1 %2 @ %3]" )
                                                  .arg( market )
                                                  .arg( ( opposite_side == SIDE_BUY ) ? "buys" : "sells" )
                                                  .arg( price );
 
-        kDebug() << "[Diffusion] Snapback disabled for opposite side" << description_str_disable;
+        kDebug() << QString( "[Diffusion] %1 Snapback disabled for opposite side" ).arg( description_str_disable );
     }
 
     const qint64 current_time = QDateTime::currentSecsSinceEpoch();
 
-    const QString description_str = QString( "for %1 %2 @ %3" )
+    const QString description_str = QString( "[%1 %2 @ %3]" )
                                      .arg( market )
                                      .arg( ( side == SIDE_BUY ) ? "buys" : "sells" )
                                      .arg( price );
@@ -236,7 +236,9 @@ void Spruce::setSnapbackState( const QString &market, const quint8 side, const b
         side == SIDE_BUY ? m_snapback_trigger1_timestart_buys[ market ] = current_time :
                            m_snapback_trigger1_timestart_sells[ market ] = current_time;
 
-        kDebug() << "[Diffusion] Snapback triggers reset for" << market;
+        kDebug() << QString( "[Diffusion] %1 Snapback triggers reset for %2" )
+                     .arg( description_str )
+                     .arg( market );
     }
 
     // do trigger
@@ -249,7 +251,9 @@ void Spruce::setSnapbackState( const QString &market, const quint8 side, const b
         if ( trigger1_count < SNAPBACK_TRIGGER1_ITERATIONS )
         {
             trigger1_count++;
-            kDebug() << "[Diffusion] Snapback trigger #1 iteration" << trigger1_count << description_str;
+            kDebug() << QString( "[Diffusion] %1 Snapback trigger #1 iteration %2" )
+                         .arg( description_str )
+                         .arg( trigger1_count );
             return;
         }
         // after 10 iterations in a 10 minute period for mechanism #1, wait for amount_to_sl pullback trigger mechanism #2
@@ -285,9 +289,11 @@ void Spruce::setSnapbackState( const QString &market, const quint8 side, const b
 
             // don't show the message every time unless trigger2 is true, otherwise show every 5 minutes
             if ( trigger2 || show_trigger2_message )
-                kDebug() << "[Diffusion] Snapback trigger #2" << trigger2_description_str
-                         << QString( "%1 with amount to sl abs %2" ).arg( threshold )
-                                                                .arg( amount_to_shortlong_abs );
+                kDebug() << QString( "[Diffusion] %1 Snapback trigger #2 %2 %3 with sl abs %4" )
+                            .arg( description_str )
+                            .arg( trigger2_description_str )
+                            .arg( threshold )
+                            .arg( amount_to_shortlong_abs );
 
             // if we didn't trigger the mechanism, return early
             if ( !trigger2 )
@@ -299,7 +305,9 @@ void Spruce::setSnapbackState( const QString &market, const quint8 side, const b
     side == SIDE_BUY ? m_snapback_state_buys[ market ] = state :
                        m_snapback_state_sells[ market ] = state;
 
-    kDebug() << "[Diffusion] Snapback" << ( ( state ) ? "enabled" : "disabled" ) << description_str;
+    kDebug() << QString( "[Diffusion] %1 Snapback %2" )
+                 .arg( description_str )
+                 .arg( ( state ) ? "enabled" : "disabled" );
 }
 
 bool Spruce::getSnapbackState( const QString &market, const quint8 side ) const
