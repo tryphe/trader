@@ -225,7 +225,7 @@ void Spruce::setSnapbackState( const QString &market, const quint8 side, const b
         trigger1_last_time_quotient = current_time_quotient;
         trigger1_count = 0;
 
-        // reset trigger #2
+        // reset trigger #2 ma
         side == SIDE_BUY ? m_snapback_trigger2_sl_abs_ma_buys[ market ] = CoinMovingAverage( SNAPBACK_TRIGGER2_MA_SAMPLES ) :
                            m_snapback_trigger2_sl_abs_ma_sells[ market ] = CoinMovingAverage( SNAPBACK_TRIGGER2_MA_SAMPLES );
 
@@ -254,6 +254,12 @@ void Spruce::setSnapbackState( const QString &market, const quint8 side, const b
             kDebug() << QString( "[Diffusion] %1 Snapback trigger #1 iteration %2" )
                          .arg( description_str )
                          .arg( trigger1_count );
+
+            // set the trigger #2 trigger price, because next round it will be enabled
+            if ( trigger1_count == SNAPBACK_TRIGGER1_ITERATIONS )
+                side == SIDE_BUY ? m_snapback_trigger2_trigger_sl_abs_initial_buys[ market ] = amount_to_shortlong_abs :
+                                   m_snapback_trigger2_trigger_sl_abs_initial_sells[ market ] = amount_to_shortlong_abs;
+
             return;
         }
         // after 10 iterations in a 10 minute period for mechanism #1, wait for amount_to_sl pullback trigger mechanism #2
@@ -262,21 +268,29 @@ void Spruce::setSnapbackState( const QString &market, const quint8 side, const b
             // add sample
             amount_to_sl_abs_ma.addSample( amount_to_shortlong_abs );
 
-            // check if current amount to shortlong abs < average of the last SNAPBACK_TRIGGER2_MA_SAMPLES * SNAPBACK_TRIGGER2_RATIO
+            // trigger2 is finished if:
+            // amount to shortlong abs < average of the last SNAPBACK_TRIGGER2_MA_SAMPLES * SNAPBACK_TRIGGER2_MA_RATIO
+            // OR
+            // we crossed the original trigger #2 price * SNAPBACK_TRIGGER2_PRICE_RATIO;
             QString trigger2_description_str;
             bool trigger2 = false;
-            const Coin threshold = amount_to_sl_abs_ma.getAverage() * SNAPBACK_TRIGGER2_RATIO;
-            if ( amount_to_shortlong_abs < threshold )
+            const Coin threshold1 = SNAPBACK_TRIGGER2_MA_RATIO * amount_to_sl_abs_ma.getAverage();
+            const Coin threshold2 = SNAPBACK_TRIGGER2_INITIAL_RATIO * ( side == SIDE_BUY ?
+                                    m_snapback_trigger2_trigger_sl_abs_initial_buys.value( market ) :
+                                    m_snapback_trigger2_trigger_sl_abs_initial_sells.value( market ) );
+
+            if ( amount_to_shortlong_abs < threshold1 ||
+                 amount_to_shortlong_abs < threshold2  )
             {
                 trigger2 = true;
-                trigger2_description_str = "crossed threshold";
+                trigger2_description_str = "crossed either threshold";
 
                 // clear samples so the next time we trigger mechanism #1, #2 trigger2_count check above is zero and we reset both mechanisms
                 amount_to_sl_abs_ma.clear();
             }
             else
             {
-                trigger2_description_str = "is still above threshold";
+                trigger2_description_str = "is still above thresholds";
             }
 
             // measure the last time we printed a trigger2 failure message, and show the message if it's too old
@@ -289,11 +303,12 @@ void Spruce::setSnapbackState( const QString &market, const quint8 side, const b
 
             // don't show the message every time unless trigger2 is true, otherwise show every 5 minutes
             if ( trigger2 || show_trigger2_message )
-                kDebug() << QString( "[Diffusion] %1 Snapback trigger #2 %2 %3 with sl abs %4" )
+                kDebug() << QString( "[Diffusion] %1 Snapback trigger #2 %2 %3 / %4 with sl abs %5" )
                             .arg( description_str )
                             .arg( trigger2_description_str )
-                            .arg( threshold )
-                            .arg( amount_to_shortlong_abs );
+                            .arg( threshold1.toString( 4 ) )
+                            .arg( threshold2.toString( 4 ) )
+                            .arg( amount_to_shortlong_abs.toString( 4 ) );
 
             // if we didn't trigger the mechanism, return early
             if ( !trigger2 )

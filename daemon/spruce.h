@@ -18,8 +18,9 @@ static const Coin DEFAULT_RESERVE = Coin("0.01");
 static const qint64 SNAPBACK_TRIGGER1_TIME_WINDOW_SECS = 600;
 static const qint64 SNAPBACK_TRIGGER1_ITERATIONS = 5;
 
-static const int SNAPBACK_TRIGGER2_MA_SAMPLES = 100;
-static const Coin SNAPBACK_TRIGGER2_RATIO = Coin("0.90");
+static const qint32 SNAPBACK_TRIGGER2_MA_SAMPLES = 450;
+static const Coin SNAPBACK_TRIGGER2_MA_RATIO = Coin("0.80"); // snapback this far below ma
+static const Coin SNAPBACK_TRIGGER2_INITIAL_RATIO = Coin("0.90"); // or snapback this far below the original trigger sl abs
 static const qint64 SNAPBACK_TRIGGER2_MESSAGE_RATE = 300; // 1 trigger2 message every x seconds
 
 struct Node
@@ -176,21 +177,21 @@ private:
     bool equalizeDates();
 
     CostFunctionCache m_cost_cache;
-    QMap<QString,Coin> m_currency_profile_u, m_currency_reserve;
+    QMap<QString, Coin> m_currency_profile_u, m_currency_reserve;
 
-    QMap<QString/*currency*/,Coin> getMarketCoeffs();
+    QMap<QString/*currency*/, Coin> getMarketCoeffs();
     RelativeCoeffs getRelativeCoeffs();
 
     RelativeCoeffs m_relative_coeffs, m_start_coeffs;
-    QMap<QString,Coin> m_quantity_to_shortlong_map;
+    QMap<QString, Coin> m_quantity_to_shortlong_map;
 
-    QMap<QString,Coin> original_quantity; // track original start quantity, since it changes
-    QMap<QString,Coin> quantity_already_shortlong; // running total of shorted/longed coins
-    QMap<QString,Coin> quantity_to_shortlong; // amount to shortlong now based on total above
+    QMap<QString, Coin> original_quantity; // track original start quantity, since it changes
+    QMap<QString, Coin> quantity_already_shortlong; // running total of shorted/longed coins
+    QMap<QString, Coin> quantity_to_shortlong; // amount to shortlong now based on total above
 
     QString base_currency;
-    QMap<QString,Coin> currency_weight; // note: weights are >0 and <=1
-    QMultiMap<Coin,QString> currency_weight_by_coin; // note: weights are >0 and <=1
+    QMap<QString, Coin> currency_weight; // note: weights are >0 and <=1
+    QMultiMap<Coin, QString> currency_weight_by_coin; // note: weights are >0 and <=1
     QMap<QString, Coin> per_exchange_market_allocations; // note: market allocations are 0:1
     Coin m_order_greed, m_order_greed_minimum, m_order_greed_buy_randomness, m_order_greed_sell_randomness, m_market_buy_max,
     m_market_sell_max, m_order_size, m_order_nice_buys, m_order_nice_sells, m_order_nice_zerobound_buys, m_order_nice_zerobound_sells,
@@ -200,9 +201,9 @@ private:
     m_order_nice_market_offset_zerobound_sells;
 
     QList<Node*> nodes_start, nodes_now;
-    QMap<QString,Node*> nodes_now_by_currency;
+    QMap<QString, Node*> nodes_now_by_currency;
     QMap<QString/*currency*/,Coin> m_last_coeffs;
-    QVector<QMap<QString/*currency*/,Coin>> m_qtys;
+    QVector<QMap<QString/*currency*/, Coin>> m_qtys;
     QList<Market> m_markets_beta;
 
     // snapback settings
@@ -215,6 +216,7 @@ private:
 
     // note: trigger mechanism #2 has an amount_to_sl_ma that triggers when it crosses under ma * SNAPBACK_TRIGGER2_RATIO
     QMap<QString, CoinMovingAverage> m_snapback_trigger2_sl_abs_ma_buys, m_snapback_trigger2_sl_abs_ma_sells;
+    QMap<QString, Coin> m_snapback_trigger2_trigger_sl_abs_initial_buys, m_snapback_trigger2_trigger_sl_abs_initial_sells;
 
     Coin m_snapback_ratio{ "0.1" }; // 0.1 default
     qint64 m_snapback_expiry_secs{ 60 * 60 * 24 }; // 1 day default
