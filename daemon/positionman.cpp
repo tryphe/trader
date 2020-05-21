@@ -1101,13 +1101,14 @@ void PositionMan::cancel( Position *const &pos, bool quiet, quint8 cancel_reason
                     .arg( pos->is_onetime ? "cancelling" :
                           pos->is_slippage ? "resetting " :
                           recancelling ?     "recancelling   " : "cancelling" )
-                    .arg( cancel_reason == CANCELLING_LOWEST              ? " lo  " :
-                          cancel_reason == CANCELLING_HIGHEST             ? " hi  " :
-                          cancel_reason == CANCELLING_FOR_MAX_AGE         ? " age " :
-                          cancel_reason == CANCELLING_FOR_SHORTLONG       ? " s/l " :
-                          cancel_reason == CANCELLING_FOR_SPRUCE          ? " sp1 " :
-                          cancel_reason == CANCELLING_FOR_SPRUCE_2        ? " sp2 " :
-                          cancel_reason == CANCELLING_FOR_SPRUCE_CONFLICT ? " cnf " :
+                    .arg( cancel_reason == CANCELLING_LOWEST                  ? " lo  " :
+                          cancel_reason == CANCELLING_HIGHEST                 ? " hi  " :
+                          cancel_reason == CANCELLING_FOR_MAX_AGE             ? " age " :
+                          cancel_reason == CANCELLING_FOR_SHORTLONG           ? " s/l " :
+                          cancel_reason == CANCELLING_FOR_SPRUCE              ? " sp1 " :
+                          cancel_reason == CANCELLING_FOR_SPRUCE_2            ? " sp2 " :
+                          cancel_reason == CANCELLING_FOR_SPRUCE_CONFLICT     ? " spc " :
+                          cancel_reason == CANCELLING_FOR_SPRUCE_SNAPBACK_OLD ? " spo " :
                                                                            "" ); // CANCELLING_FOR_SLIPPAGE_RESET
 
         kDebug() << QString( "%1 %2" )
@@ -1140,6 +1141,24 @@ void PositionMan::cancelLowest( const QString &market )
     // cancel lowest order
     if ( lo_pos )
         cancel( lo_pos, false, CANCELLING_LOWEST );
+}
+
+void PositionMan::cancelStrategy( const QString &strategy )
+{
+    QVector<Position*> positions_to_cancel;
+
+    // queue orders for cancel if we matched the strategy tag
+    for ( QSet<Position*>::const_iterator i = all().begin(); i != all().end(); i++ )
+    {
+        Position *const &pos = *i;
+
+        if ( pos->strategy_tag == strategy )
+            positions_to_cancel += pos;
+    }
+
+    // cancel the orders
+    while ( !positions_to_cancel.isEmpty() )
+        cancel( positions_to_cancel.takeFirst(), false, CANCELLING_FOR_SPRUCE_SNAPBACK_OLD );
 }
 
 void PositionMan::divergeConverge()

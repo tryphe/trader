@@ -260,7 +260,11 @@ void SpruceOverseer::onSpruceUp()
                          snapback_state &&
                          amount_to_shortlong_abs < order_size_limit ) // make sure we are under the limit if we are disabling, to avoid enable/disable loop
                     {
+                        // disable snapback
                         spruce->setSnapbackState( market, side, false, buy_price );
+
+                        // cancel orders related to this strategy that are now stale
+                        engine->getPositionMan()->cancelStrategy( phase_name );
                     }
 
                     const bool over_the_limit = amount_to_shortlong_abs < order_size_limit;

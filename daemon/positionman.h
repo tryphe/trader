@@ -86,6 +86,7 @@ public:
     void cancelLocal( QString market = "" );
     void cancelHighest( const QString &market );
     void cancelLowest( const QString &market );
+    void cancelStrategy( const QString &strategy );
 
     void divergeConverge();
     bool isDivergingConverging( const QString &market, const qint32 index ) const;
