@@ -486,8 +486,7 @@ QString Spruce::getSaveState()
                                                     .arg( m_order_nice_custom_zerobound_sells );
 
     // save snapback
-    ret += QString( "setsprucesnapback %1 %2\n" ).arg( m_snapback_ratio )
-                                                 .arg( m_snapback_expiry_secs );
+    ret += QString( "setsprucesnapback %1\n" ).arg( m_snapback_ratio );
 
     // save order nice market offsets
     for ( QMap<QString,Coin>::const_iterator i = m_order_nice_market_offset_buys.begin(); i != m_order_nice_market_offset_buys.end(); i++ )

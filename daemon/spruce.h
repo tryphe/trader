@@ -107,8 +107,6 @@ public:
     bool getSnapbackState( const QString &market, const quint8 side ) const;
     void setSnapbackRatio( const Coin &r ) { m_snapback_ratio = r; }
     Coin getSnapbackRatio() const { return m_snapback_ratio; }
-    void setSnapbackExpiry( const qint64 secs ) { m_snapback_expiry_secs = secs; }
-    qint64 getSnapbackExpiry() const { return m_snapback_expiry_secs; }
     bool getSnapbackStateTrigger1( const QString &market, const quint8 side ) const { return ( ( side == SIDE_BUY ) ? m_snapback_trigger1_count_buys.value( market ) : m_snapback_trigger1_count_sells.value( market ) ) >= SNAPBACK_TRIGGER1_ITERATIONS; }
 
     void setOrdersPerSideFlux( quint16 orders ) { m_orders_per_side_flux = orders; }
@@ -219,7 +217,6 @@ private:
     QMap<QString, Coin> m_snapback_trigger2_trigger_sl_abs_initial_buys, m_snapback_trigger2_trigger_sl_abs_initial_sells;
 
     Coin m_snapback_ratio{ "0.1" }; // 0.1 default
-    qint64 m_snapback_expiry_secs{ 60 * 60 * 24 }; // 1 day default
 
     // order scaling settings
     quint16 m_orders_per_side_flux{ 10 },

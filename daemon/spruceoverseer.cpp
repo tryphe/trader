@@ -256,24 +256,20 @@ void SpruceOverseer::onSpruceUp()
                     const bool snapback_state = spruce->getSnapbackState( market, side );
 
                     // if snapback is enabled, check to automatically disable snapback
-                    if ( is_midspread_phase && snapback_state )
+                    if ( is_midspread_phase &&
+                         snapback_state &&
+                         amount_to_shortlong_abs < order_size_limit ) // make sure we are under the limit if we are disabling, to avoid enable/disable loop
                     {
-                        const qint64 current_time = QDateTime::currentSecsSinceEpoch();
-                        const qint64 trigger_time = ( side == SIDE_BUY ) ? spruce->m_snapback_trigger1_timestart_buys.value( market ) : spruce->m_snapback_trigger1_timestart_sells.value( market );
-                        const qint64 expiry_epoch = trigger_time + spruce->m_snapback_expiry_secs;
-
-                        if ( current_time >= expiry_epoch &&
-                             amount_to_shortlong_abs < order_size_limit ) // make sure we are under the limit if we are disabling, to avoid enable/disable loop
-                        {
-                            spruce->setSnapbackState( market, side, false, buy_price );
-                        }
+                        spruce->setSnapbackState( market, side, false, buy_price );
                     }
 
                     const bool over_the_limit = amount_to_shortlong_abs < order_size_limit;
 
                     // we're over the nice value for the midspread phase OR snapback trigger #1 already went off
                     // this will modify nice values for all phases on this side on the next round of onSpruceUp() call to getOrderNice()
-                    if ( is_midspread_phase && !snapback_state && ( !over_the_limit || spruce->getSnapbackStateTrigger1( market, side ) ) )
+                    if ( is_midspread_phase &&
+                         !snapback_state &&
+                         ( !over_the_limit || spruce->getSnapbackStateTrigger1( market, side ) ) )
                     {
                         spruce->setSnapbackState( market, side, true, buy_price, amount_to_shortlong_abs ); // note: buy price == sell price
                         continue; // note: continue here, we only want to set an order in the midspread phase if snapback is completely enabled (takes 10 calls)

@@ -1013,13 +1013,11 @@ void CommandRunner::command_setspruceallocation( QStringList &args )
 
 void CommandRunner::command_setsprucesnapback( QStringList &args )
 {
-    if ( !checkArgs( args, 2 ) ) return;
+    if ( !checkArgs( args, 1 ) ) return;
 
     spruce_overseer->spruce->setSnapbackRatio( args.value( 1 ) );
-    spruce_overseer->spruce->setSnapbackExpiry( args.value( 2 ).toLongLong() );
 
-    kDebug() << "spruce snapback ratio:" << spruce_overseer->spruce->getSnapbackRatio()
-                            << "expiry:" << spruce_overseer->spruce->getSnapbackExpiry();
+    kDebug() << "spruce snapback ratio:" << spruce_overseer->spruce->getSnapbackRatio();
 }
 
 void CommandRunner::command_spruceup( QStringList & )
