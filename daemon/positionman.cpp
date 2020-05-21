@@ -1068,8 +1068,6 @@ void PositionMan::cancel( Position *const &pos, bool quiet, quint8 cancel_reason
         return;
     }
 
-    pos->is_cancelling = true;
-
     // set cancel reason (override if neccesary to change reason)
     pos->cancel_reason = cancel_reason;
 
@@ -1116,6 +1114,9 @@ void PositionMan::cancel( Position *const &pos, bool quiet, quint8 cancel_reason
                     .arg( prefix_str, -15 )
                     .arg( pos->stringifyOrder() );
     }
+
+    // mark as cancelling
+    pos->is_cancelling = true;
 
     // send request
     engine->sendCancel( pos->order_number, pos, engine->engine_type == ENGINE_WAVES ? pos->market : Market() );
