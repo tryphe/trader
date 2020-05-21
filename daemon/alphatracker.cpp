@@ -121,13 +121,11 @@ void AlphaTracker::printAlpha() const
                     .arg( getVolumePerTrade( market ), -12 )
                     .arg( getTrades( market ), -7 );
 
-        // only incorporate volume and alpha into pl if we have buy and sell prices
-        if ( alpha.isGreaterThanZero() )
-        {
-            total_volume += volume;
-            // pl += (s*s)*vwap_difference*volume where s is the ratio of the total volume on each side (small_side/big_side)
+        total_volume += volume;
+
+        // pl += (s*s)*vwap_difference*volume where s is the ratio of the total volume on each side (small_side/big_side)
+        if ( alpha.isGreaterThanZero() ) // only incorporate volume and alpha into pl if we have buy and sell prices
             estimated_pl += significance * significance * ( ( alpha - CoinAmount::COIN ) * volume );
-        }
     }
 
     kDebug() << "total volume:" << total_volume;
