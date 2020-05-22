@@ -16,8 +16,6 @@
 #include <QFile>
 
 const bool expand_spread_base_down = false; // true = getSpreadForSide always expands down for base greed value before applying other effects
-const bool expand_spread_buys = false; // expand buy side down more than sell side
-
 const bool prices_uses_avg = true; // false = assemble widest combined spread between all exchanges, true = average spreads between all exchanges
 
 static const QString MIDSPREAD_PHASE = "mid_0";
@@ -409,8 +407,7 @@ void SpruceOverseer::adjustSpread( TickerInfo &spread, Coin limit, quint8 side, 
     {
         // if the side is buy, expand down, otherwise expand outwards
         j++;
-        if ( ( side == SIDE_BUY && expand_spread_buys && j % 4 < 3 ) || // if expanding down, only expand down 60% of the time
-             ( j % 2 == 1 ) ) // if not expanding down, expand 50/50
+        if ( j % 2 == 1 ) // expand 50/50
             spread.bid -= ticksize;
         else
             spread.ask += ticksize;
