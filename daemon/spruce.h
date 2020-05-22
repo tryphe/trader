@@ -15,14 +15,6 @@
 static const Coin DEFAULT_PROFILE_U = Coin("10");
 static const Coin DEFAULT_RESERVE = Coin("0.01");
 
-static const qint64 SNAPBACK_TRIGGER1_TIME_WINDOW_SECS = 600;
-static const qint64 SNAPBACK_TRIGGER1_ITERATIONS = 5;
-
-static const qint32 SNAPBACK_TRIGGER2_MA_SAMPLES = 450;
-static const Coin SNAPBACK_TRIGGER2_MA_RATIO = Coin("0.80"); // snapback this far below ma
-static const Coin SNAPBACK_TRIGGER2_INITIAL_RATIO = Coin("0.90"); // or snapback this far below the original trigger sl abs
-static const qint64 SNAPBACK_TRIGGER2_MESSAGE_RATE = 300; // 1 trigger2 message every x seconds
-
 struct Node
 {
     QString currency;
@@ -102,12 +94,28 @@ public:
     Coin getOrderNiceZeroBoundMarketOffset( const QString &market, const quint8 side ) { return ( side == SIDE_BUY ) ? m_order_nice_market_offset_zerobound_buys.value( market ) :
                                                                                                                        m_order_nice_market_offset_zerobound_sells.value( market ); }
 
-    // snapback settings
+    // snapback state settings
     void setSnapbackState( const QString &market, const quint8 side, const bool state, const Coin price = Coin(), const Coin amount_to_shortlong_abs = Coin() );
     bool getSnapbackState( const QString &market, const quint8 side ) const;
     void setSnapbackRatio( const Coin &r ) { m_snapback_ratio = r; }
     Coin getSnapbackRatio() const { return m_snapback_ratio; }
-    bool getSnapbackStateTrigger1( const QString &market, const quint8 side ) const { return ( ( side == SIDE_BUY ) ? m_snapback_trigger1_count_buys.value( market ) : m_snapback_trigger1_count_sells.value( market ) ) >= SNAPBACK_TRIGGER1_ITERATIONS; }
+    bool getSnapbackStateTrigger1( const QString &market, const quint8 side ) const { return ( ( side == SIDE_BUY ) ? m_snapback_trigger1_count_buys.value( market ) : m_snapback_trigger1_count_sells.value( market ) ) >= m_snapback_trigger1_iterations; }
+
+    // snapback trigger 1 settings
+    void setSnapbackTrigger1Window( const qint64 window ) { m_snapback_trigger1_time_window_secs = window; }
+    qint64 getSnapbackTrigger1Window() const { return m_snapback_trigger1_time_window_secs; }
+    void setSnapbackTrigger1Iterations( const qint64 iter ) { m_snapback_trigger1_iterations = iter; }
+    qint64 getSnapbackTrigger1Iterations() const { return m_snapback_trigger1_iterations; }
+
+    // snapback trigger 2 settings
+    void setSnapbackTrigger2MASamples( const qint32 samples ) { m_snapback_trigger2_ma_samples = samples; }
+    qint32 getSnapbackTrigger2MASamples() const { return m_snapback_trigger2_ma_samples; }
+    void setSnapbackTrigger2MARatio( const Coin &ratio ) { m_snapback_trigger2_ma_ratio = ratio; }
+    Coin getSnapbackTrigger2MARatio() const { return m_snapback_trigger2_ma_ratio; }
+    void setSnapbackTrigger2InitialRatio( const Coin &ratio ) { m_snapback_trigger2_initial_ratio = ratio; }
+    Coin getSnapbackTrigger2InitialRatio() const { return m_snapback_trigger2_initial_ratio; }
+    void setSnapbackTrigger2MessageInterval( const qint64 interval ) { m_snapback_trigger2_message_interval = interval; }
+    qint64 getSnapbackTrigger2MessageInterval() const { return m_snapback_trigger2_message_interval; }
 
     void setOrdersPerSideFlux( quint16 orders ) { m_orders_per_side_flux = orders; }
     quint16 getOrdersPerSideFlux() const { return m_orders_per_side_flux; }
@@ -215,16 +223,27 @@ private:
     QMap<QString, CoinMovingAverage> m_snapback_trigger2_sl_abs_ma_buys, m_snapback_trigger2_sl_abs_ma_sells;
     QMap<QString, Coin> m_snapback_trigger2_trigger_sl_abs_initial_buys, m_snapback_trigger2_trigger_sl_abs_initial_sells;
 
-    Coin m_snapback_ratio{ "0.1" }; // 0.1 default
+    // snapback mechanism settings
+    Coin m_snapback_ratio{ "0.1" }; // snap back to x * nice value
+
+    // snapback trigger 1 settings
+    qint64 m_snapback_trigger1_time_window_secs{ 600 }; // we must reach the number of iterations below within this number of seconds to progress to trigger 2
+    qint64 m_snapback_trigger1_iterations{ 5 };
+
+    // snapback trigger 2 settings
+    qint32 m_snapback_trigger2_ma_samples{ 450 }; // ma samples to use
+    Coin m_snapback_trigger2_ma_ratio{ "0.80" }; // snapback triggers below this ma ratio
+    Coin m_snapback_trigger2_initial_ratio{ "0.90" }; // OR snapback triggers below this sl abs ratio
+    qint64 m_snapback_trigger2_message_interval{ 300 }; // debug message every x seconds
 
     // order scaling settings
-    quint16 m_orders_per_side_flux{ 10 },
-            m_orders_per_side_midspread{ 3 };
+    quint16 m_orders_per_side_flux{ 10 };
+    quint16 m_orders_per_side_midspread{ 3 };
 
     // order timeout settings
-    quint16 m_order_timeout_flux_min{ 60 },
-            m_order_timeout_flux_max{ 90 },
-            m_order_timeout_midspread{ 5 };
+    quint16 m_order_timeout_flux_min{ 60 };
+    quint16 m_order_timeout_flux_max{ 90 };
+    quint16 m_order_timeout_midspread{ 5 };
 
     Coin m_amplification;
     qint64 m_interval_secs{ 60 * 2 }; // 2min default

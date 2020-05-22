@@ -207,7 +207,7 @@ void Spruce::setSnapbackState( const QString &market, const quint8 side, const b
                                                     m_snapback_trigger1_count_sells[ market ];
 
     // the key for incrementing to the next step is quotient = current secs / 600
-    const qint64 current_time_quotient = current_time / SNAPBACK_TRIGGER1_TIME_WINDOW_SECS;
+    const qint64 current_time_quotient = current_time / m_snapback_trigger1_time_window_secs;
 
     // cache trigger2 count, the number of amount_to_sl_abs samples
     const int trigger2_count = ( side == SIDE_BUY ) ? m_snapback_trigger2_sl_abs_ma_buys.value( market ).getCurrentSamples() :
@@ -226,8 +226,8 @@ void Spruce::setSnapbackState( const QString &market, const quint8 side, const b
         trigger1_count = 0;
 
         // reset trigger #2 ma
-        side == SIDE_BUY ? m_snapback_trigger2_sl_abs_ma_buys[ market ] = CoinMovingAverage( SNAPBACK_TRIGGER2_MA_SAMPLES ) :
-                           m_snapback_trigger2_sl_abs_ma_sells[ market ] = CoinMovingAverage( SNAPBACK_TRIGGER2_MA_SAMPLES );
+        side == SIDE_BUY ? m_snapback_trigger2_sl_abs_ma_buys[ market ] = CoinMovingAverage( m_snapback_trigger2_ma_samples ) :
+                           m_snapback_trigger2_sl_abs_ma_sells[ market ] = CoinMovingAverage( m_snapback_trigger2_ma_samples );
 
         // reset trigger #2 failure message
         last_trigger2_message[ market ] = 0;
@@ -245,7 +245,7 @@ void Spruce::setSnapbackState( const QString &market, const quint8 side, const b
                                                                         m_snapback_trigger2_sl_abs_ma_sells[ market ];
 
         // iterate trigger mechanism #1 and return if we didn't hit the threshold
-        if ( trigger1_count < SNAPBACK_TRIGGER1_ITERATIONS )
+        if ( trigger1_count < m_snapback_trigger1_iterations )
         {
             trigger1_count++;
             kDebug() << QString( "[Diffusion] %1 Snapback trigger #1 iteration %2" )
@@ -253,7 +253,7 @@ void Spruce::setSnapbackState( const QString &market, const quint8 side, const b
                          .arg( trigger1_count );
 
             // set the trigger #2 trigger price, because next round it will be enabled
-            if ( trigger1_count == SNAPBACK_TRIGGER1_ITERATIONS )
+            if ( trigger1_count == m_snapback_trigger1_iterations )
                 side == SIDE_BUY ? m_snapback_trigger2_trigger_sl_abs_initial_buys[ market ] = amount_to_shortlong_abs :
                                    m_snapback_trigger2_trigger_sl_abs_initial_sells[ market ] = amount_to_shortlong_abs;
 
@@ -271,8 +271,8 @@ void Spruce::setSnapbackState( const QString &market, const quint8 side, const b
             // we crossed the original trigger #2 price * SNAPBACK_TRIGGER2_PRICE_RATIO;
             QString trigger2_description_str;
             bool trigger2 = false;
-            const Coin threshold1 = SNAPBACK_TRIGGER2_MA_RATIO * amount_to_sl_abs_ma.getAverage();
-            const Coin threshold2 = SNAPBACK_TRIGGER2_INITIAL_RATIO * ( side == SIDE_BUY ?
+            const Coin threshold1 = m_snapback_trigger2_ma_ratio * amount_to_sl_abs_ma.getAverage();
+            const Coin threshold2 = m_snapback_trigger2_initial_ratio * ( side == SIDE_BUY ?
                                     m_snapback_trigger2_trigger_sl_abs_initial_buys.value( market ) :
                                     m_snapback_trigger2_trigger_sl_abs_initial_sells.value( market ) );
 
@@ -292,7 +292,7 @@ void Spruce::setSnapbackState( const QString &market, const quint8 side, const b
 
             // measure the last time we printed a trigger2 failure message, and show the message if it's too old
             bool show_trigger2_message = false;
-            if ( !trigger2 && last_trigger2_message.value( market, 0 ) < current_time - SNAPBACK_TRIGGER2_MESSAGE_RATE )
+            if ( !trigger2 && last_trigger2_message.value( market, 0 ) < current_time - m_snapback_trigger2_message_interval )
             {
                 last_trigger2_message[ market ] = current_time;
                 show_trigger2_message = true;
@@ -482,8 +482,18 @@ QString Spruce::getSaveState()
                                                     .arg( m_order_nice_custom_sells )
                                                     .arg( m_order_nice_custom_zerobound_sells );
 
-    // save snapback
+    // save snapback ratio
     ret += QString( "setsprucesnapback %1\n" ).arg( m_snapback_ratio );
+
+    // save snapback trigger 1 settings
+    ret += QString( "setsprucesnapbacktrigger1 %1 %2\n" ).arg( m_snapback_trigger1_time_window_secs )
+                                                         .arg( m_snapback_trigger1_iterations );
+
+    // save snapback trigger 2 settings
+    ret += QString( "setsprucesnapbacktrigger2 %1 %2 %3 %4\n" ).arg( m_snapback_trigger2_ma_samples )
+                                                               .arg( m_snapback_trigger2_ma_ratio )
+                                                               .arg( m_snapback_trigger2_initial_ratio )
+                                                               .arg( m_snapback_trigger2_message_interval );
 
     // save order nice market offsets
     for ( QMap<QString,Coin>::const_iterator i = m_order_nice_market_offset_buys.begin(); i != m_order_nice_market_offset_buys.end(); i++ )

@@ -100,6 +100,8 @@ CommandRunner::CommandRunner( const quint8 _engine_type, Engine *_e, QVector<Bas
     command_map.insert( "setspruceordernicemarketoffset", std::bind( &CommandRunner::command_setspruceordernicemarketoffset, this, _1 ) );
     command_map.insert( "setspruceallocation", std::bind( &CommandRunner::command_setspruceallocation, this, _1 ) );
     command_map.insert( "setsprucesnapback", std::bind( &CommandRunner::command_setsprucesnapback, this, _1 ) );
+    command_map.insert( "setsprucesnapbacktrigger1", std::bind( &CommandRunner::command_setsprucesnapbacktrigger1, this, _1 ) );
+    command_map.insert( "setsprucesnapbacktrigger2", std::bind( &CommandRunner::command_setsprucesnapbacktrigger2, this, _1 ) );
     command_map.insert( "getmidspreadstatus", std::bind( &CommandRunner::command_getmidspreadstatus, this, _1 ) );
     command_map.insert( "getstatus", std::bind( &CommandRunner::command_getstatus, this, _1 ) );
     command_map.insert( "getconfig", std::bind( &CommandRunner::command_getconfig, this, _1 ) );
@@ -1018,6 +1020,32 @@ void CommandRunner::command_setsprucesnapback( QStringList &args )
     spruce_overseer->spruce->setSnapbackRatio( args.value( 1 ) );
 
     kDebug() << "spruce snapback ratio:" << spruce_overseer->spruce->getSnapbackRatio();
+}
+
+void CommandRunner::command_setsprucesnapbacktrigger1( QStringList &args )
+{
+    if ( !checkArgs( args, 2 ) ) return;
+
+    spruce_overseer->spruce->setSnapbackTrigger1Window( args.value( 1 ).toLongLong() );
+    spruce_overseer->spruce->setSnapbackTrigger1Iterations( args.value( 2 ).toLongLong() );
+
+    kDebug() << "spruce snapback trigger 1 window:" << spruce_overseer->spruce->getSnapbackTrigger1Window()
+                                   << "iterations:" << spruce_overseer->spruce->getSnapbackTrigger1Iterations();
+}
+
+void CommandRunner::command_setsprucesnapbacktrigger2( QStringList &args )
+{
+    if ( !checkArgs( args, 4 ) ) return;
+
+    spruce_overseer->spruce->setSnapbackTrigger2MASamples( args.value( 1 ).toLong() );
+    spruce_overseer->spruce->setSnapbackTrigger2MARatio( args.value( 2 ) );
+    spruce_overseer->spruce->setSnapbackTrigger2InitialRatio( args.value( 3 ) );
+    spruce_overseer->spruce->setSnapbackTrigger2MessageInterval( args.value( 4 ).toLongLong() );
+
+    kDebug() << "spruce snapback trigger 2 ma samples:" << spruce_overseer->spruce->getSnapbackTrigger2MASamples()
+                                         << "ma ratio:" << spruce_overseer->spruce->getSnapbackTrigger2MARatio()
+                                    << "initial ratio:" << spruce_overseer->spruce->getSnapbackTrigger2InitialRatio()
+                                 << "message interval:" << spruce_overseer->spruce->getSnapbackTrigger2MessageInterval();
 }
 
 void CommandRunner::command_spruceup( QStringList & )
