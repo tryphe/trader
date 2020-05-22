@@ -207,9 +207,8 @@ private:
     // snapback settings
     QMap<QString, bool> m_snapback_state_buys, m_snapback_state_sells;
 
-    // note: trigger mechanism #1 has a start time, a time quotient window, and a counter that's valid within the window and triggers above SNAPBACK_TRIGGER1_ITERATIONS
-    QMap<QString, qint64> m_snapback_trigger1_timestart_buys, m_snapback_trigger1_timestart_sells,
-                          m_snapback_trigger1_timequotient_buys, m_snapback_trigger1_timequotient_sells,
+    // note: trigger mechanism #1 has a time quotient window and a counter that's valid within the window and triggers above SNAPBACK_TRIGGER1_ITERATIONS
+    QMap<QString, qint64> m_snapback_trigger1_timequotient_buys, m_snapback_trigger1_timequotient_sells,
                           m_snapback_trigger1_count_buys, m_snapback_trigger1_count_sells;
 
     // note: trigger mechanism #2 has an amount_to_sl_ma that triggers when it crosses under ma * SNAPBACK_TRIGGER2_RATIO
