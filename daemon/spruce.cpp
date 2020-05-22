@@ -262,6 +262,10 @@ void Spruce::setSnapbackState( const QString &market, const quint8 side, const b
         // after 10 iterations in a 10 minute period for mechanism #1, wait for amount_to_sl pullback trigger mechanism #2
         else
         {
+            // if we changed the sample setting since we initialized, set the count manually
+            if ( amount_to_sl_abs_ma.getMaxSamples() != m_snapback_trigger2_ma_samples )
+                amount_to_sl_abs_ma.setMaxSamples( m_snapback_trigger2_ma_samples );
+
             // add sample
             amount_to_sl_abs_ma.addSample( amount_to_shortlong_abs );
 
