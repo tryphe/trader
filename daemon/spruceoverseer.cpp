@@ -265,20 +265,20 @@ void SpruceOverseer::onSpruceUp()
                         engine->getPositionMan()->cancelStrategy( phase_name );
                     }
 
-                    const bool over_the_limit = amount_to_shortlong_abs < order_size_limit;
+                    const bool under_the_limit = amount_to_shortlong_abs < order_size_limit;
 
                     // we're over the nice value for the midspread phase OR snapback trigger #1 already went off
                     // this will modify nice values for all phases on this side on the next round of onSpruceUp() call to getOrderNice()
                     if ( is_midspread_phase &&
                          !snapback_state &&
-                         ( !over_the_limit || spruce->getSnapbackStateTrigger1( market, side ) ) )
+                         ( !under_the_limit || spruce->getSnapbackStateTrigger1( market, side ) ) )
                     {
                         spruce->setSnapbackState( market, side, true, buy_price, amount_to_shortlong_abs ); // note: buy price == sell price
                         continue; // note: continue here, we only want to set an order in the midspread phase if snapback is completely enabled (takes 10 calls)
                     }
 
                     // if we're under the nice size limit, skip conflict checks and order setting
-                    if ( over_the_limit )
+                    if ( under_the_limit )
                         continue;
 
                     Coin spread_distance_limit;
