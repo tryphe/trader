@@ -419,6 +419,8 @@ void Engine::updateStatsAndPrintFill( const QString &fill_type, Market market, c
                                       const QString &strategy_tag, Coin amount, Coin quantity, Coin price,
                                       const Coin &btc_commission )
 {
+    const QString base_currency = ( spruce->getBaseCurrency() == "disabled" ) ? "BTC" : spruce->getBaseCurrency();
+
     // check for valid inputs. amount or quantity must exist, and all others must be valid
     if ( amount.isZeroOrLess() && quantity.isZeroOrLess() )
     {
@@ -434,18 +436,18 @@ void Engine::updateStatsAndPrintFill( const QString &fill_type, Market market, c
     Market alpha_market_0, alpha_market_1;
     Coin market_0_quantity;
     /// found beta level trade, convert prices and volumes to base currency using an estimated conversion rate
-    if ( market.getBase() != spruce->getBaseCurrency() &&
-         market.getQuote() != spruce->getBaseCurrency() )
+    if ( market.getBase() != base_currency &&
+         market.getQuote() != base_currency )
     {
-        alpha_market_0 = Market( spruce->getBaseCurrency(), market.getBase() );
-        alpha_market_1 = Market( spruce->getBaseCurrency(), market.getQuote() );
+        alpha_market_0 = Market( base_currency, market.getBase() );
+        alpha_market_1 = Market( base_currency, market.getQuote() );
 
-        const Coin price_in_btc = getMarketInfo( Market( spruce->getBaseCurrency(), market.getBase() ) ).ticker.bid;
+        const Coin price_in_btc = getMarketInfo( Market( base_currency, market.getBase() ) ).ticker.bid;
 
         // check for valid price
         if ( !is_testing && !price_in_btc.isGreaterThanZero() )
         {
-            kDebug() << "engine error: ticker price is <= zero for" << Market( spruce->getBaseCurrency(), market.getBase() ) << order_id << "amount:" << amount << "qty:" << quantity << "@" << price << "ticker:" << price_in_btc;
+            kDebug() << "engine error: ticker price is <= zero for" << Market( base_currency, market.getBase() ) << order_id << "amount:" << amount << "qty:" << quantity << "@" << price << "ticker:" << price_in_btc;
             return;
         }
 
@@ -474,8 +476,8 @@ void Engine::updateStatsAndPrintFill( const QString &fill_type, Market market, c
             quantity = amount / price;
 
         // if base market is not btc, but the quote is, calculate btc price with inverse
-        if ( market.getBase() != spruce->getBaseCurrency() &&
-             market.getQuote() == spruce->getBaseCurrency() )
+        if ( market.getBase() != base_currency &&
+             market.getQuote() == base_currency )
         {
             // invert market to make stats show properly
             market = market.getInverse();

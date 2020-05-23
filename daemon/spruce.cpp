@@ -437,7 +437,7 @@ QList<QString> Spruce::getMarketsAlpha() const
 
 bool Spruce::isActive()
 {
-    return !( base_currency.isEmpty() || nodes_start.isEmpty() || currency_weight.isEmpty() || base_currency == "disabled" );
+    return !( nodes_start.isEmpty() || currency_weight.isEmpty() || getBaseCurrency() == "disabled" );
 }
 
 QString Spruce::getSaveState()
@@ -448,7 +448,7 @@ QString Spruce::getSaveState()
     ret += QString( "setspruceinterval %1\n" ).arg( m_interval_secs );
 
     // save base
-    ret += QString( "setsprucebasecurrency %1\n" ).arg( base_currency.isEmpty() ? "disabled" : base_currency );
+    ret += QString( "setsprucebasecurrency %1\n" ).arg( getBaseCurrency() );
 
     // save amplification
     ret += QString( "setspruceamplification %1\n" ).arg( m_amplification );

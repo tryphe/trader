@@ -54,7 +54,7 @@ public:
     qint64 getIntervalSecs() const { return m_interval_secs; }
 
     void setBaseCurrency( QString currency ) { base_currency = currency; }
-    QString getBaseCurrency() const { return base_currency; }
+    QString getBaseCurrency() const { return base_currency.isEmpty() ? "disabled" : base_currency; }
     void setCurrencyWeight( QString currency, Coin weight );
     Coin getMarketWeight( QString market ) const;
 

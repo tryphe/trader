@@ -266,7 +266,7 @@ void CommandRunner::command_getbuyselltotal( QStringList & )
     qint32 buy_overall_count = 0, sell_overall_count = 0, total_overall_count = 0;
     Coin buy_overall_amount, sell_overall_amount, total_overall_amount;
 
-    QString base_asset = spruce_overseer->spruce->getBaseCurrency();
+    const QString base_currency = ( spruce_overseer->spruce->getBaseCurrency() == "disabled" ) ? "BTC" : spruce_overseer->spruce->getBaseCurrency();
 
     // build indexes from active and queued positions
     QSet<Position*>::const_iterator begin = engine->getPositionMan()->all().begin(),
@@ -281,7 +281,7 @@ void CommandRunner::command_getbuyselltotal( QStringList & )
 
         /// step 1: filter side, market, price, amount, qty by base spruce base market
         // quote asset = spruce base, invert market
-        if ( base_asset == pos->market.getQuote() )
+        if ( base_currency == pos->market.getQuote() )
         {
             side_actual = ( pos->side == SIDE_BUY ) ? SIDE_SELL : SIDE_BUY;
             market_actual = pos->market.getInverse();
