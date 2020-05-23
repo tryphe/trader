@@ -3,7 +3,7 @@
 #include "spruce.h"
 #include "spruceoverseer.h"
 
-#include <QDebug>
+//#include <QDebug>
 
 void SpruceOverseerTest::test( SpruceOverseer *o, Engine *engine )
 {
@@ -72,7 +72,6 @@ void SpruceOverseerTest::test( SpruceOverseer *o, Engine *engine )
     assert( midspread_test.bid == midspread_test.ask );
 
     /// ensure getSpreadLimit() with taker enabled gives us crossed prices
-
     const TickerInfo taker_spread_buy = o->getSpreadForSide( TEST_MARKET, SIDE_BUY, true, true );
     const TickerInfo taker_spread_sell = o->getSpreadForSide( TEST_MARKET, SIDE_SELL, true, true );
 
