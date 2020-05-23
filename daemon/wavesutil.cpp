@@ -22,8 +22,7 @@ QByteArray WavesUtil::hashBlake2b( const QByteArray &in )
 
 QByteArray WavesUtil::hashWaves( const QByteArray &in )
 {
-    const QByteArray sha3_out = QCryptographicHash::hash( hashBlake2b( in ), QCryptographicHash::Keccak_256 );
-    return sha3_out;
+    return QCryptographicHash::hash( hashBlake2b( in ), QCryptographicHash::Keccak_256 );
 }
 
 void WavesUtil::clampPrivateKey( QByteArray &key )
