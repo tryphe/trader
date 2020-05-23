@@ -643,7 +643,7 @@ void SpruceOverseer::loadSettings()
 
     if ( !loadfile.open( QIODevice::ReadOnly | QIODevice::Text ) )
     {
-        kDebug() << "local error: couldn't load spruce settings file" << path;
+        kDebug() << "local warning: couldn't load spruce settings file" << path;
         return;
     }
 
