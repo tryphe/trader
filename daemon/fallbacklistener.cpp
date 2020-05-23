@@ -1,8 +1,11 @@
 #include "fallbacklistener.h"
 #include "global.h"
 
+#include <QObject>
 #include <QTimer>
+#include <QDir>
 #include <QFile>
+#include <QString>
 
 FallbackListener::FallbackListener(QObject *parent)
     : QObject( parent ),

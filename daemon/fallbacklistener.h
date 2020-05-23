@@ -1,10 +1,6 @@
 #ifndef FALLBACKLISTENER_H
 #define FALLBACKLISTENER_H
 
-#include "build-config.h"
-
-class FallbackListener;
-
 #include <QObject>
 
 class QFile;
