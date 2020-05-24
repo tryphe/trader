@@ -435,11 +435,6 @@ QVector<QString> Spruce::getMarketsAlpha() const
     return ret;
 }
 
-int Spruce::getMarketsAlphaCount() const
-{
-    return original_quantity.isEmpty() ? 0 : original_quantity.size();
-}
-
 bool Spruce::isActive()
 {
     return !( nodes_start.isEmpty() || currency_weight.isEmpty() || getBaseCurrency() == "disabled" );

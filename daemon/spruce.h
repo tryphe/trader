@@ -143,7 +143,6 @@ public:
 
     QVector<QString> getCurrencies() const;
     QVector<QString> getMarketsAlpha() const;
-    int getMarketsAlphaCount() const;
     QList<Market> &getMarketsBeta() { return m_markets_beta; }
     bool isActive();
     QString getSaveState();

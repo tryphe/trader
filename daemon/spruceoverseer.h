@@ -60,6 +60,8 @@ private:
     TickerInfo getSpreadForSide( const QString &market, quint8 side, bool order_duplicity = false, bool taker_mode = false, bool include_limit_for_side = false, bool is_randomized = false, Coin greed_reduce = Coin() );
     Coin getPriceTicksizeForMarket( const Market &market ) const;
 
+    QMap<QString,Coin> m_last_spread_distance_buys;
+    QMap<QString,Coin> m_last_spread_distance_sells;
     QString m_last_midspread_output;
 
     DiffusionPhaseMan m_phase_man;
