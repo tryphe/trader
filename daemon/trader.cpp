@@ -17,6 +17,7 @@
 #include "spruce.h"
 #include "spruceoverseer.h"
 #include "spruceoverseer_test.h"
+#include "diffusionphaseman_test.h"
 #include "wavesutil_test.h"
 #include "wavesaccount_test.h"
 #include "../qbase58/qbase58_test.h"
@@ -149,6 +150,9 @@ Trader::Trader( QObject *parent )
 
     CoinAverageTester coinavg_test;
     coinavg_test.test();
+
+    DiffusionPhaseManTest phaseman_test;
+    phaseman_test.test();
 
     EngineTest engine_test;
     if ( bittrex  ) engine_test.test( engine_trex );

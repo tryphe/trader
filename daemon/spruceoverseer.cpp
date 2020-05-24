@@ -8,12 +8,16 @@
 #include "engine.h"
 #include "positionman.h"
 
-#include <QTimer>
+#include <QString>
 #include <QVector>
 #include <QMap>
 #include <QList>
 #include <QSet>
 #include <QFile>
+#include <QDir>
+#include <QDateTime>
+#include <QTextStream>
+#include <QTimer>
 
 const bool expand_spread_base_down = false; // true = getSpreadForSide always expands down for base greed value before applying other effects
 const bool prices_uses_avg = true; // false = assemble widest combined spread between all exchanges, true = average spreads between all exchanges
