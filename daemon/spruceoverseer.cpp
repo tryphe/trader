@@ -101,13 +101,16 @@ void SpruceOverseer::onSpruceUp()
 
             // if midspread is blank, cache it
             if ( !mid_spread.contains( market ) )
-            {
                 mid_spread[ market ] = getMidSpread( market );
 
-                if ( !mid_spread.value( market ).isValid() ||
-                     mid_spread.value( market ).bid != mid_spread.value( market ).ask )
+            // check if valid
+            const TickerInfo &midspread_current = mid_spread.value( market );
+            if ( !midspread_current.isValid() )
+            {
+                if ( !midspread_current.isValid() ||
+                     midspread_current.bid != midspread_current.ask )
                 {
-                    kDebug() << "spruceoverseer error: midspread" << mid_spread.value( market )
+                    kDebug() << "spruceoverseer error: midspread" << midspread_current
                              << "was not valid for phase" << phase_name;
                     return;
                 }
@@ -118,12 +121,12 @@ void SpruceOverseer::onSpruceUp()
             if ( !is_midspread_phase && market == flux_market )
             {
                 // set the most optimistic price to use, either the midprice or duplicity price
-                diffusion_price = ( side == SIDE_BUY ) ? std::min( mid_spread.value( market ).bid, spread_duplicity.bid ) :
-                                                         std::max( mid_spread.value( market ).ask, spread_duplicity.ask );
+                diffusion_price = ( side == SIDE_BUY ) ? std::min( midspread_current.bid, spread_duplicity.bid ) :
+                                                         std::max( midspread_current.ask, spread_duplicity.ask );
             }
             else
             {
-                diffusion_price = mid_spread.value( market ).bid;
+                diffusion_price = midspread_current.bid;
             }
 
             spruce->addLiveNode( market.getQuote(), diffusion_price );
