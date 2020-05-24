@@ -24,6 +24,7 @@ SOURCES += main.cpp \
     commandlistener.cpp \
     commandrunner.cpp \
     costfunctioncache.cpp \
+    diffusionphaseman.cpp \
     fallbacklistener.cpp \
     market.cpp \
     position.cpp \
@@ -101,6 +102,7 @@ HEADERS += build-config.h \
     commandlistener.h \
     commandrunner.h \
     costfunctioncache.h \
+    diffusionphaseman.h \
     enginesettings.h \
     fallbacklistener.h \
     global.h \

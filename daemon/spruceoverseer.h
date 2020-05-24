@@ -5,8 +5,14 @@
 #include "market.h"
 #include "coinamount.h"
 #include "misctypes.h"
+#include "diffusionphaseman.h"
 
+#include <QString>
+#include <QVector>
+#include <QMap>
+#include <QDir>
 #include <QObject>
+#include <QTimer>
 
 class AlphaTracker;
 class Spruce;
@@ -55,6 +61,8 @@ private:
     Coin getPriceTicksizeForMarket( const Market &market ) const;
 
     QString m_last_midspread_output;
+
+    DiffusionPhaseMan m_phase_man;
 
     QTimer *autosave_timer{ nullptr };
 };

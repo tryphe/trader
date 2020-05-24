@@ -141,8 +141,9 @@ public:
     Coin getQuantityToShortLongNow( const QString &market );
     void addToShortLonged( const QString &market, const Coin &qty );
 
-    QList<QString> getCurrencies() const;
-    QList<QString> getMarketsAlpha() const;
+    QVector<QString> getCurrencies() const;
+    QVector<QString> getMarketsAlpha() const;
+    int getMarketsAlphaCount() const;
     QList<Market> &getMarketsBeta() { return m_markets_beta; }
     bool isActive();
     QString getSaveState();

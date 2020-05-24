@@ -75,8 +75,8 @@ void Spruce::setCurrencyWeight( QString currency, Coin weight )
 
 Coin Spruce::getMarketWeight( QString market ) const
 {
-    const QList<QString> &currencies = getCurrencies();
-    for ( QList<QString>::const_iterator i = currencies.begin(); i != currencies.end(); i++ )
+    const QVector<QString> &currencies = getCurrencies();
+    for ( QVector<QString>::const_iterator i = currencies.begin(); i != currencies.end(); i++ )
     {
         const QString &currency = *i;
 
@@ -393,8 +393,8 @@ bool Spruce::calculateAmountToShortLong()
     // record amount to shortlong in a map and get total
     m_quantity_to_shortlong_map.clear();
 
-    QList<QString> markets = getMarketsAlpha();
-    for ( QList<QString>::const_iterator i = markets.begin(); i != markets.end(); i++ )
+    QVector<QString> markets = getMarketsAlpha();
+    for ( QVector<QString>::const_iterator i = markets.begin(); i != markets.end(); i++ )
     {
         const QString &market = *i;
         const Coin &shortlong_market = getQuantityToShortLongNow( market );
@@ -420,19 +420,24 @@ void Spruce::addToShortLonged( const QString &market, const Coin &qty )
     quantity_already_shortlong[ market ] += qty;
 }
 
-QList<QString> Spruce::getCurrencies() const
+QVector<QString> Spruce::getCurrencies() const
 {
-    return original_quantity.keys();
+    return original_quantity.keys().toVector();
 }
 
-QList<QString> Spruce::getMarketsAlpha() const
+QVector<QString> Spruce::getMarketsAlpha() const
 {
-    QList<QString> ret;
-    const QList<QString> &keys = original_quantity.keys();
-    for ( QList<QString>::const_iterator i = keys.begin(); i != keys.end(); i++ )
+    QVector<QString> ret;
+    const QVector<QString> &keys = original_quantity.keys().toVector();
+    for ( QVector<QString>::const_iterator i = keys.begin(); i != keys.end(); i++ )
         ret += Market( base_currency, *i );
 
     return ret;
+}
+
+int Spruce::getMarketsAlphaCount() const
+{
+    return original_quantity.isEmpty() ? 0 : original_quantity.size();
 }
 
 bool Spruce::isActive()

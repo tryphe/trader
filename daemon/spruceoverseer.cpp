@@ -37,6 +37,9 @@ SpruceOverseer::SpruceOverseer( Spruce *_spruce )
     connect( autosave_timer, &QTimer::timeout, this, &SpruceOverseer::onSaveSpruceSettings );
     autosave_timer->setTimerType( Qt::VeryCoarseTimer );
     autosave_timer->start( 60000 * 60 ); // set default to 1hr
+
+    m_phase_man.addPhase( NO_FLUX ); // run one phase for all markets with no flux
+    m_phase_man.addPhase( FLUX_PER_MARKET ); // run one phase for each market with the flux in the selected market
 }
 
 SpruceOverseer::~SpruceOverseer()
@@ -60,18 +63,18 @@ void SpruceOverseer::onSpruceUp()
     m_last_midspread_output.clear();
 
     QMap<QString/*market*/,Coin> spread_price;
-    const QList<QString> currencies = spruce->getCurrencies();
-    QList<QString> markets;
-    markets += MIDSPREAD_PHASE; // 1 phase for middle spread
-    markets += spruce->getMarketsAlpha(); // 1 phase for each market
+    const QVector<QString> markets = spruce->getMarketsAlpha();
+    QVector<QString> phases;
+    phases += MIDSPREAD_PHASE; // 1 phase for middle spread
+    phases += spruce->getMarketsAlpha(); // 1 phase for each market
 
-    for ( QList<QString>::const_iterator m = markets.begin(); m != markets.end(); m++ )
+    for ( QVector<QString>::const_iterator p = phases.begin(); p != phases.end(); p++ )
     {
+        const QString market_phase = *p;
+        const bool is_midspread_phase = ( market_phase == MIDSPREAD_PHASE );
+
         // track mid spread for each market (spread for every market is needed for custom phase)
         QMap<QString,TickerInfo> mid_spread;
-
-        const Market market_phase = *m;
-        const bool is_midspread_phase = ( market_phase == MIDSPREAD_PHASE );
 
         // one pass in each phase for buys and sells
         for ( quint8 side = SIDE_BUY; side < SIDE_SELL +1; side++ )
@@ -94,10 +97,9 @@ void SpruceOverseer::onSpruceUp()
             }
 
             spruce->clearLiveNodes();
-            for ( QList<QString>::const_iterator i = currencies.begin(); i != currencies.end(); i++ )
+            for ( QVector<QString>::const_iterator i = markets.begin(); i != markets.end(); i++ )
             {
-                const QString &currency = *i;
-                const Market market( spruce->getBaseCurrency(), currency );
+                const Market market = *i;
 
                 // if midspread is blank, cache it
                 if ( !mid_spread.contains( market ) )
@@ -136,8 +138,8 @@ void SpruceOverseer::onSpruceUp()
                                                         std::max( flux_price, spread_duplicity.ask );
                 }
 
-                spread_price.insert( currency, flux_price );
-                spruce->addLiveNode( currency, flux_price );
+                spread_price.insert( market.getQuote(), flux_price );
+                spruce->addLiveNode( market.getQuote(), flux_price );
             }
 
             // on the sell side of custom iteration 0, the result is the same as the buy side, so skip it
@@ -405,7 +407,6 @@ void SpruceOverseer::adjustSpread( TickerInfo &spread, Coin limit, quint8 side, 
     while ( expand ? spread.bid > spread.ask * limit :
                      spread.bid < spread.ask * limit )
     {
-        // if the side is buy, expand down, otherwise expand outwards
         j++;
         if ( j % 2 == 1 ) // expand 50/50
             spread.bid -= ticksize;
