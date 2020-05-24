@@ -75,8 +75,8 @@ void Spruce::setCurrencyWeight( QString currency, Coin weight )
 
 Coin Spruce::getMarketWeight( QString market ) const
 {
-    const QVector<QString> &currencies = getCurrencies();
-    for ( QVector<QString>::const_iterator i = currencies.begin(); i != currencies.end(); i++ )
+    const QList<QString> &currencies = original_quantity.keys();
+    for ( QList<QString>::const_iterator i = currencies.begin(); i != currencies.end(); i++ )
     {
         const QString &currency = *i;
 
@@ -418,11 +418,6 @@ Coin Spruce::getQuantityToShortLongNow( const QString &market )
 void Spruce::addToShortLonged( const QString &market, const Coin &qty )
 {
     quantity_already_shortlong[ market ] += qty;
-}
-
-QVector<QString> Spruce::getCurrencies() const
-{
-    return original_quantity.keys().toVector();
 }
 
 QVector<QString> Spruce::getMarketsAlpha() const

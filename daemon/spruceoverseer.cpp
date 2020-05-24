@@ -63,7 +63,6 @@ void SpruceOverseer::onSpruceUp()
     // cache mid spread for each market (needed for noflux phase optimization)
     QMap<QString,TickerInfo> mid_spread;
 
-    ///
     // cache markets. if we altered the market count, update markets
     const QVector<QString> alpha_markets = spruce->getMarketsAlpha();
     if ( m_phase_man.getMarketCount() < alpha_markets.size() )
@@ -105,15 +104,11 @@ void SpruceOverseer::onSpruceUp()
 
             // check if valid
             const TickerInfo &midspread_current = mid_spread.value( market );
-            if ( !midspread_current.isValid() )
+            if ( !midspread_current.isValid() ||  midspread_current.bid != midspread_current.ask )
             {
-                if ( !midspread_current.isValid() ||
-                     midspread_current.bid != midspread_current.ask )
-                {
-                    kDebug() << "spruceoverseer error: midspread" << midspread_current
-                             << "was not valid for phase" << phase_name;
-                    return;
-                }
+                kDebug() << "spruceoverseer error: midspread" << midspread_current
+                         << "was not valid for phase" << phase_name;
+                return;
             }
 
             // for noflux phase, if market matches selected market, select best price from duplicity price or mid price
@@ -209,7 +204,7 @@ void SpruceOverseer::onSpruceUp()
                 const Coin amount_to_shortlong_abs = amount_to_shortlong.abs();
 
                 // measure how close amount_to_sl is to hitting the limit
-                const Coin pct_progress = ( amount_to_shortlong_abs / order_size_limit.abs() ) * 100;
+                const Coin pct_progress = amount_to_shortlong_abs / order_size_limit.abs() * 100;
 
                 // check amount active
                 const Coin spruce_active_for_side = engine->positions->getActiveSpruceEquityTotal( market, phase_name, side, Coin() );
@@ -273,17 +268,14 @@ void SpruceOverseer::onSpruceUp()
                 if ( under_the_limit )
                     continue;
 
-                Coin spread_distance_limit;
-
                 /// for duplicity phases, detect conflicting positions for this market within the spread distance limit
+                Coin spread_distance_limit;
                 if ( !is_midspread_phase )
                 {
                     const Coin spread_put_threshold = order_size_default * spruce->getOrderNiceSpreadPut( side );
 
-                    // declare spread reduce here so we can print/evalulate it after
-                    Coin spread_reduce;
-
                     // reduce spread if pending amount to shortlong is greater than size * order_nice_spreadput
+                    Coin spread_reduce;
                     if ( spread_put_threshold.isGreaterThanZero() &&
                          amount_to_shortlong_abs > spread_put_threshold )
                     {
@@ -757,7 +749,7 @@ void SpruceOverseer::onSaveSpruceSettings()
 
 void SpruceOverseer::runCancellors( Engine *engine, const QString &market, const quint8 side, const QString &phase_name, const Coin &flux_price )
 {
-    const bool is_midspread_phase = phase_name.contains( "all" );
+    const bool is_midspread_phase = phase_name.contains( "noflux" );
 
     // sort active positions by longest active first, shortest active last
     const QVector<Position*> active_by_set_time = engine->positions->activeBySetTime();
