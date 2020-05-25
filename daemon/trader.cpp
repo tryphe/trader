@@ -38,7 +38,7 @@ Trader::Trader( QObject *parent )
          waves = false;
 
     // ssl hacks
-    GlobalSsl::enableSecureSsl();
+    SslPolicy::enableSecureSsl();
 
     // create spruce and spruceOverseer
     alpha = new AlphaTracker();

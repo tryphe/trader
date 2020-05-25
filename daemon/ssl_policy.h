@@ -1,5 +1,5 @@
-#ifndef GLOBALSSL_H
-#define GLOBALSSL_H
+#ifndef SSLPOLICY_H
+#define SSLPOLICY_H
 
 #include <assert.h>
 #include "global.h"
@@ -10,7 +10,7 @@
 #include <QLoggingCategory>
 
 
-namespace GlobalSsl {
+namespace SslPolicy {
 
 static inline void enableSecureSsl()
 {
@@ -111,4 +111,4 @@ static inline void enableSecureSsl()
 
 }
 
-#endif // GLOBALSSL_H
+#endif // SSLPOLICY_H
