@@ -6,7 +6,7 @@
 Spruce::Spruce()
 {
     /// user settings
-    m_order_size = "0.00500000";
+    m_order_size = "0.005";
     m_order_nice_buys = "2";
     m_order_nice_sells = "2";
     m_order_nice_zerobound_buys = "0";
@@ -22,8 +22,8 @@ Spruce::Spruce()
     m_order_greed_buy_randomness = "0.05";
     m_order_greed_sell_randomness = "0.05"; // randomly subtract tenths of a pct from greed up to this amount
 
-    m_market_buy_max = "0.20000000";
-    m_market_sell_max = "0.20000000";
+    m_market_buy_max = "0.2";
+    m_market_sell_max = "0.2";
     m_amplification = CoinAmount::COIN;
 }
 
@@ -666,7 +666,7 @@ bool Spruce::normalizeEquity()
     QMap<QString,Coin> mean_equity_for_market;
 
     Coin mean_equity = total / nodes_start.size();
-    mean_equity.truncateByTicksize( "0.00000001" ); // toss subsatoshi digits
+    mean_equity.truncateByTicksize( CoinAmount::SATOSHI_STR ); // toss subsatoshi digits
 
     // step 3: calculate weighted equity from lowest to highest weight (map is sorted by weight)
     //         for each market and recalculate mean/total equity

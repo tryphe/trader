@@ -25,35 +25,33 @@ void CoinAmountTest::testUnit()
     assert( Coin() == "0.00000000" );
     assert( Coin( "0" ) == "0.00000000" );
     assert( Coin( "0.0" ) == "0.00000000" );
-    assert( Coin( "0.0" ) == Coin( 0.0 ) );
-    assert( Coin( "0.0" ) == Coin( 0 ) );
+    assert( Coin( "0.0" ) == Coin( qreal(0.0) ) );
+    assert( Coin( "0.0" ) == Coin( int(0) ) );
 
     // Coin::operator /( const Coin &c )
-    Coin p( "0.00001" );
-    Coin amt( "1.0" );
-    Coin qty = amt / p;
-    assert( qty == "100000.00000000" );
+    c = Coin( "0.00001" );
+    assert( Coin( "1.0" ) / c == "100000.00000000" );
 
     // Coin::operator =( const QString &s )
-    Coin c13;
-    c13 = "1.0";
-    assert( c13 == "1.00000000" );
+    c = Coin();
+    c = "1.0";
+    assert( c == "1.00000000" );
 
     // Coin::operator *( const Coin &c ) const
     assert( CoinAmount::COIN == CoinAmount::COIN_PARTS * CoinAmount::SUBSATOSHI );
 
     // Coin::operator *=( const Coin &c )
-    Coin parts = Coin( CoinAmount::COIN_PARTS );
-    parts *= CoinAmount::SUBSATOSHI;
-    assert( parts == CoinAmount::COIN );
+    c = Coin( CoinAmount::COIN_PARTS );
+    c *= CoinAmount::SUBSATOSHI;
+    assert( c == CoinAmount::COIN );
 
     // Coin::operator *=( const QString &s )
-    parts *= QString( "2.0000" );
-    parts *= QString( "2" );
-    assert( parts == Coin( "4" ) );
+    c *= QString( "2.0000" );
+    c *= QString( "2" );
+    assert( c == Coin( "4" ) );
 
     // Coin::operator *(const uint64_t &i )
-    assert( parts == CoinAmount::COIN * 4 );
+    assert( c == CoinAmount::COIN * 4 );
 
     // Coin::operator /(const uint64_t &i )
     assert( CoinAmount::COIN / 4 == "0.25000000" );
@@ -96,41 +94,41 @@ void CoinAmountTest::testUnit()
     assert( c.ratio( 3.0 ) == Coin( 3.0 ) );
 
     // Coin( qreal amount )
-    Coin c1( 1000000.0 ); // 1m
-    assert( c1 == "1000000.00000000" );
-    assert( c1.toSubSatoshiString() == "1000000.0000000000000000" );
+    c = Coin( 1000000.0 ); // 1m
+    assert( c == "1000000.00000000" );
+    assert( c.toSubSatoshiString() == "1000000.0000000000000000" );
 
-    Coin c2( 100000000000000 ); // 100trillion
-    assert( c2 == "100000000000000.00000000" );
-    assert( c2.toSubSatoshiString() == "100000000000000.0000000000000000" );
+    c = Coin( 100000000000000 ); // 100trillion
+    assert( c == "100000000000000.00000000" );
+    assert( c.toSubSatoshiString() == "100000000000000.0000000000000000" );
 
     // Coin::operator /=( const QString &s )
-    Coin c12( 10.0 );
-    c12 /= "2.0";
-    assert( c12 == Coin( 5.0 ) );
+    c = Coin( 10.0 );
+    c /= "2.0";
+    assert( c == Coin( 5.0 ) );
 
     // Coin::operator /=( const uint64_t &i )
-    Coin c4( 0.00000001 ); // 1 sat
-    c4 /= 100000000;
-    assert( c4 == "0.00000000" );
-    assert( c4.toSubSatoshiString() == "0.0000000000000001" );
+    c = Coin( 0.00000001 ); // 1 sat
+    c /= 100000000;
+    assert( c == "0.00000000" );
+    assert( c.toSubSatoshiString() == "0.0000000000000001" );
 
     // Coin::operator *=( const uint64_t &i )
-    c4 *= 100;
-    assert( c4 == "0.00000000" );
-    assert( c4.toSubSatoshiString() == "0.0000000000000100" );
+    c *= 100;
+    assert( c == "0.00000000" );
+    assert( c.toSubSatoshiString() == "0.0000000000000100" );
 
-    Coin c5( "1.0" );
-    assert( c5 == "1.00000000" );
-    assert( c5.toSubSatoshiString() == "1.0000000000000000" );
+    c = Coin( "1.0" );
+    assert( c == "1.00000000" );
+    assert( c.toSubSatoshiString() == "1.0000000000000000" );
 
-    Coin c6( "10000000000000000000000000000000000000.0" );
-    assert( c6 == "10000000000000000000000000000000000000.00000000" );
-    assert( c6.toSubSatoshiString() == "10000000000000000000000000000000000000.0000000000000000" );
+    c = Coin( "10000000000000000000000000000000000000.0" );
+    assert( c == "10000000000000000000000000000000000000.00000000" );
+    assert( c.toSubSatoshiString() == "10000000000000000000000000000000000000.0000000000000000" );
 
-    Coin c7( "77777777777777777777777777777777777777.7777777777777777" );
-    assert( c7 == "77777777777777777777777777777777777777.77777777" );
-    assert( c7.toSubSatoshiString() == "77777777777777777777777777777777777777.7777777777777777" );
+    c = Coin( "77777777777777777777777777777777777777.7777777777777777" );
+    assert( c == "77777777777777777777777777777777777777.77777777" );
+    assert( c.toSubSatoshiString() == "77777777777777777777777777777777777777.7777777777777777" );
 
     // instead of Coin( QString ) aborting with std::invalid_argument, filter non-number as 0
     assert( Coin( "1.0abc" ) == Coin() );
@@ -150,32 +148,32 @@ void CoinAmountTest::testUnit()
     assert( Coin( "0. 01" ) == Coin() ); // don't tolerate spaces inside
 
     // Coin::operator *( const QString &s )
-    Coin test = QString( "0.1" );
-    assert( test == "0.10000000" );
-    test = test * "2";
-    assert( test == "0.20000000" );
-    test = test * "2.0";
-    assert( test == "0.40000000" );
-    test.applyRatio( 0.999 );
-    assert( test == "0.39960000" );
+    c = Coin( "0.1" );
+    assert( c == "0.10000000" );
+    c = c * "2";
+    assert( c == "0.20000000" );
+    c = c * "2.0";
+    assert( c == "0.40000000" );
+    c.applyRatio( 0.999 );
+    assert( c == "0.39960000" );
 
     // void applyRatio( qreal r );
-    Coin lo_ratio = Coin( 1.0 );
-    lo_ratio.applyRatio( 0.999 );
-    assert( lo_ratio == Coin( "0.999" ) );
-    assert( lo_ratio == Coin( "0.99900000" ) );
-    Coin hi_ratio = Coin( 1.0 );
-    hi_ratio *= Coin( 1.001 );
-    assert( hi_ratio == "1.00099999" );
-    assert( hi_ratio == Coin( "1.0009999999999999" ) );
+    c = Coin( 1.0 );
+    c.applyRatio( 0.999 );
+    assert( c == Coin( "0.999" ) );
+    assert( c == Coin( "0.99900000" ) );
+    c = Coin( 1.0 );
+    c *= Coin( 1.001 );
+    assert( c == "1.00099999" );
+    assert( c == Coin( "1.0009999999999999" ) );
 
     // fee string
     assert( Coin( 0.2 * 2 ) == "0.40000000" );
 
-    Coin c8 = QString( "0.00080000" );
-    assert( c8 == "0.00080000" );
-    assert( Coin( c8 * 2 ) == "0.00160000" );
-    assert( Coin( c8 * "2" ) == "0.00160000" );
+    c = Coin( "0.0008" );
+    assert( c == "0.00080000" );
+    assert( Coin( c * 2 ) == "0.00160000" );
+    assert( Coin( c * "2" ) == "0.00160000" );
 
     // fee real
     assert( Coin( 0.0008 ) == "0.00080000" );
@@ -197,31 +195,31 @@ void CoinAmountTest::testUnit()
     assert( !( Coin( "0.00000001" ) >= "0.00000002" ) );
 
     // Coin::operator +=( const Coin &c )
-    Coin c14;
-    c14 += Coin( "1.0" );
-    assert( c14 == "1.00000000" );
+    c = Coin();
+    c += Coin( "1.0" );
+    assert( c == "1.00000000" );
 
     // Coin::operator -=( const Coin &c )
-    Coin c15( "2.0" );
-    c15 -= Coin( "1.0" );
-    assert( c15 == "1.00000000" );
+    c = Coin( "2.0" );
+    c -= Coin( "1.0" );
+    assert( c == "1.00000000" );
 
     // Coin::operator -( const Coin &c
-    Coin c16( "2.0" );
-    c16 = c16 - Coin( "1.0" );
-    assert( c16 == "1.00000000" );
+    c = Coin( "2.0" );
+    c = c - Coin( "1.0" );
+    assert( c == "1.00000000" );
 
     // Coin::operator +( const Coin &c
-    Coin c17( "2.0" );
-    c17 = c17 + Coin( "1.0" );
-    assert( c17 == "3.00000000" );
+    c = Coin( "2.0" );
+    c = c + Coin( "1.0" );
+    assert( c == "3.00000000" );
 
     // Position::calculateQuantity() q = btc / price
     // Coin::operator /=( const Coin &c )
-    Coin q = QString( "0.09988888" );
-    q /= Coin( "0.00000003" );
-    assert( q == "3329629.33333333" );
-    assert( q.toSubSatoshiString() == "3329629.3333333333333333" );
+    c = QString( "0.09988888" );
+    c /= Coin( "0.00000003" );
+    assert( c == "3329629.33333333" );
+    assert( c.toSubSatoshiString() == "3329629.3333333333333333" );
 
     // stray order detection logic
     assert( Coin( "1.0" ) > Coin( "1.0" ).ratio( 0.999 ) &&
@@ -264,15 +262,15 @@ void CoinAmountTest::testUnit()
     assert( -Coin( "0" ) == Coin() );
 
     // Coin::truncateByTicksize
-    Coin trunc( "0.00001777" );
-    trunc.truncateByTicksize( "0.00001000" );
-    assert( trunc == "0.00001000" );
-    trunc = "0.00000017";
-    trunc.truncateByTicksize( "0.00000010" );
-    assert( trunc == "0.00000010" );
-    trunc = "0.09999999";
-    trunc.truncateByTicksize( "0.01" ); // tolerate unpadded zeroes
-    assert( trunc == "0.09000000" );
+    c = Coin( "0.00001777" );
+    c.truncateByTicksize( "0.00001000" );
+    assert( c == "0.00001000" );
+    c = "0.00000017";
+    c.truncateByTicksize( "0.00000010" );
+    assert( c == "0.00000010" );
+    c = "0.09999999";
+    c.truncateByTicksize( "0.01" ); // tolerate unpadded zeroes
+    assert( c == "0.09000000" );
 
     // Coin::truncatedByTicksize
     assert( Coin( "0.007777777" ).truncatedByTicksize( "0.0001" ) == "0.00770000" );
