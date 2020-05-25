@@ -36,6 +36,7 @@ static inline void enableSecureSsl()
     QList<QSslCipher> chosen_ciphers;
 
     QSet<QString> bad_ciphers;
+    // old/weak
     bad_ciphers += "DHE-DSS-AES256-SHA256";
     bad_ciphers += "DHE-DSS-AES128-SHA256";
     bad_ciphers += "AES128-GCM-SHA256";
@@ -56,6 +57,16 @@ static inline void enableSecureSsl()
     bad_ciphers += "ECDHE-ECDSA-AES128-SHA256";
     bad_ciphers += "ECDHE-ECDSA-AES256-SHA384";
     bad_ciphers += "ECDHE-RSA-AES256-SHA384";
+
+    // no forward secrecy
+    bad_ciphers += "DHE-RSA-AES128-GCM-SHA256";
+    bad_ciphers += "DHE-PSK-AES128-GCM-SHA256";
+    bad_ciphers += "DHE-PSK-AES256-GCM-SHA384";
+    bad_ciphers += "DHE-PSK-CHACHA20-POLY1305";
+    bad_ciphers += "ECDHE-PSK-CHACHA20-POLY1305";
+    bad_ciphers += "PSK-AES128-GCM-SHA256";
+    bad_ciphers += "PSK-AES256-GCM-SHA384";
+    bad_ciphers += "PSK-CHACHA20-POLY1305";
 
     // choose ciphers
     for ( int i = 0; i < cipher_list.size(); i++ )
