@@ -77,5 +77,5 @@ void DiffusionPhaseMan::next()
 
 bool DiffusionPhaseMan::atEnd() const
 {
-    return m_phase_selected >= m_phases.size();
+    return m_phase_selected >= m_phases.size() || m_phase_selected < 0; // TODO: remove second condition when we use size_t
 }
