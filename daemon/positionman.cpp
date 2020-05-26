@@ -448,7 +448,7 @@ Position *PositionMan::getHighestSpruceBuy( const QString &market ) const
         if (  pos->side != SIDE_BUY ||          // buys only
               pos->is_cancelling ||             // must not be cancelling
               pos->market != market ||          // check market filter
-             !pos->strategy_tag.startsWith( "spruce" ) )
+             !pos->strategy_tag.contains( "flux" ) )
             continue;
 
         if ( pos->buy_price > hi_buy )
@@ -472,7 +472,7 @@ Position *PositionMan::getLowestSpruceSell( const QString &market ) const
         if (  pos->side != SIDE_SELL ||         // sells only
               pos->is_cancelling ||             // must not be cancelling
               pos->market != market ||          // check market filter
-             !pos->strategy_tag.startsWith( "spruce" ) )
+             !pos->strategy_tag.contains( "flux" ) )
             continue;
 
         if ( pos->sell_price < lo_sell )
@@ -496,7 +496,7 @@ Position *PositionMan::getRandomSprucePosition( const QString &market, const qui
         if (  pos->side != side ||         // orders matching our side only
               pos->is_cancelling ||        // must not be cancelling
               pos->market != market ||     // check market filter
-             !pos->strategy_tag.startsWith( "spruce" ) )
+             !pos->strategy_tag.contains( "flux" ) )
             continue;
 
         qualifying_pos_count++;
@@ -517,7 +517,7 @@ Position *PositionMan::getRandomSprucePosition( const QString &market, const qui
         if (  pos->side != side ||         // orders matching our side only
               pos->is_cancelling ||        // must not be cancelling
               pos->market != market ||     // check market filter
-             !pos->strategy_tag.startsWith( "spruce" ) )
+             !pos->strategy_tag.contains( "flux" ) )
             continue;
 
         // if we're on the one that we chose, return it

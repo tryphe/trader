@@ -414,9 +414,11 @@ void Spruce::findOptimalProfiles()
 
     /// run diffusion, but modify the live price of a singular market while using start prices for other markets
     Coin lowest_pct_disposed = CoinAmount::A_LOT, highest_pct_disposed;
-    QString highest_pct_disposed_currency;
+    QString highest_pct_disposed_currency, lowest_pct_disposed_currency;
+    int iterations = 0;
     while ( lowest_pct_disposed == CoinAmount::A_LOT || // pass on first iteration
-            highest_pct_disposed > lowest_pct_disposed * Coin( "1.03" ) )
+            highest_pct_disposed > lowest_pct_disposed * Coin( "1.05" ) ||
+            iterations++ > 999 )
     {
         // reset trackers so they set properly each round
         lowest_pct_disposed = CoinAmount::A_LOT;
@@ -435,7 +437,7 @@ void Spruce::findOptimalProfiles()
                 const Coin &start_node_price = start_node_prices.value( currency );
 
                 if ( currency == premium_currency )
-                    addLiveNode( currency, start_node_price *2 );
+                    addLiveNode( currency, start_node_price * Coin( "1.1" ) );
                 else
                     addLiveNode( currency, start_node_price );
             }
@@ -462,13 +464,18 @@ void Spruce::findOptimalProfiles()
             if ( pct_disposed < lowest_pct_disposed )
             {
                 lowest_pct_disposed = pct_disposed;
+                lowest_pct_disposed_currency = premium_currency;
             }
         }
 
         // raise the highest disposed profile so the performance of other currencies approaches it
-        const Coin new_profile = getProfileU( highest_pct_disposed_currency ) + Coin( "0.02" );
-        setProfileU( highest_pct_disposed_currency, new_profile );
-        kDebug() << "profile" << highest_pct_disposed_currency << "=" << new_profile;
+        const Coin new_high_profile = getProfileU( highest_pct_disposed_currency ) + Coin( "0.5" );
+
+        setProfileU( highest_pct_disposed_currency, new_high_profile );
+
+
+        kDebug() << "profile" << highest_pct_disposed_currency << "=" << new_high_profile;
+        //kDebug() << "profile" << lowest_pct_disposed_currency << "=" << new_low_profile;
     }
 
     kDebug() << "optimized profiles less defaults:" << m_currency_profile_u;

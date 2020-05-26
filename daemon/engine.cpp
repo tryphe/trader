@@ -502,7 +502,7 @@ void Engine::updateStatsAndPrintFill( const QString &fill_type, Market market, c
     alpha->addAlpha( market, side, amount, price );
     alpha->addDailyVolume( QDateTime::currentSecsSinceEpoch(), amount );
 
-    if ( strategy_tag.startsWith( "spruce" ) )
+    if ( strategy_tag.contains( "flux" ) )
     {
         // beta order, adjust both quantities
         if ( alpha_market_0.isValid() && alpha_market_1.isValid() )
@@ -926,7 +926,7 @@ void Engine::processCancelledOrder( Position * const &pos )
     if ( ( pos->is_slippage && pos->cancel_reason == CANCELLING_FOR_SLIPPAGE_RESET ) ||
          ( !pos->is_onetime && pos->cancel_reason == CANCELLING_FOR_MAX_AGE ) )
     {
-        if ( pos->strategy_tag.startsWith( "spruce" ) )
+        if ( pos->strategy_tag.contains( "flux" ) )
         {
             addPosition( pos->market, pos->side, pos->buy_price_original, pos->sell_price_original, pos->original_size, "onetime", pos->strategy_tag,
                          QVector<qint32>(), false, true );
