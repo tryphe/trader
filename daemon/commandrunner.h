@@ -95,7 +95,6 @@ private:
     void command_setslippagetimeout( QStringList &args );
     void command_setspruceinterval( QStringList &args );
     void command_setsprucebasecurrency( QStringList &args );
-    void command_setspruceweight( QStringList &args );
     void command_setsprucestartnode( QStringList &args );
     void command_setspruceshortlongtotal( QStringList &args );
     void command_setsprucebetamarket( QStringList &args );

@@ -12,7 +12,7 @@
 #include <QVector>
 #include <QList>
 
-static const Coin DEFAULT_PROFILE_U = Coin("10");
+static const Coin DEFAULT_PROFILE_U = Coin("1");
 static const Coin DEFAULT_RESERVE = Coin("0.01");
 
 struct Node
@@ -55,7 +55,6 @@ public:
 
     void setBaseCurrency( QString currency ) { base_currency = currency; }
     QString getBaseCurrency() const { return base_currency.isEmpty() ? "disabled" : base_currency; }
-    void setCurrencyWeight( QString currency, Coin weight );
     Coin getMarketWeight( QString market ) const;
 
     Coin getExchangeAllocation( const QString &exchange_market );
@@ -136,6 +135,9 @@ public:
     void addMarketBeta( Market m );
     void clearLiveNodes();
     void clearStartNodes();
+
+    void generateWeights();
+    void findOptimalProfiles();
 
     bool calculateAmountToShortLong();
     Coin getQuantityToShortLongNow( const QString &market );

@@ -84,7 +84,6 @@ CommandRunner::CommandRunner( const quint8 _engine_type, Engine *_e, QVector<Bas
     command_map.insert( "setslippagetimeout", std::bind( &CommandRunner::command_setslippagetimeout, this, _1 ) );
     command_map.insert( "setspruceinterval", std::bind( &CommandRunner::command_setspruceinterval, this, _1 ) );
     command_map.insert( "setsprucebasecurrency", std::bind( &CommandRunner::command_setsprucebasecurrency, this, _1 ) );
-    command_map.insert( "setspruceweight", std::bind( &CommandRunner::command_setspruceweight, this, _1 ) );
     command_map.insert( "setsprucestartnode", std::bind( &CommandRunner::command_setsprucestartnode, this, _1 ) );
     command_map.insert( "setspruceshortlongtotal", std::bind( &CommandRunner::command_setspruceshortlongtotal, this, _1 ) );
     command_map.insert( "setsprucebetamarket", std::bind( &CommandRunner::command_setsprucebetamarket, this, _1 ) );
@@ -851,14 +850,6 @@ void CommandRunner::command_setsprucebasecurrency( QStringList &args )
 
     spruce_overseer->spruce->setBaseCurrency( args.value( 1 ) );
     kDebug() << "spruce base currency is now" << spruce_overseer->spruce->getBaseCurrency();
-}
-
-void CommandRunner::command_setspruceweight( QStringList &args )
-{
-    if ( !checkArgs( args, 2 ) ) return;
-
-    spruce_overseer->spruce->setCurrencyWeight( args.value( 1 ), args.value( 2 ) );
-    kDebug() << "spruce currency weight for" << args.value( 1 ) << "is" << args.value( 2 );
 }
 
 void CommandRunner::command_setsprucestartnode( QStringList &args )

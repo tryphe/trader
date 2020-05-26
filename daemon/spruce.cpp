@@ -57,22 +57,6 @@ void Spruce::clear()
     m_markets_beta.clear();
 }
 
-void Spruce::setCurrencyWeight( QString currency, Coin weight )
-{
-    // clear by coin
-    for ( QMultiMap<Coin,QString>::const_iterator i = currency_weight_by_coin.begin(); i != currency_weight_by_coin.end(); i++ )
-    {
-        if ( i.value() == currency )
-        {
-            currency_weight_by_coin.remove( i.key(), i.value() );
-            break;
-        }
-    }
-
-    currency_weight[ currency ] = weight;
-    currency_weight_by_coin.insert( weight, currency );
-}
-
 Coin Spruce::getMarketWeight( QString market ) const
 {
     const QList<QString> &currencies = original_quantity.keys();
@@ -382,6 +366,114 @@ void Spruce::clearStartNodes()
         delete nodes_start.takeFirst();
 }
 
+void Spruce::generateWeights()
+{
+    currency_weight.clear();
+    currency_weight_by_coin.clear();
+
+    QMap<QString, Coin> currency_aps; // sums of amount*price
+    Coin largest_aps;
+
+    // calculate aps for each currency
+    for ( QList<Node*>::const_iterator i = nodes_start.begin(); i != nodes_start.end(); i++ )
+    {
+        Node *n = *i;
+
+        currency_aps[ n->currency ] = original_quantity.value( n->currency ) * n->price;
+
+        const Coin &current_aps = currency_aps.value( n->currency );
+        if ( current_aps > largest_aps )
+            largest_aps = current_aps;
+    }
+
+    // set weights
+    for ( QMap<QString, Coin>::const_iterator i = currency_aps.begin(); i != currency_aps.end(); i++ )
+    {
+        const QString &currency = i.key();
+        const Coin &aps = i.value();
+
+        const Coin weight = aps / largest_aps;
+        currency_weight[ currency ] = weight;
+        currency_weight_by_coin.insert( weight, currency );
+    }
+}
+
+void Spruce::findOptimalProfiles()
+{
+    kDebug() << "finding optimal profiles...";
+
+    /// build start node prices
+    QMap<QString, Coin> start_node_prices, start_node_qtys, pct_disposed_map;
+    for ( QList<Node*>::const_iterator i = nodes_start.begin(); i != nodes_start.end(); i++ )
+    {
+        start_node_prices[ (*i)->currency ] = (*i)->price;
+        start_node_qtys[ (*i)->currency ] = (*i)->quantity;
+    }
+
+    //kDebug() << "start node prices:" << start_node_prices;
+
+    /// run diffusion, but modify the live price of a singular market while using start prices for other markets
+    Coin lowest_pct_disposed = CoinAmount::A_LOT, highest_pct_disposed;
+    QString highest_pct_disposed_currency;
+    while ( lowest_pct_disposed == CoinAmount::A_LOT || // pass on first iteration
+            highest_pct_disposed > lowest_pct_disposed * Coin( "1.03" ) )
+    {
+        // reset trackers so they set properly each round
+        lowest_pct_disposed = CoinAmount::A_LOT;
+        highest_pct_disposed = Coin();
+
+        for ( QMap<QString, Coin>::const_iterator i = start_node_prices.begin(); i != start_node_prices.end(); i++ )
+        {
+            clearLiveNodes();
+
+            const QString &premium_currency = i.key();
+
+            // insert modified price at p == market_modify_index, and for p != market_modify_index, use the original price
+            for ( QMap<QString, Coin>::const_iterator j = start_node_prices.begin(); j != start_node_prices.end(); j++ )
+            {
+                const QString &currency = j.key();
+                const Coin &start_node_price = start_node_prices.value( currency );
+
+                if ( currency == premium_currency )
+                    addLiveNode( currency, start_node_price *2 );
+                else
+                    addLiveNode( currency, start_node_price );
+            }
+
+            calculateAmountToShortLong();
+
+            const Coin &qty_to_sl = m_quantity_to_shortlong_map.value( Market( base_currency, premium_currency ) );
+            const Coin pct_disposed = qty_to_sl / start_node_qtys.value( premium_currency ) * 100;
+            pct_disposed_map[ premium_currency ] = pct_disposed;
+
+            kDebug() << QString( "premium currency %1 disposed %2 (%3%)" )
+                         .arg( premium_currency, MARKET_STRING_WIDTH )
+                         .arg( qty_to_sl, 15 )
+                         .arg( pct_disposed.toString( 2 ), 4 );
+
+            // record highest disposed
+            if ( pct_disposed > highest_pct_disposed )
+            {
+                highest_pct_disposed = pct_disposed;
+                highest_pct_disposed_currency = premium_currency;
+            }
+
+            // record lowest disposed
+            if ( pct_disposed < lowest_pct_disposed )
+            {
+                lowest_pct_disposed = pct_disposed;
+            }
+        }
+
+        // raise the highest disposed profile so the performance of other currencies approaches it
+        const Coin new_profile = getProfileU( highest_pct_disposed_currency ) + Coin( "0.02" );
+        setProfileU( highest_pct_disposed_currency, new_profile );
+        kDebug() << "profile" << highest_pct_disposed_currency << "=" << new_profile;
+    }
+
+    kDebug() << "optimized profiles less defaults:" << m_currency_profile_u;
+}
+
 bool Spruce::calculateAmountToShortLong()
 {
     if ( !normalizeEquity() )
@@ -432,7 +524,7 @@ QVector<QString> Spruce::getMarketsAlpha() const
 
 bool Spruce::isActive()
 {
-    return !( nodes_start.isEmpty() || currency_weight.isEmpty() || getBaseCurrency() == "disabled" );
+    return !( nodes_start.isEmpty() || getBaseCurrency() == "disabled" );
 }
 
 QString Spruce::getSaveState()
@@ -555,14 +647,6 @@ QString Spruce::getSaveState()
                 .arg( i.value() );
     }
 
-    // save market weights
-    for ( QMap<QString,Coin>::const_iterator i = currency_weight.begin(); i != currency_weight.end(); i++ )
-    {
-        ret += QString( "setspruceweight %1 %2\n" )
-                .arg( i.key() )
-                .arg( i.value() );
-    }
-
     // save start nodes
     for ( QList<Node*>::const_iterator i = nodes_start.begin(); i != nodes_start.end(); i++ )
     {
@@ -646,6 +730,9 @@ Coin Spruce::getLastCoeffForMarket( const QString &market ) const
 
 bool Spruce::normalizeEquity()
 {
+    if ( currency_weight.size() != nodes_start.size() )
+        generateWeights();
+
     if ( nodes_start.size() != nodes_now.size() )
     {
         qDebug() << "[Spruce] local error: spruce: start node count not equal date1 node count";

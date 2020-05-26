@@ -15,6 +15,7 @@
 #include <QRandomGenerator>
 #include <QMessageAuthenticationCode>
 #include <QSslSocket>
+#include <QDebug>
 
 #define kDebug QMessageLogger( __FILE__, __LINE__, Q_FUNC_INFO ).debug().noquote
 
