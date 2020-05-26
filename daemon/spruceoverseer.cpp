@@ -104,7 +104,7 @@ void SpruceOverseer::onSpruceUp()
 
             // check if valid
             const TickerInfo &midspread_current = mid_spread.value( market );
-            if ( !midspread_current.isValid() ||  midspread_current.bid != midspread_current.ask )
+            if ( !midspread_current.isValid() || midspread_current.bid != midspread_current.ask )
             {
                 kDebug() << "spruceoverseer error: midspread" << midspread_current
                          << "was not valid for phase" << phase_name;

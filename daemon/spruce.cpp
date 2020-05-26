@@ -398,7 +398,7 @@ void Spruce::generateWeights()
     }
 }
 
-void Spruce::findOptimalProfiles()
+void Spruce::findOptimalProfiles( const Coin &speculativity, const Coin &error_rate_target, const int max_iterations )
 {
     kDebug() << "finding optimal profiles...";
 
@@ -410,15 +410,13 @@ void Spruce::findOptimalProfiles()
         start_node_qtys[ (*i)->currency ] = (*i)->quantity;
     }
 
-    //kDebug() << "start node prices:" << start_node_prices;
-
     /// run diffusion, but modify the live price of a singular market while using start prices for other markets
     Coin lowest_pct_disposed = CoinAmount::A_LOT, highest_pct_disposed;
     QString highest_pct_disposed_currency, lowest_pct_disposed_currency;
     int iterations = 0;
     while ( lowest_pct_disposed == CoinAmount::A_LOT || // pass on first iteration
-            highest_pct_disposed > lowest_pct_disposed * Coin( "1.05" ) ||
-            iterations++ > 999 )
+            highest_pct_disposed > lowest_pct_disposed * error_rate_target ||
+            iterations++ > max_iterations )
     {
         // reset trackers so they set properly each round
         lowest_pct_disposed = CoinAmount::A_LOT;
@@ -437,7 +435,7 @@ void Spruce::findOptimalProfiles()
                 const Coin &start_node_price = start_node_prices.value( currency );
 
                 if ( currency == premium_currency )
-                    addLiveNode( currency, start_node_price * Coin( "1.1" ) );
+                    addLiveNode( currency, start_node_price * speculativity );
                 else
                     addLiveNode( currency, start_node_price );
             }
@@ -448,7 +446,7 @@ void Spruce::findOptimalProfiles()
             const Coin pct_disposed = qty_to_sl / start_node_qtys.value( premium_currency ) * 100;
             pct_disposed_map[ premium_currency ] = pct_disposed;
 
-            kDebug() << QString( "premium currency %1 disposed %2 (%3%)" )
+            kDebug() << QString( "currency %1 disposed %2 (%3%)" )
                          .arg( premium_currency, MARKET_STRING_WIDTH )
                          .arg( qty_to_sl, 15 )
                          .arg( pct_disposed.toString( 2 ), 4 );
@@ -469,13 +467,10 @@ void Spruce::findOptimalProfiles()
         }
 
         // raise the highest disposed profile so the performance of other currencies approaches it
-        const Coin new_high_profile = getProfileU( highest_pct_disposed_currency ) + Coin( "0.5" );
-
+        const Coin new_high_profile = getProfileU( highest_pct_disposed_currency ) + Coin( "1" );
         setProfileU( highest_pct_disposed_currency, new_high_profile );
 
-
         kDebug() << "profile" << highest_pct_disposed_currency << "=" << new_high_profile;
-        //kDebug() << "profile" << lowest_pct_disposed_currency << "=" << new_low_profile;
     }
 
     kDebug() << "optimized profiles less defaults:" << m_currency_profile_u;

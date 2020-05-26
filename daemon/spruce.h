@@ -137,7 +137,7 @@ public:
     void clearStartNodes();
 
     void generateWeights();
-    void findOptimalProfiles();
+    void findOptimalProfiles( const Coin &speculativity = Coin( "1" ), const Coin &error_rate_target = Coin( "1.05" ), const int max_iterations = 999 );
 
     bool calculateAmountToShortLong();
     Coin getQuantityToShortLongNow( const QString &market );
