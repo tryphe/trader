@@ -101,6 +101,7 @@ CommandRunner::CommandRunner( const quint8 _engine_type, Engine *_e, QVector<Bas
     command_map.insert( "setsprucesnapback", std::bind( &CommandRunner::command_setsprucesnapback, this, _1 ) );
     command_map.insert( "setsprucesnapbacktrigger1", std::bind( &CommandRunner::command_setsprucesnapbacktrigger1, this, _1 ) );
     command_map.insert( "setsprucesnapbacktrigger2", std::bind( &CommandRunner::command_setsprucesnapbacktrigger2, this, _1 ) );
+    command_map.insert( "setsprucedecay", std::bind( &CommandRunner::command_setsprucedecay, this, _1 ) );
     command_map.insert( "getmidspreadstatus", std::bind( &CommandRunner::command_getmidspreadstatus, this, _1 ) );
     command_map.insert( "getstatus", std::bind( &CommandRunner::command_getstatus, this, _1 ) );
     command_map.insert( "getconfig", std::bind( &CommandRunner::command_getconfig, this, _1 ) );
@@ -1037,6 +1038,13 @@ void CommandRunner::command_setsprucesnapbacktrigger2( QStringList &args )
                                          << "ma ratio:" << spruce_overseer->spruce->getSnapbackTrigger2MARatio()
                                     << "initial ratio:" << spruce_overseer->spruce->getSnapbackTrigger2InitialRatio()
                                  << "message interval:" << spruce_overseer->spruce->getSnapbackTrigger2MessageInterval();
+}
+
+void CommandRunner::command_setsprucedecay( QStringList &args )
+{
+    if ( !checkArgs( args, 4 ) ) return;
+
+    spruce_overseer->spruce->setCurrencyDecay( args.value( 1 ), args.value( 2 ), args.value( 3 ).toLongLong(), args.value( 4 ).toLongLong() );
 }
 
 void CommandRunner::command_spruceup( QStringList & )

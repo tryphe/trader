@@ -112,6 +112,7 @@ private:
     void command_setsprucesnapback( QStringList &args );
     void command_setsprucesnapbacktrigger1( QStringList &args );
     void command_setsprucesnapbacktrigger2( QStringList &args );
+    void command_setsprucedecay( QStringList &args );
     void command_spruceup( QStringList &args );
 
     void command_getmidspreadstatus( QStringList &args );

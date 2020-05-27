@@ -47,6 +47,8 @@ void Spruce::clear()
     m_start_coeffs = m_relative_coeffs = RelativeCoeffs();
     m_quantity_to_shortlong_map.clear();
     original_quantity.clear();
+    nodes_start_by_currency.clear();
+    nodes_now_by_currency.clear();
     quantity_already_shortlong.clear();
     quantity_to_shortlong.clear();
     base_currency = QString();
@@ -327,6 +329,7 @@ void Spruce::addStartNode( QString _currency, QString _quantity, QString _price 
     original_quantity[ _currency ] = _quantity;
 
     nodes_start += n;
+    nodes_start_by_currency.insert( _currency, n );
 }
 
 void Spruce::addLiveNode( QString _currency, QString _price )
@@ -364,6 +367,8 @@ void Spruce::clearStartNodes()
 {
     while ( nodes_start.size() > 0 )
         delete nodes_start.takeFirst();
+
+    nodes_start_by_currency.clear();
 }
 
 void Spruce::generateWeights()
@@ -588,6 +593,22 @@ QString Spruce::getSaveState()
                                                                .arg( m_snapback_trigger2_initial_ratio )
                                                                .arg( m_snapback_trigger2_message_interval );
 
+    // save decay settings
+    for ( QMap<QString, CurrencyDecayOptions>::const_iterator i = m_decay.begin(); i != m_decay.end(); i++ )
+    {
+        const QString &currency = i.key();
+        const CurrencyDecayOptions &opt = i.value();
+
+        // if currency is bad, don't save the options
+        if ( !nodes_now_by_currency.contains( currency ) )
+            continue;
+
+        ret += QString( "setsprucedecay %1 %2 %3 %4\n" ).arg( currency )
+                                                        .arg( opt.rate )
+                                                        .arg( opt.interval_secs )
+                                                        .arg( opt.last_secs );
+    }
+
     // save order nice market offsets
     for ( QMap<QString,Coin>::const_iterator i = m_order_nice_market_offset_buys.begin(); i != m_order_nice_market_offset_buys.end(); i++ )
     {
@@ -730,8 +751,24 @@ Coin Spruce::getLastCoeffForMarket( const QString &market ) const
     return m_last_coeffs.value( currency );
 }
 
+void Spruce::setCurrencyDecay( const QString &currency, const Coin &rate, const qint64 interval_secs, const qint64 last_secs )
+{
+    m_decay[ currency ] = CurrencyDecayOptions( rate, interval_secs, last_secs );
+
+    // read values back
+    const CurrencyDecayOptions &opt = m_decay.value( currency );
+    kDebug() << QString( "[Diffusion] Added decay for currency %1 rate %2 interval %3 last %4" )
+                 .arg( currency )
+                 .arg( opt.rate )
+                 .arg( opt.interval_secs )
+                 .arg( opt.last_secs );
+}
+
 bool Spruce::normalizeEquity()
 {
+    checkDecay();
+
+    // after checkDecay, check if we should generate currency weights (this happens on initialization + on market decay)
     if ( currency_weight.size() != nodes_start.size() )
         generateWeights();
 
@@ -982,4 +1019,42 @@ QMap<QString, Coin> Spruce::getMarketCoeffs()
     }
 
     return relative_coeff;
+}
+
+void Spruce::checkDecay()
+{
+    // look for decay, apply decay, clear currency weights (weights will refresh next round during generateWeights)
+    const qint64 epoch_secs = QDateTime::currentSecsSinceEpoch();
+    for ( QMap<QString, CurrencyDecayOptions>::const_iterator i = m_decay.begin(); i != m_decay.end(); i++ )
+    {
+        const QString &currency = i.key();
+        const CurrencyDecayOptions &options = i.value();
+
+        // check for not expired
+        if ( options.last_secs + options.interval_secs >= epoch_secs )
+            continue;
+
+        // check if currency is valid
+        if ( !original_quantity.contains( currency ) || !nodes_start_by_currency.contains( currency ) )
+        {
+            kDebug() << "[Diffusion] Currency" << currency << "is set to decay but is not in either original_quantity or nodes_start_by_currency";
+            continue;
+        }
+
+        // decay this currency's price
+        Node *n = nodes_start_by_currency.value( currency );
+        const Coin original_price = n->price;
+        n->price = std::max( Coin(), n->price - ( n->price * i->rate ) );
+
+        // recalculate amount
+        n->recalculateAmountByQuantity();
+
+        // reset last_secs
+        m_decay[ currency ].last_secs = epoch_secs;
+
+        // clear currency weights
+        currency_weight.clear();
+
+        kDebug() << "[Diffusion] Basis price decay triggered for" << n->currency << original_price << "->" << n->price;
+    }
 }

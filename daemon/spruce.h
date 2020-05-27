@@ -40,6 +40,20 @@ struct RelativeCoeffs // tracks hi/lo coeffs with their corresponding markets
     Coin lo_coeff;
 };
 
+struct CurrencyDecayOptions
+{
+    CurrencyDecayOptions() {}
+    CurrencyDecayOptions( const Coin &_rate, const qint64 _interval_secs, const qint64 _last_secs )
+        : rate( _rate ),
+          last_secs( _last_secs ),
+          interval_secs( _interval_secs )
+    {}
+
+    Coin rate;
+    qint64 last_secs{ 0 };
+    qint64 interval_secs{ 86400 }; // 1 day
+};
+
 class Spruce
 {
     friend class SpruceOverseer;
@@ -173,6 +187,8 @@ public:
     Coin getEquityAll();
     Coin getLastCoeffForMarket( const QString &market ) const;
 
+    void setCurrencyDecay( const QString &currency, const Coin &rate, const qint64 interval_secs, const qint64 last_secs = 0 );
+
     static inline Coin getUniversalMinOrderSize()
     {
         return std::max( std::max( Coin( WAVES_MINIMUM_ORDER_SIZE ), Coin( BITTREX_MINIMUM_ORDER_SIZE ) ),
@@ -183,11 +199,13 @@ private:
     bool normalizeEquity();
     bool equalizeDates();
 
-    CostFunctionCache m_cost_cache;
-    QMap<QString, Coin> m_currency_profile_u, m_currency_reserve;
-
     QMap<QString/*currency*/, Coin> getMarketCoeffs();
     RelativeCoeffs getRelativeCoeffs();
+
+    void checkDecay();
+
+    CostFunctionCache m_cost_cache;
+    QMap<QString, Coin> m_currency_profile_u, m_currency_reserve;
 
     RelativeCoeffs m_relative_coeffs, m_start_coeffs;
     QMap<QString, Coin> m_quantity_to_shortlong_map;
@@ -208,7 +226,7 @@ private:
     m_order_nice_market_offset_zerobound_sells;
 
     QList<Node*> nodes_start, nodes_now;
-    QMap<QString, Node*> nodes_now_by_currency;
+    QMap<QString, Node*> nodes_now_by_currency, nodes_start_by_currency;
     QMap<QString/*currency*/,Coin> m_last_coeffs;
     QVector<QMap<QString/*currency*/, Coin>> m_qtys;
     QList<Market> m_markets_beta;
@@ -223,6 +241,9 @@ private:
     // note: trigger mechanism #2 has an amount_to_sl_ma that triggers when it crosses under ma * SNAPBACK_TRIGGER2_RATIO
     QMap<QString, CoinMovingAverage> m_snapback_trigger2_sl_abs_ma_buys, m_snapback_trigger2_sl_abs_ma_sells;
     QMap<QString, Coin> m_snapback_trigger2_trigger_sl_abs_initial_buys, m_snapback_trigger2_trigger_sl_abs_initial_sells;
+
+    // currency decay settings
+    QMap<QString, CurrencyDecayOptions> m_decay;
 
     // snapback mechanism settings
     Coin m_snapback_ratio{ "0.1" }; // snap back to x * nice value
