@@ -599,10 +599,6 @@ QString Spruce::getSaveState()
         const QString &currency = i.key();
         const CurrencyDecayOptions &opt = i.value();
 
-        // if currency is bad, don't save the options
-        if ( !nodes_now_by_currency.contains( currency ) )
-            continue;
-
         ret += QString( "setsprucedecay %1 %2 %3 %4\n" ).arg( currency )
                                                         .arg( opt.rate )
                                                         .arg( opt.interval_secs )
@@ -1023,6 +1019,8 @@ QMap<QString, Coin> Spruce::getMarketCoeffs()
 
 void Spruce::checkDecay()
 {
+    QVector<QString> invalid_currencies;
+
     // look for decay, apply decay, clear currency weights (weights will refresh next round during generateWeights)
     const qint64 epoch_secs = QDateTime::currentSecsSinceEpoch();
     for ( QMap<QString, CurrencyDecayOptions>::const_iterator i = m_decay.begin(); i != m_decay.end(); i++ )
@@ -1037,7 +1035,8 @@ void Spruce::checkDecay()
         // check if currency is valid
         if ( !original_quantity.contains( currency ) || !nodes_start_by_currency.contains( currency ) )
         {
-            kDebug() << "[Diffusion] Currency" << currency << "is set to decay but is not in either original_quantity or nodes_start_by_currency";
+            invalid_currencies += currency;
+            kDebug() << "[Diffusion] Removed currency decay for" << currency << "which was set to decay but is not in either original_quantity or nodes_start_by_currency";
             continue;
         }
 
@@ -1057,4 +1056,8 @@ void Spruce::checkDecay()
 
         kDebug() << "[Diffusion] Basis price decay triggered for" << n->currency << original_price << "->" << n->price;
     }
+
+    // remove invalid currencies from member map
+    while ( !invalid_currencies.isEmpty() )
+        m_decay.remove( invalid_currencies.takeFirst() );
 }
