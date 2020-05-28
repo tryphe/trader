@@ -213,19 +213,18 @@ void SpruceOverseer::onSpruceUp()
                 const bool is_snapback_buys_enabled = spruce->getSnapbackState( market, SIDE_BUY );
                 const bool is_snapback_sells_enabled = spruce->getSnapbackState( market, SIDE_SELL );
 
-                QString message_out = QString( "[%1 %2%3] %4 | co %5 | q %6 | a %7/%8 (%9%) | act %10" )
-                        .arg( phase_name, -MARKET_STRING_WIDTH - 9 )
+                QString message_out = QString( "%1 %2 %3 | co %4 | q %5 | a %6/%7 (%8%) | act %9" )
                         // print the market name in the color of the position to be taken
                         .arg( QString( "%1%2%3" ).arg( amount_to_shortlong.isGreaterThanZero() ? COLOR_RED : COLOR_GREEN )
-                                                 .arg( market, MARKET_STRING_WIDTH )
+                                                 .arg( market, -MARKET_STRING_WIDTH )
                                                  .arg( COLOR_NONE ) )
                         // if flux phase, print nothing. if midstate, print spaces if snapback disabled,
                         // if snapback is enabled, print "snap" with the color of the side with snapback active
                         .arg( !is_midspread_phase ? QString() :
-                              QString( "%1%2%3" ).arg( is_snapback_buys_enabled ? COLOR_GREEN :
+                              QString( "%1%2%3" ).arg( is_snapback_buys_enabled  ? COLOR_GREEN :
                                                        is_snapback_sells_enabled ? COLOR_RED :
                                                                                    COLOR_NONE )
-                                                 .arg( is_snapback_buys_enabled || is_snapback_sells_enabled ? " snap" : "     " )
+                                                 .arg( is_snapback_buys_enabled || is_snapback_sells_enabled ? "snap" : "    " )
                                                  .arg( COLOR_NONE ) )
                         .arg( side == SIDE_BUY ? buy_price : sell_price )
                         .arg( spruce->getLastCoeffForMarket( market ).toString( 4 ), 7 )
@@ -237,6 +236,11 @@ void SpruceOverseer::onSpruceUp()
 
                 if ( is_midspread_phase )
                     m_last_midspread_output += message_out + "\n";
+
+                // prepend phase name for debug output
+                message_out = QString( "%1 %2" )
+                               .arg( phase_name, -MARKET_STRING_WIDTH - 9 )
+                               .arg( message_out );
 
                 const bool snapback_state = spruce->getSnapbackState( market, side );
 
