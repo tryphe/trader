@@ -168,6 +168,8 @@ struct CoinAverageTester
         mavg_test.addSample( Coin("13") );
 
         assert( mavg_test.getAverage() == Coin("8.5") ); // note: 4:13 / 10 == 8.5
+        assert( mavg_test.getCurrentSamples() == 10 );
+        assert( mavg_test.getMaxSamples() == 10 );
 
         mavg_test.clear();
 
