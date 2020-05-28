@@ -204,8 +204,8 @@ void Spruce::setSnapbackState( const QString &market, const quint8 side, const b
     if ( !other_side_state && !state && current_time_quotient == trigger1_last_time_quotient )
         return;
 
-    // reset mechanisms if we have a new time quotient, except if we triggered mechanism #2, then just wait for pullback below ma
-    if ( state && trigger1_last_time_quotient < current_time_quotient && trigger2_count == 0 )
+    // reset mechanisms if we are disabling, OR have a new time quotient, except if mechanism #2 triggered, then wait for ma pullback
+    if ( !state || ( state && trigger1_last_time_quotient < current_time_quotient && trigger2_count == 0 ) )
     {
         // reset trigger #1
         trigger1_last_time_quotient = current_time_quotient;
