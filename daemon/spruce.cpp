@@ -207,9 +207,10 @@ void Spruce::setSnapbackState( const QString &market, const quint8 side, const b
     // reset mechanisms if we are disabling, OR have a new time quotient, except if mechanism #2 triggered
     if ( !state || ( state && trigger1_last_time_quotient < current_time_quotient && trigger2_count == 0 ) )
     {
-        // reset trigger #1
-        trigger1_last_time_quotient = current_time_quotient;
+        // reset trigger #1, also update time quotient when enabling state
         trigger1_count = 0;
+        if ( state )
+            trigger1_last_time_quotient = current_time_quotient;
 
         // reset trigger #2 ma
         side == SIDE_BUY ? m_snapback_trigger2_sl_abs_ma_buys[ market ] = CoinMovingAverage( m_snapback_trigger2_ma_samples ) :
