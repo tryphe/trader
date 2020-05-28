@@ -222,7 +222,7 @@ bool Coin::operator >=( const Coin &c ) const
 Coin Coin::operator -() const
 {
     return isZeroOrLess() ? Coin() - *this :
-                            *this * ( Coin()-CoinAmount::COIN );
+                            *this * ( Coin() - CoinAmount::COIN );
 }
 
 Coin Coin::abs() const
@@ -309,7 +309,8 @@ QString Coin::toString( const int decimals = CoinAmount::subsatoshi_decimals ) c
     if ( sz == 0 )
         ret.prepend( CoinAmount::zero_exp );
 
-    if ( is_negative ) ret.prepend( CoinAmount::minus_exp );
+    if ( is_negative )
+        ret.prepend( CoinAmount::minus_exp );
 
     return ret;
 }
