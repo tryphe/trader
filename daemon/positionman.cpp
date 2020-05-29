@@ -1107,8 +1107,9 @@ void PositionMan::cancel( Position *const &pos, bool quiet, quint8 cancel_reason
                           cancel_reason == CANCELLING_FOR_SHORTLONG           ? " s/l " :
                           cancel_reason == CANCELLING_FOR_SPRUCE              ? " sp1 " :
                           cancel_reason == CANCELLING_FOR_SPRUCE_2            ? " sp2 " :
-                          cancel_reason == CANCELLING_FOR_SPRUCE_CONFLICT     ? " spc " :
-                          cancel_reason == CANCELLING_FOR_SPRUCE_SNAPBACK_OLD ? " spo " :
+                          cancel_reason == CANCELLING_FOR_SPRUCE_CONFLICT     ? " sp3 " :
+                          cancel_reason == CANCELLING_FOR_SPRUCE_SNAPBACK_OLD ? " sp4 " :
+                          cancel_reason == CANCELLING_FOR_SPRUCE_NOBALANCE    ? " sp5 " :
                                                                            "" ); // CANCELLING_FOR_SLIPPAGE_RESET
 
         kDebug() << QString( "%1 %2" )
@@ -1143,7 +1144,7 @@ void PositionMan::cancelLowest( const QString &market )
         cancel( lo_pos, false, CANCELLING_LOWEST );
 }
 
-void PositionMan::cancelStrategy( const QString &strategy )
+void PositionMan::cancelStrategy( const QString &strategy_strict )
 {
     QVector<Position*> positions_to_cancel;
 
@@ -1152,13 +1153,50 @@ void PositionMan::cancelStrategy( const QString &strategy )
     {
         Position *const &pos = *i;
 
-        if ( pos->strategy_tag == strategy )
+        if ( pos->strategy_tag == strategy_strict )
             positions_to_cancel += pos;
     }
 
     // cancel the orders
     while ( !positions_to_cancel.isEmpty() )
         cancel( positions_to_cancel.takeFirst(), false, CANCELLING_FOR_SPRUCE_SNAPBACK_OLD );
+}
+
+void PositionMan::cancelFluxOrders( const QString &currency, const Coin &required_amt, const qint64 ban_secs )
+{
+    // set ban
+    if ( ban_secs > 0 )
+        engine->setFluxCurrencyBan( currency, ban_secs );
+
+    QVector<Position*> positions_to_cancel;
+
+    // queue orders for cancel if we matched the strategy tag
+    Coin cancelling_amt;
+    for ( QSet<Position*>::const_iterator i = active().begin(); i != active().end(); i++ )
+    {
+        Position *const &pos = *i;
+
+        // skip pos if the active currency doesn't match our currency
+        if ( pos->is_cancelling ||
+             ( pos->side == SIDE_BUY  && pos->market.getBase() != currency ) ||
+             ( pos->side == SIDE_SELL && pos->market.getQuote() != currency ) )
+            continue;
+
+        // if it matches the prefix, queue cancel
+        if ( pos->strategy_tag.startsWith( "flux" ) )
+        {
+            positions_to_cancel += pos;
+            cancelling_amt += ( pos->side == SIDE_BUY ) ? pos->amount : pos->quantity;
+
+            // break if required amount was satisfied
+            if ( cancelling_amt >= required_amt )
+                break;
+        }
+    }
+
+    // cancel the orders
+    while ( !positions_to_cancel.isEmpty() )
+        cancel( positions_to_cancel.takeFirst(), false, CANCELLING_FOR_SPRUCE_NOBALANCE );
 }
 
 void PositionMan::divergeConverge()

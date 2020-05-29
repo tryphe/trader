@@ -6,13 +6,20 @@
 #include "baserest.h"
 #include "coinamount.h"
 
+#include <QString>
+#include <QVector>
+#include <QMap>
+#include <QHash>
+#include <QMultiHash>
 #include <QObject>
 #include <QNetworkReply>
+#include <QDateTime>
 
 class Spruce;
 class CommandRunner;
 class CommandListener;
 class AlphaTracker;
+class QTimer;
 class PositionMan;
 class EngineSettings;
 
@@ -60,6 +67,9 @@ public:
 
     void setMaintenanceTime( qint64 time ) { maintenance_time = time; }
     qint64 getMaintenanceTime() const { return maintenance_time; }
+
+    void setFluxCurrencyBan( const QString &currency, const qint64 ban_secs ) { m_flux_currency_ban_time[ currency ] = QDateTime::currentSecsSinceEpoch() + ban_secs; }
+    bool isFluxCurrencyBanned( const QString &currency ) const { return m_flux_currency_ban_time.value( currency, qint64( 0 ) ) > QDateTime::currentSecsSinceEpoch(); }
 
     QDateTime getStartTime() const { return start_time; }
 
@@ -112,6 +122,8 @@ private:
 
     QHash<QString, MarketInfo> market_info;
     QHash<QString/*order_id*/, qint64/*seen_time*/> order_grace_times; // record "seen" time to allow for stray grace period
+
+    QMap<QString, qint64> m_flux_currency_ban_time;
 
     QDateTime start_time;
 
