@@ -143,7 +143,7 @@ void SpruceOverseer::onSpruceUp()
 
             for ( QMap<QString,Coin>::const_iterator i = qty_to_shortlong_map.begin(); i != qty_to_shortlong_map.end(); i++ )
             {
-                const QString &market = i.key();
+                const Market market = Market( i.key() );
 
                 // skip market unless it's selected, except for midspread phase which can set every market
                 if ( !is_midspread_phase && market != flux_market )
@@ -193,6 +193,15 @@ void SpruceOverseer::onSpruceUp()
                 if ( (  is_buy && side == SIDE_SELL ) ||
                      ( !is_buy && side == SIDE_BUY ) )
                     continue;
+
+                // give priority to noflux phase orders by continuing if flux phase and order currency is banned
+                if ( !is_midspread_phase )
+                {
+                    const QString &order_currency = ( side == SIDE_BUY ) ? market.getBase() : market.getQuote();
+
+                    if ( engine->isFluxCurrencyBanned( order_currency ) )
+                        continue;
+                }
 
                 // cache some order settings
                 const Coin order_size_default = spruce->getOrderSize( market );

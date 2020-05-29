@@ -748,15 +748,45 @@ void WavesREST::parseNewOrder( const QJsonObject &info, Request *const &request 
          !info.value( "message" ).toObject().contains( "id" ) )
     {
         const QString &message = info.value( "message" ).toString();
-        kDebug() << "local waves error: failed to set new order:" << message;
 
         // remove the position if not enough balance (don't clog up queue)
-        if ( message.startsWith( "Not enough tradable balance." ) )
+        if ( message.startsWith( "Not enough tradable" ) )
+        {
             engine->getPositionMan()->remove( pos );
 
+            const QStringList words = message.split( QChar( ' ' ) );
+
+            // get info on asset that has a short balance
+            const QString asset = account.getAssetByAlias( words.value( 10 ) );
+            const Coin asset_required = words.value( 9 );
+            const Coin asset_available = words.value( 19 );
+
+            // get info on fee
+            const QString fee_asset = account.getAssetByAlias( words.value( 13 ) );
+            const Coin fee_required = words.value( 13 );
+            const Coin fee_available = words.value( 22 );
+
+            // check for valid parse
+            if ( asset.isEmpty() || fee_asset.isEmpty() || asset_required.isZeroOrLess() || fee_required.isZeroOrLess() )
+            {
+                kDebug() << "local waves error: failed to parse low balance message:" << message;
+                return;
+            }
+
+            if ( fee_available.isZeroOrLess() && fee_required.isGreaterThanZero() )
+            {
+                kDebug() << "local waves error: not enough fee:" << fee_available << fee_asset;
+                return;
+            }
+
+            // cancel this asset, but only for flux phases, and only cancel enough to meet asset_required amount, and ban from flux phases for 1hr
+            engine->getPositionMan()->cancelFluxOrders( asset, asset_required, 3600 );
+            return;
+        }
+
+        kDebug() << "local waves error: failed to set new order:" << message;
         return;
     }
-
 
     const QString &order_id = info.value( "message" ).toObject().value( "id" ).toString();
 
