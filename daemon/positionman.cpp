@@ -1105,7 +1105,7 @@ void PositionMan::cancel( Position *const &pos, bool quiet, quint8 cancel_reason
                           cancel_reason == CANCELLING_HIGHEST                 ? " hi  " :
                           cancel_reason == CANCELLING_FOR_MAX_AGE             ? " age " :
                           cancel_reason == CANCELLING_FOR_SHORTLONG           ? " s/l " :
-                          cancel_reason == CANCELLING_FOR_SPRUCE              ? " sp1 " :
+                          cancel_reason == CANCELLING_FOR_SPRUCE_PRICE_BOUNDS ? " sp1 " :
                           cancel_reason == CANCELLING_FOR_SPRUCE_2            ? " sp2 " :
                           cancel_reason == CANCELLING_FOR_SPRUCE_CONFLICT     ? " sp3 " :
                           cancel_reason == CANCELLING_FOR_SPRUCE_SNAPBACK_OLD ? " sp4 " :
@@ -1166,7 +1166,10 @@ void PositionMan::cancelFluxOrders( const QString &currency, const Coin &require
 {
     // set ban
     if ( ban_secs > 0 )
+    {
         engine->setFluxCurrencyBan( currency, ban_secs );
+        kDebug() << "[PositionMan] Banned currency" << currency << "from flux phases for" << ban_secs << "seconds.";
+    }
 
     QVector<Position*> positions_to_cancel;
 

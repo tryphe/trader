@@ -35,7 +35,7 @@ static const quint8 CANCELLING_FOR_DC                       ( 4 );
 static const quint8 CANCELLING_FOR_SLIPPAGE_RESET           ( 5 );
 static const quint8 CANCELLING_FOR_MAX_AGE                  ( 6 );
 static const quint8 CANCELLING_FOR_USER                     ( 7 );
-static const quint8 CANCELLING_FOR_SPRUCE                   ( 8 );
+static const quint8 CANCELLING_FOR_SPRUCE_PRICE_BOUNDS      ( 8 );
 static const quint8 CANCELLING_FOR_SPRUCE_2                 ( 9 );
 static const quint8 CANCELLING_FOR_SPRUCE_CONFLICT          ( 10 );
 static const quint8 CANCELLING_FOR_SPRUCE_SNAPBACK_OLD      ( 11 );

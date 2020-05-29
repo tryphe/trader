@@ -819,7 +819,7 @@ void SpruceOverseer::runCancellors( Engine *engine, const QString &market, const
              ( ( side_actual == SIDE_BUY  && price_actual < buy_price_limit ) ||
                ( side_actual == SIDE_SELL && price_actual > sell_price_limit ) ) )
         {
-            engine->positions->cancel( pos, false, CANCELLING_FOR_SPRUCE );
+            engine->positions->cancel( pos, false, CANCELLING_FOR_SPRUCE_PRICE_BOUNDS );
             continue;
         }
 
