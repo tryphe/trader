@@ -202,7 +202,7 @@ static inline const QString printVectorqint32( const QVector<qint32> &vec )
 
 static inline QString getBuildString()
 {
-    return QString( "bot version[%1]  qt[%2]  gmp[%3]  ssl[%4]  build time[%5 %6]" )
+    return QString( "trader[%1]  qt[%2]  gmp[%3]  ssl[%4]  built[%5 %6]" )
             .arg( BUILD_VERSION )
             .arg( QT_VERSION_STR )
             .arg( __gmp_version )
