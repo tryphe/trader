@@ -754,6 +754,7 @@ void WavesREST::parseNewOrder( const QJsonObject &info, Request *const &request 
         {
             engine->getPositionMan()->remove( pos );
 
+            // example message: Not enough tradable balance. The order requires at least 1.14196277 HZk1mbfuJpmxU1Fs4AX5MWLVYtctsNcg6e2C6VKqK8zk and 0.003 WAVES on balance, but available are 1.04297244 HZk1mbfuJpmxU1Fs4AX5MWLVYtctsNcg6e2C6VKqK8zk and 34.93502078 WAVES
             const QStringList words = message.split( QChar( ' ' ) );
 
             // get info on asset that has a short balance
