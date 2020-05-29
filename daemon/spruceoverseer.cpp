@@ -166,8 +166,7 @@ void SpruceOverseer::onSpruceUp()
                 // set price for order
                 if ( is_midspread_phase )
                 {
-                    buy_price = mid_spread.value( market ).bid;
-                    sell_price = mid_spread.value( market ).ask;
+                    buy_price = sell_price = mid_spread.value( market ).bid; // note: midspread buy == midspread sell
 
                     // set local taker mode to disable local spread collision detection which would modify the price
                     order_type += "-taker";
