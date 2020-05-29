@@ -87,4 +87,12 @@ void WavesAccountTest::test()
     QByteArray get_orders_bytes = acc.createGetOrdersBytes( qint64( 0 ) );
 
     assert( get_orders_bytes == QByteArray::fromHex( "10889dcdbba87fac60ac658f4c8b4add9e7aafecc3fff1fafb599d833b38307d0000000000000000" ) );
+
+    /// test alias->asset
+    assert( acc.getAssetByAlias( "8LQW8f7P5d5PZM7GtZEBgaqRPGSzS3DfPuiXrURJ4AJS" ) == "BTC" );
+    assert( acc.getAssetByAlias( "WAVES" ) == "WAVES" );
+
+    /// test asset->alias
+    assert( acc.getAliasByAsset( "BTC" ) == "8LQW8f7P5d5PZM7GtZEBgaqRPGSzS3DfPuiXrURJ4AJS" );
+    assert( acc.getAliasByAsset( "WAVES" ) == "WAVES" );
 }
