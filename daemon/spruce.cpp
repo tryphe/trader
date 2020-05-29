@@ -419,9 +419,9 @@ void Spruce::findOptimalProfiles( const Coin &speculativity, const Coin &error_r
     Coin lowest_pct_disposed = CoinAmount::A_LOT, highest_pct_disposed;
     QString highest_pct_disposed_currency, lowest_pct_disposed_currency;
     int iterations = 0;
-    while ( lowest_pct_disposed == CoinAmount::A_LOT || // pass on first iteration
-            highest_pct_disposed > lowest_pct_disposed * error_rate_target ||
-            iterations++ > max_iterations )
+    while ( ( lowest_pct_disposed == CoinAmount::A_LOT || // pass on first iteration
+              highest_pct_disposed > lowest_pct_disposed * error_rate_target ) &&
+            iterations++ < max_iterations )
     {
         // reset trackers so they set properly each round
         lowest_pct_disposed = CoinAmount::A_LOT;
