@@ -1,4 +1,5 @@
 #include "wavesrest.h"
+#include "coinamount.h"
 #include "position.h"
 #include "positionman.h"
 #include "alphatracker.h"
@@ -7,7 +8,15 @@
 #include "wavesutil.h"
 #include "enginesettings.h"
 
+#include <QChar>
+#include <QString>
+#include <QVector>
+#include <QMap>
+#include <QList>
+#include <QByteArray>
 #include <QTimer>
+#include <QNetworkRequest>
+#include <QNetworkReply>
 #include <QNetworkAccessManager>
 #include <QUrl>
 #include <QUrlQuery>
@@ -774,9 +783,9 @@ void WavesREST::parseNewOrder( const QJsonObject &info, Request *const &request 
                 return;
             }
 
-            if ( fee_available.isZeroOrLess() && fee_required.isGreaterThanZero() )
+            if ( fee_required > fee_available )
             {
-                kDebug() << "local waves error: not enough fee:" << fee_available << fee_asset;
+                kDebug() << "local waves error: not enough fee:" << fee_required << fee_asset << "required," << fee_available << "available";
                 return;
             }
 
