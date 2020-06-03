@@ -1168,13 +1168,15 @@ void PositionMan::cancelFluxOrders( const QString &currency, const Coin &require
     if ( ban_secs > 0 )
     {
         engine->setFluxCurrencyBan( currency, ban_secs );
-        kDebug() << "[PositionMan] Banned currency" << currency << "from flux phases for" << ban_secs << "seconds.";
+        kDebug() << QString( "[PositionMan] Banned currency %1 from flux phases for %2 seconds." )
+                     .arg( currency )
+                     .arg( ban_secs );
     }
 
     QVector<Position*> positions_to_cancel;
 
     // queue orders for cancel if we matched the strategy tag
-    Coin cancelling_amt;
+    Coin cancelled_amt;
     for ( QSet<Position*>::const_iterator i = active().begin(); i != active().end(); i++ )
     {
         Position *const &pos = *i;
@@ -1189,10 +1191,10 @@ void PositionMan::cancelFluxOrders( const QString &currency, const Coin &require
         if ( pos->strategy_tag.startsWith( "flux" ) )
         {
             positions_to_cancel += pos;
-            cancelling_amt += ( pos->side == SIDE_BUY ) ? pos->amount : pos->quantity;
+            cancelled_amt += ( pos->side == SIDE_BUY ) ? pos->amount : pos->quantity;
 
             // break if required amount was satisfied
-            if ( cancelling_amt >= required_amt )
+            if ( cancelled_amt >= required_amt )
                 break;
         }
     }
@@ -1200,6 +1202,12 @@ void PositionMan::cancelFluxOrders( const QString &currency, const Coin &require
     // cancel the orders
     while ( !positions_to_cancel.isEmpty() )
         cancel( positions_to_cancel.takeFirst(), false, CANCELLING_FOR_SPRUCE_NOBALANCE );
+
+
+    if ( cancelled_amt < required_amt )
+        kDebug() << QString( "[PositionMan] Low balance warning: deposit more %1" )
+                     .arg( currency );
+
 }
 
 void PositionMan::divergeConverge()
