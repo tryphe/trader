@@ -766,31 +766,43 @@ void WavesREST::parseNewOrder( const QJsonObject &info, Request *const &request 
             // example message: Not enough tradable balance. The order requires at least 1.14196277 HZk1mbfuJpmxU1Fs4AX5MWLVYtctsNcg6e2C6VKqK8zk and 0.003 WAVES on balance, but available are 1.04297244 HZk1mbfuJpmxU1Fs4AX5MWLVYtctsNcg6e2C6VKqK8zk and 34.93502078 WAVES
             const QStringList words = message.split( QChar( ' ' ) );
 
-            // get info on asset that has a short balance
-            const QString asset = account.getAssetByAlias( words.value( 10 ) );
-            const Coin asset_required = words.value( 9 );
-            const Coin asset_available = words.value( 19 );
+            // get asset1
+            const QString asset1 = account.getAssetByAlias( words.value( 10 ) );
+            const Coin asset1_required = words.value( 9 );
+            const Coin asset1_available = words.value( 19 );
 
-            // get info on fee
-            const QString fee_asset = account.getAssetByAlias( words.value( 13 ) );
-            const Coin fee_required = words.value( 13 );
-            const Coin fee_available = words.value( 22 );
+            // get asset2
+            const QString asset2 = account.getAssetByAlias( words.value( 13 ) );
+            const Coin asset2_required = words.value( 12 );
+            const Coin asset2_available = words.value( 22 );
 
             // check for valid parse
-            if ( asset.isEmpty() || fee_asset.isEmpty() || asset_required.isZeroOrLess() || fee_required.isZeroOrLess() )
+            if ( asset1.isEmpty() || asset2.isEmpty() || asset1_required.isZeroOrLess() || asset2_required.isZeroOrLess() )
             {
-                kDebug() << "local waves error: failed to parse low balance message:" << message;
+                kDebug() << "local waves error: failed to parse low balance message:" << message << "asset1:" << asset1 << "asset2:" << asset2 << "asset2 requied:" << asset1_required << "asset2 required:" << asset2_required;
                 return;
             }
 
-            if ( fee_required > fee_available )
+            // cancel enough to meet asset_required amount, and ban from flux phases for 1hr
+            if ( asset1_required > asset1_available )
             {
-                kDebug() << "local waves error: not enough fee:" << fee_required << fee_asset << "required," << fee_available << "available";
-                return;
+                kDebug() << QString( "waves error: %1 balance low, %2 required, %3 available." )
+                             .arg( asset1 )
+                             .arg( asset1_required )
+                             .arg( asset1_available );
+                engine->getPositionMan()->cancelFluxOrders( asset1, asset1_required, 3600 );
             }
 
-            // cancel this asset, but only for flux phases, and only cancel enough to meet asset_required amount, and ban from flux phases for 1hr
-            engine->getPositionMan()->cancelFluxOrders( asset, asset_required, 3600 );
+            // ditto
+            if ( asset2_required > asset2_available )
+            {
+                kDebug() << QString( "waves error: %1 balance low, %2 required, %3 available." )
+                             .arg( asset2 )
+                             .arg( asset2_required )
+                             .arg( asset2_available );
+                engine->getPositionMan()->cancelFluxOrders( asset2, asset2_required, 3600 );
+            }
+
             return;
         }
 
