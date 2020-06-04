@@ -1162,7 +1162,7 @@ void PositionMan::cancelStrategy( const QString &strategy_strict )
         cancel( positions_to_cancel.takeFirst(), false, CANCELLING_FOR_SPRUCE_SNAPBACK_OLD );
 }
 
-void PositionMan::cancelFluxOrders( const QString &currency, const Coin &required_amt, const qint64 ban_secs )
+void PositionMan::cancelFluxOrders( const QString &currency, const Coin &required, const QString &available, const qint64 ban_secs )
 {
     // set ban
     if ( ban_secs > 0 )
@@ -1194,7 +1194,7 @@ void PositionMan::cancelFluxOrders( const QString &currency, const Coin &require
             cancelled_amt += ( pos->side == SIDE_BUY ) ? pos->amount : pos->quantity;
 
             // break if required amount was satisfied
-            if ( cancelled_amt >= required_amt )
+            if ( cancelled_amt >= required )
                 break;
         }
     }
@@ -1203,11 +1203,10 @@ void PositionMan::cancelFluxOrders( const QString &currency, const Coin &require
     while ( !positions_to_cancel.isEmpty() )
         cancel( positions_to_cancel.takeFirst(), false, CANCELLING_FOR_SPRUCE_NOBALANCE );
 
-
-    if ( cancelled_amt < required_amt )
-        kDebug() << QString( "[PositionMan] Low balance warning: deposit more %1" )
-                     .arg( currency );
-
+    kDebug() << QString( "[PositionMan] %1 balance low, %2 required, %3 available." )
+                 .arg( currency )
+                 .arg( required )
+                 .arg( available );
 }
 
 void PositionMan::divergeConverge()

@@ -785,23 +785,11 @@ void WavesREST::parseNewOrder( const QJsonObject &info, Request *const &request 
 
             // cancel enough to meet asset_required amount, and ban from flux phases for 1hr
             if ( asset1_required > asset1_available )
-            {
-                kDebug() << QString( "waves error: %1 balance low, %2 required, %3 available." )
-                             .arg( asset1 )
-                             .arg( asset1_required )
-                             .arg( asset1_available );
-                engine->getPositionMan()->cancelFluxOrders( asset1, asset1_required, 3600 );
-            }
+                engine->getPositionMan()->cancelFluxOrders( asset1, asset1_required, asset1_available, 3600 );
 
             // ditto
             if ( asset2_required > asset2_available )
-            {
-                kDebug() << QString( "waves error: %1 balance low, %2 required, %3 available." )
-                             .arg( asset2 )
-                             .arg( asset2_required )
-                             .arg( asset2_available );
-                engine->getPositionMan()->cancelFluxOrders( asset2, asset2_required, 3600 );
-            }
+                engine->getPositionMan()->cancelFluxOrders( asset2, asset2_required, asset2_available, 3600 );
 
             return;
         }

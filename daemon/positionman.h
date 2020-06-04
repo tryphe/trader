@@ -87,7 +87,7 @@ public:
     void cancelHighest( const QString &market );
     void cancelLowest( const QString &market );
     void cancelStrategy( const QString &strategy );
-    void cancelFluxOrders( const QString &currency, const Coin &required_amt, const qint64 ban_secs = 0 );
+    void cancelFluxOrders( const QString &currency, const Coin &required, const QString &available, const qint64 ban_secs = 0 );
 
     void divergeConverge();
     bool isDivergingConverging( const QString &market, const qint32 index ) const;
