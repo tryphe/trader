@@ -26,6 +26,7 @@ SOURCES += main.cpp \
     costfunctioncache.cpp \
     diffusionphaseman.cpp \
     diffusionphaseman_test.cpp \
+    enginemap.cpp \
     fallbacklistener.cpp \
     market.cpp \
     position.cpp \
@@ -105,6 +106,7 @@ HEADERS += build-config.h \
     costfunctioncache.h \
     diffusionphaseman.h \
     diffusionphaseman_test.h \
+    enginemap.h \
     enginesettings.h \
     fallbacklistener.h \
     global.h \

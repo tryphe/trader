@@ -5,6 +5,7 @@
 #include "coinamount.h"
 #include "misctypes.h"
 #include "market.h"
+#include "enginemap.h"
 #include "engine.h"
 #include "positionman.h"
 
@@ -22,8 +23,9 @@
 const bool expand_spread_base_down = false; // true = getSpreadForSide always expands down for base greed value before applying other effects
 const bool prices_uses_avg = true; // false = assemble widest combined spread between all exchanges, true = average spreads between all exchanges
 
-SpruceOverseer::SpruceOverseer( Spruce *_spruce )
+SpruceOverseer::SpruceOverseer( EngineMap *_engine_map, Spruce *_spruce )
     : QObject( nullptr ),
+    engine_map( _engine_map ),
     spruce( _spruce )
 {
     kDebug() << "[SpruceOverseer]";
@@ -137,7 +139,7 @@ void SpruceOverseer::onSpruceUp()
 
         const QMap<QString,Coin> &qty_to_shortlong_map = spruce->getQuantityToShortLongMap();
 
-        for ( QMap<quint8, Engine*>::const_iterator e = engine_map.begin(); e != engine_map.end(); e++ )
+        for ( QMap<quint8, Engine*>::const_iterator e = engine_map->begin(); e != engine_map->end(); e++ )
         {
             Engine *engine = e.value();
 
@@ -477,7 +479,7 @@ TickerInfo SpruceOverseer::getMidSpread( const QString &market )
     TickerInfo ret;
     quint16 samples = 0;
 
-    for ( QMap<quint8, Engine*>::const_iterator i = engine_map.begin(); i != engine_map.end(); i++ )
+    for ( QMap<quint8, Engine*>::const_iterator i = engine_map->begin(); i != engine_map->end(); i++ )
     {
         Engine *engine = i.value();
 
@@ -613,7 +615,7 @@ TickerInfo SpruceOverseer::getSpreadForSide( const QString &market, quint8 side,
 
 Coin SpruceOverseer::getPriceTicksizeForMarket( const Market &market ) const
 {
-    for ( QMap<quint8, Engine*>::const_iterator i = engine_map.begin(); i != engine_map.end(); i++ )
+    for ( QMap<quint8, Engine*>::const_iterator i = engine_map->begin(); i != engine_map->end(); i++ )
     {
         Engine *engine = i.value();
 

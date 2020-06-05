@@ -16,6 +16,7 @@
 
 class AlphaTracker;
 class Spruce;
+class EngineMap;
 class Engine;
 class QTimer;
 
@@ -26,7 +27,7 @@ class SpruceOverseer : public QObject
     friend class SpruceOverseerTest;
 
 public:
-    explicit SpruceOverseer( Spruce *_spruce );
+    explicit SpruceOverseer( EngineMap *_engine_map, Spruce *_spruce );
     ~SpruceOverseer();
 
     static QString getSettingsPath() { return Global::getTraderPath() + QDir::separator() + "spruce.settings"; }
@@ -37,7 +38,7 @@ public:
 
     const QString &getLastMidspreadPhaseOutput() const { return m_last_midspread_output; }
 
-    QMap<quint8, Engine*> engine_map;
+    EngineMap *engine_map{ nullptr };
     AlphaTracker *alpha{ nullptr };
     Spruce *spruce{ nullptr };
     QTimer *spruce_timer{ nullptr };

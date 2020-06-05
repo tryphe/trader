@@ -14,6 +14,7 @@ class FallbackListener;
 class AlphaTracker;
 class Spruce;
 class SpruceOverseer;
+class EngineMap;
 class Engine;
 class TrexREST;
 class BncREST;
@@ -45,10 +46,11 @@ private:
     Spruce *spruce{ nullptr };
     SpruceOverseer *spruce_overseer{ nullptr };
 
-    Engine* engine_trex{ nullptr };
-    Engine* engine_bnc{ nullptr };
-    Engine* engine_polo{ nullptr };
-    Engine* engine_waves{ nullptr };
+    EngineMap *engine_map{ nullptr };
+    Engine *engine_trex{ nullptr };
+    Engine *engine_bnc{ nullptr };
+    Engine *engine_polo{ nullptr };
+    Engine *engine_waves{ nullptr };
 
     TrexREST *rest_trex{ nullptr };
     BncREST *rest_bnc{ nullptr };

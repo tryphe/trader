@@ -1,6 +1,7 @@
 #include "trader.h"
 #include "bncrest.h"
 #include "position.h"
+#include "enginemap.h"
 #include "engine.h"
 #include "engine_test.h"
 #include "coinamount_test.h"
@@ -40,10 +41,11 @@ Trader::Trader( QObject *parent )
     // ssl hacks
     SslPolicy::enableSecureSsl();
 
-    // create spruce and spruceOverseer
+    // create non-engine components
+    engine_map = new EngineMap();
     alpha = new AlphaTracker();
     spruce = new Spruce();
-    spruce_overseer = new SpruceOverseer( spruce );
+    spruce_overseer = new SpruceOverseer( engine_map, spruce );
     spruce_overseer->alpha = alpha;
 
     nam = new QNetworkAccessManager();
@@ -55,7 +57,7 @@ Trader::Trader( QObject *parent )
     engine_trex->alpha = alpha;
     engine_trex->spruce = spruce;
 
-    spruce_overseer->engine_map.insert( ENGINE_BITTREX, engine_trex );
+    engine_map->insert( ENGINE_BITTREX, engine_trex );
 
     bittrex = true;
 #endif
@@ -66,7 +68,7 @@ Trader::Trader( QObject *parent )
     engine_bnc->alpha = alpha;
     engine_bnc->spruce = spruce;
 
-    spruce_overseer->engine_map.insert( ENGINE_BINANCE, engine_bnc );
+    engine_map->insert( ENGINE_BINANCE, engine_bnc );
 
     binance = true;
 #endif
@@ -77,7 +79,7 @@ Trader::Trader( QObject *parent )
     engine_polo->alpha = alpha;
     engine_polo->spruce = spruce;
 
-    spruce_overseer->engine_map.insert( ENGINE_POLONIEX, engine_polo );
+    engine_map->insert( ENGINE_POLONIEX, engine_polo );
 
     poloniex = true;
 #endif
@@ -88,7 +90,7 @@ Trader::Trader( QObject *parent )
     engine_waves->alpha = alpha;
     engine_waves->spruce = spruce;
 
-    spruce_overseer->engine_map.insert( ENGINE_WAVES, engine_waves );
+    engine_map->insert( ENGINE_WAVES, engine_waves );
 
     waves = true;
 #endif
@@ -218,6 +220,7 @@ Trader::~Trader()
     delete alpha;
     delete spruce;
     delete spruce_overseer;
+    delete engine_map;
 
     QCoreApplication::processEvents( QEventLoop::AllEvents, 10000 );
 
