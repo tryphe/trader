@@ -645,12 +645,12 @@ void PositionMan::flipLoSellIndex( const QString &market, QString tag )
 
 Coin PositionMan::getLoSell( const QString &market ) const
 {
-    return engine->getMarketInfoStructure()[ market ].ticker.ask;
+    return engine->getMarketInfoStructure()[ market ].spread.ask;
 }
 
 Coin PositionMan::getHiBuy( const QString &market ) const
 {
-    return engine->getMarketInfoStructure()[ market ].ticker.bid;
+    return engine->getMarketInfoStructure()[ market ].spread.bid;
 }
 
 void PositionMan::flipHiBuyPrice( const QString &market, QString tag )

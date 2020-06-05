@@ -39,8 +39,8 @@ struct MarketInfo
     }
 
     operator QString() const { return QString( "bid %1 ask %2 tradeable %3 price_tick %4 matcher_tick %5 qty_tick %6 order_min %7 order_max %8 order_dc %9 order_dc_nice %10 order_landmark_thresh %11 order_landmark_start %12 slippage_timeout %13 market_offset %14 market_sentiment %15" )
-                                   .arg( ticker.bid, -16 )
-                                   .arg( ticker.ask, -16 )
+                                   .arg( spread.bid, -16 )
+                                   .arg( spread.ask, -16 )
                                    .arg( is_tradeable )
                                    .arg( price_ticksize )
                                    .arg( quantity_ticksize )
@@ -59,27 +59,27 @@ struct MarketInfo
     {
         arr += "t";
         arr += market;
-        arr += ticker.bid.toAmountString();
-        arr += ticker.ask.toAmountString();
+        arr += spread.bid.toAmountString();
+        arr += spread.ask.toAmountString();
     }
     void jsonifyBid( QJsonArray &arr, const QString &market ) const
     {
         arr += "b";
         arr += market;
-        arr += ticker.bid.toAmountString();
+        arr += spread.bid.toAmountString();
     }
     void jsonifyAsk( QJsonArray &arr, const QString &market ) const
     {
         arr += "a";
         arr += market;
-        arr += ticker.ask.toAmountString();
+        arr += spread.ask.toAmountString();
     }
 
     // prices for this market
     QVector<QString> order_prices;
 
     // internal ticker
-    TickerInfo ticker;
+    Spread spread;
 
     // ping-pong settings
     QVector<PositionData> /*position_index*/ position_index;

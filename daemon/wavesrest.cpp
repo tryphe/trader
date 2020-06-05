@@ -582,8 +582,8 @@ void WavesREST::parseMarketStatus( const QJsonObject &info, Request *const &requ
     const Coin bid_price = local_market_info.price_ticksize * bid_raw;
     const Coin ask_price = local_market_info.price_ticksize * ask_raw;
 
-    QMap<QString, TickerInfo> ticker_info;
-    ticker_info.insert( market, TickerInfo( bid_price, ask_price ) );
+    QMap<QString, Spread> ticker_info;
+    ticker_info.insert( market, Spread( bid_price, ask_price ) );
 
     engine->processTicker( this, ticker_info );
 }
@@ -621,8 +621,8 @@ void WavesREST::parseMarketStatus( const QJsonObject &info, Request *const &requ
 //    const Coin bid_price_coin = local_market_info.price_ticksize * bid_price;
 //    const Coin ask_price_coin = local_market_info.price_ticksize * ask_price;
 
-//    QMap<QString, TickerInfo> ticker_info;
-//    ticker_info.insert( market, TickerInfo( bid_price_coin, ask_price_coin ) );
+//    QMap<QString, Spread> ticker_info;
+//    ticker_info.insert( market, Spread( bid_price_coin, ask_price_coin ) );
 
 //    engine->processTicker( this, ticker_info );
 //}

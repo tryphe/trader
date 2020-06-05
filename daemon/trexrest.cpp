@@ -751,7 +751,7 @@ void TrexREST::parseOrderBook( const QJsonArray &info, qint64 request_time_sent_
 
     ticker_update_request_time = request_time_sent_ms;
 
-    QMap<QString, TickerInfo> ticker_info;
+    QMap<QString, Spread> ticker_info;
 
     // iterate through each market object
     for ( QJsonArray::const_iterator i = info.begin(); i != info.end(); i++ )
@@ -778,7 +778,7 @@ void TrexREST::parseOrderBook( const QJsonArray &info, qint64 request_time_sent_
              bid.isGreaterThanZero() &&
              ask.isGreaterThanZero() )
         {
-            ticker_info.insert( market, TickerInfo( bid, ask ) );
+            ticker_info.insert( market, Spread( bid, ask ) );
         }
     }
 

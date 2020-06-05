@@ -39,11 +39,11 @@ struct OrderInfo
     QString amount;
 };
 
-struct TickerInfo
+struct Spread
 {
-    explicit TickerInfo() {}
-    explicit TickerInfo( const Coin &_bid_price,
-                         const Coin &_ask_price )
+    explicit Spread() {}
+    explicit Spread( const Coin &_bid_price,
+                     const Coin &_ask_price )
     {
         bid = _bid_price;
         ask = _ask_price;

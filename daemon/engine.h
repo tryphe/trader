@@ -48,7 +48,7 @@ public:
 
     // post-parse processing stuff
     void processOpenOrders( QVector<QString> &order_numbers, QMultiHash<QString, OrderInfo> &orders, qint64 request_time_sent_ms );
-    void processTicker( BaseREST *base_rest_module, const QMap<QString, TickerInfo> &ticker_data, qint64 request_time_sent_ms = 0 );
+    void processTicker( BaseREST *base_rest_module, const QMap<QString, Spread> &ticker_data, qint64 request_time_sent_ms = 0 );
     void processCancelledOrder( Position *const &pos );
 
     void saveMarket( QString market, qint32 num_orders = 15 );

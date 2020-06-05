@@ -793,7 +793,7 @@ void BncREST::parseTicker( const QJsonArray &info, qint64 request_time_sent_ms )
     ticker_update_request_time = request_time_sent_ms;
 
     // iterate through each market object
-    QMap<QString, TickerInfo> ticker_info;
+    QMap<QString, Spread> ticker_info;
     QVector<QString> market_aliases_not_found;
 
     for ( QJsonArray::const_iterator i = info.begin(); i != info.end(); i++ )
@@ -828,7 +828,7 @@ void BncREST::parseTicker( const QJsonArray &info, qint64 request_time_sent_ms )
              bid_price.isGreaterThanZero() &&
              ask_price.isGreaterThanZero() )
         {
-            ticker_info.insert( market, TickerInfo( bid_price, ask_price ) );
+            ticker_info.insert( market, Spread( bid_price, ask_price ) );
         }
     }
 
