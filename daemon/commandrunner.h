@@ -12,6 +12,7 @@
 class Engine;
 class Spruce;
 class SpruceOverseer;
+class PriceAggregator;
 class BaseREST;
 class TrexREST;
 class BncREST;
@@ -113,6 +114,7 @@ private:
     void command_setsprucesnapbacktrigger1( QStringList &args );
     void command_setsprucesnapbacktrigger2( QStringList &args );
     void command_setsprucedecay( QStringList &args );
+    void command_setpricetracking( QStringList &args );
     void command_spruceup( QStringList &args );
 
     void command_getmidspreadstatus( QStringList &args );
@@ -135,6 +137,7 @@ private:
 
     Engine *engine{ nullptr };
     SpruceOverseer *spruce_overseer{ nullptr };
+    PriceAggregator *price_aggregator{ nullptr };
 };
 
 #endif // COMMANDRUNNER_H

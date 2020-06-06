@@ -26,7 +26,6 @@ SOURCES += main.cpp \
     costfunctioncache.cpp \
     diffusionphaseman.cpp \
     diffusionphaseman_test.cpp \
-    enginemap.cpp \
     fallbacklistener.cpp \
     market.cpp \
     position.cpp \

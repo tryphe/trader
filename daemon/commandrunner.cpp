@@ -11,12 +11,17 @@
 #include "alphatracker.h"
 #include "spruce.h"
 #include "spruceoverseer.h"
+#include "priceaggregator.h"
+#include "coinamount.h"
 
 #include <functional>
 #include <QString>
 #include <QMap>
 #include <QVector>
 #include <QQueue>
+#include <QSet>
+#include <QHash>
+#include <QObject>
 #include <QTimer>
 
 CommandRunner::CommandRunner( const quint8 _engine_type, Engine *_e, QVector<BaseREST*> _rest_arr, QObject *parent )
@@ -102,6 +107,7 @@ CommandRunner::CommandRunner( const quint8 _engine_type, Engine *_e, QVector<Bas
     command_map.insert( "setsprucesnapbacktrigger1", std::bind( &CommandRunner::command_setsprucesnapbacktrigger1, this, _1 ) );
     command_map.insert( "setsprucesnapbacktrigger2", std::bind( &CommandRunner::command_setsprucesnapbacktrigger2, this, _1 ) );
     command_map.insert( "setsprucedecay", std::bind( &CommandRunner::command_setsprucedecay, this, _1 ) );
+    command_map.insert( "setpricetracking", std::bind( &CommandRunner::command_setpricetracking, this, _1 ) );
     command_map.insert( "getmidspreadstatus", std::bind( &CommandRunner::command_getmidspreadstatus, this, _1 ) );
     command_map.insert( "getstatus", std::bind( &CommandRunner::command_getstatus, this, _1 ) );
     command_map.insert( "getconfig", std::bind( &CommandRunner::command_getconfig, this, _1 ) );
@@ -219,8 +225,12 @@ void CommandRunner::runCommandChunk( QString &s )
 
 bool CommandRunner::checkArgs( const QStringList &args, qint32 expected_args_min, qint32 expected_args_max )
 {
-    expected_args_min++; // add one
-    if ( expected_args_max < 0 )
+    expected_args_min++; // add one for command arg
+
+    // if there isn't a max, set it to the min, otherwise add one to max for the command arg
+    if ( expected_args_max > 0 )
+        expected_args_max++;
+    else if ( expected_args_max < 0 )
         expected_args_max = expected_args_min;
 
     const QString prefix = QString( "[CommandRunner %1]" )
@@ -1047,6 +1057,18 @@ void CommandRunner::command_setsprucedecay( QStringList &args )
     spruce_overseer->spruce->setCurrencyDecay( args.value( 1 ), args.value( 2 ), args.value( 3 ).toLongLong(), args.value( 4 ).toLongLong() );
 }
 
+void CommandRunner::command_setpricetracking( QStringList &args )
+{
+    if ( !checkArgs( args, 4, 6 ) ) return;
+
+    PriceAggregatorConfig config( args.value( 1 ),
+                                  args.value( 2 ).toLongLong(),
+                                  args.value( 3 ).toLongLong(),
+                                  args.value( 4 ).toLongLong(),
+                                  Coin( args.value( 5 ) ) );
+    price_aggregator->addPersistentMarket( config );
+}
+
 void CommandRunner::command_spruceup( QStringList & )
 {
     spruce_overseer->onSpruceUp();
@@ -1190,6 +1212,7 @@ void CommandRunner::command_savesettings( QStringList &args )
 {
     Q_UNUSED( args )
     spruce_overseer->saveSettings();
+    price_aggregator->save();
 }
 
 void CommandRunner::command_savestats( QStringList &args )

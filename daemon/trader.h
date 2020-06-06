@@ -10,7 +10,7 @@ class QNetworkAccessManager;
 class CommandRunner;
 class CommandListener;
 class FallbackListener;
-
+class PriceAggregator;
 class AlphaTracker;
 class Spruce;
 class SpruceOverseer;
@@ -43,6 +43,9 @@ private:
     CommandRunner *command_runner_waves{ nullptr };
 
     AlphaTracker *alpha{ nullptr };
+    PriceAggregator *price_aggregator{ nullptr };
+
+    // deprecated
     Spruce *spruce{ nullptr };
     SpruceOverseer *spruce_overseer{ nullptr };
 

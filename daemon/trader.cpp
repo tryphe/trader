@@ -15,6 +15,7 @@
 #include "commandrunner.h"
 #include "global.h"
 #include "alphatracker.h"
+#include "priceaggregator.h"
 #include "spruce.h"
 #include "spruceoverseer.h"
 #include "spruceoverseer_test.h"
@@ -28,7 +29,6 @@
 #include <QThread>
 #include <QCoreApplication>
 #include <QNetworkAccessManager>
-
 
 Trader::Trader( QObject *parent )
   : QObject( parent )
@@ -44,6 +44,9 @@ Trader::Trader( QObject *parent )
     // create non-engine components
     engine_map = new EngineMap();
     alpha = new AlphaTracker();
+    price_aggregator = new PriceAggregator( engine_map );
+
+    // deprecated
     spruce = new Spruce();
     spruce_overseer = new SpruceOverseer( engine_map, spruce );
     spruce_overseer->alpha = alpha;
@@ -107,6 +110,7 @@ Trader::Trader( QObject *parent )
         engine_trex->rest_arr = rest_arr;
         command_runner_trex = new CommandRunner( ENGINE_BITTREX, engine_trex, rest_arr );
         command_runner_trex->spruce_overseer = spruce_overseer;
+        command_runner_trex->price_aggregator = price_aggregator;
         connect( command_runner_trex, &CommandRunner::exitSignal, this, &Trader::handleExitSignal );
         connect( engine_trex, &Engine::gotUserCommandChunk, command_runner_trex, &CommandRunner::runCommandChunk );
     }
@@ -115,6 +119,7 @@ Trader::Trader( QObject *parent )
         engine_bnc->rest_arr = rest_arr;
         command_runner_bnc = new CommandRunner( ENGINE_BINANCE, engine_bnc, rest_arr );
         command_runner_bnc->spruce_overseer = spruce_overseer;
+        command_runner_bnc->price_aggregator = price_aggregator;
         connect( command_runner_bnc,  &CommandRunner::exitSignal, this, &Trader::handleExitSignal );
         connect( engine_bnc, &Engine::gotUserCommandChunk, command_runner_bnc, &CommandRunner::runCommandChunk );
     }
@@ -123,6 +128,7 @@ Trader::Trader( QObject *parent )
         engine_polo->rest_arr = rest_arr;
         command_runner_polo = new CommandRunner( ENGINE_POLONIEX, engine_polo, rest_arr );
         command_runner_polo->spruce_overseer = spruce_overseer;
+        command_runner_polo->price_aggregator = price_aggregator;
         connect( command_runner_polo, &CommandRunner::exitSignal, this, &Trader::handleExitSignal );
         connect( engine_polo, &Engine::gotUserCommandChunk, command_runner_polo, &CommandRunner::runCommandChunk );
     }
@@ -131,6 +137,7 @@ Trader::Trader( QObject *parent )
         engine_waves->rest_arr = rest_arr;
         command_runner_waves = new CommandRunner( ENGINE_WAVES, engine_waves, rest_arr );
         command_runner_waves->spruce_overseer = spruce_overseer;
+        command_runner_waves->price_aggregator = price_aggregator;
         connect( command_runner_waves, &CommandRunner::exitSignal, this, &Trader::handleExitSignal );
         connect( engine_waves, &Engine::gotUserCommandChunk, command_runner_waves, &CommandRunner::runCommandChunk );
     }
@@ -182,8 +189,12 @@ Trader::Trader( QObject *parent )
                                     command_runner_waves != nullptr ? command_runner_waves :
                                                                      nullptr;
 
+    // connect spruce_overseer to commandrunner
     if ( command_runner )
         connect( spruce_overseer, &SpruceOverseer::gotUserCommandChunk, command_runner, &CommandRunner::runCommandChunk );
+
+    // connect price_aggregator to commandrunner
+    connect( price_aggregator, &PriceAggregator::gotUserCommandChunk, command_runner, &CommandRunner::runCommandChunk );
 
     // open IPC command listener
     command_listener = new CommandListener();
@@ -198,6 +209,7 @@ Trader::Trader( QObject *parent )
         if ( rest_arr.at( i ) != nullptr )
             rest_arr.at( i )->init();
 
+    price_aggregator->load();
     spruce_overseer->loadSettings();
     spruce_overseer->loadStats();
 }
@@ -220,6 +232,7 @@ Trader::~Trader()
     delete alpha;
     delete spruce;
     delete spruce_overseer;
+    delete price_aggregator;
     delete engine_map;
 
     QCoreApplication::processEvents( QEventLoop::AllEvents, 10000 );
