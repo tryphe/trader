@@ -10,7 +10,8 @@
 #include <QLoggingCategory>
 
 
-namespace SslPolicy {
+namespace SslPolicy
+{
 
 static inline void enableSecureSsl()
 {
@@ -21,7 +22,7 @@ static inline void enableSecureSsl()
     QSslConfiguration ssl_config = QSslConfiguration::defaultConfiguration();
 
     // enforce tls minimum version
-    ssl_config.setProtocol( QSsl::TlsV1_2OrLater);
+    ssl_config.setProtocol( QSsl::TlsV1_2OrLater );
 
     // enable ocsp (don't do this, it breaks things)
     //ssl_config.setOcspStaplingEnabled( true );
