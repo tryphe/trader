@@ -8,7 +8,7 @@ class Engine;
 class EngineMap : public QMap<quint8, Engine*>
 {
 public:
-    EngineMap();
+    explicit EngineMap() {}
 };
 
 #endif // ENGINEMAP_H
