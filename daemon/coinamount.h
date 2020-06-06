@@ -57,6 +57,7 @@ public:
     QString toString( const int decimals ) const;
     QString toSubSatoshiString() const;
     QString toAmountString() const;
+    QString toCompact() const;
 
     int toInt() const;
     quint32 toUInt32() const;

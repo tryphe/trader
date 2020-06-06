@@ -325,6 +325,16 @@ QString Coin::toAmountString() const
     return toString( CoinAmount::satoshi_decimals );
 }
 
+QString Coin::toCompact() const
+{
+    QString ret = toString( CoinAmount::satoshi_decimals );
+
+    while ( ret.endsWith( CoinAmount::zero_exp ) )
+        ret.chop( 1 );
+
+    return ret;
+}
+
 int Coin::toInt() const
 {
     QString str = toString( 0 );

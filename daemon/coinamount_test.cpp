@@ -318,6 +318,10 @@ void CoinAmountTest::testUnit()
     assert( Coin( QVariant( -0.000000011 /* -11e-7 */ ).toString() ).toSubSatoshiString() == "-0.0000000110000000" );
     assert( Coin( QVariant( -0.00000001 /* -1e-7 */ ).toString() ).toSubSatoshiString() == "-0.0000000100000000" );
     assert( Coin( QVariant( -0.00000010 /* -1e-6 */ ).toString() ) == "-0.00000010" );
+
+    // toCompact()
+    assert( Coin( "2." ).toCompact() == "2." );
+    assert( Coin( "22222." ).toCompact() == "22222." );
 }
 
 void CoinAmountTest::testDoubleFailure()
