@@ -485,87 +485,14 @@ Spread SpruceOverseer::getSpreadLimit( const QString &market, bool order_duplici
     return combined_spread;
 }
 
-Spread SpruceOverseer::getMidSpread( const QString &market )
-{
-    Spread ret;
-    quint16 samples = 0;
-
-    for ( QMap<quint8, Engine*>::const_iterator i = engine_map->begin(); i != engine_map->end(); i++ )
-    {
-        Engine *engine = i.value();
-
-        // ensure ticker exists
-        if ( !engine->market_info.contains( market ) )
-            continue;
-
-        // ensure ticker isn't stale
-        if ( engine->rest_arr.at( engine->engine_type )->ticker_update_time
-             < QDateTime::currentMSecsSinceEpoch() - 60000 )
-        {
-            //kDebug() << "local warning: engine ticker" << engine->engine_type << "is stale, skipping";
-            continue;
-        }
-
-        const MarketInfo &info = engine->market_info[ market ];
-
-        // ensure prices are valid
-        if ( !info.spread.isValid() )
-            continue;
-
-        // use avg spread
-        if ( prices_uses_avg )
-        {
-            samples++;
-
-            // incorporate prices of this exchange
-            ret.bid += info.spread.bid;
-            ret.ask += info.spread.ask;
-        }
-        // or, use combined spread edges
-        else
-        {
-            // incorporate bid price of this exchange
-            if ( ret.bid.isZeroOrLess() || // bid doesn't exist yet
-                 ret.bid > info.spread.bid ) // bid is higher than the exchange bid
-                ret.bid = info.spread.bid;
-
-            // incorporate ask price of this exchange
-            if ( ret.ask.isZeroOrLess() || // ask doesn't exist yet
-                 ret.ask < info.spread.ask ) // ask is lower than the exchange ask
-                ret.ask = info.spread.ask;
-        }
-    }
-
-    if ( prices_uses_avg )
-    {
-        // on 0 samples, return here
-        if ( samples < 1 )
-            return Spread();
-
-        // divide by num of samples if necessary
-        if ( samples > 1 )
-        {
-            ret.bid /= samples;
-            ret.ask /= samples;
-        }
-    }
-    else if ( !ret.isValid() )
-        return Spread();
-
-    const Coin midprice = ret.getMidPrice();
-    ret.bid = midprice;
-    ret.ask = midprice;
-
-    return ret;
-}
-
 Spread SpruceOverseer::getSpreadForSide( const QString &market, quint8 side, bool order_duplicity, bool taker_mode, bool include_limit_for_side, bool is_randomized, Coin greed_reduce )
 {
     if ( side == SIDE_SELL )
         greed_reduce = -greed_reduce;
 
-    /// step 1: get combined spread between all exchanges
-    Spread ret = getMidSpread( market );
+    /// step 1: get aggregated spread
+    Coin mp = price_aggregator->getSpread( market ).getMidPrice();
+    Spread ret( mp, mp );
 
     /// step 2: apply base greed value to spread
     // get price ticksize
@@ -812,9 +739,9 @@ void SpruceOverseer::runCancellors( Engine *engine, const QString &market, const
         Coin buy_price_limit, sell_price_limit;
         if ( is_midspread_phase )
         {
-            const Spread mid_spread = getMidSpread( market );
-            buy_price_limit = mid_spread.bid * Coin("0.99");
-            sell_price_limit = mid_spread.ask * Coin("1.01");
+            const Coin midspread_price = price_aggregator->getSpread( market ).getMidPrice();
+            buy_price_limit = midspread_price * Coin("0.99");
+            sell_price_limit = midspread_price * Coin("1.01");
         }
         else
         {

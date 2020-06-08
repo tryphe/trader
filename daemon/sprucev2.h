@@ -11,10 +11,8 @@
 #include <QVector>
 #include <QList>
 
-class SpruceV2
+class SpruceV2 final
 {
-    friend class SpruceV2Overseer;
-
 public:
     explicit SpruceV2();
     ~SpruceV2();
