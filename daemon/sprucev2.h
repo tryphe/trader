@@ -2,7 +2,6 @@
 #define SPRUCEV2_H
 
 #include "coinamount.h"
-#include "costfunctioncache.h"
 #include "market.h"
 #include "misctypes.h"
 

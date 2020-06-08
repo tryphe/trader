@@ -263,8 +263,6 @@ void SpruceOverseer::onSpruceUp()
                                .arg( phase_name, -MARKET_STRING_WIDTH - 9 )
                                .arg( message_out );
 
-                kDebug() << message_out;
-
                 const bool snapback_state = spruce->getSnapbackState( market, side );
 
                 // if snapback is enabled, check to automatically disable snapback
@@ -377,7 +375,7 @@ void SpruceOverseer::onSpruceUp()
                     message_out += QString( " | dst %1" )
                                     .arg( spread_distance_limit.toString( 4 ) );
 
-                //kDebug() << message_out;
+                kDebug() << message_out;
 
                 // queue the order if we aren't paper trading
 #if !defined(PAPER_TRADE)
