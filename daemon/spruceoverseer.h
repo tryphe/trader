@@ -15,7 +15,8 @@
 #include <QTimer>
 
 class AlphaTracker;
-class Spruce;
+class PriceAggregator;
+class SpruceV2;
 class EngineMap;
 class Engine;
 class QTimer;
@@ -27,7 +28,7 @@ class SpruceOverseer : public QObject
     friend class SpruceOverseerTest;
 
 public:
-    explicit SpruceOverseer( EngineMap *_engine_map, Spruce *_spruce );
+    explicit SpruceOverseer( EngineMap *_engine_map, PriceAggregator *_price_aggregator, SpruceV2 *_spruce );
     ~SpruceOverseer();
 
     static QString getSettingsPath() { return Global::getTraderPath() + QDir::separator() + "spruce.settings"; }
@@ -40,7 +41,8 @@ public:
 
     EngineMap *engine_map{ nullptr };
     AlphaTracker *alpha{ nullptr };
-    Spruce *spruce{ nullptr };
+    PriceAggregator *price_aggregator{ nullptr };
+    SpruceV2 *spruce{ nullptr };
     QTimer *spruce_timer{ nullptr };
 
 signals:

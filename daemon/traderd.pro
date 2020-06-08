@@ -23,7 +23,6 @@ SOURCES += main.cpp \
     alphatracker.cpp \
     commandlistener.cpp \
     commandrunner.cpp \
-    costfunctioncache.cpp \
     diffusionphaseman.cpp \
     diffusionphaseman_test.cpp \
     fallbacklistener.cpp \
@@ -32,9 +31,9 @@ SOURCES += main.cpp \
     engine.cpp \
     positionman.cpp \
     priceaggregator.cpp \
-    spruce.cpp \
     spruceoverseer.cpp \
     spruceoverseer_test.cpp \
+    sprucev2.cpp \
     trader.cpp \
     trexrest.cpp \
     bncrest.cpp \
@@ -103,7 +102,6 @@ HEADERS += build-config.h \
     alphatracker.h \
     commandlistener.h \
     commandrunner.h \
-    costfunctioncache.h \
     diffusionphaseman.h \
     diffusionphaseman_test.h \
     enginemap.h \
@@ -118,9 +116,9 @@ HEADERS += build-config.h \
     positiondata.h \
     positionman.h \
     priceaggregator.h \
-    spruce.h \
     spruceoverseer.h \
     spruceoverseer_test.h \
+    sprucev2.h \
     trader.h \
     trexrest.h \
     bncrest.h \

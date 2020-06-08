@@ -1,5 +1,5 @@
 #include "spruceoverseer.h"
-#include "spruce.h"
+#include "sprucev2.h"
 #include "alphatracker.h"
 #include "position.h"
 #include "coinamount.h"
@@ -8,6 +8,7 @@
 #include "enginemap.h"
 #include "engine.h"
 #include "positionman.h"
+#include "priceaggregator.h"
 
 #include <QString>
 #include <QVector>
@@ -23,9 +24,10 @@
 const bool expand_spread_base_down = false; // true = getSpreadForSide always expands down for base greed value before applying other effects
 const bool prices_uses_avg = true; // false = assemble widest combined spread between all exchanges, true = average spreads between all exchanges
 
-SpruceOverseer::SpruceOverseer( EngineMap *_engine_map, Spruce *_spruce )
+SpruceOverseer::SpruceOverseer( EngineMap *_engine_map, PriceAggregator *_price_aggregator, SpruceV2 *_spruce )
     : QObject( nullptr ),
     engine_map( _engine_map ),
+    price_aggregator( _price_aggregator ),
     spruce( _spruce )
 {
     kDebug() << "[SpruceOverseer]";
@@ -63,7 +65,7 @@ void SpruceOverseer::onSpruceUp()
     m_last_midspread_output.clear();
 
     // cache mid spread for each market (needed for noflux phase optimization)
-    QMap<QString, Spread> mid_spread;
+    QMap<QString, Coin> spread_midprice;
 
     // cache markets. if we altered the market count, update markets
     const QVector<QString> alpha_markets = spruce->getMarketsAlpha();
@@ -95,41 +97,51 @@ void SpruceOverseer::onSpruceUp()
             }
         }
 
-        spruce->clearLiveNodes();
+        spruce->clearCurrentPrices();
+        spruce->clearSignalPrices();
         for ( QVector<QString>::const_iterator i = alpha_markets.begin(); i != alpha_markets.end(); i++ )
         {
             const Market market = *i;
+            const QString currency = market.getQuote();
 
-            // if midspread is blank, cache it
-            if ( !mid_spread.contains( market ) )
-                mid_spread[ market ] = getMidSpread( market );
-
-            // check if valid
-            const Spread &midspread_current = mid_spread.value( market );
-            if ( !midspread_current.isValid() || midspread_current.bid != midspread_current.ask )
+            // check spread midprice
+            const Coin midprice = price_aggregator->getSpread( market ).getMidPrice();
+            if ( midprice.isZeroOrLess() )
             {
-                kDebug() << "spruceoverseer error: midspread" << midspread_current
-                         << "was not valid for phase" << phase_name;
+                kDebug() << "spruceoverseer error:" << market << "midprice" << midprice << "was invalid for phase" << phase_name;
                 return;
             }
+
+            spread_midprice[ market ] = midprice;
 
             // for noflux phase, if market matches selected market, select best price from duplicity price or mid price
             Coin diffusion_price;
             if ( !is_midspread_phase && market == flux_market )
             {
                 // set the most optimistic price to use, either the midprice or duplicity price
-                diffusion_price = ( side == SIDE_BUY ) ? std::min( midspread_current.bid, spread_duplicity.bid ) :
-                                                         std::max( midspread_current.ask, spread_duplicity.ask );
+                diffusion_price = ( side == SIDE_BUY ) ? std::min( midprice, spread_duplicity.bid ) :
+                                                         std::max( midprice, spread_duplicity.ask );
             }
             else
             {
-                diffusion_price = midspread_current.bid;
+                diffusion_price = midprice;
             }
 
-            spruce->addLiveNode( market.getQuote(), diffusion_price );
+            // check signal price
+            const Coin signal_price = price_aggregator->getSignalMA( market );
+            if ( signal_price.isZeroOrLess() )
+            {
+                kDebug() << "spruceoverseer error:" << market << "signal price" << signal_price << "was invalid for phase" << phase_name;
+                return;
+            }
+
+            //kDebug() << currency << "signal" << signal_price << "diffusion price" << diffusion_price;
+
+            spruce->setSignalPrice( currency, signal_price );
+            spruce->setCurrentPrice( currency, diffusion_price );
         }
 
-        // on the sell side of custom iteration 0, the result is the same as the buy side, so skip it
+        // on the sell side of the midspread phase, the result is the same as the buy side, so skip it
         if ( !( side == SIDE_SELL && is_midspread_phase ) )
         {
             // calculate amount to short/long, and fail if necessary
@@ -168,7 +180,7 @@ void SpruceOverseer::onSpruceUp()
                 // set price for order
                 if ( is_midspread_phase )
                 {
-                    buy_price = sell_price = mid_spread.value( market ).bid; // note: midspread buy == midspread sell
+                    buy_price = sell_price = spread_midprice.value( market ); // note: midspread buy == midspread sell
 
                     // set local taker mode to disable local spread collision detection which would modify the price
                     order_type += "-taker";
@@ -210,7 +222,7 @@ void SpruceOverseer::onSpruceUp()
                 const Coin order_size_limit = order_size_default * order_nice;
 
                 // cache amount to short/long
-                const Coin amount_to_shortlong = spruce->getCurrencyPriceByMarket( market ) * qty_to_shortlong;
+                const Coin amount_to_shortlong = spruce->getCurrentPrice( market.getQuote() ) * qty_to_shortlong;
                 const Coin amount_to_shortlong_abs = amount_to_shortlong.abs();
 
                 // measure how close amount_to_sl is to hitting the limit
@@ -223,7 +235,7 @@ void SpruceOverseer::onSpruceUp()
                 const bool is_snapback_buys_enabled = spruce->getSnapbackState( market, SIDE_BUY );
                 const bool is_snapback_sells_enabled = spruce->getSnapbackState( market, SIDE_SELL );
 
-                QString message_out = QString( "%1 %2 %3 | co %4 | q %5 | a %6/%7 (%8%) | act %9" )
+                QString message_out = QString( "%1 %2 %3 | q %4 | a %5/%6 (%7%) | act %8" )
                         // print the market name in the color of the position to be taken
                         .arg( QString( "%1%2%3" ).arg( amount_to_shortlong.isGreaterThanZero() ? COLOR_RED : COLOR_GREEN )
                                                  .arg( market, -MARKET_STRING_WIDTH )
@@ -237,7 +249,6 @@ void SpruceOverseer::onSpruceUp()
                                                  .arg( is_snapback_buys_enabled || is_snapback_sells_enabled ? "snap" : "    " )
                                                  .arg( COLOR_NONE ) )
                         .arg( side == SIDE_BUY ? buy_price : sell_price )
-                        .arg( spruce->getLastCoeffForMarket( market ).toString( 4 ), 7 )
                         .arg( qty_to_shortlong.toString( 4 ), 12 )
                         .arg( amount_to_shortlong.toString( 4 ), 9 ) // print amount to s/l
                         .arg( ( is_buy ? -order_size_limit : order_size_limit ).toString( 4 ), -13 ) // print amount to s/l less the nice buffer (the actionable amount)
@@ -251,6 +262,8 @@ void SpruceOverseer::onSpruceUp()
                 message_out = QString( "%1 %2" )
                                .arg( phase_name, -MARKET_STRING_WIDTH - 9 )
                                .arg( message_out );
+
+                kDebug() << message_out;
 
                 const bool snapback_state = spruce->getSnapbackState( market, side );
 
@@ -364,7 +377,7 @@ void SpruceOverseer::onSpruceUp()
                     message_out += QString( " | dst %1" )
                                     .arg( spread_distance_limit.toString( 4 ) );
 
-                kDebug() << message_out;
+                //kDebug() << message_out;
 
                 // queue the order if we aren't paper trading
 #if !defined(PAPER_TRADE)
@@ -840,8 +853,9 @@ void SpruceOverseer::runCancellors( Engine *engine, const QString &market, const
                                             .arg( market );
 
         // get market allocation
+        const QString currency = Market( market ).getQuote();
         const Coin active_amount = engine->positions->getActiveSpruceEquityTotal( market, phase_name, side_actual, flux_price );
-        const Coin amount_to_shortlong = spruce->getExchangeAllocation( exchange_market_key ) * spruce->getCurrencyPriceByMarket( market ) * spruce->getQuantityToShortLongNow( market );
+        const Coin amount_to_shortlong = spruce->getExchangeAllocation( exchange_market_key ) * spruce->getCurrentPrice( currency ) * spruce->getQuantityToShortLongByCurrency( currency );
 
         // get active tolerance
         const Coin nice_zero_bound = spruce->getOrderNiceZeroBound( market, side_actual, is_midspread_phase );

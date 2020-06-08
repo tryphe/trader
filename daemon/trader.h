@@ -3,16 +3,12 @@
 
 #include <QObject>
 
-#include "global.h"
-
 class QNetworkAccessManager;
-
-class CommandRunner;
 class CommandListener;
-class FallbackListener;
-class PriceAggregator;
+class CommandRunner;
 class AlphaTracker;
-class Spruce;
+class PriceAggregator;
+class SpruceV2;
 class SpruceOverseer;
 class EngineMap;
 class Engine;
@@ -44,9 +40,7 @@ private:
 
     AlphaTracker *alpha{ nullptr };
     PriceAggregator *price_aggregator{ nullptr };
-
-    // deprecated
-    Spruce *spruce{ nullptr };
+    SpruceV2 *spruce{ nullptr };
     SpruceOverseer *spruce_overseer{ nullptr };
 
     EngineMap *engine_map{ nullptr };

@@ -1,6 +1,6 @@
 #include "spruceoverseer_test.h"
 #include "engine.h"
-#include "spruce.h"
+#include "sprucev2.h"
 #include "spruceoverseer.h"
 
 //#include <QDebug>

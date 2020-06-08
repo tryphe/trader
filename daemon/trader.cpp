@@ -16,7 +16,7 @@
 #include "global.h"
 #include "alphatracker.h"
 #include "priceaggregator.h"
-#include "spruce.h"
+#include "sprucev2.h"
 #include "spruceoverseer.h"
 #include "spruceoverseer_test.h"
 #include "diffusionphaseman_test.h"
@@ -45,10 +45,8 @@ Trader::Trader( QObject *parent )
     engine_map = new EngineMap();
     alpha = new AlphaTracker();
     price_aggregator = new PriceAggregator( engine_map );
-
-    // deprecated
-    spruce = new Spruce();
-    spruce_overseer = new SpruceOverseer( engine_map, spruce );
+    spruce = new SpruceV2();
+    spruce_overseer = new SpruceOverseer( engine_map, price_aggregator, spruce );
     spruce_overseer->alpha = alpha;
 
     nam = new QNetworkAccessManager();

@@ -469,7 +469,7 @@ void PriceAggregator::nextPriceSample()
             small_ma_to_fill--;
             small_ma_filled++;
 
-            kDebug() << config.market << "small_ma updated:" << config.small_ma.ma.getAverage();
+            //kDebug() << config.market << "small_ma updated:" << config.small_ma.ma.getAverage();
         }
 
         if ( small_ma_filled > 1 )
@@ -489,7 +489,7 @@ void PriceAggregator::nextPriceSample()
             signal_ma_to_fill--;
             signal_ma_filled++;
 
-            kDebug() << config.market << "signal_ma updated:" << config.signal_ma.ma.getAverage();
+            //kDebug() << config.market << "signal_ma updated:" << config.signal_ma.ma.getAverage();
         }
 
         if ( signal_ma_filled > 1 )

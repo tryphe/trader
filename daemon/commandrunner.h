@@ -10,7 +10,6 @@
 #include <QMap>
 
 class Engine;
-class Spruce;
 class SpruceOverseer;
 class PriceAggregator;
 class BaseREST;
@@ -96,12 +95,8 @@ private:
     void command_setslippagetimeout( QStringList &args );
     void command_setspruceinterval( QStringList &args );
     void command_setsprucebasecurrency( QStringList &args );
-    void command_setsprucestartnode( QStringList &args );
-    void command_setspruceshortlongtotal( QStringList &args );
+    void command_setspruceqty( QStringList &args );
     void command_setsprucebetamarket( QStringList &args );
-    void command_setspruceamplification( QStringList &args );
-    void command_setspruceprofile( QStringList &args );
-    void command_setsprucereserve( QStringList &args );
     void command_setspruceordergreed( QStringList &args );
     void command_setspruceordersize( QStringList &args );
     void command_setspruceordercount( QStringList &args );
@@ -113,7 +108,6 @@ private:
     void command_setsprucesnapback( QStringList &args );
     void command_setsprucesnapbacktrigger1( QStringList &args );
     void command_setsprucesnapbacktrigger2( QStringList &args );
-    void command_setsprucedecay( QStringList &args );
     void command_setpricetracking( QStringList &args );
     void command_spruceup( QStringList &args );
 
@@ -124,8 +118,7 @@ private:
     void command_setmaintenancetime( QStringList &args );
     void command_clearallstats( QStringList &args );
     void command_savemarket( QStringList &args );
-    void command_savesettings( QStringList &args );
-    void command_savestats( QStringList &args );
+    void command_save( QStringList &args );
     void command_sendcommand( QStringList &args );
     void command_setchatty( QStringList &args );
     void command_exit( QStringList &args );

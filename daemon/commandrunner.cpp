@@ -9,7 +9,7 @@
 #include "positionman.h"
 #include "market.h"
 #include "alphatracker.h"
-#include "spruce.h"
+#include "sprucev2.h"
 #include "spruceoverseer.h"
 #include "priceaggregator.h"
 #include "coinamount.h"
@@ -89,12 +89,8 @@ CommandRunner::CommandRunner( const quint8 _engine_type, Engine *_e, QVector<Bas
     command_map.insert( "setslippagetimeout", std::bind( &CommandRunner::command_setslippagetimeout, this, _1 ) );
     command_map.insert( "setspruceinterval", std::bind( &CommandRunner::command_setspruceinterval, this, _1 ) );
     command_map.insert( "setsprucebasecurrency", std::bind( &CommandRunner::command_setsprucebasecurrency, this, _1 ) );
-    command_map.insert( "setsprucestartnode", std::bind( &CommandRunner::command_setsprucestartnode, this, _1 ) );
-    command_map.insert( "setspruceshortlongtotal", std::bind( &CommandRunner::command_setspruceshortlongtotal, this, _1 ) );
+    command_map.insert( "setspruceqty", std::bind( &CommandRunner::command_setspruceqty, this, _1 ) );
     command_map.insert( "setsprucebetamarket", std::bind( &CommandRunner::command_setsprucebetamarket, this, _1 ) );
-    command_map.insert( "setspruceamplification", std::bind( &CommandRunner::command_setspruceamplification, this, _1 ) );
-    command_map.insert( "setspruceprofile", std::bind( &CommandRunner::command_setspruceprofile, this, _1 ) );
-    command_map.insert( "setsprucereserve", std::bind( &CommandRunner::command_setsprucereserve, this, _1 ) );
     command_map.insert( "setspruceordergreed", std::bind( &CommandRunner::command_setspruceordergreed, this, _1 ) );
     command_map.insert( "setspruceordersize", std::bind( &CommandRunner::command_setspruceordersize, this, _1 ) );
     command_map.insert( "setspruceordercount", std::bind( &CommandRunner::command_setspruceordercount, this, _1 ) );
@@ -106,7 +102,6 @@ CommandRunner::CommandRunner( const quint8 _engine_type, Engine *_e, QVector<Bas
     command_map.insert( "setsprucesnapback", std::bind( &CommandRunner::command_setsprucesnapback, this, _1 ) );
     command_map.insert( "setsprucesnapbacktrigger1", std::bind( &CommandRunner::command_setsprucesnapbacktrigger1, this, _1 ) );
     command_map.insert( "setsprucesnapbacktrigger2", std::bind( &CommandRunner::command_setsprucesnapbacktrigger2, this, _1 ) );
-    command_map.insert( "setsprucedecay", std::bind( &CommandRunner::command_setsprucedecay, this, _1 ) );
     command_map.insert( "setpricetracking", std::bind( &CommandRunner::command_setpricetracking, this, _1 ) );
     command_map.insert( "getmidspreadstatus", std::bind( &CommandRunner::command_getmidspreadstatus, this, _1 ) );
     command_map.insert( "getstatus", std::bind( &CommandRunner::command_getstatus, this, _1 ) );
@@ -115,8 +110,7 @@ CommandRunner::CommandRunner( const quint8 _engine_type, Engine *_e, QVector<Bas
     command_map.insert( "setmaintenancetime", std::bind( &CommandRunner::command_setmaintenancetime, this, _1 ) );
     command_map.insert( "clearallstats", std::bind( &CommandRunner::command_clearallstats, this, _1 ) );
     command_map.insert( "savemarket", std::bind( &CommandRunner::command_savemarket, this, _1 ) );
-    command_map.insert( "savesettings", std::bind( &CommandRunner::command_savesettings, this, _1 ) );
-    command_map.insert( "savestats", std::bind( &CommandRunner::command_savestats, this, _1 ) );
+    command_map.insert( "save", std::bind( &CommandRunner::command_save, this, _1 ) );
     command_map.insert( "sendcommand", std::bind( &CommandRunner::command_sendcommand, this, _1 ) );
     command_map.insert( "setchatty", std::bind( &CommandRunner::command_setchatty, this, _1 ) );
     command_map.insert( "spruceup", std::bind( &CommandRunner::command_spruceup, this, _1 ) );
@@ -863,20 +857,12 @@ void CommandRunner::command_setsprucebasecurrency( QStringList &args )
     kDebug() << "spruce base currency is now" << spruce_overseer->spruce->getBaseCurrency();
 }
 
-void CommandRunner::command_setsprucestartnode( QStringList &args )
-{
-    if ( !checkArgs( args, 3 ) ) return;
-
-    spruce_overseer->spruce->addStartNode( args.value( 1 ), args.value( 2 ), args.value( 3 ) );
-    kDebug() << "spruce added start node for" << args.value( 1 ) << args.value( 2 ) << args.value( 3 );
-}
-
-void CommandRunner::command_setspruceshortlongtotal( QStringList &args )
+void CommandRunner::command_setspruceqty( QStringList &args )
 {
     if ( !checkArgs( args, 2 ) ) return;
 
-    spruce_overseer->spruce->addToShortLonged( Market( args.value( 1 ) ), args.value( 2 ) );
-    kDebug() << "spruce shortlong total for" << args.value( 1 ) << "is" << args.value( 2 );
+    spruce_overseer->spruce->setCurrentQty( args.value( 1 ), args.value( 2 ) );
+    kDebug() << "spruce set current qty for" << args.value( 1 ) << args.value( 2 );
 }
 
 void CommandRunner::command_setsprucebetamarket( QStringList &args )
@@ -885,30 +871,6 @@ void CommandRunner::command_setsprucebetamarket( QStringList &args )
 
     const Market m = args.value( 1 );
     spruce_overseer->spruce->addMarketBeta( m );
-}
-
-void CommandRunner::command_setspruceamplification( QStringList &args )
-{
-    if ( !checkArgs( args, 1 ) ) return;
-
-    spruce_overseer->spruce->setAmplification( args.value( 1 ) );
-    kDebug() << "spruce log amplification is" << spruce_overseer->spruce->getAmplification();
-}
-
-void CommandRunner::command_setspruceprofile( QStringList &args )
-{
-    if ( !checkArgs( args, 2 ) ) return;
-
-    spruce_overseer->spruce->setProfileU( args.value( 1 ), args.value( 2 ) );
-    kDebug() << "spruce profile u for" << args.value( 1 ) << "is" << spruce_overseer->spruce->getProfileU( args.value( 1 ) );
-}
-
-void CommandRunner::command_setsprucereserve( QStringList &args )
-{
-    if ( !checkArgs( args, 2 ) ) return;
-
-    spruce_overseer->spruce->setReserve( args.value( 1 ), args.value( 2 ) );
-    kDebug() << "spruce reserve for" << args.value( 1 ) << "is" << spruce_overseer->spruce->getReserve( args.value( 1 ) );
 }
 
 void CommandRunner::command_setspruceordergreed( QStringList &args )
@@ -1048,13 +1010,6 @@ void CommandRunner::command_setsprucesnapbacktrigger2( QStringList &args )
                                          << "ma ratio:" << spruce_overseer->spruce->getSnapbackTrigger2MARatio()
                                     << "initial ratio:" << spruce_overseer->spruce->getSnapbackTrigger2InitialRatio()
                                  << "message interval:" << spruce_overseer->spruce->getSnapbackTrigger2MessageInterval();
-}
-
-void CommandRunner::command_setsprucedecay( QStringList &args )
-{
-    if ( !checkArgs( args, 4 ) ) return;
-
-    spruce_overseer->spruce->setCurrencyDecay( args.value( 1 ), args.value( 2 ), args.value( 3 ).toLongLong(), args.value( 4 ).toLongLong() );
 }
 
 void CommandRunner::command_setpricetracking( QStringList &args )
@@ -1208,17 +1163,12 @@ void CommandRunner::command_savemarket( QStringList &args )
     engine->saveMarket( Market( args.value( 1 ) ), args.value( 2 ).toInt() );
 }
 
-void CommandRunner::command_savesettings( QStringList &args )
+void CommandRunner::command_save( QStringList &args )
 {
     Q_UNUSED( args )
     spruce_overseer->saveSettings();
-    price_aggregator->save();
-}
-
-void CommandRunner::command_savestats( QStringList &args )
-{
-    Q_UNUSED( args )
     spruce_overseer->saveStats();
+    price_aggregator->save();
 }
 
 void CommandRunner::command_sendcommand( QStringList &args )

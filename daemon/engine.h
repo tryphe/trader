@@ -15,7 +15,7 @@
 #include <QNetworkReply>
 #include <QDateTime>
 
-class Spruce;
+class SpruceV2;
 class CommandRunner;
 class CommandListener;
 class AlphaTracker;
@@ -97,7 +97,7 @@ public:
     QVector<QString/*order_id*/> orders_for_polling;
 
     quint8 engine_type{ 0 };
-    Spruce *spruce{ nullptr };
+    SpruceV2 *spruce{ nullptr };
     QVector<BaseREST*> rest_arr;
     AlphaTracker *alpha{ nullptr };
 

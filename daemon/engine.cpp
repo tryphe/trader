@@ -8,7 +8,7 @@
 #include "enginesettings.h"
 #include "market.h"
 #include "alphatracker.h"
-#include "spruce.h"
+#include "sprucev2.h"
 
 #include <algorithm>
 #include <QtMath>
@@ -512,8 +512,8 @@ void Engine::updateStatsAndPrintFill( const QString &fill_type, Market market, c
             const Coin quantity_offset_1 = ( side == SIDE_BUY ) ?  quantity
                                                                 : -quantity;
 
-            spruce->addToShortLonged( alpha_market_0, quantity_offset_0 );
-            spruce->addToShortLonged( alpha_market_1, quantity_offset_1 );
+            spruce->adjustCurrentQty( alpha_market_0.getQuote(), quantity_offset_0 );
+            spruce->adjustCurrentQty( alpha_market_1.getQuote(), quantity_offset_1 );
         }
         // normal order, subtract the qty of the alt (base doesn't need changing)
         else
@@ -522,7 +522,7 @@ void Engine::updateStatsAndPrintFill( const QString &fill_type, Market market, c
             const Coin quantity_offset = ( side == SIDE_BUY ) ?  quantity
                                                               : -quantity;
 
-            spruce->addToShortLonged( market, quantity_offset );
+            spruce->adjustCurrentQty( market.getQuote(), quantity_offset );
         }
     }
 
