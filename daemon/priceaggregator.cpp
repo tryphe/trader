@@ -276,7 +276,7 @@ void PriceAggregator::savePriceSamples( const QString &market, const qint64 samp
         if ( !state.isEmpty() )
             state += QChar( ' ' );
 
-        state += QString( "%1" ).arg( *i );
+        state += QString( "%1" ).arg( (*i).toCompact() );
     }
     state.prepend( QString( "p %1 " ).arg( data_start_secs ) );
 

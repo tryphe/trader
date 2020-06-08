@@ -320,8 +320,9 @@ void CoinAmountTest::testUnit()
     assert( Coin( QVariant( -0.00000010 /* -1e-6 */ ).toString() ) == "-0.00000010" );
 
     // toCompact()
-    assert( Coin( "2." ).toCompact() == "2." );
-    assert( Coin( "22222." ).toCompact() == "22222." );
+    assert( Coin( "0" ).toCompact() == "0." );
+    assert( Coin( "2" ).toCompact() == "2." );
+    assert( Coin( "22222" ).toCompact() == "22222." );
 }
 
 void CoinAmountTest::testDoubleFailure()
