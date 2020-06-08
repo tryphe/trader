@@ -33,7 +33,7 @@ CommandListener::~CommandListener()
     QLocalServer::close();
 
     QList<LocalClient*> list = m_users.values();
-    while ( list.size() > 0 )
+    while ( !list.isEmpty() )
         delete list.takeFirst(); //->deleteLater();
 }
 

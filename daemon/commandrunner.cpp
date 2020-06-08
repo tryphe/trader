@@ -134,7 +134,7 @@ void CommandRunner::runCommandChunk( QString &s )
     QMap<QString, qint32> positions_added; // count of positions set in each market
 
     QStringList lines = s.split( "\n" );
-    while ( lines.size() > 0 )
+    while ( !lines.isEmpty() )
     {
         QString line = lines.takeFirst();
 
@@ -1060,7 +1060,7 @@ void CommandRunner::command_getstatus( QStringList &args )
                              .arg( COLOR_NONE );
     }
 
-    if ( ticker_status.size() > 0 )
+    if ( !ticker_status.isEmpty() )
         ticker_status.chop( 3 );
 
     kDebug() << ticker_status;

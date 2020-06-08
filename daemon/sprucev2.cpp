@@ -152,7 +152,7 @@ bool SpruceV2::calculateAmountToShortLong()
                             .arg( alloc.value( currency ).toString( 3 ) );
     }
 
-    kDebug() << "alloc:" << alloc_debug_out;
+    //kDebug() << "alloc:" << alloc_debug_out;
 
     // get base amount total of portfolio
     const Coin base_capital = getBaseCapital();
@@ -283,8 +283,8 @@ void SpruceV2::setSnapbackState( const QString &market, const quint8 side, const
     const bool other_side_state = getSnapbackState( market, opposite_side );
 
     // if we are turning the state on, and the state of the other side of this market is enabled, disable it directly
-    // note: this should almost never happen realistically, as once the amount_to_sl is under the nice limit, snapback
-    //       will disable instantly. however if it flips to the other side, it won't catch the check, and we must disable is here.
+    // note: this should almost never happen, as once the amount_to_sl is under the nice limit, snapback  will disable.
+    //       if it flips to the other side before disabling, it won't catch the check and we must disable it here.
     if ( state && other_side_state )
     {
         opposite_side == SIDE_BUY ? m_snapback_state_buys[ market ] = false :

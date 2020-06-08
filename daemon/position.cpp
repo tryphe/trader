@@ -142,7 +142,7 @@ Position::Position( QString _market, quint8 _side, QString _buy_price, QString _
         indices_str += QString::number( *i ) + ' ';
 
     // get rid of trailing space
-    if ( indices_str.size() > 0 )
+    if ( !indices_str.isEmpty() )
     {
         indices_str.prepend( "i " );
         indices_str.truncate( indices_str.size() -1 );

@@ -518,7 +518,7 @@ void TrexREST::parseBuySell( Request *const &request, const QJsonObject &respons
 
     // if we scan-set the order, it'll have an id. skip if the id is set
     // exiting here lets us have simultaneous scan-set across different indices with the same prices/sizes
-    if ( pos->order_number.size() > 0 )
+    if ( !pos->order_number.isEmpty() )
         return;
 
     if ( !response.contains( "uuid" ) )
@@ -662,7 +662,7 @@ void TrexREST::parseReturnBalances( const QJsonArray &balances )
                        .arg( value_d, -PRICE_WIDTH );
 
         // append deposit address if there is one
-        if ( address.size() > 0 )
+        if ( !address.isEmpty() )
             out += " ADDR:" + address;
 
         kDebug() << out;
@@ -774,7 +774,7 @@ void TrexREST::parseOrderBook( const QJsonArray &info, qint64 request_time_sent_
         //kDebug() << market << "bid:" << bid << "ask:" << ask;
 
         // update our maps
-        if ( market.size() > 0 &&
+        if ( !market.isEmpty() &&
              bid.isGreaterThanZero() &&
              ask.isGreaterThanZero() )
         {

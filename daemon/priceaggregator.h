@@ -51,7 +51,7 @@ struct PriceAggregatorConfig
     int signal_ma_interval_secs{ 84600 }; // save price ma every x secs, default 1 day
     int signal_ma_length{ 365 }; // combine this many 1 day ma samples for our signal price
 
-    // TODO: these should be a stack
+    // TODO: these should be a stack and interval/lengths should be in PriceMAData
     // data in the small_ma file
     PriceMAData small_ma;
 

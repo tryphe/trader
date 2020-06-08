@@ -161,7 +161,7 @@ Position *Engine::addPosition( QString market_input, quint8 side, QString buy_pr
                             Coin( buy_price ).isZeroOrLess() || Coin( sell_price ).isZeroOrLess() ) ) ||
          ( is_onetime && side == SIDE_BUY && Coin( buy_price ).isZeroOrLess() ) ||
          ( is_onetime && side == SIDE_SELL && Coin( sell_price ).isZeroOrLess() ) ||
-         ( is_onetime && alternate_size.size() > 0 && Coin( alternate_size ).isZeroOrLess() ) )
+         ( is_onetime && !alternate_size.isEmpty() && Coin( alternate_size ).isZeroOrLess() ) )
     {
         kDebug() << "local error: tried to set bad" << ( is_onetime ? "one-time" : "ping-pong" ) << "order. hi price"
                  << sell_price << "lo price" << buy_price << "size" << order_size << "alternate size" << alternate_size;
@@ -712,7 +712,7 @@ void Engine::processOpenOrders( QVector<QString> &order_numbers, QMultiHash<QStr
     }
     else
     {
-        while ( stray_orders.size() > 0 )
+        while ( !stray_orders.isEmpty() )
         {
             const QString &order_number = stray_orders.takeFirst();
             const Market &market = engine_type == ENGINE_WAVES ? stray_orders_markets.takeFirst() : Market();
@@ -1130,7 +1130,7 @@ void Engine::saveMarket( QString market, qint32 num_orders )
 
             // if the order has an "alternate_size", append it to preserve the state
             QString order_size = pos_data.order_size;
-            if ( pos_data.alternate_size.size() > 0 )
+            if ( !pos_data.alternate_size.isEmpty() )
                 order_size += QString( "/%1" ).arg( pos_data.alternate_size );
 
             out_savefile << QString( "setorder %1 %2 %3 %4 %5 %6\n" )
@@ -1232,7 +1232,7 @@ void Engine::cleanGraceTimes()
     }
 
     // clear removed after iterator finishes
-    while ( removed.size() > 0 )
+    while ( !removed.isEmpty() )
         order_grace_times.remove( removed.takeFirst() );
 }
 

@@ -177,7 +177,7 @@ QString AlphaTracker::getSaveState() const
     for ( QMap<quint32, Coin>::const_iterator i = daily_volume.begin(); i != daily_volume.end(); i++ )
     {
         // if there's data, add a space
-        if ( daily_volume_data.size() > 0 )
+        if ( !daily_volume_data.isEmpty() )
             daily_volume_data += QChar( ' ' );
 
         daily_volume_data += i.value();

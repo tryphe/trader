@@ -23,7 +23,7 @@ PositionMan::PositionMan( Engine *_engine, QObject *parent )
 PositionMan::~PositionMan()
 {
     // delete local positions
-    while( positions_all.size() > 0 )
+    while( !positions_all.isEmpty() )
         remove( *positions_all.begin() );
 }
 
@@ -787,7 +787,7 @@ void PositionMan::remove( Position * const &pos )
     }
 
     // delete replies that we handled
-    while ( deleted_queue.size() > 0 )
+    while ( !deleted_queue.isEmpty() )
     {
         QPair<QNetworkReply*,Request*> pair = deleted_queue.takeFirst();
 
@@ -866,7 +866,7 @@ void PositionMan::converge( QMap<QString, QVector<qint32> > &market_map, quint8 
                 new_order.clear();
 
                 // we still have indices, we should continue
-                if ( indices.size() > 0 )
+                if ( !indices.isEmpty() )
                 {
                     j = -1; // restart loop from 0
                     continue;
@@ -1029,15 +1029,15 @@ void PositionMan::cancelLocal( QString market )
     }
 
     // delete queued positions
-    while ( deleted_positions.size() > 0 )
+    while ( !deleted_positions.isEmpty() )
         remove( deleted_positions.takeFirst() );
 
     // delete and cancel all normal positions
-    while ( normal_positions.size() > 0 )
+    while ( !normal_positions.isEmpty() )
         cancel( normal_positions.takeFirst() );
 
     // delete and cancel all landmark positions
-    while ( landmark_positions.size() > 0 )
+    while ( !landmark_positions.isEmpty() )
         cancel( landmark_positions.takeFirst() );
 
     // clear market index

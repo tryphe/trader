@@ -338,7 +338,7 @@ void BncREST::sendCancel( const QString &_order_id, Position *const &pos )
     // extract market from orderid (binance only)
     QString order_id = _order_id;
     QString market;
-    while( order_id.size() > 0 && !order_id.at( 0 ).isDigit() )
+    while( !order_id.isEmpty() && !order_id.at( 0 ).isDigit() )
     {
         market.append( order_id.left( 1 ) );
         order_id.remove( 0, 1 );
@@ -364,7 +364,7 @@ void BncREST::sendGetOrder( const QString &_order_id, Position * const &pos )
     // extract market from orderid (binance only)
     QString order_id = _order_id;
     QString market;
-    while( order_id.size() > 0 && !order_id.at( 0 ).isDigit() )
+    while( !order_id.isEmpty() && !order_id.at( 0 ).isDigit() )
     {
         market.append( order_id.left( 1 ) );
         order_id.remove( 0, 1 );
@@ -588,7 +588,7 @@ void BncREST::parseBuySell( Request *const &request, const QJsonObject &response
 
     // if we scan-set the order, it'll have an id. skip if the id is set
     // exiting here lets us have simultaneous scan-sets across different indices with the same prices/sizes
-    if ( pos->order_number.size() > 0 )
+    if ( !pos->order_number.isEmpty() )
         return;
 
     // look for post-only error
@@ -824,7 +824,7 @@ void BncREST::parseTicker( const QJsonArray &info, qint64 request_time_sent_ms )
         //kDebug() << market << bid_price << ask_price;
 
         // update our maps
-        if ( market.size() > 0 &&
+        if ( !market.isEmpty() &&
              bid_price.isGreaterThanZero() &&
              ask_price.isGreaterThanZero() )
         {
@@ -832,7 +832,7 @@ void BncREST::parseTicker( const QJsonArray &info, qint64 request_time_sent_ms )
         }
     }
 
-    if ( market_aliases_not_found.size() > 0 )
+    if ( !market_aliases_not_found.isEmpty() )
     {
         kDebug() << "local warning: couldn't find market alias for binance markets" << market_aliases_not_found;
         onCheckExchangeInfo(); // read markets again

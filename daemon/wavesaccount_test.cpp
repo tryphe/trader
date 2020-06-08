@@ -28,7 +28,7 @@ void WavesAccountTest::test()
     bool sign_result = acc.sign( message, signature );
 
     assert( sign_result );
-    assert( signature.size() > 0 );
+    assert( !signature.isEmpty() );
 
     /// verify our message signed with a random signature
     bool verify_result = acc.verify( message, signature );

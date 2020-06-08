@@ -60,7 +60,7 @@ BaseREST::~BaseREST()
     }
 
     // delete nam queues
-    while ( nam_queue.size() > 0 )
+    while ( !nam_queue.isEmpty() )
         delete nam_queue.takeFirst();
 
     delete send_timer;
@@ -167,7 +167,7 @@ void BaseREST::removeRequest( const QString &api_command, const QString &body )
     }
 
     // remove the requests we matched
-    while ( removed_requests.size() > 0 )
+    while ( !removed_requests.isEmpty() )
         nam_queue.removeOne( removed_requests.takeFirst() );
 }
 

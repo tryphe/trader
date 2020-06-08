@@ -76,7 +76,7 @@ void FallbackListener::parseInputFile()
 
     // truncate the file before we parse the commands, incase we run 'exit', otherwise they'll run next time
     // NOTE: this causes problems, as we can't bombard the text file with frequent edits. use IPC sockets instead, except for bulk calls.
-    if ( data.size() > 0 )
+    if ( !data.isEmpty() )
     {
         input_file->resize( 0 );
     }

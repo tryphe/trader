@@ -97,7 +97,7 @@ void WavesREST::sendNamQueue()
     // check for orders that we should poll
     if ( nam_queue.isEmpty() )
     {
-        while ( engine->orders_for_polling.size() > 0 )
+        while ( !engine->orders_for_polling.isEmpty() )
         {
             const QString order_number = engine->orders_for_polling.takeFirst();
 

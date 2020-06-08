@@ -18,7 +18,7 @@ struct PositionData
     void iterateFillCount()
     {
         fill_count++;
-        if ( alternate_size.size() > 0 )
+        if ( !alternate_size.isEmpty() )
         {
             order_size = alternate_size;
             alternate_size.clear();
