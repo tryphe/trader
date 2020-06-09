@@ -78,6 +78,9 @@ public:
     static QString getSettingsPath();
     static QString getSamplesPath( const QString &market, const qint64 interval_secs );
 
+    static void savePriceSamples( const QString &market, const qint64 sample_interval, const qint64 data_start_secs, const QVector<Coin> &data );
+    static bool loadPriceSamples( PriceMAData &data, const QString &path, const int ma_length, const int ma_interval );
+
     Spread getSpread( const QString &market ) const;
     Coin getSignalMA( const QString &market ) const;
 
@@ -87,11 +90,9 @@ public:
     void save();
     void saveConfig();
     void savePrices();
-    void savePriceSamples( const QString &market, const qint64 sample_interval, const qint64 data_start_secs, const QVector<Coin> &data );
     void load();
     void loadConfig();
     void loadPrices();
-    bool loadPriceSamples( PriceMAData &data, const QString &path, const int ma_length, const int ma_interval );
 
 signals:
     void gotUserCommandChunk( QString &s );

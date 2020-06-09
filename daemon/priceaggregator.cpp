@@ -87,6 +87,117 @@ QString PriceAggregator::getSamplesPath( const QString &market, const qint64 int
            .arg( interval_secs );
 }
 
+void PriceAggregator::savePriceSamples( const QString &market, const qint64 sample_interval, const qint64 data_start_secs, const QVector<Coin> &data )
+{
+    // open file
+    const QString path = getSamplesPath( market, sample_interval );
+
+    QFile savefile( path );
+    if ( !savefile.open( QIODevice::WriteOnly | QIODevice::Text ) )
+    {
+        kDebug() << "[PriceAggregator] error: couldn't open price sample file" << path;
+        return;
+    }
+
+    // construct state
+    QString state;
+    for ( QVector<Coin>::const_iterator i = data.begin(); i != data.end(); i++ )
+    {
+        if ( !state.isEmpty() )
+            state += QChar( ' ' );
+
+        state += QString( "%1" ).arg( (*i).toCompact() );
+    }
+    state.prepend( QString( "p %1 " ).arg( data_start_secs ) );
+
+    // save state
+    QTextStream out_samples( &savefile );
+    out_samples << state;
+
+    // close file
+    out_samples.flush();
+    savefile.close();
+}
+
+bool PriceAggregator::loadPriceSamples( PriceMAData &data, const QString &path, const int ma_length, const int ma_interval )
+{
+    static const QChar separator = QChar(' ');
+
+    kDebug() << "[PriceAggregator] loading" << path;
+
+    // open sample file
+    QFile sample_file( path );
+    if ( !sample_file.open( QIODevice::ReadOnly | QIODevice::Text ) )
+    {
+        kDebug() << "[PriceAggregator] error: couldn't load sample file" << path;
+        return false;
+    }
+
+    const QByteArray data_in = sample_file.readAll();
+
+    // close file
+    sample_file.close();
+
+    // check prefix
+    if ( !data_in.startsWith( "p " ) )
+    {
+        kDebug() << "[PriceAggregator] error: bad prefix in sample file" << path;
+        return false;
+    }
+
+    // init counters
+    int z = 2;
+    int s = data_in.indexOf( separator, z );
+
+    // read timestamp
+    bool ok = false;
+    qint64 ts = data_in.mid( z, s -1 ).toLongLong( &ok );
+    z += s -1;
+    if ( !ok || ts < 1 )
+    {
+        kDebug() << "[PriceAggregator] bad timestamp" << ts;
+        return false;
+    }
+
+    data.data_start_secs = ts;
+    //kDebug() << "read timestamp" << ts;
+
+    // read the data
+    int s_minus_z;
+    do
+    {
+        s = data_in.indexOf( separator, z );
+        s_minus_z = s-z;
+
+        Coin sample = QString( data_in.mid( z, s_minus_z ) );
+
+        // check for bad sample
+        if ( sample.isZeroOrLess() )
+        {
+            kDebug() << "[PriceAggregator] bad sample" << sample;
+            return false;
+        }
+
+        z += s_minus_z +1;
+        data.data += sample;
+        //kDebug() << "read sample" << sample;
+    }
+    while ( s > -1 );
+
+    // after loading the data, calculate the ma start time
+    const int samples_count = data.data.size();
+    const int start_idx = std::max( 0, samples_count - ma_length );
+    data.start_secs = data.data_start_secs + start_idx * ma_interval;
+
+    // load ma samples starting at start_secs
+    for ( int i = start_idx; i < samples_count; i++ )
+        data.ma.addSample( data.data.value( i ) );
+
+    kDebug() << "[PriceAggregator] loaded" << data.data.size() << "samples, ma:" << data.ma.getAverage() << "ma length:" << ma_length;
+
+    return true;
+}
+
 Spread PriceAggregator::getSpread( const QString &market ) const
 {
     static const bool prices_uses_avg = true; // false = assemble widest combined spread between all exchanges, true = average spreads between all exchanges
@@ -257,37 +368,6 @@ void PriceAggregator::savePrices()
     }
 }
 
-void PriceAggregator::savePriceSamples( const QString &market, const qint64 sample_interval, const qint64 data_start_secs, const QVector<Coin> &data )
-{
-    // open file
-    const QString path = getSamplesPath( market, sample_interval );
-
-    QFile savefile( path );
-    if ( !savefile.open( QIODevice::WriteOnly | QIODevice::Text ) )
-    {
-        kDebug() << "[PriceAggregator] error: couldn't open price sample file" << path;
-        return;
-    }
-
-    // construct state
-    QString state;
-    for ( QVector<Coin>::const_iterator i = data.begin(); i != data.end(); i++ )
-    {
-        if ( !state.isEmpty() )
-            state += QChar( ' ' );
-
-        state += QString( "%1" ).arg( (*i).toCompact() );
-    }
-    state.prepend( QString( "p %1 " ).arg( data_start_secs ) );
-
-    // save state
-    QTextStream out_samples( &savefile );
-    out_samples << state;
-
-    // close file
-    out_samples.flush();
-    savefile.close();
-}
 
 void PriceAggregator::load()
 {
@@ -341,95 +421,6 @@ void PriceAggregator::loadPrices()
     // remove invalid markets
     while ( !invalid_markets.isEmpty() )
         m_config.remove( invalid_markets.takeLast() );
-}
-
-bool PriceAggregator::loadPriceSamples( PriceMAData &data, const QString &path, const int ma_length, const int ma_interval )
-{
-    kDebug() << "[PriceAggregator] loading" << path;
-
-    // open sample file
-    QFile sample_file( path );
-    if ( !sample_file.open( QIODevice::ReadOnly | QIODevice::Text ) )
-    {
-        kDebug() << "[PriceAggregator] error: couldn't load sample file" << path;
-        return false;
-    }
-
-    // check for prefix
-    static QByteArray prefix_data( "p " );
-    QByteArray data_in = sample_file.readAll();
-
-    if ( !data_in.startsWith( prefix_data ) )
-    {
-        kDebug() << "[PriceAggregator] error: bad prefix in sample file" << path;
-        return false;
-    }
-
-    // remove prefix
-    data_in.remove( 0, 2 );
-
-    // eat all the data
-    for ( int i = 0; !data_in.isEmpty(); i++ )
-    {
-        const int s0 = data_in.indexOf( QChar(' '), 0 );
-
-        // read sample
-        Coin sample;
-        if ( s0 < 0 )
-        {
-            sample = data_in.mid( 0, data_in.size() );
-            data_in.clear();
-        }
-        else
-        {
-            // read timestamp on first iteration
-            if ( i == 0 )
-            {
-                // abort if invalid timestamp
-                bool ok = false;
-                qint64 ts = data_in.mid( 0, s0 ).toLongLong( &ok );
-                data_in.remove( 0, s0 +1 );
-                if ( !ok || ts < 1 )
-                {
-                    kDebug() << "[PriceAggregator] bad timestamp" << ts;
-                    return false;
-                }
-
-                data.data_start_secs = ts;
-            }
-            // read price sample
-            else
-            {
-                sample = data_in.mid( 0, s0 );
-                data_in.remove( 0, s0 +1 );
-            }
-        }
-
-        if ( i > 0 )
-        {
-            // abort on bad sample
-            if ( sample.isZeroOrLess() )
-            {
-                kDebug() << "[PriceAggregator] bad sample" << sample;
-                return false;
-            }
-
-            data.data += sample;
-        }
-    }
-
-    // after loading the data, calculate the ma start time
-    const int samples_count = data.data.size();
-    const int start_idx = std::max( 1, samples_count - ma_length );
-    data.start_secs = data.data_start_secs + start_idx * ma_interval;
-
-    // load ma samples starting at start_secs
-    for ( int i = start_idx; i < samples_count; i++ )
-        data.ma.addSample( data.data.value( i ) );
-
-    kDebug() << "[PriceAggregator] loaded ma:" << data.ma.getAverage() << "ma length:" << ma_length;
-
-    return true;
 }
 
 void PriceAggregator::onTimerUp()
