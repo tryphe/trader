@@ -26,6 +26,29 @@ void AlphaTracker::addAlpha( const QString &market, const quint8 side, const Coi
     d.trades++;
 }
 
+Coin AlphaTracker::getEstimatedPL( const bool conservative ) const
+{
+    Coin ret;
+    const QList<QString> keys = getMarkets();
+    for ( QList<QString>::const_iterator i = keys.begin(); i != keys.end(); i++ )
+    {
+        const QString &market = *i;
+        const Coin volume = getVolume( market );
+        const Coin significance = getAlphaSignificanceFactor( market );
+        const Coin alpha = getAlpha( market );
+
+        Coin rating;
+        if ( conservative )
+            rating = significance * significance; // reduce x by x*x where x =< 1
+        else
+            rating = significance; // non-conservative, don't reduce
+
+        ret += rating * ( ( alpha - CoinAmount::COIN ) * volume );
+    }
+
+    return ret;
+}
+
 Coin AlphaTracker::getAlpha( const QString &market ) const
 {
     const Coin sell_price = getAvgPrice( market, SIDE_SELL );
@@ -100,9 +123,11 @@ void AlphaTracker::addDailyVolume( const qint64 epoch_time_secs, const Coin &vol
     daily_volume[ days_offset ] += volume;
 }
 
-void AlphaTracker::printAlpha() const
+QString AlphaTracker::getAlphaReadout() const
 {
-    Coin total_volume, estimated_pl;
+    QString ret;
+
+    Coin total_volume;
     const QList<QString> keys = getMarkets();
     for ( QList<QString>::const_iterator i = keys.begin(); i != keys.end(); i++ )
     {
@@ -111,25 +136,26 @@ void AlphaTracker::printAlpha() const
         const Coin significance = getAlphaSignificanceFactor( market );
         const Coin alpha = getAlpha( market );
 
-        kDebug() << QString( "%1 | est_alpha %2 | signif %3 | buy %4 | sell %5 | vol %6 | vol-trade %7 | trades %8" )
-                    .arg( market, -MARKET_STRING_WIDTH )
-                    .arg( alpha.toString( 4 ), -6 )
-                    .arg( significance.toString( 3 ), -5 )
-                    .arg( getAvgPrice( market, SIDE_BUY ), -12 )
-                    .arg( getAvgPrice( market, SIDE_SELL ), -12 )
-                    .arg( volume, -12 )
-                    .arg( getVolumePerTrade( market ), -12 )
-                    .arg( getTrades( market ), -7 );
+        ret += QString( "%1 | est_alpha %2 | signif %3 | buy %4 | sell %5 | vol %6 | vol-trade %7 | trades %8\n" )
+                .arg( market, -MARKET_STRING_WIDTH )
+                .arg( alpha.toString( 4 ), -6 )
+                .arg( significance.toString( 3 ), -5 )
+                .arg( getAvgPrice( market, SIDE_BUY ), -12 )
+                .arg( getAvgPrice( market, SIDE_SELL ), -12 )
+                .arg( volume.toString( 2 ), -12 )
+                .arg( getVolumePerTrade( market ).toString( 2 ), -12 )
+                .arg( getTrades( market ), -7 );
 
         total_volume += volume;
-
-        // pl += (s*s)*vwap_difference*volume where s is the ratio of the total volume on each side (small_side/big_side)
-        if ( alpha.isGreaterThanZero() ) // only incorporate volume and alpha into pl if we have buy and sell prices
-            estimated_pl += significance * significance * ( ( alpha - CoinAmount::COIN ) * volume );
     }
 
-    kDebug() << "total volume:" << total_volume;
-    kDebug() << "estimated pl:" << estimated_pl;
+    ret += QString( "total volume: %1\n"
+                    "pl estimate (conservative): %2 (aggressive): %3" )
+            .arg( total_volume.toString( 2 ) )
+            .arg( getEstimatedPL( true ).toString( 2 ) )
+            .arg( getEstimatedPL( false ).toString( 2 ) );
+
+    return ret;
 }
 
 void AlphaTracker::printDailyVolume() const

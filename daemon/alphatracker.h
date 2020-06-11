@@ -28,21 +28,22 @@ public:
     Coin getAvgPrice( const QString &market, quint8 side ) const;
     quint64 getTrades( const QString &market ) const;
     void addAlpha( const QString &market, const quint8 side, const Coin &amount, const Coin &price );
+    Coin getEstimatedPL( const bool conservative = true ) const;
     //
 
     // "daily volume"
     void addDailyVolume( const qint64 epoch_time_secs, const Coin &volume );
     //
 
-    void printAlpha() const;
+    QString getAlphaReadout() const;
     void printDailyVolume() const;
 
     QString getSaveState() const;
     void readSaveState( const QString &state );
 
-private:
     QList<QString> getMarkets() const;
 
+private:
     // "alpha" data
     QMap<QString,AlphaData> buys, sells;
 
