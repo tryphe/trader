@@ -103,28 +103,27 @@ public:
     void setMaxSamples( int max ) { samples_max = max; }
     int getMaxSamples() const { return samples_max; }
     int getCurrentSamples() const { return samples.size(); }
-    void clear() { samples.clear(); }
+    void clear() { samples.clear(); sum = Coin(); }
     void addSample( const Coin &sample )
     {
         samples.push_back( sample );
+        sum += sample;
         while ( samples_max > 0 && samples.size() > samples_max )
-            samples.removeFirst();
+            sum -= samples.takeFirst();
     }
     Coin getAverage() const
     {
-        if ( samples.size() == 0 )
+        const int samples_size = samples.size();
+
+        if ( samples_size < 1 )
             return Coin();
 
-        const int samples_size = samples.size();
-        Coin total;
-        for ( int i = 0; i < samples_size; i++ )
-            total += samples.value( i );
-
-        return total / samples_size;
+        return sum / samples_size;
     }
 
 private:
      QQueue<Coin> samples;
+     Coin sum;
      int samples_max{ 0 };
 };
 
