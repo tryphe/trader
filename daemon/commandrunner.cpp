@@ -543,7 +543,7 @@ void CommandRunner::command_getdailyfills( QStringList &args )
 void CommandRunner::command_getalpha( QStringList &args )
 {
     Q_UNUSED( args )
-    engine->alpha->printAlpha();
+    kDebug() << engine->alpha->getAlphaReadout();
 }
 
 void CommandRunner::command_setalphamanual( QStringList &args )
