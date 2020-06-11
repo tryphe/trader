@@ -521,8 +521,11 @@ void Engine::updateStatsAndPrintFill( const QString &fill_type, Market market, c
             // add qty changes to spruce strat
             const Coin quantity_offset = ( side == SIDE_BUY ) ?  quantity
                                                               : -quantity;
+            const Coin amount_offset = ( side == SIDE_BUY ) ? -amount
+                                                            :  amount;
 
             spruce->adjustCurrentQty( market.getQuote(), quantity_offset );
+            spruce->adjustCurrentQty( market.getBase(), amount_offset );
         }
     }
 
