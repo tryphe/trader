@@ -202,6 +202,14 @@ void SpruceOverseer::onSpruceUp()
                 const Coin qty_to_shortlong = i.value() * market_allocation;
                 const bool is_buy = qty_to_shortlong.isZeroOrLess();
 
+                // disable snapback if we flipped to the other side
+                if ( is_midspread_phase &&
+                     ( (  is_buy && spruce->getSnapbackState( market, SIDE_SELL ) ) ||
+                       ( !is_buy && spruce->getSnapbackState( market, SIDE_BUY ) ) ) )
+                {
+                    spruce->setSnapbackState( market, is_buy ? SIDE_SELL : SIDE_BUY, false, buy_price );
+                }
+
                 // don't place buys during the ask price loop, or sells during the bid price loop
                 if ( (  is_buy && side == SIDE_SELL ) ||
                      ( !is_buy && side == SIDE_BUY ) )
