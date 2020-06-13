@@ -1165,7 +1165,7 @@ void PositionMan::cancelStrategy( const QString &strategy_strict )
 void PositionMan::cancelFluxOrders( const QString &currency, const Coin &required, const QString &available, const qint64 ban_secs )
 {
     // set ban
-    if ( ban_secs > 0 )
+    if ( ban_secs > 0 && !engine->isFluxCurrencyBanned( currency ) )
     {
         engine->setFluxCurrencyBan( currency, ban_secs );
         kDebug() << QString( "[PositionMan] Banned currency %1 from flux phases for %2 seconds." )
