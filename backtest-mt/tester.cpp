@@ -267,22 +267,22 @@ void Tester::generateWork()
 void Tester::generateRandomWork()
 {
     //int base_ma_length_rand = Global::getSecureRandomRange32( 1, 5 );
-    int rsi_length_rand = Global::getSecureRandomRange32( 1, 5 );
-    int rsi_ma_length_rand = Global::getSecureRandomRange32( 1, 5 );
-    int modulation_length_slow = Global::getSecureRandomRange32( 1, 5 );
-    int modulation_length_fast = Global::getSecureRandomRange32( 1, 5 );
+    int rsi_length_rand = Global::getSecureRandomRange32( 1, 6 );
+    int rsi_ma_length_rand = Global::getSecureRandomRange32( 1, 6 );
+    int modulation_length_slow = Global::getSecureRandomRange32( 1, 6 );
+    int modulation_length_fast = Global::getSecureRandomRange32( 1, 6 );
 
     SimulationTask *work = new SimulationTask;
     work->m_strategy_signal_type = Global::getSecureRandomRange32( 0, 1 ) == 0 ? SMA : RSI;
     work->m_base_ma_length =  40;
-    work->m_rsi_length = rsi_length_rand * rsi_length_rand * 25;
-    work->m_rsi_ma_length = rsi_ma_length_rand * rsi_ma_length_rand * 25;
+    work->m_rsi_length = rsi_length_rand * rsi_length_rand * 20;
+    work->m_rsi_ma_length = rsi_ma_length_rand * rsi_ma_length_rand * 20;
     work->m_allocation_func = Global::getSecureRandomRange32( 0, 19 );
 
-    work->m_modulation_length_slow += modulation_length_slow * modulation_length_slow * 25;
-    work->m_modulation_length_fast += modulation_length_fast * modulation_length_fast * 25;
-    work->m_modulation_factor += CoinAmount::COIN + ( Coin("0.1") * Global::getSecureRandomRange32( 0, 80 ) );
-    work->m_modulation_threshold += CoinAmount::COIN + ( Coin("0.1") * Global::getSecureRandomRange32( 0, 80 ) );
+    work->m_modulation_length_slow += modulation_length_slow * modulation_length_slow * 20;
+    work->m_modulation_length_fast += modulation_length_fast * modulation_length_fast * 20;
+    work->m_modulation_factor += CoinAmount::COIN + ( Coin("0.1") * Global::getSecureRandomRange32( 0, 100 ) );
+    work->m_modulation_threshold += CoinAmount::COIN + ( Coin("0.1") * Global::getSecureRandomRange32( 0, 50 ) );
 
     m_work_queued += work;
     m_work_count_total++;

@@ -12,9 +12,6 @@
 #include <QMutex>
 
 class QTimer;
-class QThreadPool;
-
-static const int MAX_WORKERS = 8;
 
 struct SimulationTask
 {
@@ -66,7 +63,8 @@ class Tester : public QObject
 {
     Q_OBJECT
 
-    static const bool RUN_RANDOM_TESTS = false;
+    static const bool RUN_RANDOM_TESTS = true;
+    static const int MAX_WORKERS = 8;
     static const int MARKET_VARIATIONS = 2;
 
 public:
