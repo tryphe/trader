@@ -260,6 +260,7 @@ void CoinAmountTest::testUnit()
     assert( -Coin( "7" ) == Coin( "-7" ) );
     assert( -Coin( "-7" ) == Coin( "7" ) );
     assert( -Coin( "0" ) == Coin() );
+    assert( -Coin() == Coin( "-0" ) );
 
     // Coin::truncateByTicksize
     c = Coin( "0.00001777" );

@@ -6,6 +6,7 @@
 
 #include <QString>
 #include <QDebug>
+#include <QThread>
 
 static inline QString qrealToSubsatoshis( qreal r )
 {
@@ -256,15 +257,14 @@ Coin::operator QString() const
     return toAmountString();
 }
 
-// note: these next few functions are optimized with 'static' but it'll only work with 1 thread using Coin
 QString Coin::toString( const int decimals = CoinAmount::subsatoshi_decimals ) const
 {
-    // note: if multithread, then remove these static declarations
-    static size_t buffer_size;
-    static std::vector<char> buffer = std::vector<char>( 10 );
+    static QMap<Qt::HANDLE, std::vector<char>> buffer_map;
+    std::vector<char> &buffer = buffer_map[ QThread::currentThreadId() ];
+//    std::vector<char> buffer;
 
     // resize the buffer to how many base10 bytes we'll need
-    buffer_size = mpz_sizeinbase( b, CoinAmount::str_base ) +2; // "two extra bytes for a possible minus sign, and null-terminator."
+    size_t buffer_size = mpz_sizeinbase( b, CoinAmount::str_base ) +2; // "two extra bytes for a possible minus sign, and null-terminator."
     if ( buffer_size != buffer.size() )
         buffer.resize( buffer_size );
 
@@ -307,7 +307,10 @@ QString Coin::toString( const int decimals = CoinAmount::subsatoshi_decimals ) c
 
     // decimal is the first character, return with prepended zero
     if ( sz == 0 )
+    {
         ret.prepend( CoinAmount::zero_exp );
+        sz++;
+    }
 
     if ( is_negative )
         ret.prepend( CoinAmount::minus_exp );

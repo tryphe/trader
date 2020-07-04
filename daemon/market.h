@@ -18,6 +18,7 @@ public:
     Market( const QString &_base, const QString &_quote );
     bool isValid() const;
 
+    bool operator <( const Market &other ) const { return this->operator QString() < other.operator QString(); }
     bool operator ==( const QString &other ) const;
     bool operator !=( const QString &other ) const;
     operator QString() const; // obtain universal string
@@ -55,25 +56,25 @@ struct MarketInfo
                                    .arg( market_offset, -6 )
                                    .arg( market_sentiment ); } // TODO: fill in this string for binance stuff
 
-    void jsonifyTicker( QJsonArray &arr, const QString &market ) const
-    {
-        arr += "t";
-        arr += market;
-        arr += spread.bid.toAmountString();
-        arr += spread.ask.toAmountString();
-    }
-    void jsonifyBid( QJsonArray &arr, const QString &market ) const
-    {
-        arr += "b";
-        arr += market;
-        arr += spread.bid.toAmountString();
-    }
-    void jsonifyAsk( QJsonArray &arr, const QString &market ) const
-    {
-        arr += "a";
-        arr += market;
-        arr += spread.ask.toAmountString();
-    }
+//    void jsonifyTicker( QJsonArray &arr, const QString &market ) const
+//    {
+//        arr += "t";
+//        arr += market;
+//        arr += Coin( spread.bid ).toAmountString();
+//        arr += Coin( spread.ask ).toAmountString();
+//    }
+//    void jsonifyBid( QJsonArray &arr, const QString &market ) const
+//    {
+//        arr += "b";
+//        arr += market;
+//        arr += spread.bid.toAmountString();
+//    }
+//    void jsonifyAsk( QJsonArray &arr, const QString &market ) const
+//    {
+//        arr += "a";
+//        arr += market;
+//        arr += spread.ask.toAmountString();
+//    }
 
     // prices for this market
     QVector<QString> order_prices;

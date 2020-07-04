@@ -1,7 +1,7 @@
 #ifndef BUILDCONFIG_H
 #define BUILDCONFIG_H
 
-#define BUILD_VERSION "1.81"
+#define BUILD_VERSION "1.81g2"
 
 /// select your exchanges
 #define BITTREX_ENABLED
@@ -14,6 +14,8 @@
 #define BINANCE_TICKER_ONLY
 #define POLONIEX_TICKER_ONLY
 //#define WAVES_TICKER_ONLY
+
+#define SPRUCE_PERFORMANCE_TWEAKS_ENABLED
 
 /// where to print logs
 #define PRINT_LOGS_TO_CONSOLE

@@ -15,16 +15,19 @@ class EngineMap;
 class QTimer;
 
 /*
- * PriceMAData
+ * PriceData
  *
  * Data for each MA in the config
  *
  */
-struct PriceMAData
+struct PriceData
 {
+    PriceData() {}
+    ~PriceData() {}
+
     qint64 start_secs{ 0 };
     qint64 data_start_secs{ 0 };
-    CoinMovingAverage ma;
+    Signal base_ma;
     QVector<Coin> data;
 };
 
@@ -51,12 +54,12 @@ struct PriceAggregatorConfig
     int signal_ma_interval_secs{ 84600 }; // save price ma every x secs, default 1 day
     int signal_ma_length{ 365 }; // combine this many 1 day ma samples for our signal price
 
-    // TODO: these should be a stack and interval/lengths should be in PriceMAData
+    // TODO: these should be a stack and interval/lengths should be in PriceData
     // data in the small_ma file
-    PriceMAData small_ma;
+    PriceData small_ma;
 
     // data in the signal ma file
-    PriceMAData signal_ma;
+    PriceData signal_ma;
 };
 
 /* PriceAggregator
@@ -79,7 +82,7 @@ public:
     static QString getSamplesPath( const QString &market, const qint64 interval_secs );
 
     static void savePriceSamples( const QString &market, const qint64 sample_interval, const qint64 data_start_secs, const QVector<Coin> &data );
-    static bool loadPriceSamples( PriceMAData &data, const QString &path, const int ma_length, const int ma_interval );
+    static bool loadPriceSamples( PriceData &data, const QString &path, const int ma_length, const int ma_interval );
 
     Spread getSpread( const QString &market ) const;
     Coin getSignalMA( const QString &market ) const;

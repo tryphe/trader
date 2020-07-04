@@ -11,7 +11,7 @@ DiffusionPhaseMan::DiffusionPhaseMan( QVector<QString> _markets)
     setMarkets( _markets );
 }
 
-void DiffusionPhaseMan::addPhase(const DiffusionPhaseFluxType &_phase)
+void DiffusionPhaseMan::addPhase( const DiffusionPhaseFluxType &_phase )
 {
     m_phases += _phase;
 }

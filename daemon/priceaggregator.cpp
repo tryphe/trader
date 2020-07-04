@@ -18,8 +18,8 @@ PriceAggregatorConfig::PriceAggregatorConfig( const QString &_market, const int 
       signal_ma_interval_secs( _signal_ma_interval_secs ),
       signal_ma_length( _signal_ma_length )
 {
-    small_ma.ma.setMaxSamples( getSmallMALength() );
-    signal_ma.ma.setMaxSamples( signal_ma_length );
+    small_ma.base_ma.setMaxSamples( getSmallMALength() );
+    signal_ma.base_ma.setMaxSamples( signal_ma_length );
 
     // exit if not jumpstarting state (aggregator should load if samples == 0)
     if ( jumpstart_price.isZeroOrLess() )
@@ -35,14 +35,14 @@ void PriceAggregatorConfig::jumpstart( const Coin &price )
     // fill small_ma samples
     for ( int i = 0; i < small_ma_length; i++ )
     {
-        small_ma.ma.addSample( price );
+        small_ma.base_ma.addSample( price );
         small_ma.data += price;
     }
 
     // fill signal_ma samples
     for ( int i = 0; i < signal_ma_length; i++ )
     {
-        signal_ma.ma.addSample( price );
+        signal_ma.base_ma.addSample( price );
         signal_ma.data += price;
     }
 
@@ -52,8 +52,8 @@ void PriceAggregatorConfig::jumpstart( const Coin &price )
     signal_ma.data_start_secs = signal_ma.start_secs = epoch_secs - ( signal_ma_length * signal_ma_interval_secs );
 
     kDebug() << "[PriceAggregator] jumpstarted" << market
-             << ", small_ma:" << small_ma.ma.getAverage() << "x" << small_ma.ma.getCurrentSamples()
-             << ", signal_ma:" << signal_ma.ma.getAverage() << "x" << signal_ma.ma.getCurrentSamples();
+             << ", small_ma:" << small_ma.base_ma.getSignal() << "x" << small_ma.base_ma.getCurrentSamples()
+             << ", signal_ma:" << signal_ma.base_ma.getSignal() << "x" << signal_ma.base_ma.getCurrentSamples();
 }
 
 PriceAggregator::PriceAggregator( EngineMap *_engine_map )
@@ -106,7 +106,7 @@ void PriceAggregator::savePriceSamples( const QString &market, const qint64 samp
         if ( !state.isEmpty() )
             state += QChar( ' ' );
 
-        state += QString( "%1" ).arg( (*i).toCompact() );
+        state += QString( "%1" ).arg( Coin( *i ).toCompact() );
     }
     state.prepend( QString( "p %1 " ).arg( data_start_secs ) );
 
@@ -119,7 +119,7 @@ void PriceAggregator::savePriceSamples( const QString &market, const qint64 samp
     savefile.close();
 }
 
-bool PriceAggregator::loadPriceSamples( PriceMAData &data, const QString &path, const int ma_length, const int ma_interval )
+bool PriceAggregator::loadPriceSamples( PriceData &data, const QString &path, const int ma_length, const int ma_interval )
 {
     static const QChar separator = QChar(' ');
 
@@ -191,9 +191,9 @@ bool PriceAggregator::loadPriceSamples( PriceMAData &data, const QString &path, 
 
     // load ma samples starting at start_secs
     for ( int i = start_idx; i < samples_count; i++ )
-        data.ma.addSample( data.data.value( i ) );
+        data.base_ma.addSample( data.data.value( i ) );
 
-    kDebug() << "[PriceAggregator] loaded" << data.data.size() << "samples, ma:" << data.ma.getAverage() << "ma length:" << ma_length;
+    kDebug() << "[PriceAggregator] loaded" << data.data.size() << "samples, ma:" << data.base_ma.getSignal() << "ma length:" << ma_length;
 
     return true;
 }
@@ -274,7 +274,7 @@ Coin PriceAggregator::getSignalMA( const QString &market ) const
     if ( !m_config.contains( market ) )
         return Coin();
 
-    return m_config[ market ].signal_ma.ma.getAverage();
+    return m_config[ market ].signal_ma.base_ma.getSignal();
 }
 
 void PriceAggregator::addPersistentMarket( const PriceAggregatorConfig &config )
@@ -450,17 +450,17 @@ void PriceAggregator::nextPriceSample()
 
         // fill all missing small_ma samples with the new sample
         qint64 small_ma_filled = 0;
-        qint64 small_ma_to_fill = ( epoch_secs - config.small_ma.start_secs ) / config.small_ma_interval_secs - config.small_ma.ma.getCurrentSamples();
+        qint64 small_ma_to_fill = ( epoch_secs - config.small_ma.start_secs ) / config.small_ma_interval_secs - config.small_ma.base_ma.getCurrentSamples();
 
         while ( small_ma_to_fill > 0 )
         {
-            config.small_ma.ma.addSample( midprice );
+            config.small_ma.base_ma.addSample( midprice );
             config.small_ma.data += midprice;
             config.small_ma.start_secs += config.small_ma_interval_secs;
             small_ma_to_fill--;
             small_ma_filled++;
 
-            //kDebug() << config.market << "small_ma updated:" << config.small_ma.ma.getAverage();
+            //kDebug() << config.market << "small_ma updated:" << config.small_ma.base_ma.getSignal();
         }
 
         if ( small_ma_filled > 1 )
@@ -470,17 +470,17 @@ void PriceAggregator::nextPriceSample()
 
         // fill all missing signal_ma samples with the latest small_ma sample
         qint64 signal_ma_filled = 0;
-        qint64 signal_ma_to_fill = ( epoch_secs - config.signal_ma.start_secs ) / config.signal_ma_interval_secs - config.signal_ma.ma.getCurrentSamples();
+        qint64 signal_ma_to_fill = ( epoch_secs - config.signal_ma.start_secs ) / config.signal_ma_interval_secs - config.signal_ma.base_ma.getCurrentSamples();
 
         while ( signal_ma_to_fill > 0 )
         {
-            config.signal_ma.ma.addSample( config.small_ma.ma.getAverage() );
-            config.signal_ma.data += config.small_ma.ma.getAverage();
+            config.signal_ma.base_ma.addSample( config.small_ma.base_ma.getSignal() );
+            config.signal_ma.data += config.small_ma.base_ma.getSignal();
             config.signal_ma.start_secs += config.signal_ma_interval_secs;
             signal_ma_to_fill--;
             signal_ma_filled++;
 
-            //kDebug() << config.market << "signal_ma updated:" << config.signal_ma.ma.getAverage();
+            //kDebug() << config.market << "signal_ma updated:" << config.signal_ma.base_ma.getSignal();
         }
 
         if ( signal_ma_filled > 1 )
