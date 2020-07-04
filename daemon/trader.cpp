@@ -155,8 +155,8 @@ Trader::Trader( QObject *parent )
     CoinAmountTest coin_test;
     coin_test.test();
 
-    CoinAverageTester coinavg_test;
-    coinavg_test.test();
+    SignalTest signal_test;
+    signal_test.test();
 
     DiffusionPhaseManTest phaseman_test;
     phaseman_test.test();
