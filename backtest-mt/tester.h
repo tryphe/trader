@@ -3,8 +3,7 @@
 
 #include "../daemon/coinamount.h"
 #include "../daemon/market.h"
-
-#include "simulationthread.h"
+#include "../daemon/priceaggregator.h"
 
 #include <QString>
 #include <QVector>
@@ -13,6 +12,8 @@
 #include <QMutex>
 
 class QTimer;
+class SimulationThread;
+class SimulationTask;
 
 class Tester : public QObject
 {
@@ -35,16 +36,11 @@ public:
     void processFinishedWork();
 
     void printHighScores( const QMap<Coin, QString> &scores, const int print_count = 3 );
-    QString runSimulation();
-
-    /// runSimulation sub steps
-    void initPriceData( const qint64 late_start_samples );
 
 public Q_SLOTS:
     void onWorkTimer();
 
 private:
-//    QMap<int,QMap<QString, Coin>> m_scores;
     QMap<int, QMap<Coin, QString>> m_highscores;
     QMap<QString, QString> m_alpha_readout;
 

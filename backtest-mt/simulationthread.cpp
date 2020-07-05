@@ -335,14 +335,16 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
             sp.doCapitalMomentumModulation( base_capital );
 
         /// measure if we should make a trade, and add to alphatracker
-        const QMap<QString, Coin> &qsl = sp.getQuantityToShortLongMap();
         const QMap<QString, Coin> &current_prices = sp.getCurrentPrices();
+        const QMap<QString, Coin> &qsl = sp.getQuantityToShortLongMap();
+        const QMap<QString, Coin>::const_iterator &qsl_begin = qsl.constBegin();
+        const QMap<QString, Coin>::const_iterator &qsl_end = qsl.constEnd();
         //kDebug() << qsl;
-        for ( qsl_it = qsl.begin(); qsl_it != qsl.end(); qsl_it++ )
+        for ( qsl_it = qsl_begin; qsl_it != qsl_end; qsl_it++ )
         {
-            const QString &market = qsl_it.key();
-            const Market m( market );
+            const QString &market_str = qsl_it.key();
             const Coin &amount = qsl_it.value();
+            const Market m( market_str );
 
             const quint8 side = amount.isGreaterThanZero() ? SIDE_SELL : SIDE_BUY;
             const Coin &price = current_prices[ m.getQuote() ];
@@ -374,7 +376,7 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
 
             assert( qty_abs.isGreaterThanZero() );
 
-            alpha.addAlpha( market, side, amt_abs, price );
+            alpha.addAlpha( market_str, side, amt_abs, price );
             sp.adjustCurrentQty( m.getQuote(), side == SIDE_BUY ? qty_abs : -qty_abs );
             sp.adjustCurrentQty( m.getBase(), side == SIDE_BUY ? -amt_abs + FEE : amt_abs + FEE );
         }
