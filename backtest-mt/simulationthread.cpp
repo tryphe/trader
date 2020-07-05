@@ -137,16 +137,17 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
         latest_ts_market = market;
     }
 
-    qint64 m_current_date_secs = m_latest_ts;
-    QVector<qint64> m_current_idx;
-    QVector<Signal> m_base_ma, m_price_ma, m_signal_ma;
+    struct SignalContainer
+    {
+        Signal m_base_ma, m_price_ma, m_signal_ma;
+        qint64 m_current_idx{ 0 };
+    };
+    QVector<SignalContainer> m_signals;
+    qint64 current_secs = m_latest_ts;
 
     for ( int i = 0; i < price_data->size(); i++ )
     {
-        m_current_idx += qint64( 0 );
-        m_base_ma += Signal();
-        m_price_ma += Signal();
-        m_signal_ma += Signal();
+        m_signals += SignalContainer();
     }
 
     /// step 2: construct current prices and signals loop from a common starting point m_latest_ts
@@ -158,14 +159,14 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
 
 //        const Market &market = i.key();
         const PriceData &data = i.value();
-        Signal &base_ma = m_base_ma[ market_i ];
-        Signal &strategy_signal = m_signal_ma[ market_i ];
-        Signal &price_signal = m_price_ma[ market_i ];
-        qint64 &current_idx = m_current_idx[ market_i ];
-        base_elapsed = m_current_date_secs;
+        Signal &base_ma = m_signals[ market_i ].m_base_ma;
+        Signal &strategy_signal = m_signals[ market_i ].m_signal_ma;
+        Signal &price_signal = m_signals[ market_i ].m_price_ma;
+        qint64 &current_idx = m_signals[ market_i ].m_current_idx;
+        base_elapsed = current_secs;
 
         // init ma
-        base_ma.setType( SMA ); // set base MA type
+//        base_ma.setType( SMA ); // set base MA type
         base_ma.setMaxSamples( BASE_MA_LENGTH ); // maintain ma of the last m_base_ma_length samples
 
         // turn rsi_ma if non-zero
@@ -174,7 +175,7 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
         strategy_signal.setType( m_task->m_strategy_signal_type );
         strategy_signal.setMaxSamples( m_task->m_rsi_length );
 
-        price_signal.setType( SMA ); // set price MA type
+//        price_signal.setType( SMA ); // set price MA type
         price_signal.setMaxSamples( BASE_MA_LENGTH );
 
         assert( base_ma.getSignal().isZero() &&
@@ -182,8 +183,7 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
                 price_signal.getSignal().isZero() );
 
         // init start data idx
-        const qint64 start_idx = LATE_START_SAMPLES + ( ( m_latest_ts - data.data_start_secs ) / CANDLE_INTERVAL_SECS );
-        current_idx = start_idx;
+        current_idx = LATE_START_SAMPLES + ( ( m_latest_ts - data.data_start_secs ) / CANDLE_INTERVAL_SECS );
 
         // fill initial ma samples, ensure base_ma is full before we fill the first strategy sample. fill until
         strategy_signal.resetIntervalCounter( BASE_MA_LENGTH );
@@ -228,7 +228,7 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
     }
 
     // update current timestamp
-    m_current_date_secs = base_elapsed;
+    current_secs = base_elapsed;
 
 //    QDateTime start_date = m_current_date;
 //    kDebug() << QString( "latest index-0 market %1  data start date %2(%3) simulation start date %4(%5)" )
@@ -241,10 +241,12 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
     /// step 3: loop until out of data samples. each iteration: set price, update ma, run simulation
     qint64 total_samples = 0; // total sample count, not per-market
     int simulation_keeper = 0;
-    Coin signal;
+    Coin base_capital, signal, qty_abs, amt_abs;
     const int END_TIME = qint64(1591574400) - ( ( ( BASE_MA_LENGTH / 2 ) +1 ) * CANDLE_INTERVAL_SECS );
     do
     {
+        current_secs += CANDLE_INTERVAL_SECS;
+
         // check to run simulation this iteration
         const bool should_run_simulation = ++simulation_keeper % BASE_MA_LENGTH == 0;
 
@@ -264,15 +266,16 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
             ++market_i;
 
             const Market &market = i.key();
-            const PriceData &data = i.value();
-            Signal &base_ma = m_base_ma[ market_i ];
-            Signal &strategy_signal = m_signal_ma[ market_i ];
-            Signal &price_signal = m_price_ma[ market_i ];
-            qint64 &current_idx = m_current_idx[ market_i ];
+            const QVector<Coin> &data = i.value().data;
+            SignalContainer &container = m_signals[ market_i ];
+            Signal &base_ma = container.m_base_ma;
+            Signal &strategy_signal = container.m_signal_ma;
+            Signal &price_signal = container.m_price_ma;
+            qint64 &current_idx = container.m_current_idx;
 
             // read price
-            const Coin &price = data.data.at( current_idx );
-            const Coin &price_ahead = data.data.at( current_idx + ( BASE_MA_LENGTH / 2 ) );
+            const Coin &price = data.at( current_idx );
+            const Coin &price_ahead = data.at( current_idx + ( BASE_MA_LENGTH / 2 ) );
             ++current_idx;
 
             assert( price_ahead.isGreaterThanZero() );
@@ -280,8 +283,6 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
             // add signal samples
             base_ma.addSample( price );
             price_signal.addSample( price_ahead );
-
-//            kDebug() << "adding base ma sample";
 
             // add base ma to strategy ma every m_base_ma_length samples
             strategy_signal.iterateIntervalCounter();
@@ -303,12 +304,8 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
                                               strategy_signal.getRSISMA();
 
             const QString &currency = market.getQuote();
-            sp.setCurrentPrice( currency, price_signal.getSignal() );
-            sp.setSignalPrice( currency, signal );
-
-//            kDebug() << market << "rsi:" << strategy_signal.getSignal();
+            sp.setCurrentPriceSignal( currency, price_signal.getSignal(), signal );
         }
-        m_current_date_secs += CANDLE_INTERVAL_SECS;
 
         if ( !should_run_simulation )
             continue;
@@ -321,7 +318,7 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
         }
 
         // cache base capital
-        const Coin base_capital = sp.getBaseCapital();
+        base_capital = sp.getBaseCapital();
         if ( base_capital.isZeroOrLess() )
         {
             kDebug() << "ran out of capital!";
@@ -329,24 +326,25 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
         }
 
         // note: only run this every m_base_ma_length * CANDLE_INTERVAL_SECS seconds
-        sp.doCapitalMomentumModulation( base_capital );
+        if ( sp.getBaseModulatorCount() > 0 )
+            sp.doCapitalMomentumModulation( base_capital );
 
         /// measure if we should make a trade, and add to alphatracker
         const QMap<QString, Coin> &qsl = sp.getQuantityToShortLongMap();
+        const QMap<QString, Coin> &current_prices = sp.getCurrentPrices();
         //kDebug() << qsl;
-
         for ( QMap<QString, Coin>::const_iterator j = qsl.begin(); j != qsl.end(); j++ )
         {
             const QString &market = j.key();
             const Market m( market );
 
             const quint8 side = j.value().isGreaterThanZero() ? SIDE_SELL : SIDE_BUY;
-            const Coin price = sp.getCurrentPrice( m.getQuote() );
+            const Coin &price = current_prices[ m.getQuote() ];
 
             assert( price.isGreaterThanZero() );
 
-            Coin qty_abs = j.value().abs();
-            Coin amt_abs = qty_abs * price;
+            qty_abs = j.value().abs();
+            amt_abs = qty_abs * price;
 //            assert( !amt_abs.isLessThanZero() );
 
             // if non-actionable amount, skip
@@ -361,7 +359,6 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
                 amt_abs = qty_abs * price;
             }
 
-            assert( qty_abs.isGreaterThanZero() );
 //            assert( amt_abs == qty_abs * price );
 
 //            if ( side == SIDE_BUY )
@@ -369,10 +366,11 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
 //            else
 //                kDebug() << "selling" << -qty_abs << m.getQuote() << "for" << amt_abs << m.getBase();
 
+            assert( qty_abs.isGreaterThanZero() );
+
             alpha.addAlpha( market, side, amt_abs, price );
             sp.adjustCurrentQty( m.getQuote(), side == SIDE_BUY ? qty_abs : -qty_abs );
-            sp.adjustCurrentQty( m.getBase(), side == SIDE_BUY ? -amt_abs : amt_abs );
-            sp.adjustCurrentQty( m.getBase(), FEE ); // subtract FEE
+            sp.adjustCurrentQty( m.getBase(), side == SIDE_BUY ? -amt_abs + FEE : amt_abs + FEE );
         }
 
         base_capital_sma0.addSample( base_capital ); // record score 0
@@ -397,7 +395,7 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
 //        for ( QMap<QString, Coin>::const_iterator i = signal_prices.begin(); i != signal_prices.end(); i++ )
 //            signal_prices_str += QString( " %1" ).arg( i.value() );
     }
-    while ( m_current_date_secs < END_TIME );
+    while ( current_secs < END_TIME );
 
     // set simulation id
     if ( m_task->m_simulation_id.isEmpty() )
@@ -420,7 +418,7 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
                           .arg( m_task->m_strategy_signal_type )
                           .arg( BASE_MA_LENGTH )
                           .arg( m_task->m_rsi_length )
-                          .arg( m_signal_ma.first().isRSISMAEnabled() ? m_task->m_rsi_ma_length : 0 )
+                          .arg( m_signals.first().m_signal_ma.isRSISMAEnabled() ? m_task->m_rsi_ma_length : 0 )
                           .arg( INVERT_RSI_MA ? "I" : "" )
                           .arg( sp.getAllocationFunctionIndex() )
                           .arg( modulation_str )

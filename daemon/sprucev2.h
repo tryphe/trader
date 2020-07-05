@@ -41,14 +41,17 @@ public:
     void clearCurrentQtys();
     void setCurrentQty( const QString &currency, const Coin &qty ) { m_current_qty[ currency ] = qty; }
 
+    void setCurrentPriceSignal( const QString &currency, const Coin &price, const Coin &signal_price ) { m_current_price[ currency ] = price;
+                                                                                                         m_signal_price[ currency ] = signal_price; }
+
     void clearCurrentPrices();
     void setCurrentPrice( const QString &currency, const Coin &price ) { m_current_price[ currency ] = price; }
     Coin getCurrentPrice( const QString &currency ) const { return m_current_price.value( currency ); }
-    QMap<QString, Coin> getCurrentPrices() { return m_current_price; }
+    QMap<QString, Coin> &getCurrentPrices() { return m_current_price; }
 
     void clearSignalPrices();
     void setSignalPrice( const QString &currency, const Coin &signal_price ) { m_signal_price[ currency ] = signal_price; }
-    QMap<QString, Coin> getSignalPrices() { return m_signal_price; }
+    QMap<QString, Coin> &getSignalPrices() { return m_signal_price; }
 
     bool calculateAmountToShortLong(); // run to get amount to sl
     void doCapitalMomentumModulation( const Coin &base_capital ); // run every m_base_ma_length period
@@ -73,6 +76,7 @@ public:
     Coin getBaseCapital();
 
     void addBaseModulator( const BaseCapitalModulator &modulator ) { m_modulator += modulator; }
+    int getBaseModulatorCount() const { return m_modulator.size(); }
 
     Coin getExchangeAllocation( const QString &exchange_market );
     void setExchangeAllocation( const QString &exchange_market_key, const Coin allocation );

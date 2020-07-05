@@ -267,7 +267,7 @@ void Tester::generateRandomWork()
     SimulationTask *work = new SimulationTask;
 
     work->m_strategy_signal_type = Global::getSecureRandomRange32( 0, 1 ) == 0 ? SMA : RSI;
-    work->m_base_ma_length =  40;
+    work->m_base_ma_length = 40;
     work->m_rsi_length = std::pow( Global::getSecureRandomRange32( 1, 15 ), 2 ) * 10;
     work->m_rsi_ma_length = std::pow( Global::getSecureRandomRange32( 1, 15 ), 2 ) * 10;
     work->m_allocation_func = Global::getSecureRandomRange32( 0, 19 );
