@@ -59,7 +59,7 @@ public:
 
     void adjustCurrentQty( const QString &currency, const Coin &qty );
 
-    void setAllocationFunction( const int index ) { m_allocation_function_index = index; }
+    void setAllocationFunction( const int index ) { m_allocation_function_index = std::min( std::max( 0, index ), m_allocaton_function_vec.size() -1 ); }
     int getAllocationFunctionIndex() const { return m_allocation_function_index; }
 
     void setVisualization( const bool enabled ) { m_visualize = enabled; }
