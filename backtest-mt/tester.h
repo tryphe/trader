@@ -1,6 +1,7 @@
 #ifndef TESTER_H
 #define TESTER_H
 
+#include "../daemon/misctypes.h"
 #include "../daemon/priceaggregator.h"
 #include "../daemon/market.h"
 

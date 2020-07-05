@@ -178,7 +178,6 @@ void Tester::generateWork()
     QVector<Coin> modulation_factor;
     QVector<Coin> modulation_threshold;
 
-    int current_simulation = 0;
     for ( int signal_type = SMA; signal_type <= RSI; signal_type++ )
     {
     for ( int allocation_func = 0; allocation_func <= 19; allocation_func++ ) // 30m to 30m, increment 30m
@@ -216,8 +215,6 @@ void Tester::generateWork()
 //    {
 //    for ( modulation_threshold += Coin( "1" ); modulation_threshold[ 2 ] <= Coin( "1" ); modulation_threshold[ 2 ] *= Coin( "2" ) )
 //    {
-        current_simulation++;
-
         // generate next work
         SimulationTask *work = new SimulationTask;
         work->m_strategy_signal_type = static_cast<SignalType>( signal_type );
@@ -232,6 +229,7 @@ void Tester::generateWork()
         work->m_modulation_threshold = modulation_threshold;
 
         m_work_queued += work;
+        m_work_count_total++;
 //    }
 //    modulation_threshold.remove( 2 );
 //    }
@@ -261,28 +259,33 @@ void Tester::generateWork()
     }
     }
     }
-    m_work_count_total = current_simulation;
 }
 
 void Tester::generateRandomWork()
 {
-    //int base_ma_length_rand = Global::getSecureRandomRange32( 1, 5 );
-    int rsi_length_rand = Global::getSecureRandomRange32( 1, 6 );
-    int rsi_ma_length_rand = Global::getSecureRandomRange32( 1, 6 );
-    int modulation_length_slow = Global::getSecureRandomRange32( 1, 6 );
-    int modulation_length_fast = Global::getSecureRandomRange32( 1, 6 );
-
     SimulationTask *work = new SimulationTask;
+
+    //int base_ma_length_rand = Global::getSecureRandomRange32( 1, 5 );
+    int rsi_length_rand = Global::getSecureRandomRange32( 1, 15 );
+    int rsi_ma_length_rand = Global::getSecureRandomRange32( 1, 15 );
+
     work->m_strategy_signal_type = Global::getSecureRandomRange32( 0, 1 ) == 0 ? SMA : RSI;
     work->m_base_ma_length =  40;
-    work->m_rsi_length = rsi_length_rand * rsi_length_rand * 20;
-    work->m_rsi_ma_length = rsi_ma_length_rand * rsi_ma_length_rand * 20;
+    work->m_rsi_length = rsi_length_rand * rsi_length_rand * 10;
+    work->m_rsi_ma_length = rsi_ma_length_rand * rsi_ma_length_rand * 10;
     work->m_allocation_func = Global::getSecureRandomRange32( 0, 19 );
 
-    work->m_modulation_length_slow += modulation_length_slow * modulation_length_slow * 20;
-    work->m_modulation_length_fast += modulation_length_fast * modulation_length_fast * 20;
-    work->m_modulation_factor += CoinAmount::COIN + ( Coin("0.1") * Global::getSecureRandomRange32( 0, 100 ) );
-    work->m_modulation_threshold += CoinAmount::COIN + ( Coin("0.1") * Global::getSecureRandomRange32( 0, 50 ) );
+    int modulation_count = Global::getSecureRandomRange32( 0, 2 );
+    for ( int i = 0; i < modulation_count; i++ )
+    {
+        int modulation_length_slow = Global::getSecureRandomRange32( 1, 15 );
+        int modulation_length_fast = Global::getSecureRandomRange32( 1, 15 );
+
+        work->m_modulation_length_slow += modulation_length_slow * modulation_length_slow * 10;
+        work->m_modulation_length_fast += modulation_length_fast * modulation_length_fast * 10;
+        work->m_modulation_factor += CoinAmount::COIN + ( Coin("0.1") * Global::getSecureRandomRange32( 0, 80 ) );
+        work->m_modulation_threshold += CoinAmount::COIN + ( Coin("0.1") * Global::getSecureRandomRange32( 0, 30 ) );
+    }
 
     m_work_queued += work;
     m_work_count_total++;
