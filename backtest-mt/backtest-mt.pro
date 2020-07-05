@@ -22,6 +22,7 @@ SOURCES += main.cpp \
     ../libbase58/base58.c \
     ../qbase58/qbase58.cpp \
     ../qbase58/qbase58_test.cpp \
+    simulationthread.cpp \
     tester.cpp
 
 HEADERS += \
@@ -37,4 +38,5 @@ HEADERS += \
     ../libbase58/libbase58.h \
     ../qbase58/qbase58.h \
     ../qbase58/qbase58_test.h \
+    simulationthread.h \
     tester.h
