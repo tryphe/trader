@@ -1,5 +1,7 @@
 #include "tester.h"
 
+#include <math.h>
+
 #include "../daemon/coinamount.h"
 #include "../daemon/coinamount_test.h"
 #include "../daemon/global.h"
@@ -15,6 +17,7 @@
 #include <QTimer>
 #include <QMutex>
 #include <QMutexLocker>
+
 
 Tester::Tester()
 {
@@ -263,24 +266,17 @@ void Tester::generateRandomWork()
 {
     SimulationTask *work = new SimulationTask;
 
-    //int base_ma_length_rand = Global::getSecureRandomRange32( 1, 5 );
-    int rsi_length_rand = Global::getSecureRandomRange32( 1, 15 );
-    int rsi_ma_length_rand = Global::getSecureRandomRange32( 1, 15 );
-
     work->m_strategy_signal_type = Global::getSecureRandomRange32( 0, 1 ) == 0 ? SMA : RSI;
     work->m_base_ma_length =  40;
-    work->m_rsi_length = rsi_length_rand * rsi_length_rand * 10;
-    work->m_rsi_ma_length = rsi_ma_length_rand * rsi_ma_length_rand * 10;
+    work->m_rsi_length = std::pow( Global::getSecureRandomRange32( 1, 15 ), 2 ) * 10;
+    work->m_rsi_ma_length = std::pow( Global::getSecureRandomRange32( 1, 15 ), 2 ) * 10;
     work->m_allocation_func = Global::getSecureRandomRange32( 0, 19 );
 
-    int modulation_count = Global::getSecureRandomRange32( 0, 2 );
+    const int modulation_count = Global::getSecureRandomRange32( 0, 2 );
     for ( int i = 0; i < modulation_count; i++ )
     {
-        int modulation_length_slow = Global::getSecureRandomRange32( 1, 15 );
-        int modulation_length_fast = Global::getSecureRandomRange32( 1, 15 );
-
-        work->m_modulation_length_slow += modulation_length_slow * modulation_length_slow * 10;
-        work->m_modulation_length_fast += modulation_length_fast * modulation_length_fast * 10;
+        work->m_modulation_length_slow += std::pow( Global::getSecureRandomRange32( 1, 15 ), 2 ) * 10;
+        work->m_modulation_length_fast += std::pow( Global::getSecureRandomRange32( 1, 15 ), 2 ) * 10;
         work->m_modulation_factor += CoinAmount::COIN + ( Coin("0.1") * Global::getSecureRandomRange32( 1, 80 ) );
         work->m_modulation_threshold += CoinAmount::COIN + ( Coin("0.1") * Global::getSecureRandomRange32( 0, 30 ) );
     }

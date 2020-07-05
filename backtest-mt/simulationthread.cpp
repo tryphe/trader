@@ -68,9 +68,7 @@ void SimulationThread::run()
 
 void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &price_data )
 {
-//    kDebug() << "running simulation for markets" << price_data->keys();
-
-    static const int BASE_MA_INTERVAL = 300; // 5 minutes per sample
+    static const int CANDLE_INTERVAL_SECS = 300; // 5 minutes per sample
     static const qint64 LATE_START_SAMPLES = 00000;
     static const Coin ORDER_SIZE_LIMIT = Coin( "0.005" );
     static const Coin FEE = -Coin( CoinAmount::SATOSHI * 200 );
@@ -78,13 +76,13 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
     const Coin MAX_TAKE_PER_SIMULATION( Coin("0.001428571") * m_task->m_base_ma_length ); // we can only take so much btc per relative base length
 
     // for score keeping
-    Signal base_capital_sma0 = Signal( SMA, qint64( 1000 * 24 * 60 * 60 ) / ( m_task->m_base_ma_length * BASE_MA_INTERVAL ) ); // 1000 days
-    Signal base_capital_sma1 = Signal( SMA, qint64( 300 * 24 * 60 * 60 ) / ( m_task->m_base_ma_length * BASE_MA_INTERVAL ) ); // 300 days
+    Signal base_capital_sma0 = Signal( SMA, qint64( 1000 * 24 * 60 * 60 ) / ( m_task->m_base_ma_length * CANDLE_INTERVAL_SECS ) ); // 1000 days
+    Signal base_capital_sma1 = Signal( SMA, qint64( 300 * 24 * 60 * 60 ) / ( m_task->m_base_ma_length * CANDLE_INTERVAL_SECS ) ); // 300 days
     Coin initial_btc_value, highest_btc_value;
 
     assert( m_task->m_base_ma_length > 0 );
     assert( m_task->m_rsi_length > 0 );
-    assert( BASE_MA_INTERVAL > 0 );
+    assert( CANDLE_INTERVAL_SECS > 0 );
     assert( MAX_TAKE_PER_SIMULATION.isGreaterThanZero() );
     assert( FEE.isLessThanZero() );
     assert( m_price_data.size() > 0 );
@@ -184,7 +182,7 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
                 price_signal.getSignal().isZero() );
 
         // init start data idx
-        const qint64 start_idx = LATE_START_SAMPLES + ( ( m_latest_ts - data.data_start_secs ) / BASE_MA_INTERVAL );
+        const qint64 start_idx = LATE_START_SAMPLES + ( ( m_latest_ts - data.data_start_secs ) / CANDLE_INTERVAL_SECS );
         current_idx = start_idx;
 
         // fill initial ma samples, ensure base_ma is full before we fill the first strategy sample. fill until
@@ -205,11 +203,11 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
                 strategy_signal.resetIntervalCounter( m_task->m_base_ma_length );
                 strategy_signal.addSample( base_ma.getSignal() );
 
-                date_test += BASE_MA_INTERVAL * m_task->m_base_ma_length;
+                date_test += CANDLE_INTERVAL_SECS * m_task->m_base_ma_length;
             }
 
             current_idx++;
-            base_elapsed += BASE_MA_INTERVAL;
+            base_elapsed += CANDLE_INTERVAL_SECS;
         }
 
         // reset strategy signal again to prepare for the next loop
@@ -310,7 +308,7 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
 
 //            kDebug() << market << "rsi:" << strategy_signal.getSignal();
         }
-        m_current_date = m_current_date.addSecs( BASE_MA_INTERVAL );
+        m_current_date = m_current_date.addSecs( CANDLE_INTERVAL_SECS );
 
         if ( !should_run_simulation )
             continue;
@@ -322,7 +320,7 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
             return;
         }
 
-        // note: only run this every m_base_ma_length * BASE_MA_INTERVAL seconds
+        // note: only run this every m_base_ma_length * CANDLE_INTERVAL_SECS seconds
         sp.doCapitalMomentumModulation();
 
         /// measure if we should make a trade, and add to alphatracker
@@ -398,7 +396,7 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
 //        for ( QMap<QString, Coin>::const_iterator i = signal_prices.begin(); i != signal_prices.end(); i++ )
 //            signal_prices_str += QString( " %1" ).arg( i.value() );
     }
-    while ( m_current_date.toSecsSinceEpoch() < qint64(1591574400) - ( ( ( m_task->m_base_ma_length / 2 ) +1 ) * BASE_MA_INTERVAL ) );
+    while ( m_current_date.toSecsSinceEpoch() < qint64(1591574400) - ( ( ( m_task->m_base_ma_length / 2 ) +1 ) * CANDLE_INTERVAL_SECS ) );
 
     // set simulation id
     if ( m_task->m_simulation_id.isEmpty() )
