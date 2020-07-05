@@ -371,7 +371,7 @@ void Tester::processFinishedWork()
     kDebug() << QString( "[%1 of %2] %3% done, %4 threads active" )
                  .arg( m_work_count_done )
                  .arg( m_work_count_total )
-                 .arg( Coin( m_work_count_started ) / Coin( m_work_count_total ) * 100 )
+                 .arg( Coin( m_work_count_done ) / Coin( m_work_count_total ) * 100 )
                  .arg( m_threads.size() );
 
     if ( m_work_queued.size() == 0 &&

@@ -239,10 +239,16 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
 //                 .arg( m_current_date.toSecsSinceEpoch() );
 
     /// step 3: loop until out of data samples. each iteration: set price, update ma, run simulation
+    const int BASE_MA_LENGTH_D2 = BASE_MA_LENGTH / 2;
+    const int END_TIME = qint64(1591574400) - ( ( ( BASE_MA_LENGTH / 2 ) +1 ) * CANDLE_INTERVAL_SECS );
+
     qint64 total_samples = 0; // total sample count, not per-market
     int simulation_keeper = 0;
     Coin base_capital, signal, qty_abs, amt_abs;
-    const int END_TIME = qint64(1591574400) - ( ( ( BASE_MA_LENGTH / 2 ) +1 ) * CANDLE_INTERVAL_SECS );
+    QMap<Market, PriceData>::const_iterator price_it;
+    const QMap<Market, PriceData>::const_iterator &price_data_begin = price_data->constBegin();
+    const QMap<Market, PriceData>::const_iterator &price_data_end = price_data->constEnd();
+    QMap<QString, Coin>::const_iterator qsl_it;
     do
     {
         current_secs += CANDLE_INTERVAL_SECS;
@@ -255,18 +261,17 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
         {
             total_samples += BASE_MA_LENGTH;
             simulation_keeper = 0;
-            sp.clearCurrentPrices();
-            sp.clearSignalPrices();
+            sp.clearPrices();
         }
 
         //kDebug() << "time:" << m_current_date.toString() << "run simulation:" << should_run_simulation;
         market_i = -1;
-        for ( QMap<Market, PriceData>::const_iterator i = price_data->begin(); i != price_data->end(); i++ )
+        for ( price_it = price_data_begin; price_it != price_data_end; price_it++ )
         {
             ++market_i;
 
-            const Market &market = i.key();
-            const QVector<Coin> &data = i.value().data;
+            const Market &market = price_it.key();
+            const QVector<Coin> &data = price_it.value().data;
             SignalContainer &container = m_signals[ market_i ];
             Signal &base_ma = container.m_base_ma;
             Signal &strategy_signal = container.m_signal_ma;
@@ -275,7 +280,7 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
 
             // read price
             const Coin &price = data.at( current_idx );
-            const Coin &price_ahead = data.at( current_idx + ( BASE_MA_LENGTH / 2 ) );
+            const Coin &price_ahead = data.at( current_idx + BASE_MA_LENGTH_D2 );
             ++current_idx;
 
             assert( price_ahead.isGreaterThanZero() );
@@ -333,17 +338,18 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
         const QMap<QString, Coin> &qsl = sp.getQuantityToShortLongMap();
         const QMap<QString, Coin> &current_prices = sp.getCurrentPrices();
         //kDebug() << qsl;
-        for ( QMap<QString, Coin>::const_iterator j = qsl.begin(); j != qsl.end(); j++ )
+        for ( qsl_it = qsl.begin(); qsl_it != qsl.end(); qsl_it++ )
         {
-            const QString &market = j.key();
+            const QString &market = qsl_it.key();
             const Market m( market );
+            const Coin &amount = qsl_it.value();
 
-            const quint8 side = j.value().isGreaterThanZero() ? SIDE_SELL : SIDE_BUY;
+            const quint8 side = amount.isGreaterThanZero() ? SIDE_SELL : SIDE_BUY;
             const Coin &price = current_prices[ m.getQuote() ];
 
             assert( price.isGreaterThanZero() );
 
-            qty_abs = j.value().abs();
+            qty_abs = amount.abs();
             amt_abs = qty_abs * price;
 //            assert( !amt_abs.isLessThanZero() );
 

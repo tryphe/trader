@@ -77,6 +77,12 @@ void SpruceV2::clearCurrentQtys()
     m_current_qty.clear();
 }
 
+void SpruceV2::clearPrices()
+{
+    m_current_price.clear();
+    m_signal_price.clear();
+}
+
 void SpruceV2::clearCurrentPrices()
 {
     m_current_price.clear();

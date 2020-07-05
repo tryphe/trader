@@ -43,7 +43,7 @@ public:
 
     void setCurrentPriceSignal( const QString &currency, const Coin &price, const Coin &signal_price ) { m_current_price[ currency ] = price;
                                                                                                          m_signal_price[ currency ] = signal_price; }
-
+    void clearPrices();
     void clearCurrentPrices();
     void setCurrentPrice( const QString &currency, const Coin &price ) { m_current_price[ currency ] = price; }
     Coin getCurrentPrice( const QString &currency ) const { return m_current_price.value( currency ); }
