@@ -272,13 +272,17 @@ void Tester::generateRandomWork()
     work->m_rsi_ma_length = std::pow( Global::getSecureRandomRange32( 1, 15 ), 2 ) * 10;
     work->m_allocation_func = Global::getSecureRandomRange32( 0, 19 );
 
-    const int modulation_count = Global::getSecureRandomRange32( 0, 2 );
-    for ( int i = 0; i < modulation_count; i++ )
+    // select modulation, 50% of the time select up to 2 modulations
+    int modulation_count = Global::getSecureRandomRange32( 0, 3 ) -1;
+    if ( modulation_count > 0 )
     {
-        work->m_modulation_length_slow += std::pow( Global::getSecureRandomRange32( 1, 15 ), 2 ) * 10;
-        work->m_modulation_length_fast += std::pow( Global::getSecureRandomRange32( 1, 15 ), 2 ) * 10;
-        work->m_modulation_factor += CoinAmount::COIN + ( Coin("0.1") * Global::getSecureRandomRange32( 1, 80 ) );
-        work->m_modulation_threshold += CoinAmount::COIN + ( Coin("0.1") * Global::getSecureRandomRange32( 0, 30 ) );
+        for ( int i = 0; i < modulation_count; i++ )
+        {
+            work->m_modulation_length_slow += std::pow( Global::getSecureRandomRange32( 1, 15 ), 2 ) * 10;
+            work->m_modulation_length_fast += std::pow( Global::getSecureRandomRange32( 1, 15 ), 2 ) * 10;
+            work->m_modulation_factor += CoinAmount::COIN + ( Coin("0.1") * Global::getSecureRandomRange32( 1, 80 ) );
+            work->m_modulation_threshold += CoinAmount::COIN + ( Coin("0.1") * Global::getSecureRandomRange32( 0, 30 ) );
+        }
     }
 
     m_work_queued += work;

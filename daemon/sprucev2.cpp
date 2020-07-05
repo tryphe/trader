@@ -265,10 +265,8 @@ bool SpruceV2::calculateAmountToShortLong()
     return true;
 }
 
-void SpruceV2::doCapitalMomentumModulation()
+void SpruceV2::doCapitalMomentumModulation( const Coin &base_capital )
 {
-    const Coin base_capital = getBaseCapital();
-
     // add base capital to fast/slow ma
     for ( QVector<BaseCapitalModulator>::iterator i = m_modulator.begin(); i != m_modulator.end(); i++ )
     {

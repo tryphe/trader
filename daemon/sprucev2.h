@@ -51,7 +51,7 @@ public:
     QMap<QString, Coin> getSignalPrices() { return m_signal_price; }
 
     bool calculateAmountToShortLong(); // run to get amount to sl
-    void doCapitalMomentumModulation(); // run every m_base_ma_length period
+    void doCapitalMomentumModulation( const Coin &base_capital ); // run every m_base_ma_length period
 
     Coin getQuantityToShortLongByCurrency( const QString &currency ) { return m_qty_to_sl.value( currency ); }
     Coin getQuantityToShortLongByMarket( const Market &market ) { return market.getBase() != getBaseCurrency() ? Coin() : m_qty_to_sl.value( market.getQuote() ); }

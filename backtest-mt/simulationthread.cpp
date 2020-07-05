@@ -74,13 +74,14 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
     static const Coin FEE = -Coin( CoinAmount::SATOSHI * 200 );
     static const bool INVERT_RSI_MA = true;
     const Coin MAX_TAKE_PER_SIMULATION( Coin("0.001428571") * m_task->m_base_ma_length ); // we can only take so much btc per relative base length
+    const int BASE_MA_LENGTH = m_task->m_base_ma_length; // copy to skip ptr walk
 
     // for score keeping
-    Signal base_capital_sma0 = Signal( SMA, qint64( 1000 * 24 * 60 * 60 ) / ( m_task->m_base_ma_length * CANDLE_INTERVAL_SECS ) ); // 1000 days
-    Signal base_capital_sma1 = Signal( SMA, qint64( 300 * 24 * 60 * 60 ) / ( m_task->m_base_ma_length * CANDLE_INTERVAL_SECS ) ); // 300 days
+    Signal base_capital_sma0 = Signal( SMA, qint64( 1000 * 24 * 60 * 60 ) / ( BASE_MA_LENGTH * CANDLE_INTERVAL_SECS ) ); // 1000 days
+    Signal base_capital_sma1 = Signal( SMA, qint64( 300 * 24 * 60 * 60 ) / ( BASE_MA_LENGTH * CANDLE_INTERVAL_SECS ) ); // 300 days
     Coin initial_btc_value, highest_btc_value;
 
-    assert( m_task->m_base_ma_length > 0 );
+    assert( BASE_MA_LENGTH > 0 );
     assert( m_task->m_rsi_length > 0 );
     assert( CANDLE_INTERVAL_SECS > 0 );
     assert( MAX_TAKE_PER_SIMULATION.isGreaterThanZero() );
@@ -136,7 +137,7 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
         latest_ts_market = market;
     }
 
-    QDateTime m_current_date = QDateTime::fromSecsSinceEpoch( m_latest_ts );
+    qint64 m_current_date_secs = m_latest_ts;
     QVector<qint64> m_current_idx;
     QVector<Signal> m_base_ma, m_price_ma, m_signal_ma;
 
@@ -161,12 +162,11 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
         Signal &strategy_signal = m_signal_ma[ market_i ];
         Signal &price_signal = m_price_ma[ market_i ];
         qint64 &current_idx = m_current_idx[ market_i ];
-        qint64 date_test = m_current_date.toSecsSinceEpoch();
-        base_elapsed = m_current_date.toSecsSinceEpoch();
+        base_elapsed = m_current_date_secs;
 
         // init ma
         base_ma.setType( SMA ); // set base MA type
-        base_ma.setMaxSamples( m_task->m_base_ma_length ); // maintain ma of the last m_base_ma_length samples
+        base_ma.setMaxSamples( BASE_MA_LENGTH ); // maintain ma of the last m_base_ma_length samples
 
         // turn rsi_ma if non-zero
         if ( m_task->m_strategy_signal_type == RSI && m_task->m_rsi_ma_length > 0 )
@@ -175,7 +175,7 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
         strategy_signal.setMaxSamples( m_task->m_rsi_length );
 
         price_signal.setType( SMA ); // set price MA type
-        price_signal.setMaxSamples( m_task->m_base_ma_length );
+        price_signal.setMaxSamples( BASE_MA_LENGTH );
 
         assert( base_ma.getSignal().isZero() &&
                 strategy_signal.getSignal().isZero() &&
@@ -186,7 +186,7 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
         current_idx = start_idx;
 
         // fill initial ma samples, ensure base_ma is full before we fill the first strategy sample. fill until
-        strategy_signal.resetIntervalCounter( m_task->m_base_ma_length );
+        strategy_signal.resetIntervalCounter( BASE_MA_LENGTH );
         while ( !strategy_signal.hasSignal() )
         {
             const Coin &sample = data.data.at( current_idx );
@@ -200,10 +200,8 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
             if ( strategy_signal.shouldUpdate() )
             {
                 assert( base_ma.getSignal().isGreaterThanZero() );
-                strategy_signal.resetIntervalCounter( m_task->m_base_ma_length );
+                strategy_signal.resetIntervalCounter( BASE_MA_LENGTH );
                 strategy_signal.addSample( base_ma.getSignal() );
-
-                date_test += CANDLE_INTERVAL_SECS * m_task->m_base_ma_length;
             }
 
             current_idx++;
@@ -230,9 +228,9 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
     }
 
     // update current timestamp
-    QDateTime start_date = m_current_date;
-    m_current_date.setSecsSinceEpoch( base_elapsed );
+    m_current_date_secs = base_elapsed;
 
+//    QDateTime start_date = m_current_date;
 //    kDebug() << QString( "latest index-0 market %1  data start date %2(%3) simulation start date %4(%5)" )
 //                 .arg( latest_ts_market )
 //                 .arg( start_date.toString() )
@@ -243,15 +241,17 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
     /// step 3: loop until out of data samples. each iteration: set price, update ma, run simulation
     qint64 total_samples = 0; // total sample count, not per-market
     int simulation_keeper = 0;
+    Coin signal;
+    const int END_TIME = qint64(1591574400) - ( ( ( BASE_MA_LENGTH / 2 ) +1 ) * CANDLE_INTERVAL_SECS );
     do
     {
         // check to run simulation this iteration
-        ++total_samples;
-        const bool should_run_simulation = ++simulation_keeper % m_task->m_base_ma_length == 0;
+        const bool should_run_simulation = ++simulation_keeper % BASE_MA_LENGTH == 0;
 
         // reset to prevent overflow, also clear prices for each market
         if ( should_run_simulation )
         {
+            total_samples += BASE_MA_LENGTH;
             simulation_keeper = 0;
             sp.clearCurrentPrices();
             sp.clearSignalPrices();
@@ -272,10 +272,10 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
 
             // read price
             const Coin &price = data.data.at( current_idx );
-            const Coin &price_ahead = data.data.at( current_idx + ( m_task->m_base_ma_length / 2 ) );
+            const Coin &price_ahead = data.data.at( current_idx + ( BASE_MA_LENGTH / 2 ) );
             ++current_idx;
 
-            assert( price.isGreaterThanZero() && price_ahead.isGreaterThanZero() );
+            assert( price_ahead.isGreaterThanZero() );
 
             // add signal samples
             base_ma.addSample( price );
@@ -291,11 +291,11 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
             // if shouldUpdate() is true, should_run_simulation should also be true (only make a trade on a new sample)
             assert( should_run_simulation );
 
-            strategy_signal.resetIntervalCounter( m_task->m_base_ma_length );
+            strategy_signal.resetIntervalCounter( BASE_MA_LENGTH );
             strategy_signal.addSample( base_ma.getSignal() );
 
             /// fill price/signal price
-            Coin signal = strategy_signal.getSignal();
+            signal = strategy_signal.getSignal();
 
             // don't modulate signal unless the modulator has reached maximum samples
             if ( strategy_signal.isRSISMAPopulated() )
@@ -308,7 +308,7 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
 
 //            kDebug() << market << "rsi:" << strategy_signal.getSignal();
         }
-        m_current_date = m_current_date.addSecs( CANDLE_INTERVAL_SECS );
+        m_current_date_secs += CANDLE_INTERVAL_SECS;
 
         if ( !should_run_simulation )
             continue;
@@ -320,19 +320,20 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
             return;
         }
 
-        // note: only run this every m_base_ma_length * CANDLE_INTERVAL_SECS seconds
-        sp.doCapitalMomentumModulation();
-
-        /// measure if we should make a trade, and add to alphatracker
+        // cache base capital
         const Coin base_capital = sp.getBaseCapital();
-        const QMap<QString, Coin> &qsl = sp.getQuantityToShortLongMap();
-        //kDebug() << qsl;
-
         if ( base_capital.isZeroOrLess() )
         {
             kDebug() << "ran out of capital!";
             return;
         }
+
+        // note: only run this every m_base_ma_length * CANDLE_INTERVAL_SECS seconds
+        sp.doCapitalMomentumModulation( base_capital );
+
+        /// measure if we should make a trade, and add to alphatracker
+        const QMap<QString, Coin> &qsl = sp.getQuantityToShortLongMap();
+        //kDebug() << qsl;
 
         for ( QMap<QString, Coin>::const_iterator j = qsl.begin(); j != qsl.end(); j++ )
         {
@@ -396,7 +397,7 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
 //        for ( QMap<QString, Coin>::const_iterator i = signal_prices.begin(); i != signal_prices.end(); i++ )
 //            signal_prices_str += QString( " %1" ).arg( i.value() );
     }
-    while ( m_current_date.toSecsSinceEpoch() < qint64(1591574400) - ( ( ( m_task->m_base_ma_length / 2 ) +1 ) * CANDLE_INTERVAL_SECS ) );
+    while ( m_current_date_secs < END_TIME );
 
     // set simulation id
     if ( m_task->m_simulation_id.isEmpty() )
@@ -417,7 +418,7 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
 
         m_task->m_simulation_id = QString( "sig[%1]-rsi[%2/%3]-rsi_sma[%4%5]-func[%6]%7-maxtake[%8]-startamt[%9]-fee[%10]-pricema[%11]-[+%12]" )
                           .arg( m_task->m_strategy_signal_type )
-                          .arg( m_task->m_base_ma_length )
+                          .arg( BASE_MA_LENGTH )
                           .arg( m_task->m_rsi_length )
                           .arg( m_signal_ma.first().isRSISMAEnabled() ? m_task->m_rsi_ma_length : 0 )
                           .arg( INVERT_RSI_MA ? "I" : "" )
@@ -426,7 +427,7 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
                           .arg( MAX_TAKE_PER_SIMULATION.toCompact() )
                           .arg( initial_btc_value.toCompact() )
                           .arg( FEE.toCompact() )
-                          .arg( m_task->m_base_ma_length )
+                          .arg( BASE_MA_LENGTH )
                           .arg( LATE_START_SAMPLES );
     }
 
