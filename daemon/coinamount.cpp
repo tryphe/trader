@@ -232,6 +232,15 @@ Coin Coin::abs() const
                                  Coin() - *this;
 }
 
+Coin Coin::pow( int p ) const
+{
+    Coin ret = *this;
+    while ( p-- > 1 )
+        ret = *this * ret;
+
+    return ret;
+}
+
 bool Coin::isZero() const
 {
     return mpz_cmp_ui( b, 0 ) == 0;

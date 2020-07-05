@@ -46,6 +46,7 @@ public:
 
     Coin operator -() const;
     Coin abs() const;
+    Coin pow( const int p ) const;
 
     bool isZero() const;
     bool isZeroOrLess() const;

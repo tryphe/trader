@@ -324,6 +324,11 @@ void CoinAmountTest::testUnit()
     assert( Coin( "0" ).toCompact() == "0." );
     assert( Coin( "2" ).toCompact() == "2." );
     assert( Coin( "22222" ).toCompact() == "22222." );
+
+    // pow(p)
+    assert( Coin( CoinAmount::COIN * 4 ).pow( 1 ) == CoinAmount::COIN *4 );
+    assert( Coin( CoinAmount::COIN * 4 ).pow( 3 ) == CoinAmount::COIN *64 );
+    //assert( Coin( CoinAmount::COIN * 999 ).pow( 65530 ) == CoinAmount::COIN *16 );
 }
 
 void CoinAmountTest::testDoubleFailure()
