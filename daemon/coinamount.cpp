@@ -307,10 +307,7 @@ QString Coin::toString( const int decimals = CoinAmount::subsatoshi_decimals ) c
 
     // decimal is the first character, return with prepended zero
     if ( sz == 0 )
-    {
         ret.prepend( CoinAmount::zero_exp );
-        sz++;
-    }
 
     if ( is_negative )
         ret.prepend( CoinAmount::minus_exp );

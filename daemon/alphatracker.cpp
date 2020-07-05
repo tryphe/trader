@@ -132,9 +132,9 @@ QString AlphaTracker::getAlphaReadout() const
     for ( QList<QString>::const_iterator i = keys.begin(); i != keys.end(); i++ )
     {
         const QString &market = *i;
-        Coin volume = getVolume( market );
-        Coin significance = getAlphaSignificanceFactor( market );
-        Coin alpha = getAlpha( market );
+        const Coin volume = getVolume( market );
+        const Coin significance = getAlphaSignificanceFactor( market );
+        const Coin alpha = getAlpha( market );
 
         ret += QString( "%1 | est_alpha %2 | signif %3 | buy %4 | sell %5 | vol %6 | vol-trade %7 | trades %8\n" )
                 .arg( market, -MARKET_STRING_WIDTH )
@@ -192,8 +192,8 @@ QString AlphaTracker::getSaveState() const
             ret += QString( "a %1 %2 %3 %4 %5\n" )
                         .arg( market )
                         .arg( side )
-                        .arg( Coin( d.v ).toSubSatoshiString() )
-                        .arg( Coin( d.vp ).toSubSatoshiString() )
+                        .arg( d.v.toSubSatoshiString() )
+                        .arg( d.vp.toSubSatoshiString() )
                         .arg( d.trades );
         }
     }
