@@ -281,7 +281,7 @@ void Tester::generateRandomWork()
 
         work->m_modulation_length_slow += modulation_length_slow * modulation_length_slow * 10;
         work->m_modulation_length_fast += modulation_length_fast * modulation_length_fast * 10;
-        work->m_modulation_factor += CoinAmount::COIN + ( Coin("0.1") * Global::getSecureRandomRange32( 0, 80 ) );
+        work->m_modulation_factor += CoinAmount::COIN + ( Coin("0.1") * Global::getSecureRandomRange32( 1, 80 ) );
         work->m_modulation_threshold += CoinAmount::COIN + ( Coin("0.1") * Global::getSecureRandomRange32( 0, 30 ) );
     }
 
@@ -294,7 +294,7 @@ void Tester::startWork()
     // init threads
     for ( int i = 0; i < MAX_WORKERS; i++ )
     {
-        SimulationThread *t = new SimulationThread;
+        SimulationThread *t = new SimulationThread( i );
         m_threads += t;
 
         t->m_price_data += &m_price_data_0[ i ];
@@ -332,13 +332,12 @@ void Tester::processFinishedWork()
         for ( int j = 0; j < task->m_scores.size(); j++ )
             scores[ j ] = task->m_scores.value( j ) / MARKET_VARIATIONS;
 
-        const QString score_out = QString( "------------------------------------------------------------------------------------\nscore-1000d[%1] score-300d[%2] score-300d/1000d[%3] peak[%4] final[%5] gainloss[%6]: %7\n%8" )
+        const QString score_out = QString( "------------------------------------------------------------------------------------\nscore-1000d[%1] score-300d[%2] score-300d/1000d[%3] peak[%4] final[%5]: %6\n%7" )
                                    .arg( scores[ 0 ] )
                                    .arg( scores[ 1 ] )
                                    .arg( scores[ 2 ] )
                                    .arg( scores[ 3 ] )
                                    .arg( scores[ 4 ] )
-                                   .arg( scores[ 5 ] )
                                    .arg( task->m_simulation_id )
                                    .arg( task->m_alpha_readout );
 
@@ -368,8 +367,12 @@ void Tester::processFinishedWork()
     printHighScores( m_highscores[ 3 ] );
     kDebug() << "========================== HIGH FINAL SCORES ==========================";
     printHighScores( m_highscores[ 4 ] );
-    kDebug() << "========================== HIGH GAINLOSS ==============================";
-    printHighScores( m_highscores[ 5 ] );
+
+    kDebug() << QString( "[%1 of %2] %3% done, %4 threads active" )
+                 .arg( m_work_count_done )
+                 .arg( m_work_count_total )
+                 .arg( Coin( m_work_count_started ) / Coin( m_work_count_total ) * 100 )
+                 .arg( m_threads.size() );
 
     if ( m_work_queued.size() == 0 &&
          m_work_done.size() == 0 &&

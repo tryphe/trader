@@ -37,8 +37,10 @@ class SimulationThread : public QThread
 {
     Q_OBJECT
 public:
-   explicit SimulationThread();
+   explicit SimulationThread( const int id = 0 );
    ~SimulationThread();
+
+    int m_id, m_task_id;
 
     // price data pointers
     QVector<QMap<Market, PriceData>*> m_price_data;

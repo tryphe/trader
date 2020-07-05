@@ -13,8 +13,9 @@
 #include <QMutex>
 #include <QMutexLocker>
 
-SimulationThread::SimulationThread()
-    : QThread()
+SimulationThread::SimulationThread( const int id )
+    : QThread(),
+      m_id( id )
 {
 }
 
@@ -30,34 +31,27 @@ void SimulationThread::run()
     assert( ext_work_count_total != nullptr );
     assert( ext_work_count_done != nullptr );
 
-    kDebug() << "started thread" << QThread::currentThreadId();
+    kDebug() << QString( "[Thread %1] started" ).arg( m_id );
 
     ext_mutex->lock();
     while ( ext_work_queued->size() > 0 )
     {
         ++*ext_work_count_started;
+        m_task_id = *ext_work_count_started;
         m_task = ext_work_queued->takeFirst();
         int tasks_total = *ext_work_count_total;
-        int tasks_started = *ext_work_count_started;
-        int threads_active = ext_threads->size();
         ext_mutex->unlock();
-
-
-        kDebug() << QString( "[%1 of %2] %3%, %4 threads active" )
-                     .arg( tasks_started )
-                     .arg( tasks_total )
-                     .arg( Coin( tasks_started ) / Coin( tasks_total ) * 100 )
-                     .arg( threads_active );
 
         // run simulation on each map of price data
         for ( int i = 0; i < m_price_data.size(); i++ )
         {
             // print subsimulation if there are multiple
             if ( m_price_data.size() > 1 )
-                kDebug() << QString( "[%1 of %2] running sub simulation %3" )
-                             .arg( tasks_started )
+                kDebug() << QString( "[Thread %1] [%2 of %3] [Phase %4] started" )
+                             .arg( m_id )
+                             .arg( m_task_id )
                              .arg( tasks_total )
-                             .arg( i +1 );
+                             .arg( i );
 
             assert( m_price_data[ i ] != nullptr );
             runSimulation( m_price_data[ i ] );
@@ -69,7 +63,7 @@ void SimulationThread::run()
     }
     ext_mutex->unlock();
 
-    kDebug() << "finished thread" << QThread::currentThreadId();
+    kDebug() << QString( "[Thread %1] finished" ).arg( m_id );
 }
 
 void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &price_data )
@@ -86,8 +80,6 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
     // for score keeping
     Signal base_capital_sma0 = Signal( SMA, qint64( 1000 * 24 * 60 * 60 ) / ( m_task->m_base_ma_length * BASE_MA_INTERVAL ) ); // 1000 days
     Signal base_capital_sma1 = Signal( SMA, qint64( 300 * 24 * 60 * 60 ) / ( m_task->m_base_ma_length * BASE_MA_INTERVAL ) ); // 300 days
-    qint64 gain_periods = 0, loss_periods = 0;
-    Coin last_capital, gain, loss;
     Coin initial_btc_value, highest_btc_value;
 
     assert( m_task->m_base_ma_length > 0 );
@@ -112,7 +104,6 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
 
     // start with ~0.2 btc value for each currency
     sp.clearCurrentQtys();
-
     sp.setCurrentQty( "BTC",   Coin( "0.2" ) );
     if ( price_data->contains( Market( "BTC_DASH" ) ) )
         sp.setCurrentQty( "DASH", Coin( "16.84" ) );
@@ -128,8 +119,6 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
         sp.setCurrentQty( "XMR",  Coin( "19.65" ) );
     if ( price_data->contains( Market( "BTC_ZEC" ) ) )
         sp.setCurrentQty( "ZEC",  Coin( "5" ) );
-
-//    kDebug() << "start data" << price_data->keys();
 
     /// step 1: initialize price data and fill signal samples while seeking ahead
     // clear members
@@ -399,22 +388,6 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
                 initial_btc_value = base_capital;
         }
 
-        // record score 5
-        if ( last_capital.isGreaterThanZero() )
-        {
-            if ( base_capital > last_capital )
-            {
-                gain += ( base_capital / last_capital ) - CoinAmount::COIN;
-                gain_periods++;
-            }
-            else if ( base_capital < last_capital )
-            {
-                loss += ( last_capital / base_capital ) - CoinAmount::COIN;
-                loss_periods++;
-            }
-        }
-        last_capital = base_capital;
-
 //        QMap<QString, Coin> prices = sp.getCurrentPrices();
 //        QString prices_str;
 //        for ( QMap<QString, Coin>::const_iterator i = prices.begin(); i != prices.end(); i++ )
@@ -466,10 +439,7 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
     const Coin score_2 = score_1 / score_0 + unique_value;
     const Coin score_3 = highest_btc_value + unique_value;
     const Coin score_4 = sp.getBaseCapital() + unique_value;
-    const Coin score_5 = ( gain / Coin( gain_periods +1 ) ) / ( loss / Coin( loss_periods +1 ) ) + unique_value;
-
-//    kDebug() << "gain periods:" << gain_periods << "gain:" << gain << "loss periods:" << loss_periods << "loss:" << loss;
-//    kDebug() << score_0 << score_1 << score_2 << score_3 << score_4 << score_5;
+//    kDebug() << score_0 << score_1 << score_2 << score_3 << score_4;
 
     // insert score
     m_task->m_scores[ 0 ] += score_0;
@@ -477,7 +447,6 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
     m_task->m_scores[ 2 ] += score_2;
     m_task->m_scores[ 3 ] += score_3;
     m_task->m_scores[ 4 ] += score_4;
-    m_task->m_scores[ 5 ] += score_5;
 
     // append alpha readout
     if ( !m_task->m_alpha_readout.isEmpty() )

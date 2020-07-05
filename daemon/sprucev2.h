@@ -198,7 +198,7 @@ private:
     QVector<BaseCapitalModulator> m_modulator;
 
     QVector<std::function<Coin(const Coin&)>> m_allocaton_function_vec;
-    int m_allocation_function_index{ 4 };
+    int m_allocation_function_index{ 0 };
     bool m_visualize{ false };
     ///
 
