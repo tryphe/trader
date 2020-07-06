@@ -19,8 +19,13 @@
 #include <QMutex>
 #include <QMutexLocker>
 
+#include "../daemon/sprucev2.h"
+
 Tester::Tester()
 {
+    //    kDebug() << sp.allocationFunc21( Coin("1") ) << sp.allocationFunc21( Coin("3") );
+//    kDebug() << sp.allocationFunc22( Coin("1") ) << sp.allocationFunc22( Coin("3") );
+
 //    Coin p( CoinAmount::COIN * 2300 + CoinAmount::SUBSATOSHI );
 //    kDebug() << p;
 //    exit( 0 );
@@ -97,6 +102,8 @@ Tester::Tester()
     else
         generateWork();
 
+//    generateCustomWork();
+
     kDebug() << "generated" << m_work_queued.size() << "work units";
 
     // start threads
@@ -106,7 +113,7 @@ Tester::Tester()
     m_work_timer = new QTimer( this );
     connect( m_work_timer, &QTimer::timeout, this, &Tester::onWorkTimer );
     m_work_timer->setTimerType( Qt::VeryCoarseTimer );
-    m_work_timer->setInterval( 5000 );
+    m_work_timer->setInterval( 10000 );
     m_work_timer->start();
 }
 
@@ -181,7 +188,7 @@ void Tester::generateWork()
 
     for ( int signal_type = SMA; signal_type <= RSI; signal_type++ )
     {
-    for ( int allocation_func = 0; allocation_func <= 19; allocation_func++ ) // 30m to 30m, increment 30m
+    for ( int allocation_func = 0; allocation_func <= 22; allocation_func++ ) // 30m to 30m, increment 30m
     {
     for ( int base_ma_length = 10; base_ma_length <= 1000; base_ma_length *= 2 ) // 40 == 3.3h
     {
@@ -270,7 +277,7 @@ void Tester::generateRandomWork()
     work->m_base_ma_length = 40;
     work->m_rsi_length = std::pow( Global::getSecureRandomRange32( 1, 15 ), 2 ) * 10;
     work->m_rsi_ma_length = std::pow( Global::getSecureRandomRange32( 1, 15 ), 2 ) * 10;
-    work->m_allocation_func = Global::getSecureRandomRange32( 0, 20 );
+    work->m_allocation_func = Global::getSecureRandomRange32( 0, 22 );
 
     // select modulation, 50% of the time select up to 2 modulations
     int modulation_count = Global::getSecureRandomRange32( 0, 3 ) -1;
@@ -284,6 +291,20 @@ void Tester::generateRandomWork()
             work->m_modulation_threshold += CoinAmount::COIN + ( Coin("0.1") * Global::getSecureRandomRange32( 0, 30 ) );
         }
     }
+
+    m_work_queued += work;
+    m_work_count_total++;
+}
+
+void Tester::generateCustomWork()
+{
+    SimulationTask *work = new SimulationTask;
+
+    work->m_strategy_signal_type = RSI;
+    work->m_base_ma_length = 40;
+    work->m_rsi_length = 75;
+    work->m_rsi_ma_length = 25;
+    work->m_allocation_func = 21;
 
     m_work_queued += work;
     m_work_count_total++;

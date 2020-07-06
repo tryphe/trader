@@ -32,6 +32,7 @@ public:
 
     void generateWork();
     void generateRandomWork();
+    void generateCustomWork();
     void startWork();
     void processFinishedWork();
 
