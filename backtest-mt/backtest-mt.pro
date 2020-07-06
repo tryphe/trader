@@ -4,12 +4,14 @@ QMAKE_CXXFLAGS = -O3
 QMAKE_CFLAGS = -O3
 
 CONFIG += c++14 c++17
-CONFIG += release
+CONFIG += RELEASE
+#CONFIG += DEBUG
 
 LIBS += -lgmp
 
 TARGET = backtest-mt
 TEMPLATE = app
+
 
 SOURCES += main.cpp \
     ../daemon/alphatracker.cpp \

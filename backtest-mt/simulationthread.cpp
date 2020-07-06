@@ -37,8 +37,8 @@ void SimulationThread::run()
     while ( ext_work_queued->size() > 0 )
     {
         ++*ext_work_count_started;
-        m_task_id = *ext_work_count_started;
-        m_task = ext_work_queued->takeFirst();
+        m_work_id = *ext_work_count_started;
+        m_work = ext_work_queued->takeFirst();
         int tasks_total = *ext_work_count_total;
         ext_mutex->unlock();
 
@@ -49,7 +49,7 @@ void SimulationThread::run()
             if ( m_price_data.size() > 1 )
                 kDebug() << QString( "[Thread %1] [%2 of %3] [Phase %4] started" )
                              .arg( m_id )
-                             .arg( m_task_id )
+                             .arg( m_work_id )
                              .arg( tasks_total )
                              .arg( i );
 
@@ -59,7 +59,7 @@ void SimulationThread::run()
 
         ext_mutex->lock();
         ++*ext_work_count_done;
-        ext_work_done->operator +=( m_task );
+        ext_work_done->operator +=( m_work );
     }
     ext_mutex->unlock();
 
@@ -69,12 +69,11 @@ void SimulationThread::run()
 void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &price_data )
 {
     static const int CANDLE_INTERVAL_SECS = 300; // 5 minutes per sample
-    static const qint64 LATE_START_SAMPLES = 00000;
     static const Coin ORDER_SIZE_LIMIT = Coin( "0.005" );
     static const Coin FEE = -Coin( CoinAmount::SATOSHI * 200 );
     static const bool INVERT_RSI_MA = true;
-    const Coin MAX_TAKE_PER_SIMULATION( Coin("0.001428571") * m_task->m_base_ma_length ); // we can only take so much btc per relative base length
-    const int BASE_MA_LENGTH = m_task->m_base_ma_length; // copy to skip ptr walk
+    const Coin MAX_TAKE_PER_SIMULATION( Coin("0.001428571") * m_work->m_base_ma_length ); // we can only take so much btc per relative base length
+    const int BASE_MA_LENGTH = m_work->m_base_ma_length; // copy to skip ptr walk
 
     // for score keeping
     Signal base_capital_sma0 = Signal( SMA, qint64( 1000 * 24 * 60 * 60 ) / ( BASE_MA_LENGTH * CANDLE_INTERVAL_SECS ) ); // 1000 days
@@ -82,7 +81,7 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
     Coin initial_btc_value, highest_btc_value;
 
     assert( BASE_MA_LENGTH > 0 );
-    assert( m_task->m_rsi_length > 0 );
+    assert( m_work->m_rsi_length > 0 );
     assert( CANDLE_INTERVAL_SECS > 0 );
     assert( MAX_TAKE_PER_SIMULATION.isGreaterThanZero() );
     assert( FEE.isLessThanZero() );
@@ -92,13 +91,13 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
     SpruceV2 sp;
 
     // set new spruce capital modulation options
-    for ( int i = 0; i < m_task->m_modulation_length_slow.size(); i++ )
-        if ( m_task->m_modulation_length_slow.value( i ) > 0 && m_task->m_modulation_length_fast.value( i ) > 0 )
-            sp.addBaseModulator( BaseCapitalModulator( m_task->m_modulation_length_slow[ i ], m_task->m_modulation_length_fast[ i ], m_task->m_modulation_factor[ i ], m_task->m_modulation_threshold[ i ] ) );
+    for ( int i = 0; i < m_work->m_modulation_length_slow.size(); i++ )
+        if ( m_work->m_modulation_length_slow.value( i ) > 0 && m_work->m_modulation_length_fast.value( i ) > 0 )
+            sp.addBaseModulator( BaseCapitalModulator( m_work->m_modulation_length_slow[ i ], m_work->m_modulation_length_fast[ i ], m_work->m_modulation_factor[ i ], m_work->m_modulation_threshold[ i ] ) );
 
     /// set initial spruce config
     //sp.setVisualization( true );
-    sp.setAllocationFunction( m_task->m_allocation_func );
+    sp.setAllocationFunction( m_work->m_allocation_func );
     sp.setBaseCurrency( "BTC" );
 
     // start with ~0.2 btc value for each currency
@@ -170,10 +169,10 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
         base_ma.setMaxSamples( BASE_MA_LENGTH ); // maintain ma of the last m_base_ma_length samples
 
         // turn rsi_ma if non-zero
-        if ( m_task->m_strategy_signal_type == RSI && m_task->m_rsi_ma_length > 0 )
-            strategy_signal.setGeneralOption0( m_task->m_rsi_ma_length );
-        strategy_signal.setType( m_task->m_strategy_signal_type );
-        strategy_signal.setMaxSamples( m_task->m_rsi_length );
+        if ( m_work->m_strategy_signal_type == RSI && m_work->m_rsi_ma_length > 0 )
+            strategy_signal.setGeneralOption0( m_work->m_rsi_ma_length );
+        strategy_signal.setType( m_work->m_strategy_signal_type );
+        strategy_signal.setMaxSamples( m_work->m_rsi_length );
 
 //        price_signal.setType( SMA ); // set price MA type
         price_signal.setMaxSamples( BASE_MA_LENGTH );
@@ -183,7 +182,7 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
                 price_signal.getSignal().isZero() );
 
         // init start data idx
-        current_idx = LATE_START_SAMPLES + ( ( m_latest_ts - data.data_start_secs ) / CANDLE_INTERVAL_SECS );
+        current_idx = m_work->m_samples_start_offset + ( ( m_latest_ts - data.data_start_secs ) / CANDLE_INTERVAL_SECS );
 
         // fill initial ma samples, ensure base_ma is full before we fill the first strategy sample. fill until
         strategy_signal.resetIntervalCounter( BASE_MA_LENGTH );
@@ -209,18 +208,18 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
         }
 
         // reset strategy signal again to prepare for the next loop
-        strategy_signal.resetIntervalCounter( m_task->m_base_ma_length );
+        strategy_signal.resetIntervalCounter( m_work->m_base_ma_length );
 
         // ensure strategy signal has correct number of samples
-//        if ( strategy_signal.getCurrentSamples() != m_task->m_rsi_length )
+//        if ( strategy_signal.getCurrentSamples() != m_work->m_rsi_length )
 //        {
-//            kDebug() << "strategy samples:" << strategy_signal.getCurrentSamples() << "rsi len" << m_task->m_rsi_length;
+//            kDebug() << "strategy samples:" << strategy_signal.getCurrentSamples() << "rsi len" << m_work->m_rsi_length;
 //        }
-//        assert( strategy_signal.getCurrentSamples() == m_task->m_rsi_length );
+//        assert( strategy_signal.getCurrentSamples() == m_work->m_rsi_length );
 
 //        kDebug() << QString( "%1  signal %2*%3=%4  start idx %5  current idx %6" )
 //                     .arg( market, -10 )
-//                     .arg( m_task->m_base_ma_length )
+//                     .arg( m_work->m_base_ma_length )
 //                     .arg( strategy_signal.getCurrentSamples() )
 //                     .arg( strategy_signal.getSignal(), -10 )
 //                     .arg( start_idx, -7 )
@@ -406,27 +405,27 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
     while ( current_secs < END_TIME );
 
     // set simulation id
-    if ( m_task->m_simulation_id.isEmpty() )
+    if ( m_work->m_simulation_id.isEmpty() )
     {
         QString modulation_str;
-        for ( int i = 0; i < m_task->m_modulation_length_slow.size(); i++ )
+        for ( int i = 0; i < m_work->m_modulation_length_slow.size(); i++ )
         {
-            if ( m_task->m_modulation_length_slow.value( i ) < 1 && m_task->m_modulation_length_fast.value( i ) < 1 )
+            if ( m_work->m_modulation_length_slow.value( i ) < 1 && m_work->m_modulation_length_fast.value( i ) < 1 )
                 continue;
 
             modulation_str += QString( "-mod%1[%2/%3/%4/%5]" )
                                .arg( i )
-                               .arg( m_task->m_modulation_length_slow.value( i ) )
-                               .arg( m_task->m_modulation_length_fast.value( i ) )
-                               .arg( m_task->m_modulation_factor.value( i ).toCompact() )
-                               .arg( m_task->m_modulation_threshold.value( i ).toCompact() );
+                               .arg( m_work->m_modulation_length_slow.value( i ) )
+                               .arg( m_work->m_modulation_length_fast.value( i ) )
+                               .arg( m_work->m_modulation_factor.value( i ).toCompact() )
+                               .arg( m_work->m_modulation_threshold.value( i ).toCompact() );
         }
 
-        m_task->m_simulation_id = QString( "sig[%1]-rsi[%2/%3]-rsi_sma[%4%5]-func[%6]%7-maxtake[%8]-startamt[%9]-fee[%10]-pricema[%11]-[+%12]" )
-                          .arg( m_task->m_strategy_signal_type )
+        m_work->m_simulation_id = QString( "sig[%1]-rsi[%2/%3]-rsi_sma[%4%5]-func[%6]%7-maxtake[%8]-startamt[%9]-fee[%10]-pricema[%11]-[+%12]" )
+                          .arg( m_work->m_strategy_signal_type )
                           .arg( BASE_MA_LENGTH )
-                          .arg( m_task->m_rsi_length )
-                          .arg( m_signals.first().m_signal_ma.isRSISMAEnabled() ? m_task->m_rsi_ma_length : 0 )
+                          .arg( m_work->m_rsi_length )
+                          .arg( m_signals.first().m_signal_ma.isRSISMAEnabled() ? m_work->m_rsi_ma_length : 0 )
                           .arg( INVERT_RSI_MA ? "I" : "" )
                           .arg( sp.getAllocationFunctionIndex() )
                           .arg( modulation_str )
@@ -434,7 +433,7 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
                           .arg( initial_btc_value.toCompact() )
                           .arg( FEE.toCompact() )
                           .arg( BASE_MA_LENGTH )
-                          .arg( LATE_START_SAMPLES );
+                          .arg( m_work->m_samples_start_offset );
     }
 
     // submit high score
@@ -447,15 +446,15 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
 //    kDebug() << score_0 << score_1 << score_2 << score_3 << score_4;
 
     // insert score
-    m_task->m_scores[ 0 ] += score_0;
-    m_task->m_scores[ 1 ] += score_1;
-    m_task->m_scores[ 2 ] += score_2;
-    m_task->m_scores[ 3 ] += score_3;
-    m_task->m_scores[ 4 ] += score_4;
+    m_work->m_scores[ 0 ] += score_0;
+    m_work->m_scores[ 1 ] += score_1;
+    m_work->m_scores[ 2 ] += score_2;
+    m_work->m_scores[ 3 ] += score_3;
+    m_work->m_scores[ 4 ] += score_4;
 
     // append alpha readout
-    if ( !m_task->m_alpha_readout.isEmpty() )
-        m_task->m_alpha_readout += '\n';
+    if ( !m_work->m_alpha_readout.isEmpty() )
+        m_work->m_alpha_readout += '\n';
 
-    m_task->m_alpha_readout += alpha.getAlphaReadout();
+    m_work->m_alpha_readout += alpha.getAlphaReadout();
 }

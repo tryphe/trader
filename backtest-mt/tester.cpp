@@ -18,6 +18,7 @@
 #include <QTimer>
 #include <QMutex>
 #include <QMutexLocker>
+#include <QMessageLogger>
 
 #include "../daemon/sprucev2.h"
 
@@ -85,19 +86,17 @@ Tester::Tester()
     SignalTest t;
     t.test();
 
-//    qint64 t0 = QDateTime::currentMSecsSinceEpoch();
-
     CoinAmountTest c;
     c.test();
-
-//    kDebug() << "tests passed in" << QDateTime::currentMSecsSinceEpoch() - t0 << "ms";
 
     // load data
     loadPriceData();
 
+    kDebug() << "generating work...";
+
     // generate work
-    if ( RUN_RANDOM_TESTS )
-        for ( int i = 0; i < 100000; i++ )
+    if ( WORK_RANDOM )
+        for ( int i = 0; i < WORK_RANDOM_TRIES; i++ )
             generateRandomWork();
     else
         generateWork();
@@ -178,8 +177,6 @@ void Tester::loadPriceData()
 
 void Tester::generateWork()
 {
-    kDebug() << "generating work...";
-
     // non-loop initialized options to generate
     QVector<int> modulation_length_slow;
     QVector<int> modulation_length_fast;
@@ -273,6 +270,8 @@ void Tester::generateRandomWork()
 {
     SimulationTask *work = new SimulationTask;
 
+    work->m_samples_start_offset = WORK_SAMPLES_START_OFFSET;
+
     work->m_strategy_signal_type = /*Global::getSecureRandomRange32( 0, 1 ) == 0 ? SMA : */RSI;
     work->m_base_ma_length = 40;
     work->m_rsi_length = std::pow( Global::getSecureRandomRange32( 1, 15 ), 2 ) * 10;
@@ -280,7 +279,7 @@ void Tester::generateRandomWork()
     work->m_allocation_func = Global::getSecureRandomRange32( 0, 22 );
 
     // select modulation, 50% of the time select up to 2 modulations
-    int modulation_count = Global::getSecureRandomRange32( 0, 3 ) -1;
+    const int modulation_count = Global::getSecureRandomRange32( 0, 3 ) -1;
     if ( modulation_count > 0 )
     {
         for ( int i = 0; i < modulation_count; i++ )
@@ -292,6 +291,15 @@ void Tester::generateRandomWork()
         }
     }
 
+    // if hash of raw data exists in QSet, skip adding duplicate work
+    const QByteArray work_raw = work->getRaw();
+    if ( m_work_raw.contains( work_raw ) )
+    {
+        delete work;
+        return;
+    }
+
+    m_work_raw += work_raw;
     m_work_queued += work;
     m_work_count_total++;
 }
@@ -378,16 +386,27 @@ void Tester::processFinishedWork()
     if ( tasks_processed < 1 )
         return;
 
-    kDebug() << "========================== HIGH 1000d SCORES ==========================";
-    printHighScores( m_highscores[ 0 ] );
-    kDebug() << "========================== HIGH 300d SCORES ===========================";
-    printHighScores( m_highscores[ 1 ] );
-    kDebug() << "========================== HIGH 300d/1000d SCORES =====================";
-    printHighScores( m_highscores[ 2 ] );
-    kDebug() << "========================== HIGH PEAK SCORES ===========================";
-    printHighScores( m_highscores[ 3 ] );
-    kDebug() << "========================== HIGH FINAL SCORES ==========================";
-    printHighScores( m_highscores[ 4 ] );
+    // open results log file
+    static const qint64 START_SECS = QDateTime::currentSecsSinceEpoch();
+    const QString filename = QString( "simulation.results.%1.txt" ).arg( START_SECS );
+    QFile savefile( filename );
+    if ( !savefile.open( QIODevice::WriteOnly | QIODevice::Text ) )
+    {
+        kDebug() << "local error: couldn't open" << filename << "for writing";
+        return;
+    }
+
+    QTextStream out_savefile( &savefile );
+
+    printHighScores( m_highscores[ 0 ], out_savefile, "1000d" );
+    printHighScores( m_highscores[ 1 ], out_savefile, "300d" );
+    printHighScores( m_highscores[ 2 ], out_savefile, "300d/1000d" );
+    printHighScores( m_highscores[ 3 ], out_savefile, "PEAK" );
+    printHighScores( m_highscores[ 4 ], out_savefile, "FINAL" );
+
+    // save the buffer
+    out_savefile.flush();
+    savefile.close();
 
     kDebug() << QString( "[%1 of %2] %3% done, %4 threads active" )
                  .arg( m_work_count_done )
@@ -406,8 +425,12 @@ void Tester::processFinishedWork()
     }
 }
 
-void Tester::printHighScores( const QMap<Coin, QString> &scores, const int print_count )
+void Tester::printHighScores( const QMap<Coin, QString> &scores, QTextStream &out, QString description, const int print_count )
 {
+    const QString title = QString( "========================== %1 ==========================" ).arg( description );
+    out << title;
+    kDebug() << title;
+
     const int score_count = scores.size();
     int scores_iterated = 0;
     for ( QMap<Coin, QString>::const_iterator j = scores.begin(); j != scores.end(); j++ )
@@ -416,6 +439,7 @@ void Tester::printHighScores( const QMap<Coin, QString> &scores, const int print
         if ( ++scores_iterated < score_count - print_count +1 )
             continue;
 
+        out << j.value();
         kDebug() << j.value();
     }
 }

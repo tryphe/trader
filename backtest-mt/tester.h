@@ -19,9 +19,12 @@ class Tester : public QObject
 {
     Q_OBJECT
 
-    static const bool RUN_RANDOM_TESTS = true;
     static const int MAX_WORKERS = 8;
     static const int MARKET_VARIATIONS = 2;
+
+    static const bool WORK_RANDOM = true;
+    static const int WORK_RANDOM_TRIES = 1000000;
+    static const int WORK_SAMPLES_START_OFFSET = 0;
 
 public:
     explicit Tester();
@@ -36,7 +39,7 @@ public:
     void startWork();
     void processFinishedWork();
 
-    void printHighScores( const QMap<Coin, QString> &scores, const int print_count = 3 );
+    void printHighScores( const QMap<Coin, QString> &scores, QTextStream &out, QString description, const int print_count = 3 );
 
 public Q_SLOTS:
     void onWorkTimer();
@@ -57,6 +60,9 @@ private:
 
     // threads
     QVector<SimulationThread*> m_threads;
+
+    // work data, but not accessed by threads
+    QSet<QByteArray> m_work_raw;
 };
 
 #endif // TESTER_H
