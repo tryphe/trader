@@ -92,6 +92,9 @@ Tester::Tester()
     // load data
     loadPriceData();
 
+    kDebug() << "loading finished work...";
+    loadFinishedWork();
+
     kDebug() << "generating work...";
 
     // generate work
@@ -293,13 +296,13 @@ void Tester::generateRandomWork()
 
     // if hash of raw data exists in QSet, skip adding duplicate work
     const QByteArray work_raw = work->getRaw();
-    if ( m_work_raw.contains( work_raw ) )
+    if ( m_work_ids_generated_or_done.contains( work_raw ) )
     {
         delete work;
         return;
     }
 
-    m_work_raw += work_raw;
+    m_work_ids_generated_or_done += work_raw;
     m_work_queued += work;
     m_work_count_total++;
 }
@@ -361,18 +364,25 @@ void Tester::processFinishedWork()
         for ( int j = 0; j < task->m_scores.size(); j++ )
             scores[ j ] = task->m_scores.value( j ) / MARKET_VARIATIONS;
 
-        const QString score_out = QString( "------------------------------------------------------------------------------------\nscore-1000d[%1] score-300d[%2] score-300d/1000d[%3] peak[%4] final[%5]: %6\n%7" )
-                                   .arg( scores[ 0 ] )
-                                   .arg( scores[ 1 ] )
-                                   .arg( scores[ 2 ] )
-                                   .arg( scores[ 3 ] )
-                                   .arg( scores[ 4 ] )
-                                   .arg( task->m_simulation_id )
+        // prepend scores to simulation result
+        const QString score_str = QString( "1000d[%1]-300d[%2]-300d/1000d[%3]-peak[%4]-final[%5]:" )
+                .arg( scores[ 0 ] )
+                .arg( scores[ 1 ] )
+                .arg( scores[ 2 ] )
+                .arg( scores[ 3 ] )
+                .arg( scores[ 4 ] );
+
+        task->m_simulation_result.prepend( score_str );
+
+        const QString score_out = QString( "------------------------------------------------------------------------------------\n%1\n%2" )
+                                   .arg( task->m_simulation_result )
                                    .arg( task->m_alpha_readout );
 
         // copy scores into local data
         for ( int j = 0; j < scores.size(); j++ )
             m_highscores[ j ][ scores[ j ] ] = score_out;
+
+        m_work_done_unsaved[ task->getRaw() ] = task->m_simulation_result;
     }
 
     // cleanup finished work
@@ -414,6 +424,9 @@ void Tester::processFinishedWork()
                  .arg( Coin( m_work_count_done ) / Coin( m_work_count_total ) * 100 )
                  .arg( m_threads.size() );
 
+    // save unsaved work
+    saveFinishedWork();
+
     if ( m_work_queued.size() == 0 &&
          m_work_done.size() == 0 &&
          m_work_count_total == m_work_count_done )
@@ -442,6 +455,89 @@ void Tester::printHighScores( const QMap<Coin, QString> &scores, QTextStream &ou
         out << j.value();
         kDebug() << j.value();
     }
+}
+
+void Tester::saveFinishedWork()
+{
+    if ( m_work_done_unsaved.isEmpty() )
+        return;
+
+    // open data file
+    const QString path = "simulation.storage.txt";
+
+    QFile savefile( path );
+    if ( !savefile.open( QIODevice::WriteOnly | QIODevice::Text | QIODevice::Append ) )
+    {
+        kDebug() << "local error: couldn't open spruce settings file" << path;
+        return;
+    }
+
+    QTextStream out_savefile( &savefile );
+
+    // save state
+    int work_ids_saved_count = 0;
+    QVector<QByteArray> work_ids_raw_saved;
+    for ( QMap<QByteArray, QString>::const_iterator i = m_work_done_unsaved.constBegin(); i != m_work_done_unsaved.constEnd(); i++ )
+    {
+        QByteArray work_id = i.key().toHex();
+
+        out_savefile << work_id;
+        out_savefile << ' ';
+        out_savefile << i.value();
+        out_savefile << '\n';
+
+        // transfer into saved map, and queue for removal from unsaved map
+        m_work_done_saved[ work_id ] = i.value();
+        work_ids_raw_saved += i.key();
+        work_ids_saved_count++;
+    }
+
+    // removed saved ids from unsaved map
+    while ( !work_ids_raw_saved.isEmpty() )
+        m_work_done_unsaved.remove( work_ids_raw_saved.takeFirst() );
+
+    // save the buffer
+    out_savefile.flush();
+    savefile.close();
+
+    kDebug() << "saved" << work_ids_saved_count << "new work results";
+}
+
+void Tester::loadFinishedWork()
+{
+    QString path = "simulation.storage.txt";
+    QFile loadfile( path );
+
+    if ( !loadfile.open( QIODevice::ReadWrite | QIODevice::Text ) )
+    {
+        kDebug() << "local error: couldn't load stats file" << path;
+        return;
+    }
+
+    if ( loadfile.bytesAvailable() == 0 )
+        return;
+
+    QList<QByteArray> data = loadfile.readAll().split( '\n' );
+    int results_loaded = 0;
+
+    for ( int i = 0; i < data.size(); i++ )
+    {
+        QList<QByteArray> line_data = data[ i ].split( ' ' );
+
+        // skip last empty line
+        if ( line_data.size() != 2 )
+            continue;
+
+        QByteArray work_id = QByteArray::fromHex( line_data[ 0 ] );
+
+        m_work_ids_generated_or_done += work_id;
+        m_work_done_saved[ work_id ] = line_data[ 1 ];
+        results_loaded++;
+
+//        kDebug() << "loaded" << work_id.toHex() << line_data[ 1 ];
+    }
+
+    kDebug() << "loaded" << results_loaded << "historical work results";
 }
 
 void Tester::onWorkTimer()

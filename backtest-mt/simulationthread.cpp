@@ -405,7 +405,7 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
     while ( current_secs < END_TIME );
 
     // set simulation id
-    if ( m_work->m_simulation_id.isEmpty() )
+    if ( m_work->m_simulation_result.isEmpty() )
     {
         QString modulation_str;
         for ( int i = 0; i < m_work->m_modulation_length_slow.size(); i++ )
@@ -421,7 +421,7 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
                                .arg( m_work->m_modulation_threshold.value( i ).toCompact() );
         }
 
-        m_work->m_simulation_id = QString( "sig[%1]-rsi[%2/%3]-rsi_sma[%4%5]-func[%6]%7-maxtake[%8]-startamt[%9]-fee[%10]-pricema[%11]-[+%12]" )
+        m_work->m_simulation_result = QString( "sig[%1]-rsi[%2/%3]-rsi_sma[%4%5]-func[%6]%7-maxtake[%8]-startamt[%9]-fee[%10]-pricema[%11]-[+%12]" )
                           .arg( m_work->m_strategy_signal_type )
                           .arg( BASE_MA_LENGTH )
                           .arg( m_work->m_rsi_length )

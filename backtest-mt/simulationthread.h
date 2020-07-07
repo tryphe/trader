@@ -56,7 +56,7 @@ struct SimulationTask
     QVector<Coin> m_modulation_threshold;
 
     // results
-    QString m_simulation_id;
+    QString m_simulation_result;
     QString m_alpha_readout;
     QMap<int, Coin> m_scores;
 };

@@ -41,6 +41,9 @@ public:
 
     void printHighScores( const QMap<Coin, QString> &scores, QTextStream &out, QString description, const int print_count = 3 );
 
+    void saveFinishedWork();
+    void loadFinishedWork();
+
 public Q_SLOTS:
     void onWorkTimer();
 
@@ -62,7 +65,8 @@ private:
     QVector<SimulationThread*> m_threads;
 
     // work data, but not accessed by threads
-    QSet<QByteArray> m_work_raw;
+    QSet<QByteArray> m_work_ids_generated_or_done;
+    QMap<QByteArray, QString> m_work_done_saved, m_work_done_unsaved;
 };
 
 #endif // TESTER_H
