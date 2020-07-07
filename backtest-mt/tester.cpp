@@ -373,7 +373,7 @@ void Tester::processFinishedWork()
     }
 }
 
-void Tester::printHighScores( const QMap<Coin, QString> &scores, QTextStream &out, QString description, const int print_count )
+void Tester::printHighScores( const QMultiMap<Coin, QString> &scores, QTextStream &out, QString description, const int print_count )
 {
     Global::centerString( description, QChar('='), 40 );
 
@@ -382,8 +382,10 @@ void Tester::printHighScores( const QMap<Coin, QString> &scores, QTextStream &ou
 
     const int score_count = scores.size();
     int scores_iterated = 0;
-    for ( QMap<Coin, QString>::const_iterator j = scores.begin(); j != scores.end(); j++ )
+    for ( QMultiMap<Coin, QString>::const_iterator j = scores.begin(); j != scores.end(); j++ )
     {
+        // note: this is a multimap, so we can see identical scores with different configurations
+
         // only show the 5 highest scores
         if ( ++scores_iterated < score_count - print_count +1 )
             continue;

@@ -38,7 +38,7 @@ public:
     void startWork();
     void processFinishedWork();
 
-    void printHighScores( const QMap<Coin, QString> &scores, QTextStream &out, QString description, const int print_count = 3 );
+    void printHighScores( const QMultiMap<Coin, QString> &scores, QTextStream &out, QString description, const int print_count = 3 );
 
     void saveFinishedWork();
     void loadFinishedWork();
