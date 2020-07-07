@@ -382,7 +382,7 @@ void Tester::printHighScores( const QMultiMap<Coin, QString> &scores, QTextStrea
 
     const int score_count = scores.size();
     int scores_iterated = 0;
-    for ( QMultiMap<Coin, QString>::const_iterator j = scores.begin(); j != scores.end(); j++ )
+    for ( QMultiMap<Coin, QString>::const_iterator j = scores.constBegin(); j != scores.constEnd(); j++ )
     {
         // note: this is a multimap, so we can see identical scores with different configurations
 

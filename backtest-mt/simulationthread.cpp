@@ -13,6 +13,43 @@
 #include <QMutex>
 #include <QMutexLocker>
 
+QByteArray SimulationTask::getRaw() const
+{
+    QByteArray raw;
+    raw += m_samples_start_offset;
+
+    raw += m_strategy_signal_type;
+    raw += m_base_ma_length;
+    raw += m_rsi_length;
+    raw += m_rsi_ma_length;
+    raw += m_allocation_func;
+
+    for ( int i = 0; i < m_modulation_length_slow.size(); i++ )
+        raw += m_modulation_length_slow.value( i );
+
+    for ( int i = 0; i < m_modulation_length_fast.size(); i++ )
+        raw += m_modulation_length_fast.value( i );
+
+    for ( int i = 0; i < m_modulation_factor.size(); i++ )
+        raw += m_modulation_factor.value( i );
+
+    for ( int i = 0; i < m_modulation_threshold.size(); i++ )
+        raw += m_modulation_threshold.value( i );
+
+    // append the base currency, then for each set of markets, append '.<quote currencies>'
+    raw += m_markets_tested.first().first().getBase();
+    for ( int i = 0; i < m_markets_tested.size(); i++ )
+    {
+        raw += '.';
+        for ( int j = 0; j < m_markets_tested[ i ].size(); j++ )
+            raw += m_markets_tested[ i ][ j ].getQuote();
+    }
+
+    //        kDebug() << raw.toHex();
+
+    return raw;
+}
+
 SimulationThread::SimulationThread( const int id )
     : QThread(),
       m_id( id )
@@ -124,7 +161,7 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
     QString latest_ts_market;
 
     /// calculate latest index-0 timestamp out of all markets
-    for ( QMap<Market, PriceData>::const_iterator i = price_data->begin(); i != price_data->end(); i++ )
+    for ( QMap<Market, PriceData>::const_iterator i = price_data->constBegin(); i != price_data->constEnd(); i++ )
     {
         const Market &market = i.key();
         const PriceData &data = i.value();
@@ -152,7 +189,7 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
     /// step 2: construct current prices and signals loop from a common starting point m_latest_ts
     qint64 base_elapsed = 0;
     int market_i = -1;
-    for ( QMap<Market, PriceData>::const_iterator i = price_data->begin(); i != price_data->end(); i++ )
+    for ( QMap<Market, PriceData>::const_iterator i = price_data->constBegin(); i != price_data->constEnd(); i++ )
     {
         ++market_i;
 
@@ -394,12 +431,12 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
 
 //        QMap<QString, Coin> prices = sp.getCurrentPrices();
 //        QString prices_str;
-//        for ( QMap<QString, Coin>::const_iterator i = prices.begin(); i != prices.end(); i++ )
+//        for ( QMap<QString, Coin>::const_iterator i = prices.constBegin(); i != prices.constEnd(); i++ )
 //            prices_str += QString( " %1" ).arg( i.value() );
 
 //        QMap<QString, Coin> signal_prices = sp.getSignalPrices();
 //        QString signal_prices_str;
-//        for ( QMap<QString, Coin>::const_iterator i = signal_prices.begin(); i != signal_prices.end(); i++ )
+//        for ( QMap<QString, Coin>::const_iterator i = signal_prices.constBegin(); i != signal_prices.constEnd(); i++ )
 //            signal_prices_str += QString( " %1" ).arg( i.value() );
     }
     while ( current_secs < END_TIME );

@@ -15,42 +15,7 @@
 
 struct SimulationTask
 {
-    QByteArray getRaw() const
-    {
-        QByteArray raw;
-        raw += m_samples_start_offset;
-
-        raw += m_strategy_signal_type;
-        raw += m_base_ma_length;
-        raw += m_rsi_length;
-        raw += m_rsi_ma_length;
-        raw += m_allocation_func;
-
-        for ( int i = 0; i < m_modulation_length_slow.size(); i++ )
-            raw += m_modulation_length_slow.value( i );
-
-        for ( int i = 0; i < m_modulation_length_fast.size(); i++ )
-            raw += m_modulation_length_fast.value( i );
-
-        for ( int i = 0; i < m_modulation_factor.size(); i++ )
-            raw += m_modulation_factor.value( i );
-
-        for ( int i = 0; i < m_modulation_threshold.size(); i++ )
-            raw += m_modulation_threshold.value( i );
-
-        // append the base currency, then for each set of markets, append '.<quote currencies>'
-        raw += m_markets_tested.first().first().getBase();
-        for ( int i = 0; i < m_markets_tested.size(); i++ )
-        {
-            raw += '.';
-            for ( int j = 0; j < m_markets_tested[ i ].size(); j++ )
-                raw += m_markets_tested[ i ][ j ].getQuote();
-        }
-
-//        kDebug() << raw.toHex();
-
-        return raw;
-    }
+    QByteArray getRaw() const;
 
     // general options
     QVector<QVector<Market>> m_markets_tested;
