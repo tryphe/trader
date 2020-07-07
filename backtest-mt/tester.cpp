@@ -104,9 +104,7 @@ Tester::Tester()
     else
         generateWork();
 
-//    generateCustomWork();
-
-    kDebug() << "generated" << m_work_queued.size() << "work units";
+    kDebug() << "generated" << m_work_queued.size() << "work units, skipped" << m_work_skipped_duplicate << "duplicate work units";
 
     // start threads
     startWork();
@@ -303,6 +301,7 @@ void Tester::generateRandomWork()
     const QByteArray work_raw = work->getRaw();
     if ( m_work_ids_generated_or_done.contains( work_raw ) )
     {
+        m_work_skipped_duplicate++;
         delete work;
         return;
     }
@@ -310,21 +309,6 @@ void Tester::generateRandomWork()
     m_work_ids_generated_or_done += work_raw;
     m_work_queued += work;
     m_work_count_total++;
-}
-
-void Tester::generateCustomWork()
-{
-    // TODO: add m_samples_start_offset, m_markets_tested
-//    SimulationTask *work = new SimulationTask;
-
-//    work->m_strategy_signal_type = RSI;
-//    work->m_base_ma_length = 40;
-//    work->m_rsi_length = 75;
-//    work->m_rsi_ma_length = 25;
-//    work->m_allocation_func = 21;
-
-//    m_work_queued += work;
-//    m_work_count_total++;
 }
 
 void Tester::startWork()
@@ -366,29 +350,34 @@ void Tester::processFinishedWork()
         tasks_processed++;
 
         // copy normalized scores into scores
-        QMap<int, Coin> scores;
-        for ( int j = 0; j < task->m_scores.size(); j++ )
-            scores[ j ] = task->m_scores.value( j ) / MARKET_VARIATIONS;
+        QVector<Coin> scores;
+        for ( int score_type = 0; score_type < task->m_scores.size(); score_type++ )
+            scores += task->m_scores.value( score_type ) / MARKET_VARIATIONS;
 
         // prepend scores to simulation result
         const QString score_str = QString( "1000d[%1]-300d[%2]-300d/1000d[%3]-peak[%4]-final[%5]:" )
-                .arg( scores[ 0 ] )
-                .arg( scores[ 1 ] )
-                .arg( scores[ 2 ] )
-                .arg( scores[ 3 ] )
-                .arg( scores[ 4 ] );
+                .arg( scores[ 0 ], -12, QChar('0') )
+                .arg( scores[ 1 ], -12, QChar('0') )
+                .arg( scores[ 2 ], -12, QChar('0') )
+                .arg( scores[ 3 ], -12, QChar('0') )
+                .arg( scores[ 4 ], -12, QChar('0') );
 
         task->m_simulation_result.prepend( score_str );
 
-        const QString score_out = QString( "------------------------------------------------------------------------------------\n%1\n%2" )
-                                   .arg( task->m_simulation_result )
-                                   .arg( task->m_alpha_readout );
+//        const QString score_out = QString( "------------------------------------------------------------------------------------\n%1\n%2" )
+//                                   .arg( task->m_simulation_result )
+//                                   .arg( task->m_alpha_readout );
 
         // copy scores into local data
-        for ( int j = 0; j < scores.size(); j++ )
-            m_highscores[ j ][ scores[ j ] ] = score_out;
+        for ( int score_type = 0; score_type < scores.size(); score_type++ )
+        {
+            const Coin &score = scores[ score_type ];
 
-        m_work_done_unsaved[ task->getRaw() ] = task->m_simulation_result;
+            m_highscores_by_result[ score_type ][ task->m_simulation_result ] = score;
+            m_highscores_by_score[ score_type ].insert( score, task->m_simulation_result );
+        }
+
+        m_work_results_unsaved[ task->getRaw() ] = task->m_simulation_result;
     }
 
     // cleanup finished work
@@ -414,11 +403,11 @@ void Tester::processFinishedWork()
 
     QTextStream out_savefile( &savefile );
 
-    printHighScores( m_highscores[ 0 ], out_savefile, "1000d" );
-    printHighScores( m_highscores[ 1 ], out_savefile, "300d" );
-    printHighScores( m_highscores[ 2 ], out_savefile, "300d/1000d" );
-    printHighScores( m_highscores[ 3 ], out_savefile, "PEAK" );
-    printHighScores( m_highscores[ 4 ], out_savefile, "FINAL" );
+    printHighScores( m_highscores_by_score[ 0 ], out_savefile, "1000d" );
+    printHighScores( m_highscores_by_score[ 1 ], out_savefile, "300d" );
+    printHighScores( m_highscores_by_score[ 2 ], out_savefile, "300d/1000d" );
+    printHighScores( m_highscores_by_score[ 3 ], out_savefile, "PEAK" );
+    printHighScores( m_highscores_by_score[ 4 ], out_savefile, "FINAL" );
 
     // save the buffer
     out_savefile.flush();
@@ -465,7 +454,7 @@ void Tester::printHighScores( const QMap<Coin, QString> &scores, QTextStream &ou
 
 void Tester::saveFinishedWork()
 {
-    if ( m_work_done_unsaved.isEmpty() )
+    if ( m_work_results_unsaved.isEmpty() )
         return;
 
     // open data file
@@ -483,24 +472,30 @@ void Tester::saveFinishedWork()
     // save state
     int work_ids_saved_count = 0;
     QVector<QByteArray> work_ids_raw_saved;
-    for ( QMap<QByteArray, QString>::const_iterator i = m_work_done_unsaved.constBegin(); i != m_work_done_unsaved.constEnd(); i++ )
+    for ( QMap<QByteArray, QString>::const_iterator i = m_work_results_unsaved.constBegin(); i != m_work_results_unsaved.constEnd(); i++ )
     {
         QByteArray work_id = i.key().toHex();
+        const QString &work_result = i.value();
 
-        out_savefile << work_id;
-        out_savefile << ' ';
-        out_savefile << i.value();
-        out_savefile << '\n';
+        // save id
+        out_savefile << work_id << ' ';
+
+        // save scores
+        for ( QMap<int, QMap<QString, Coin>>::const_iterator j = m_highscores_by_result.constBegin(); j != m_highscores_by_result.constEnd(); j++ )
+            out_savefile << j.value()[ work_result ] << ' ';
+
+        // save result
+        out_savefile << work_result << '\n';
 
         // transfer into saved map, and queue for removal from unsaved map
-        m_work_done_saved[ work_id ] = i.value();
+        m_work_results_saved[ work_id ] = i.value();
         work_ids_raw_saved += i.key();
         work_ids_saved_count++;
     }
 
     // removed saved ids from unsaved map
     while ( !work_ids_raw_saved.isEmpty() )
-        m_work_done_unsaved.remove( work_ids_raw_saved.takeFirst() );
+        m_work_results_unsaved.remove( work_ids_raw_saved.takeFirst() );
 
     // save the buffer
     out_savefile.flush();
@@ -526,21 +521,42 @@ void Tester::loadFinishedWork()
     QList<QByteArray> data = loadfile.readAll().split( '\n' );
     int results_loaded = 0;
 
+    QByteArray work_id;
+    QString result, score_0, score_1, score_2, score_3, score_4;
     for ( int i = 0; i < data.size(); i++ )
     {
         QList<QByteArray> line_data = data[ i ].split( ' ' );
 
         // skip last empty line
-        if ( line_data.size() != 2 )
+        if ( line_data.size() != 7 )
             continue;
 
-        QByteArray work_id = QByteArray::fromHex( line_data[ 0 ] );
+        work_id = QByteArray::fromHex( line_data[ 0 ] );
+        result = line_data[ 6 ];
+
+        // TODO: add loops for this
+        score_0 = line_data[ 1 ];
+        score_1 = line_data[ 2 ];
+        score_2 = line_data[ 3 ];
+        score_3 = line_data[ 4 ];
+        score_4 = line_data[ 5 ];
+
+        m_highscores_by_result[ 0 ][ result ] = score_0;
+        m_highscores_by_result[ 1 ][ result ] = score_1;
+        m_highscores_by_result[ 2 ][ result ] = score_2;
+        m_highscores_by_result[ 3 ][ result ] = score_3;
+        m_highscores_by_result[ 4 ][ result ] = score_4;
+
+        m_highscores_by_score[ 0 ].insert( score_0, result );
+        m_highscores_by_score[ 1 ].insert( score_1, result );
+        m_highscores_by_score[ 2 ].insert( score_2, result );
+        m_highscores_by_score[ 3 ].insert( score_3, result );
+        m_highscores_by_score[ 4 ].insert( score_4, result );
 
         m_work_ids_generated_or_done += work_id;
-        m_work_done_saved[ work_id ] = line_data[ 1 ];
-        results_loaded++;
+        m_work_results_saved[ work_id ] = result;
 
-//        kDebug() << "loaded" << work_id.toHex() << line_data[ 1 ];
+        results_loaded++;
     }
 
     kDebug() << "loaded" << results_loaded << "historical work results";

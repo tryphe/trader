@@ -49,7 +49,7 @@ struct SimulationTask
 
 //        kDebug() << raw.toHex();
 
-        return raw /*QCryptographicHash::hash( raw, QCryptographicHash::Sha256 )*/;
+        return raw;
     }
 
     // general options

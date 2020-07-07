@@ -35,7 +35,6 @@ public:
 
     void generateWork();
     void generateRandomWork();
-    void generateCustomWork();
     void startWork();
     void processFinishedWork();
 
@@ -48,7 +47,8 @@ public Q_SLOTS:
     void onWorkTimer();
 
 private:
-    QMap<int, QMap<Coin, QString>> m_highscores;
+    QMap<int, QMultiMap<Coin, QString>> m_highscores_by_score; // for each score type, store kv<score,id>
+    QMap<int, QMap<QString, Coin>> m_highscores_by_result; // for each score type, store kv<id,score>
     QMap<QString, QString> m_alpha_readout;
 
     // price data
@@ -66,7 +66,10 @@ private:
 
     // work data, but not accessed by threads
     QSet<QByteArray> m_work_ids_generated_or_done;
-    QMap<QByteArray, QString> m_work_done_saved, m_work_done_unsaved;
+    QMap<QByteArray, QString> m_work_results_saved, m_work_results_unsaved;
+
+    // stats
+    int m_work_skipped_duplicate{ 0 };
 };
 
 #endif // TESTER_H
