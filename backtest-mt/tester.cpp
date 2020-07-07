@@ -180,98 +180,103 @@ void Tester::loadPriceData()
 
 void Tester::generateWork()
 {
-    // non-loop initialized options to generate
-    QVector<int> modulation_length_slow;
-    QVector<int> modulation_length_fast;
-    QVector<Coin> modulation_factor;
-    QVector<Coin> modulation_threshold;
+    // TODO: add m_samples_start_offset, m_markets_tested
 
-    for ( int signal_type = SMA; signal_type <= RSI; signal_type++ )
-    {
-    for ( int allocation_func = 0; allocation_func <= 22; allocation_func++ ) // 30m to 30m, increment 30m
-    {
-    for ( int base_ma_length = 10; base_ma_length <= 1000; base_ma_length *= 2 ) // 40 == 3.3h
-    {
-    for ( int rsi_length = 10; rsi_length <= 1000; rsi_length *= 3 ) // 1h to 1d
-    {
-    for ( int rsi_ma_length = 10; rsi_ma_length <= 1000; rsi_ma_length *= 3 )
-    {
-    // modulation 1
-//    for ( modulation_length_slow += 250; modulation_length_slow[ 0 ] <= 500; modulation_length_slow[ 0 ] *= 2 )
-//    {
-//    for ( modulation_length_fast += 10; modulation_length_fast[ 0 ] <= 30; modulation_length_fast[ 0 ] *= 3 )
-//    {
-//    for ( modulation_factor += Coin( "1.1" ); modulation_factor[ 0 ] <= Coin( "8.8" ); modulation_factor[ 0 ] *= Coin( "2" ) )
-//    {
-//    for ( modulation_threshold += Coin( "1" ); modulation_threshold[ 0 ] <= Coin( "1.95" ); modulation_threshold[ 0 ] *= Coin( "1.2" ) )
-//    {
-//    // modulation 2
-//    for ( modulation_length_slow += 250; modulation_length_slow[ 1 ] <= 500; modulation_length_slow[ 1 ] *= 2 )
-//    {
-//    for ( modulation_length_fast += 10; modulation_length_fast[ 1 ] <= 30; modulation_length_fast[ 1 ] *= 3 )
-//    {
-//    for ( modulation_factor += Coin( "1.1" ); modulation_factor[ 1 ] <= Coin( "8.8" ); modulation_factor[ 1 ] *= Coin( "2" ) )
-//    {
-//    for ( modulation_threshold += Coin( "1" ); modulation_threshold[ 1 ] <= Coin( "1.95" ); modulation_threshold[ 1 ] *= Coin( "1.2" ) )
-//    {
-    // modulation 3
-//    for ( modulation_length_slow += 62; modulation_length_slow[ 2 ] <= 248; modulation_length_slow[ 2 ] *= 2 )
-//    {
-//    for ( modulation_length_fast += 6; modulation_length_fast[ 2 ] <= 12; modulation_length_fast[ 2 ] *= 2 )
-//    {
-//    for ( modulation_factor += Coin( "1" ); modulation_factor[ 2 ] <= Coin( "9" ); modulation_factor[ 2 ] *= Coin( "3" ) )
-//    {
-//    for ( modulation_threshold += Coin( "1" ); modulation_threshold[ 2 ] <= Coin( "1" ); modulation_threshold[ 2 ] *= Coin( "2" ) )
-//    {
-        // generate next work
-        SimulationTask *work = new SimulationTask;
-        work->m_strategy_signal_type = static_cast<SignalType>( signal_type );
-        work->m_base_ma_length = base_ma_length;
-        work->m_rsi_length = rsi_length;
-        work->m_rsi_ma_length = rsi_ma_length;
-        work->m_allocation_func = allocation_func;
+//    // non-loop initialized options to generate
+//    QVector<int> modulation_length_slow;
+//    QVector<int> modulation_length_fast;
+//    QVector<Coin> modulation_factor;
+//    QVector<Coin> modulation_threshold;
 
-        work->m_modulation_length_slow = modulation_length_slow;
-        work->m_modulation_length_fast = modulation_length_fast;
-        work->m_modulation_factor = modulation_factor;
-        work->m_modulation_threshold = modulation_threshold;
+//    for ( int signal_type = SMA; signal_type <= RSI; signal_type++ )
+//    {
+//    for ( int allocation_func = 0; allocation_func <= 22; allocation_func++ ) // 30m to 30m, increment 30m
+//    {
+//    for ( int base_ma_length = 10; base_ma_length <= 1000; base_ma_length *= 2 ) // 40 == 3.3h
+//    {
+//    for ( int rsi_length = 10; rsi_length <= 1000; rsi_length *= 3 ) // 1h to 1d
+//    {
+//    for ( int rsi_ma_length = 10; rsi_ma_length <= 1000; rsi_ma_length *= 3 )
+//    {
+//    // modulation 1
+////    for ( modulation_length_slow += 250; modulation_length_slow[ 0 ] <= 500; modulation_length_slow[ 0 ] *= 2 )
+////    {
+////    for ( modulation_length_fast += 10; modulation_length_fast[ 0 ] <= 30; modulation_length_fast[ 0 ] *= 3 )
+////    {
+////    for ( modulation_factor += Coin( "1.1" ); modulation_factor[ 0 ] <= Coin( "8.8" ); modulation_factor[ 0 ] *= Coin( "2" ) )
+////    {
+////    for ( modulation_threshold += Coin( "1" ); modulation_threshold[ 0 ] <= Coin( "1.95" ); modulation_threshold[ 0 ] *= Coin( "1.2" ) )
+////    {
+////    // modulation 2
+////    for ( modulation_length_slow += 250; modulation_length_slow[ 1 ] <= 500; modulation_length_slow[ 1 ] *= 2 )
+////    {
+////    for ( modulation_length_fast += 10; modulation_length_fast[ 1 ] <= 30; modulation_length_fast[ 1 ] *= 3 )
+////    {
+////    for ( modulation_factor += Coin( "1.1" ); modulation_factor[ 1 ] <= Coin( "8.8" ); modulation_factor[ 1 ] *= Coin( "2" ) )
+////    {
+////    for ( modulation_threshold += Coin( "1" ); modulation_threshold[ 1 ] <= Coin( "1.95" ); modulation_threshold[ 1 ] *= Coin( "1.2" ) )
+////    {
+//    // modulation 3
+////    for ( modulation_length_slow += 62; modulation_length_slow[ 2 ] <= 248; modulation_length_slow[ 2 ] *= 2 )
+////    {
+////    for ( modulation_length_fast += 6; modulation_length_fast[ 2 ] <= 12; modulation_length_fast[ 2 ] *= 2 )
+////    {
+////    for ( modulation_factor += Coin( "1" ); modulation_factor[ 2 ] <= Coin( "9" ); modulation_factor[ 2 ] *= Coin( "3" ) )
+////    {
+////    for ( modulation_threshold += Coin( "1" ); modulation_threshold[ 2 ] <= Coin( "1" ); modulation_threshold[ 2 ] *= Coin( "2" ) )
+////    {
+//        // generate next work
+//        SimulationTask *work = new SimulationTask;
+//        work->m_strategy_signal_type = static_cast<SignalType>( signal_type );
+//        work->m_base_ma_length = base_ma_length;
+//        work->m_rsi_length = rsi_length;
+//        work->m_rsi_ma_length = rsi_ma_length;
+//        work->m_allocation_func = allocation_func;
 
-        m_work_queued += work;
-        m_work_count_total++;
+//        work->m_modulation_length_slow = modulation_length_slow;
+//        work->m_modulation_length_fast = modulation_length_fast;
+//        work->m_modulation_factor = modulation_factor;
+//        work->m_modulation_threshold = modulation_threshold;
+
+//        m_work_queued += work;
+//        m_work_count_total++;
+////    }
+////    modulation_threshold.remove( 2 );
+////    }
+////    modulation_factor.remove( 2 );
+////    }
+////    modulation_length_fast.remove( 2 );
+////    }
+////    modulation_length_slow.remove( 2 );
+////    }
+////    modulation_threshold.remove( 1 );
+////    }
+////    modulation_factor.remove( 1 );
+////    }
+////    modulation_length_fast.remove( 1 );
+////    }
+////    modulation_length_slow.remove( 1 );
+////    }
+////    modulation_threshold.remove( 0 );
+////    }
+////    modulation_factor.remove( 0 );
+////    }
+////    modulation_length_fast.remove( 0 );
+////    }
+////    modulation_length_slow.remove( 0 );
 //    }
-//    modulation_threshold.remove( 2 );
 //    }
-//    modulation_factor.remove( 2 );
 //    }
-//    modulation_length_fast.remove( 2 );
 //    }
-//    modulation_length_slow.remove( 2 );
 //    }
-//    modulation_threshold.remove( 1 );
-//    }
-//    modulation_factor.remove( 1 );
-//    }
-//    modulation_length_fast.remove( 1 );
-//    }
-//    modulation_length_slow.remove( 1 );
-//    }
-//    modulation_threshold.remove( 0 );
-//    }
-//    modulation_factor.remove( 0 );
-//    }
-//    modulation_length_fast.remove( 0 );
-//    }
-//    modulation_length_slow.remove( 0 );
-    }
-    }
-    }
-    }
-    }
 }
 
 void Tester::generateRandomWork()
 {
     SimulationTask *work = new SimulationTask;
+
+    work->m_markets_tested += m_price_data_0.first().keys().toVector();
+    work->m_markets_tested += m_price_data_1.first().keys().toVector();
 
     work->m_samples_start_offset = WORK_SAMPLES_START_OFFSET;
 
@@ -309,16 +314,17 @@ void Tester::generateRandomWork()
 
 void Tester::generateCustomWork()
 {
-    SimulationTask *work = new SimulationTask;
+    // TODO: add m_samples_start_offset, m_markets_tested
+//    SimulationTask *work = new SimulationTask;
 
-    work->m_strategy_signal_type = RSI;
-    work->m_base_ma_length = 40;
-    work->m_rsi_length = 75;
-    work->m_rsi_ma_length = 25;
-    work->m_allocation_func = 21;
+//    work->m_strategy_signal_type = RSI;
+//    work->m_base_ma_length = 40;
+//    work->m_rsi_length = 75;
+//    work->m_rsi_ma_length = 25;
+//    work->m_allocation_func = 21;
 
-    m_work_queued += work;
-    m_work_count_total++;
+//    m_work_queued += work;
+//    m_work_count_total++;
 }
 
 void Tester::startWork()

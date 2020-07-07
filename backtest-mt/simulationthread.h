@@ -38,10 +38,23 @@ struct SimulationTask
         for ( int i = 0; i < m_modulation_threshold.size(); i++ )
             raw += m_modulation_threshold.value( i );
 
+        // append the base currency, then for each set of markets, append '.<quote currencies>'
+        raw += m_markets_tested.first().first().getBase();
+        for ( int i = 0; i < m_markets_tested.size(); i++ )
+        {
+            raw += '.';
+            for ( int j = 0; j < m_markets_tested[ i ].size(); j++ )
+                raw += m_markets_tested[ i ][ j ].getQuote();
+        }
+
+//        kDebug() << raw.toHex();
+
         return raw /*QCryptographicHash::hash( raw, QCryptographicHash::Sha256 )*/;
     }
 
     // general options
+    QVector<QVector<Market>> m_markets_tested;
+
     int m_samples_start_offset{ 0 };
 
     SignalType m_strategy_signal_type{ SMA };
