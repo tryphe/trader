@@ -163,6 +163,21 @@ static const QLatin1String WAVES_COMMAND_POST_ORDER_NEW     ( "on-post-matcher/o
 
 namespace Global {
 
+static inline void centerString( QString &s, const QChar pad, const int field_size )
+{
+    if ( field_size < 1 )
+        return;
+
+    int sz = s.size();
+    const int field_half = ( field_size / 2 ) + ( sz / 2 );
+
+    while ( sz++ < field_half )
+        s.prepend( pad );
+
+    while ( sz++ < field_size )
+        s.append( pad );
+}
+
 static inline quint32 getSecureRandomRange32( const quint32 min, const quint32 max )
 {
     static const quint32 max_val = 0xFFFFFFFF;
