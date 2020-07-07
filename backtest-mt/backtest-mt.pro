@@ -12,7 +12,6 @@ LIBS += -lgmp
 TARGET = backtest-mt
 TEMPLATE = app
 
-
 SOURCES += main.cpp \
     ../daemon/alphatracker.cpp \
     ../daemon/coinamount.cpp \
