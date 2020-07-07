@@ -24,65 +24,6 @@
 
 Tester::Tester()
 {
-    //    kDebug() << sp.allocationFunc21( Coin("1") ) << sp.allocationFunc21( Coin("3") );
-//    kDebug() << sp.allocationFunc22( Coin("1") ) << sp.allocationFunc22( Coin("3") );
-
-//    Coin p( CoinAmount::COIN * 2300 + CoinAmount::SUBSATOSHI );
-//    kDebug() << p;
-//    exit( 0 );
-
-//    qint64 t0 = QDateTime::currentMSecsSinceEpoch();
-
-//    SpruceV2 sp;
-//    sp.setBaseCurrency( "BTC" );
-//    sp.setVisualization( true );
-
-//    for ( int i = 0; i < 1; i++ )
-//    {
-//        // add current quantities
-//        sp.clearCurrentQtys();
-//        sp.setCurrentQty( "BTC",   Coin( "0.0" ) );
-//        sp.setCurrentQty( "DASH",  Coin( "100" ) );
-//        sp.setCurrentQty( "LTC",   Coin( "100" ) );
-//        sp.setCurrentQty( "USDN",  Coin( "10000" ) );
-//        sp.setCurrentQty( "WAVES", Coin( "10000" ) );
-//        sp.setCurrentQty( "XMR",   Coin( "100" ) );
-//        sp.setCurrentQty( "ZEC",   Coin( "100" ) );
-
-//        // add current prices
-//        sp.clearCurrentPrices();
-//        sp.setCurrentPrice( "DASH",  Coin( "0.00802" ) );
-//        sp.setCurrentPrice( "LTC",   Coin( "0.00478" ) );
-//        sp.setCurrentPrice( "USDN",  Coin( "0.000102" ) );
-//        sp.setCurrentPrice( "WAVES", Coin( "0.000117" ) );
-//        sp.setCurrentPrice( "XMR",   Coin( "0.00681" ) );
-//        sp.setCurrentPrice( "ZEC",   Coin( "0.00533" ) );
-
-//        // add signal prices
-//        sp.clearSignalPrices();
-//        sp.setSignalPrice( "DASH",  Coin( "0.00975" ) );
-//        sp.setSignalPrice( "LTC",   Coin( "0.00713" ) );
-//        sp.setSignalPrice( "USDN",  Coin( "0.000116" ) );
-//        sp.setSignalPrice( "WAVES", Coin( "0.000126" ) );
-//        sp.setSignalPrice( "XMR",   Coin( "0.00756" ) );
-//        sp.setSignalPrice( "ZEC",   Coin( "0.00559" ) );
-
-//        // calculate ratio table
-//        if ( !sp.calculateAmountToShortLong() )
-//        {
-//            kDebug() << "calculateAmountToShortLong() failed";
-//            return;
-//        }
-
-//        //kDebug() << sp.getQuantityToShortLongMap();
-//        //kDebug() << sp.getBaseCapital();
-
-//        kDebug() << sp.getVisualization();
-//    }
-
-//    return;
-//    kDebug() << "took" << QDateTime::currentMSecsSinceEpoch() - t0 << "ms";
-
     SignalTest t;
     t.test();
 
@@ -349,18 +290,17 @@ void Tester::processFinishedWork()
         work_to_delete += task;
         tasks_processed++;
 
-        // copy normalized scores into scores
-        QVector<Coin> scores;
+        // normalize scores
         for ( int score_type = 0; score_type < task->m_scores.size(); score_type++ )
-            scores += task->m_scores.value( score_type ) / MARKET_VARIATIONS;
+            task->m_scores[ score_type ] = task->m_scores.value( score_type ) / MARKET_VARIATIONS;
 
         // prepend scores to simulation result
         const QString score_str = QString( "1000d[%1]-300d[%2]-300d/1000d[%3]-peak[%4]-final[%5]:" )
-                .arg( scores[ 0 ], -12, QChar('0') )
-                .arg( scores[ 1 ], -12, QChar('0') )
-                .arg( scores[ 2 ], -12, QChar('0') )
-                .arg( scores[ 3 ], -12, QChar('0') )
-                .arg( scores[ 4 ], -12, QChar('0') );
+                .arg( task->m_scores[ 0 ], -12, QChar('0') )
+                .arg( task->m_scores[ 1 ], -12, QChar('0') )
+                .arg( task->m_scores[ 2 ], -12, QChar('0') )
+                .arg( task->m_scores[ 3 ], -12, QChar('0') )
+                .arg( task->m_scores[ 4 ], -12, QChar('0') );
 
         task->m_simulation_result.prepend( score_str );
 
@@ -369,9 +309,9 @@ void Tester::processFinishedWork()
 //                                   .arg( task->m_alpha_readout );
 
         // copy scores into local data
-        for ( int score_type = 0; score_type < scores.size(); score_type++ )
+        for ( int score_type = 0; score_type < task->m_scores.size(); score_type++ )
         {
-            const Coin &score = scores[ score_type ];
+            const Coin &score = task->m_scores[ score_type ];
 
             m_highscores_by_result[ score_type ][ task->m_simulation_result ] = score;
             m_highscores_by_score[ score_type ].insert( score, task->m_simulation_result );
@@ -435,9 +375,10 @@ void Tester::processFinishedWork()
 
 void Tester::printHighScores( const QMap<Coin, QString> &scores, QTextStream &out, QString description, const int print_count )
 {
-    const QString title = QString( "========================== %1 ==========================" ).arg( description );
-    out << title;
-    kDebug() << title;
+    Global::centerString( description, QChar('='), 40 );
+
+    out << description;
+    kDebug() << description;
 
     const int score_count = scores.size();
     int scores_iterated = 0;
