@@ -45,7 +45,7 @@ public:
    explicit SimulationThread( const int id = 0 );
    ~SimulationThread();
 
-    int m_id, m_work_id;
+    int m_id;
 
     // price data pointers
     QVector<QMap<Market, PriceData>*> m_price_data;

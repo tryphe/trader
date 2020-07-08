@@ -214,15 +214,15 @@ void Tester::generateRandomWork()
 {
     SimulationTask *work = new SimulationTask;
 
-    const int base_multiplier = 10;
+    const int base_multiplier = 5;
     work->m_markets_tested += m_price_data_0.first().keys().toVector();
     work->m_markets_tested += m_price_data_1.first().keys().toVector();
 
     work->m_samples_start_offset = WORK_SAMPLES_START_OFFSET;
     work->m_strategy_signal_type = /*Global::getSecureRandomRange32( 0, 1 ) == 0 ? SMA : */RSI;
     work->m_base_ma_length = 40;
-    work->m_rsi_length = std::pow( Global::getSecureRandomRange32( 1, 15 ), 2 ) * base_multiplier;
-    work->m_rsi_ma_length = std::pow( Global::getSecureRandomRange32( 1, 15 ), 2 ) * base_multiplier;
+    work->m_rsi_length = std::pow( Global::getSecureRandomRange32( 1, 20 ), 2 ) * base_multiplier;
+    work->m_rsi_ma_length = std::pow( Global::getSecureRandomRange32( 1, 20 ), 2 ) * base_multiplier;
     work->m_allocation_func = Global::getSecureRandomRange32( 0, 22 );
 
     // select modulation, 50% of the time select up to 2 modulations
@@ -231,8 +231,8 @@ void Tester::generateRandomWork()
 //    {
 //        for ( int i = 0; i < modulation_count; i++ )
 //        {
-//            work->m_modulation_length_slow += std::pow( Global::getSecureRandomRange32( 1, 15 ), 2 ) * base_multiplier;
-//            work->m_modulation_length_fast += std::pow( Global::getSecureRandomRange32( 1, 15 ), 2 ) * base_multiplier;
+//            work->m_modulation_length_slow += std::pow( Global::getSecureRandomRange32( 1, 20 ), 2 ) * base_multiplier;
+//            work->m_modulation_length_fast += std::pow( Global::getSecureRandomRange32( 1, 20 ), 2 ) * base_multiplier;
 //            work->m_modulation_factor += CoinAmount::COIN + ( Coin("0.1") * Global::getSecureRandomRange32( 1, 80 ) );
 //            work->m_modulation_threshold += CoinAmount::COIN + ( Coin("0.1") * Global::getSecureRandomRange32( 0, 30 ) );
 //        }

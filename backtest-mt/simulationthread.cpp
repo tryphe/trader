@@ -78,10 +78,13 @@ void SimulationThread::run()
     ext_mutex->lock();
     while ( ext_work_queued->size() > 0 )
     {
-        ++*ext_work_count_started;
-        m_work_id = *ext_work_count_started;
+        // get new work, iterate work started
         m_work = ext_work_queued->takeFirst();
-        int tasks_total = *ext_work_count_total;
+        ++*ext_work_count_started;
+
+        // copy number of work units started/total so we can print them out of lock
+        const int work_id = *ext_work_count_started;
+        const int tasks_total = *ext_work_count_total;
         ext_mutex->unlock();
 
         // run simulation on each map of price data
@@ -91,7 +94,7 @@ void SimulationThread::run()
             if ( m_price_data.size() > 1 )
                 kDebug() << QString( "[Thread %1] [%2 of %3] [Phase %4] started" )
                              .arg( m_id )
-                             .arg( m_work_id )
+                             .arg( work_id )
                              .arg( tasks_total )
                              .arg( i );
 
@@ -99,9 +102,10 @@ void SimulationThread::run()
             runSimulation( m_price_data[ i ] );
         }
 
+        // relock, iterate done counter, submit done work
         ext_mutex->lock();
         ++*ext_work_count_done;
-        ext_work_done->operator <<( m_work );
+        ext_work_done->operator +=( m_work );
     }
     ext_mutex->unlock();
 
@@ -112,7 +116,7 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
 {
     static const int CANDLE_INTERVAL_SECS = 300; // 5 minutes per sample
     static const Coin ORDER_SIZE_LIMIT = Coin( "0.005" );
-    static const Coin FEE = -Coin( CoinAmount::SATOSHI * 200 );
+    static const Coin FEE = -Coin( CoinAmount::SATOSHI * 500 );
     static const bool INVERT_RSI_MA = true;
     const Coin MAX_TAKE_PER_SIMULATION( Coin("0.001428571") * m_work->m_base_ma_length ); // we can only take so much btc per relative base length
     const int BASE_MA_LENGTH = m_work->m_base_ma_length; // copy to skip ptr walk
