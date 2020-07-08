@@ -20,23 +20,22 @@ struct SimulationTask
     // general options
     QVector<QVector<Market>> m_markets_tested;
 
-    int m_samples_start_offset{ 0 };
+    quint32 m_samples_start_offset{ 0 };
+    quint8 m_strategy_signal_type{ SMA };
+    quint16 m_base_ma_length{ 0 };
+    quint16 m_rsi_length{ 0 };
+    quint16 m_rsi_ma_length{ 0 };
+    quint8 m_allocation_func{ 0 };
 
-    SignalType m_strategy_signal_type{ SMA };
-    int m_base_ma_length{ 0 };
-    int m_rsi_length{ 0 };
-    int m_rsi_ma_length{ 0 };
-    int m_allocation_func{ 0 };
-
-    QVector<int> m_modulation_length_slow;
-    QVector<int> m_modulation_length_fast;
+    QVector<quint16> m_modulation_length_slow;
+    QVector<quint16> m_modulation_length_fast;
     QVector<Coin> m_modulation_factor;
     QVector<Coin> m_modulation_threshold;
 
     // results
     QString m_simulation_result;
     QString m_alpha_readout;
-    QMap<int, Coin> m_scores;
+    QMap<quint8, Coin> m_scores;
 };
 
 class SimulationThread : public QThread

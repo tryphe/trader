@@ -12,42 +12,47 @@
 #include <QThread>
 #include <QMutex>
 #include <QMutexLocker>
+#include <QDataStream>
 
 QByteArray SimulationTask::getRaw() const
 {
-    QByteArray raw;
-    raw += m_samples_start_offset;
+    int i, j;
+    QByteArray bytes;
+    QDataStream s( &bytes, QIODevice::WriteOnly );
 
-    raw += m_strategy_signal_type;
-    raw += m_base_ma_length;
-    raw += m_rsi_length;
-    raw += m_rsi_ma_length;
-    raw += m_allocation_func;
+    s << m_samples_start_offset;
+    s << m_strategy_signal_type;
+    s << m_base_ma_length;
+    s << m_rsi_length;
+    s << m_rsi_ma_length;
+    s << m_allocation_func;
 
-    for ( int i = 0; i < m_modulation_length_slow.size(); i++ )
-        raw += m_modulation_length_slow.value( i );
+    for ( i = 0; i < m_modulation_length_slow.size(); i++ )
+        s << m_modulation_length_slow.value( i );
 
-    for ( int i = 0; i < m_modulation_length_fast.size(); i++ )
-        raw += m_modulation_length_fast.value( i );
+    for ( i = 0; i < m_modulation_length_fast.size(); i++ )
+        s << m_modulation_length_fast.value( i );
 
-    for ( int i = 0; i < m_modulation_factor.size(); i++ )
-        raw += m_modulation_factor.value( i );
+    // note: use += here for strings
+    for ( i = 0; i < m_modulation_factor.size(); i++ )
+        bytes += m_modulation_factor.value( i ).toCompact();
 
-    for ( int i = 0; i < m_modulation_threshold.size(); i++ )
-        raw += m_modulation_threshold.value( i );
+    for ( i = 0; i < m_modulation_threshold.size(); i++ )
+        bytes += m_modulation_threshold.value( i ).toCompact();
 
-    // append the base currency, then for each set of markets, append '.<quote currencies>'
-    raw += m_markets_tested.first().first().getBase();
-    for ( int i = 0; i < m_markets_tested.size(); i++ )
+//    kDebug() << "config bytes0" << bytes.size() << bytes.toHex();
+
+    bytes += m_markets_tested.first().first().getBase().toLocal8Bit();
+    for ( i = 0; i < m_markets_tested.size(); i++ )
     {
-        raw += '.';
-        for ( int j = 0; j < m_markets_tested[ i ].size(); j++ )
-            raw += m_markets_tested[ i ][ j ].getQuote();
+        bytes += '.';
+        for ( j = 0; j < m_markets_tested[ i ].size(); j++ )
+            bytes += m_markets_tested[ i ][ j ].getQuote().toLocal8Bit();
     }
 
-    //        kDebug() << raw.toHex();
+//    kDebug() << "config bytes1" << bytes.size() << bytes.toHex();
 
-    return raw;
+    return bytes;
 }
 
 SimulationThread::SimulationThread( const int id )
@@ -96,7 +101,7 @@ void SimulationThread::run()
 
         ext_mutex->lock();
         ++*ext_work_count_done;
-        ext_work_done->operator +=( m_work );
+        ext_work_done->operator <<( m_work );
     }
     ext_mutex->unlock();
 
@@ -182,9 +187,7 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
     qint64 current_secs = m_latest_ts;
 
     for ( int i = 0; i < price_data->size(); i++ )
-    {
         m_signals += SignalContainer();
-    }
 
     /// step 2: construct current prices and signals loop from a common starting point m_latest_ts
     qint64 base_elapsed = 0;
@@ -208,7 +211,7 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
         // turn rsi_ma if non-zero
         if ( m_work->m_strategy_signal_type == RSI && m_work->m_rsi_ma_length > 0 )
             strategy_signal.setGeneralOption0( m_work->m_rsi_ma_length );
-        strategy_signal.setType( m_work->m_strategy_signal_type );
+        strategy_signal.setType( static_cast<SignalType>( m_work->m_strategy_signal_type ) );
         strategy_signal.setMaxSamples( m_work->m_rsi_length );
 
 //        price_signal.setType( SMA ); // set price MA type
