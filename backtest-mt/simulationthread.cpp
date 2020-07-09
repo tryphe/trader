@@ -42,15 +42,13 @@ QByteArray SimulationTask::getRaw() const
 
 //    kDebug() << "config bytes0" << bytes.size() << bytes.toHex();
 
-    bytes += m_markets_tested.first().first().getBase().toLocal8Bit();
+    bytes += m_markets_tested.first().first().getBase();
     for ( i = 0; i < m_markets_tested.size(); i++ )
     {
         bytes += '.';
         for ( j = 0; j < m_markets_tested[ i ].size(); j++ )
-            bytes += m_markets_tested[ i ][ j ].getQuote().toLocal8Bit();
+            bytes += m_markets_tested[ i ][ j ].getQuote();
     }
-
-//    kDebug() << "config bytes1" << bytes.size() << bytes.toHex();
 
     return bytes;
 }
@@ -165,9 +163,19 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
         sp.setCurrentQty( "ZEC",  Coin( "5" ) );
 
     /// step 1: initialize price data and fill signal samples while seeking ahead
-    // clear members
+    qint64 current_secs = 0;
     qint64 m_latest_ts = 0;
     QString latest_ts_market;
+
+    struct SignalContainer
+    {
+        Signal m_base_ma, m_price_ma, m_signal_ma;
+        qint64 m_current_idx{ 0 };
+    };
+    QVector<SignalContainer> m_signals;
+
+    for ( int i = 0; i < price_data->size(); i++ )
+        m_signals += SignalContainer();
 
     /// calculate latest index-0 timestamp out of all markets
     for ( QMap<Market, PriceData>::const_iterator i = price_data->constBegin(); i != price_data->constEnd(); i++ )
@@ -181,17 +189,6 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
         m_latest_ts = data.data_start_secs;
         latest_ts_market = market;
     }
-
-    struct SignalContainer
-    {
-        Signal m_base_ma, m_price_ma, m_signal_ma;
-        qint64 m_current_idx{ 0 };
-    };
-    QVector<SignalContainer> m_signals;
-    qint64 current_secs = m_latest_ts;
-
-    for ( int i = 0; i < price_data->size(); i++ )
-        m_signals += SignalContainer();
 
     /// step 2: construct current prices and signals loop from a common starting point m_latest_ts
     qint64 base_elapsed = 0;
@@ -283,7 +280,7 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
 
     /// step 3: loop until out of data samples. each iteration: set price, update ma, run simulation
     const int BASE_MA_LENGTH_D2 = BASE_MA_LENGTH / 2;
-    const int END_TIME = qint64(1591574400) - ( ( ( BASE_MA_LENGTH / 2 ) +1 ) * CANDLE_INTERVAL_SECS );
+    bool at_end = false;
 
     qint64 total_samples = 0; // total sample count, not per-market
     int simulation_keeper = 0;
@@ -294,8 +291,6 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
     QMap<QString, Coin>::const_iterator qsl_it;
     do
     {
-        current_secs += CANDLE_INTERVAL_SECS;
-
         // check to run simulation this iteration
         const bool should_run_simulation = ++simulation_keeper % BASE_MA_LENGTH == 0;
 
@@ -321,9 +316,13 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
             Signal &price_signal = container.m_price_ma;
             qint64 &current_idx = container.m_current_idx;
 
-            // read price
+            const int price_ahead_idx = current_idx + BASE_MA_LENGTH_D2;
+            if ( price_ahead_idx == data.size() -1 )
+                at_end = true;
+
+            // read price, iterate index
             const Coin &price = data.at( current_idx );
-            const Coin &price_ahead = data.at( current_idx + BASE_MA_LENGTH_D2 );
+            const Coin &price_ahead = data.at( price_ahead_idx );
             ++current_idx;
 
             assert( price_ahead.isGreaterThanZero() );
@@ -446,7 +445,7 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
 //        for ( QMap<QString, Coin>::const_iterator i = signal_prices.constBegin(); i != signal_prices.constEnd(); i++ )
 //            signal_prices_str += QString( " %1" ).arg( i.value() );
     }
-    while ( current_secs < END_TIME );
+    while ( !at_end );
 
     // set simulation id
     if ( m_work->m_simulation_result.isEmpty() )
