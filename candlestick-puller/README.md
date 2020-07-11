@@ -6,13 +6,13 @@ Dumps the candlesticks in OHLC4 `(open+high+low+close)/4` format, space delimite
 
 `p <epoch> <ohlc4 1> <ohlc4 2> <ohlc4 n>...`
 
-#### Market format
+### Market format
 The market format on Bittrex is backwards from most exchanges. Where `LTC-BTC` is for quantities of `LTC` priced in `BTC`, some other exchanges will format this as `BTC_LTC`. Arguments are taken in the former format, but the file name will be saved in the latter format.
 
-#### Exchange rate limits
+### Exchange rate limits
 Bittrex allows 1 command per second. Pulling candles for many markets may take hours, but at least you won't get banned. In order to support multiple pullers running and be nice to the API, it only sends a request after it gets a response.
 
-#### Usage
+### Usage
 
 `./candlestick-puller <bittrex market> <date> [invert flag]`
 
@@ -32,6 +32,6 @@ If you want to invert the price of a market, for example `BTC-USDT`, but you wan
 `./candlestick-puller BTC-USDT M12d12y2015 invert`
 Will save to the file `BITTREX.BTC_USDT.5` when finished.
 
-#### Candlestick intervals
+### Candlestick intervals
 
 Currently, only 5 minute candles are supported. Please fork the code if you would like to change it.
