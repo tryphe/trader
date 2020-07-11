@@ -3,6 +3,7 @@
 Rudimentary candlestick puller, currently only supports Bittrex, but can be modified to support more exchanges.
 
 Dumps the candlesticks in OHLC4 `(open+high+low+close)/4` format, space delimited text, prepended by the epoch timestamp of the first candle, and a marker `p`:
+
 `p <epoch> <ohlc4 1> <ohlc4 2> <ohlc4 n>...`
 
 #### Market format
