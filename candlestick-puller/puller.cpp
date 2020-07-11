@@ -63,8 +63,8 @@ Puller::Puller() :
     if ( !m.isValid() || !current_market.contains( QChar('-') ) )
         qFatal( QString( "error: invalid market: %1 (did you forget the '-'?)" ).arg( USAGE_EXAMPLE_STR ).toLocal8Bit() );
 
-    // construct filename, but reverse the market naming pattern.
-    filename = "BITTREX." + m.getQuote() + "_" + m.getBase() + ".5";
+    // construct filename, but reverse the market naming pattern (because it's backwards), except if we are inverting the price
+    filename = "BITTREX." + ( invert_price ? m.getBase() : m.getQuote() ) + "_" + ( invert_price ? m.getQuote() : m.getBase() )  + ".5";
 
     // exit if filename exists
     if ( QFile::exists( filename ) )
@@ -159,7 +159,7 @@ void Puller::onCheckFinished()
     savefile.close();
 
     // write stuff
-    qDebug() << "success!";
+    qDebug() << "success! results saved to" << filename;
     exit( 0 );
 }
 
