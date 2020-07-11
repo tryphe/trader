@@ -17,15 +17,18 @@ Bittrex allows 1 command per second. Pulling candles for many markets may take h
 `./candlestick-puller <bittrex market> <date> [invert flag]`
 
 Pull the `LTC-BTC` market:
+
 `./candlestick-puller LTC-BTC M3d7y2014`
 
 Where `M3d7y2014` is month 3, day 7, year 2014, the date `LTC` became tradeable.
 This will pull the candles and save to the file `BITTREX.BTC_LTC.5` when finished.
 
 If you don't know exactly where the data starts, you can specify `?` at the end of an earlier date, and it will scan until it finds populated data:
+
 `./candlestick-puller LTC-BTC M2d1y2014?`
 
 If you want to invert the price of a market, for example `BTC-USDT`, but you want the price in `BTC` and not `USDT`, you can invert it:
+
 `./candlestick-puller BTC-USDT M12d12y2015 invert`
 Will save to the file `BITTREX.BTC_USDT.5` when finished.
 
