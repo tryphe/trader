@@ -145,7 +145,7 @@ void Puller::onCheckFinished()
         if ( !state.isEmpty() )
             state += QChar( ' ' );
 
-        state += QString( "%1" ).arg( (*i).toCompact() );
+        state += (*i).toCompact();
     }
     // prepend a marker, and the start date
     state.prepend( QString( "p %1 " ).arg( start_sample_secs ) );
