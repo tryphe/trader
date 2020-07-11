@@ -226,6 +226,7 @@ void Puller::onNamReply( QNetworkReply *reply )
 
             //qDebug() << ohlc4 << d.toSecsSinceEpoch() << "last sample" << last_sample_secs;
 
+            assert( ohlc4.isGreaterThanZero() );
             samples += ohlc4;
         }
 
