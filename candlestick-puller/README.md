@@ -1,6 +1,6 @@
 # candlestick-puller
 
-Rudimentary candlestick puller, currently only supports Bittrex, but can be modified to support more exchanges.
+Rudimentary candlestick puller. Downloads and saves candles. Currently only supports Bittrex, but can be modified to support more exchanges.
 
 Dumps the candlesticks in OHLC4 `(open+high+low+close)/4` format, space delimited text, prepended by the epoch timestamp of the first candle, and a marker `p`:
 
