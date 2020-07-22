@@ -391,7 +391,6 @@ void CoinAmountTest::testPractical()
     // sanity testing
     assert( CoinAmount::COIN.isGreaterThanZero() ); // also avoids div0 in tests
     assert( CoinAmount::COIN_PARTS.isGreaterThanZero() );
-    assert( CoinAmount::COIN_PARTS_DIV.isGreaterThanZero() );
     assert( CoinAmount::toSatoshiFormatExpr( CoinAmount::SATOSHI_STR.toDouble() ) == CoinAmount::SATOSHI_STR );
     assert( CoinAmount::toSatoshiFormatExpr( CoinAmount::SATOSHI_REAL ) == CoinAmount::SATOSHI_STR );
     assert( CoinAmount::toSatoshiFormatExpr( CoinAmount::SATOSHI_REAL ).toDouble() == CoinAmount::SATOSHI_STR.toDouble() );
