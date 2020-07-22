@@ -87,9 +87,8 @@ Coin &Coin::operator /=( const Coin &c )
 
 Coin &Coin::operator *=( const Coin &c )
 {
-    mpz_mul( b, b, CoinAmount::COIN_PARTS.b );
     mpz_mul( b, b, c.b );
-    mpz_div( b, b, CoinAmount::COIN_PARTS_DIV.b );
+    mpz_div( b, b, CoinAmount::COIN.b );
     return *this;
 }
 

@@ -214,7 +214,11 @@ void CoinAmountTest::testUnit()
     c = c + Coin( "1.0" );
     assert( c == "3.00000000" );
 
-    // Position::calculateQuantity() q = btc / price
+    // Coin::operator *=( const Coin &c );
+    c = Coin( "1.1" );
+    c *= c;
+    assert( c == "1.21000000" );
+
     // Coin::operator /=( const Coin &c )
     c = QString( "0.09988888" );
     c /= Coin( "0.00000003" );

@@ -81,7 +81,7 @@ namespace CoinAmount
 
 // note: there MUST NOT be any Coin::operators used here as we might recursively reference another
 // uninitialized static variable, which is undefined and will break things
-static const Coin COIN = QString( "1.0" );
+static const Coin COIN = QString( "1" );
 static const Coin COIN_PARTS = QString( "10000000000000000" );
 static const Coin COIN_PARTS_DIV = QString( "100000000000000000000000000000000" ); // =COIN_PARTS^2
 static const Coin SATOSHI_PARTS = QString( "100000000" );
