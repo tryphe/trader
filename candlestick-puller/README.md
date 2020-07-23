@@ -32,6 +32,11 @@ If you want to invert the price of a market, for example `BTC-USDT`, but you wan
 `./candlestick-puller BTC-USDT M12d12y2015 invert`
 Will save to the file `BITTREX.BTC_USDT.5` when finished.
 
+### Updating existing candles
+To update a market, supply `update` for the date:
+
+`./candlestick-puller LTC-BTC update`
+
 ### Candlestick intervals
 
 Currently, only 5 minute candles are supported. Please fork the code if you would like to change it.

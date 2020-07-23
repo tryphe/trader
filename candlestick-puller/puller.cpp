@@ -2,6 +2,7 @@
 
 #include "../daemon/coinamount.h"
 #include "../daemon/market.h"
+#include "../daemon/priceaggregator.h"
 
 #include <QDebug>
 #include <QObject>
@@ -35,7 +36,6 @@ Puller::Puller() :
     nam_queue_timer->setTimerType( Qt::CoarseTimer );
     nam_queue_timer->start( 60 );
 
-    ///
     QString input_market = QCoreApplication::arguments().value( 1 );
     QString input_date = QCoreApplication::arguments().value( 2 );
     QString input_invert_flag = QCoreApplication::arguments().value( 3 );
@@ -45,33 +45,60 @@ Puller::Puller() :
     if ( continue_on_empty_data )
         input_date.chop( 1 );
 
-    current_market = input_market; // ex: "ZEC-BTC"
-    current_date = QDateTime::fromString( input_date, "'M'M'd'd'y'yyyy" ); // ex: "M10d28y2016"
-    invert_price = input_invert_flag.toLower() == "invert"; // 0 = don't invert, 1 = invert
+    // look for update flag
+    updating_candles = input_date == "update";
 
+    current_market = input_market; // ex: "ZEC-BTC"
+
+    invert_price = input_invert_flag.toLower() == "invert"; // 0 = don't invert, 1 = invert
     if ( invert_price )
         qDebug() << "info: inverting price data";
 
     static const QString USAGE_EXAMPLE_STR = "example: ./candlestick-puller ZEC-BTC M10d28y2016";
 
-    // check for valid date
-    if ( !current_date.isValid() )
-        qFatal( QString( "error: invalid start date: %1" ).arg( USAGE_EXAMPLE_STR ).toLocal8Bit() );
-
     // check for valid market format
-    Market m = Market( current_market );
-    if ( !m.isValid() || !current_market.contains( QChar('-') ) )
+    Market market_raw = Market( current_market );
+    if ( !market_raw.isValid() || !current_market.contains( QChar('-') ) )
         qFatal( QString( "error: invalid market: %1 (did you forget the '-'?)" ).arg( USAGE_EXAMPLE_STR ).toLocal8Bit() );
 
-    // construct filename, but reverse the market naming pattern (because it's backwards), except if we are inverting the price
-    filename = "BITTREX." + ( invert_price ? m.getBase() : m.getQuote() ) + "_" + ( invert_price ? m.getQuote() : m.getBase() )  + ".5";
+    Market market = Market( QString( "%1_%2" )
+                             .arg( invert_price ? market_raw.getBase() : market_raw.getQuote() )
+                             .arg( invert_price ? market_raw.getQuote() : market_raw.getBase() ) );
 
-    // exit if filename exists
-    if ( QFile::exists( filename ) )
+    // construct filename, but reverse the market naming pattern (because it's backwards), except if we are inverting the price
+    filename = "BITTREX." + market + ".5";
+
+    // exit if filename exists, but only if we aren't updating
+    const bool file_exists = QFile::exists( filename );
+    if ( file_exists && !updating_candles )
         qFatal( QString( "error: file already exists: %1, (re)move it first" ).arg( filename ).toLocal8Bit() );
 
+    // exit if the filename doesn't exist, but we are updating
+    if ( !file_exists && updating_candles )
+        qFatal( "error: update flag enabled but samples file does not exist" );
+
+    // check for valid date, but only if we aren't updating(we know the date if we are updating)
+    if ( !current_date.isValid() && !updating_candles )
+        qFatal( QString( "error: invalid start date: %1" ).arg( USAGE_EXAMPLE_STR ).toLocal8Bit() );
+
+    // if we are updating, load the samples that exist, and set the current date
+    if ( updating_candles )
+    {
+        const bool ret = PriceAggregator::loadPriceSamples( price_data, filename );
+        assert( ret );
+
+        last_sample_secs = price_data.data_start_secs + 300 * ( price_data.data.size() -1 );
+        current_date = QDateTime::fromSecsSinceEpoch( last_sample_secs );
+
+        qDebug() << "info: loaded" << price_data.data.size() << "samples";
+    }
+    // if not updating, just set the current date
+    else
+    {
+        current_date = QDateTime::fromString( input_date, "'M'M'd'd'y'yyyy" ); // ex: "M10d28y2016"
+    }
+
     sendCandleRequest();
-    ///
 }
 
 Puller::~Puller()
@@ -93,7 +120,7 @@ void Puller::sendCandleRequest()
     current_date = current_date.addDays( 1 );
     requests_made++;
 
-    if ( current_date >= QDateTime::currentDateTime() )
+    if ( current_date > QDateTime::currentDateTime() )
         waiting_for_final_reply = true;
 }
 
@@ -138,28 +165,19 @@ void Puller::onCheckFinished()
         exit( 0 );
     }
 
-    // construct state
-    QString state;
-    for ( QVector<Coin>::const_iterator i = samples.begin(); i != samples.end(); i++ )
-    {
-        if ( !state.isEmpty() )
-            state += QChar( ' ' );
-
-        state += (*i).toCompact();
-    }
-    // prepend a marker, and the start date
-    state.prepend( QString( "p %1 " ).arg( start_sample_secs ) );
-
     // save state
-    QTextStream out_samples( &savefile );
-    out_samples << state;
+    QTextStream out( &savefile );
+    // prepend a marker, and the start date
+    out << QString( "p %1" ).arg( price_data.data_start_secs );
+    for ( QVector<Coin>::const_iterator i = price_data.data.begin(); i != price_data.data.end(); i++ )
+        out << " " << (*i).toCompact();
 
     // close file
-    out_samples.flush();
+    out.flush();
     savefile.close();
 
     // write stuff
-    qDebug() << "success! results saved to" << filename;
+    qDebug() << "success!" << price_data.data.size() << "candles saved to" << filename;
     exit( 0 );
 }
 
@@ -193,6 +211,8 @@ void Puller::onNamReply( QNetworkReply *reply )
 
     if ( request_id.contains( "BITTREX" ) )
     {
+        int new_candles_saved = 0;
+
         // throw error on empty first piece, but not if we supplied a continue flag. also process the last day (it's empty)
         if ( json_arr.isEmpty() && !continue_on_empty_data && requests_parsed == 0 )
             qFatal( "error: empty data" );
@@ -213,11 +233,14 @@ void Puller::onNamReply( QNetworkReply *reply )
             // ensure that we don't miss any candles, and they are in order
             if ( last_sample_secs == 0 || d.toSecsSinceEpoch() == last_sample_secs + 300 )
                 last_sample_secs = d.toSecsSinceEpoch();
+            // if updating samples, skip samples that we already have
+            else if ( updating_candles && d.toSecsSinceEpoch() <= last_sample_secs )
+                continue;
             else
                 qFatal( "error: bad time spacing" );
 
-            if ( start_sample_secs == 0 )
-                start_sample_secs = d.toSecsSinceEpoch();
+            if ( price_data.data_start_secs == 0 )
+                price_data.data_start_secs = d.toSecsSinceEpoch();
 
             Coin ohlc4 = ( open + high + low + close ) / 4;
 
@@ -227,7 +250,8 @@ void Puller::onNamReply( QNetworkReply *reply )
             //qDebug() << ohlc4 << d.toSecsSinceEpoch() << "last sample" << last_sample_secs;
 
             assert( ohlc4.isGreaterThanZero() );
-            samples += ohlc4;
+            price_data.data += ohlc4;
+            new_candles_saved++;
         }
 
         requests_parsed++;
@@ -236,7 +260,7 @@ void Puller::onNamReply( QNetworkReply *reply )
         if ( json_arr.isEmpty() )
             qDebug() << "exchange didn't have any samples for this day, continuing anyway";
         else
-            qDebug() << "processed candles for" << d.toString( "dd-MM-yyyy" );
+            qDebug() << "parsed" << new_candles_saved << "new candles," << price_data.data.size() << "candles total for" << current_market << "on" << d.toString( "dd-MM-yyyy" );
 
         // if we aren't at the end, send another request
         if ( !waiting_for_final_reply )
