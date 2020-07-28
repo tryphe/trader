@@ -108,11 +108,20 @@ Puller::~Puller()
 
 void Puller::sendCandleRequest()
 {
-    QString addr = QString( "https://api.bittrex.com/v3/markets/%1/candles/MINUTE_5/historical/%2/%3/%4" )
-                    .arg( current_market )
-                    .arg( current_date.date().year() )
-                    .arg( current_date.date().month() )
-                    .arg( current_date.date().day() );
+    bool recent = false;
+    if ( current_date > QDateTime::currentDateTime() )
+        recent = true;
+
+    QString addr;
+    if ( !recent )
+        addr = QString( "https://api.bittrex.com/v3/markets/%1/candles/MINUTE_5/historical/%2/%3/%4" )
+                        .arg( current_market )
+                        .arg( current_date.date().year() )
+                        .arg( current_date.date().month() )
+                        .arg( current_date.date().day() );
+    else
+        addr = QString( "https://api.bittrex.com/v3/markets/%1/candles/MINUTE_5/recent" )
+                        .arg( current_market );
 
     qDebug() << "sending request" << addr;
     sendRequest( addr, "", filename );
@@ -120,7 +129,7 @@ void Puller::sendCandleRequest()
     current_date = current_date.addDays( 1 );
     requests_made++;
 
-    if ( current_date > QDateTime::currentDateTime() )
+    if ( recent )
         waiting_for_final_reply = true;
 }
 
@@ -214,8 +223,16 @@ void Puller::onNamReply( QNetworkReply *reply )
         int new_candles_saved = 0;
 
         // throw error on empty first piece, but not if we supplied a continue flag. also process the last day (it's empty)
-        if ( json_arr.isEmpty() && !continue_on_empty_data && requests_parsed == 0 )
-            qFatal( "error: empty data" );
+        if ( json_arr.isEmpty() && !continue_on_empty_data )
+        {
+            if ( requests_parsed == 0 )
+            {
+                qDebug() << "got empty recent data, requesting recent candles";
+                sendCandleRequest();
+            }
+            else
+                qFatal( "error: empty data" );
+        }
 
         QDateTime d;
         for ( QJsonArray::const_iterator i = json_arr.begin(); i != json_arr.end(); i++ )
