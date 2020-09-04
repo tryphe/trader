@@ -1,47 +1,57 @@
 #include "tester.h"
-
-#include <math.h>
+#include "simulationthread.h"
 
 #include "../daemon/coinamount.h"
 #include "../daemon/coinamount_test.h"
 #include "../daemon/global.h"
 #include "../daemon/misctypes.h"
 #include "../daemon/priceaggregator.h"
-#include "simulationthread.h"
 
+#include <math.h>
+
+#include <QByteArray>
 #include <QString>
+#include <QTextStream>
 #include <QDebug>
 #include <QFile>
 #include <QDir>
+#include <QVector>
 #include <QMap>
+#include <QSet>
+#include <QDateTime>
 #include <QThread>
 #include <QTimer>
 #include <QMutex>
 #include <QMutexLocker>
 #include <QMessageLogger>
 
-#include "../daemon/sprucev2.h"
-
 Tester::Tester()
 {
-    SignalTest t;
-    t.test();
+
+//    exit( 0 );
 
     CoinAmountTest c;
     c.test();
 
+    SignalTest t;
+    t.test();
+
     // load data
     loadPriceData();
 
-    kDebug() << "loading finished work...";
-    loadFinishedWork();
-
-    kDebug() << "generating work...";
+    // load work history
+    if ( USE_SAVED_WORK )
+    {
+        kDebug() << "loading finished work...";
+        loadFinishedWork();
+    }
 
     // generate work
+    kDebug() << "generating work...";
     if ( WORK_RANDOM )
-        for ( int i = 0; i < WORK_RANDOM_TRIES; i++ )
-            generateRandomWork();
+    {
+        fillRandomWorkQueue();
+    }
     else
         generateWork();
 
@@ -54,7 +64,7 @@ Tester::Tester()
     m_work_timer = new QTimer( this );
     connect( m_work_timer, &QTimer::timeout, this, &Tester::onWorkTimer );
     m_work_timer->setTimerType( Qt::VeryCoarseTimer );
-    m_work_timer->setInterval( 10000 );
+    m_work_timer->setInterval( RESULTS_OUTPUT_INTERVAL_SECS * 1000 );
     m_work_timer->start();
 }
 
@@ -70,11 +80,15 @@ Tester::~Tester()
 
 void Tester::loadPriceDataSingle( const QString &file_name, const Market &market )
 {
-    const QString path = Global::getTraderPath() + QDir::separator() + "candles" + QDir::separator() + file_name;
+    const QString path = USE_CANDLES_FROM_THIS_DIRECTORY ? file_name :
+                                                           Global::getTraderPath() + QDir::separator() + "candles" + QDir::separator() + file_name;
 
     // load data but don't calculate ma, since we are manually doing it
-    const bool ret0 = PriceAggregator::loadPriceSamples( m_price_data_0[ 0 ][ market ], path, 0, 0 );
-    assert( ret0 );
+    const bool ret = PriceAggregator::loadPriceSamples( m_price_data_0[ 0 ][ market ], path );
+    assert( ret );
+
+    // reindex samples to desired interval
+    reindexPriceData( m_price_data_0[ 0 ][ market ], BASE_INTERVAL );
 
     // duplicate the new data into data_0 and data_1
     for ( int i = 0; i < MAX_WORKERS; i++ )
@@ -82,7 +96,7 @@ void Tester::loadPriceDataSingle( const QString &file_name, const Market &market
         if ( i > 0 )
             m_price_data_0[ i ][ market ] = m_price_data_0[ 0 ][ market ];
 
-        m_price_data_1[ i ][ market ] = m_price_data_0[ 0 ][ market ];
+//        m_price_data_1[ i ][ market ] = m_price_data_0[ 0 ][ market ];
     }
 }
 
@@ -92,7 +106,7 @@ void Tester::loadPriceData()
     for ( int i = 0; i < MAX_WORKERS; i++ )
     {
         m_price_data_0 += QMap<Market, PriceData>();
-        m_price_data_1 += QMap<Market, PriceData>();
+//        m_price_data_1 += QMap<Market, PriceData>();
     }
 
     /// load samples
@@ -104,150 +118,104 @@ void Tester::loadPriceData()
     loadPriceDataSingle( "BITTREX.BTC_USDT.5", Market( "BTC_USDT" ) );
     loadPriceDataSingle( "BITTREX.BTC_WAVES.5", Market( "BTC_WAVES" ) );
     loadPriceDataSingle( "BITTREX.BTC_XMR.5", Market( "BTC_XMR" ) );
-    //loadPriceData( "BITTREX.BTC_ZEC.5", "BTC_ZEC" );
+//    loadPriceDataSingle( "BITTREX.BTC_ZEC.5", Market( "BTC_ZEC" ) );
 
     // remove some price data for a different simulation outcome
     for ( int i = 0; i < MAX_WORKERS; i++ )
     {
-        m_price_data_1[ i ].remove( Market( "BTC_USDT" ) );
-        m_price_data_1[ i ].remove( Market( "BTC_WAVES" ) );
+//        m_price_data_1[ i ].remove( Market( "BTC_USDT" ) );
+//        m_price_data_1[ i ].remove( Market( "BTC_WAVES" ) );
     }
 
-    assert( m_price_data_0.size() == m_price_data_1.size() );
+//    assert( m_price_data_0.size() == m_price_data_1.size() );
     kDebug() << "loaded price data for" << m_price_data_0.size() << "threads in" << QDateTime::currentMSecsSinceEpoch() - t0_secs << "ms";
+}
+
+void Tester::reindexPriceData( PriceData &data, const int interval )
+{
+    if ( interval < 2 )
+        return;
+
+    QVector<Coin> newdata;
+    Signal base = Signal( SMA, interval );
+
+    int interval_counter = 0;
+    for ( QVector<Coin>::const_iterator i = data.data.begin(); i < data.data.end(); i++ )
+    {
+        const Coin &sample = *i;
+        const bool should_run = ++interval_counter % interval == 0;
+
+        // add sample to base every iteration
+        base.addSample( sample );
+
+        // check if we should add base to newdata
+        if ( !should_run )
+            continue;
+
+        // reset counter, add base to newdata
+        interval_counter = 0;
+        newdata += base.getSignal();
+    }
+
+    kDebug() << "reindexed price data," << data.data.size() << "->" << newdata.size() << "samples";
+
+    // copy new data over old data
+    data.data = newdata;
+    assert( newdata.size() == data.data.size() );
+}
+
+void Tester::fillRandomWorkQueue()
+{
+    qint64 current_count = 0, current_tries = 0;
+    while ( m_work_count_total < WORK_UNITS_BUFFER )
+    {
+        generateRandomWork();
+
+        // when new work is generated, reset tries
+        if ( current_count != m_work_count_total )
+        {
+            current_count = m_work_count_total;
+            current_tries = 0;
+        }
+
+        // if we try too many times without generating any work, break
+        if ( ++current_tries > WORK_RANDOM_TRIES_MAX )
+            break;
+    }
 }
 
 void Tester::generateWork()
 {
-    // TODO: add m_samples_start_offset, m_markets_tested
+    SimulationTask *work = new SimulationTask;
 
-//    // non-loop initialized options to generate
-//    QVector<int> modulation_length_slow;
-//    QVector<int> modulation_length_fast;
-//    QVector<Coin> modulation_factor;
-//    QVector<Coin> modulation_threshold;
+    work->m_markets_tested += m_price_data_0.first().keys().toVector();
+//    work->m_markets_tested += m_price_data_1.first().keys().toVector();
 
-//    for ( int signal_type = SMA; signal_type <= RSI; signal_type++ )
-//    {
-//    for ( int allocation_func = 0; allocation_func <= 22; allocation_func++ ) // 30m to 30m, increment 30m
-//    {
-//    for ( int base_ma_length = 10; base_ma_length <= 1000; base_ma_length *= 2 ) // 40 == 3.3h
-//    {
-//    for ( int rsi_length = 10; rsi_length <= 1000; rsi_length *= 3 ) // 1h to 1d
-//    {
-//    for ( int rsi_ma_length = 10; rsi_ma_length <= 1000; rsi_ma_length *= 3 )
-//    {
-//    // modulation 1
-////    for ( modulation_length_slow += 250; modulation_length_slow[ 0 ] <= 500; modulation_length_slow[ 0 ] *= 2 )
-////    {
-////    for ( modulation_length_fast += 10; modulation_length_fast[ 0 ] <= 30; modulation_length_fast[ 0 ] *= 3 )
-////    {
-////    for ( modulation_factor += Coin( "1.1" ); modulation_factor[ 0 ] <= Coin( "8.8" ); modulation_factor[ 0 ] *= Coin( "2" ) )
-////    {
-////    for ( modulation_threshold += Coin( "1" ); modulation_threshold[ 0 ] <= Coin( "1.95" ); modulation_threshold[ 0 ] *= Coin( "1.2" ) )
-////    {
-////    // modulation 2
-////    for ( modulation_length_slow += 250; modulation_length_slow[ 1 ] <= 500; modulation_length_slow[ 1 ] *= 2 )
-////    {
-////    for ( modulation_length_fast += 10; modulation_length_fast[ 1 ] <= 30; modulation_length_fast[ 1 ] *= 3 )
-////    {
-////    for ( modulation_factor += Coin( "1.1" ); modulation_factor[ 1 ] <= Coin( "8.8" ); modulation_factor[ 1 ] *= Coin( "2" ) )
-////    {
-////    for ( modulation_threshold += Coin( "1" ); modulation_threshold[ 1 ] <= Coin( "1.95" ); modulation_threshold[ 1 ] *= Coin( "1.2" ) )
-////    {
-//    // modulation 3
-////    for ( modulation_length_slow += 62; modulation_length_slow[ 2 ] <= 248; modulation_length_slow[ 2 ] *= 2 )
-////    {
-////    for ( modulation_length_fast += 6; modulation_length_fast[ 2 ] <= 12; modulation_length_fast[ 2 ] *= 2 )
-////    {
-////    for ( modulation_factor += Coin( "1" ); modulation_factor[ 2 ] <= Coin( "9" ); modulation_factor[ 2 ] *= Coin( "3" ) )
-////    {
-////    for ( modulation_threshold += Coin( "1" ); modulation_threshold[ 2 ] <= Coin( "1" ); modulation_threshold[ 2 ] *= Coin( "2" ) )
-////    {
-//        // generate next work
-//        SimulationTask *work = new SimulationTask;
-//        work->m_strategy_signal_type = static_cast<SignalType>( signal_type );
-//        work->m_base_ma_length = base_ma_length;
-//        work->m_rsi_length = rsi_length;
-//        work->m_rsi_ma_length = rsi_ma_length;
-//        work->m_allocation_func = allocation_func;
-
-//        work->m_modulation_length_slow = modulation_length_slow;
-//        work->m_modulation_length_fast = modulation_length_fast;
-//        work->m_modulation_factor = modulation_factor;
-//        work->m_modulation_threshold = modulation_threshold;
-
-//        m_work_queued += work;
-//        m_work_count_total++;
-////    }
-////    modulation_threshold.remove( 2 );
-////    }
-////    modulation_factor.remove( 2 );
-////    }
-////    modulation_length_fast.remove( 2 );
-////    }
-////    modulation_length_slow.remove( 2 );
-////    }
-////    modulation_threshold.remove( 1 );
-////    }
-////    modulation_factor.remove( 1 );
-////    }
-////    modulation_length_fast.remove( 1 );
-////    }
-////    modulation_length_slow.remove( 1 );
-////    }
-////    modulation_threshold.remove( 0 );
-////    }
-////    modulation_factor.remove( 0 );
-////    }
-////    modulation_length_fast.remove( 0 );
-////    }
-////    modulation_length_slow.remove( 0 );
-//    }
-//    }
-//    }
-//    }
-//    }
+    m_work_queued += work;
+    m_work_count_total++;
 }
 
 void Tester::generateRandomWork()
 {
     SimulationTask *work = new SimulationTask;
 
-    const int base_multiplier = 5;
+    // add markets
     work->m_markets_tested += m_price_data_0.first().keys().toVector();
-    work->m_markets_tested += m_price_data_1.first().keys().toVector();
+//    work->m_markets_tested += m_price_data_1.first().keys().toVector();
 
+    // add basic args
     work->m_samples_start_offset = WORK_SAMPLES_START_OFFSET;
-    work->m_strategy_signal_type = /*Global::getSecureRandomRange32( 0, 1 ) == 0 ? SMA : */RSI;
-    work->m_base_ma_length = 40;
-    work->m_rsi_length = std::pow( Global::getSecureRandomRange32( 1, 20 ), 2 ) * base_multiplier;
-    work->m_rsi_ma_length = std::pow( Global::getSecureRandomRange32( 1, 20 ), 2 ) * base_multiplier;
-    work->m_allocation_func = Global::getSecureRandomRange32( 0, 22 );
-
-    // select modulation, 50% of the time select up to 2 modulations
-//    const int modulation_count = Global::getSecureRandomRange32( 0, 3 ) -1;
-//    if ( modulation_count > 0 )
-//    {
-//        for ( int i = 0; i < modulation_count; i++ )
-//        {
-//            work->m_modulation_length_slow += std::pow( Global::getSecureRandomRange32( 1, 20 ), 2 ) * base_multiplier;
-//            work->m_modulation_length_fast += std::pow( Global::getSecureRandomRange32( 1, 20 ), 2 ) * base_multiplier;
-//            work->m_modulation_factor += CoinAmount::COIN + ( Coin("0.1") * Global::getSecureRandomRange32( 1, 80 ) );
-//            work->m_modulation_threshold += CoinAmount::COIN + ( Coin("0.1") * Global::getSecureRandomRange32( 0, 30 ) );
-//        }
-//    }
 
     // if hash of raw data exists in QSet, skip adding duplicate work
-    const QByteArray work_raw = work->getRaw();
-    if ( m_work_ids_generated_or_done.contains( work_raw ) )
+    const QByteArray &work_id = work->getUniqueID();
+    if ( m_work_ids_generated_or_done.contains( work_id ) )
     {
         m_work_skipped_duplicate++;
         delete work;
         return;
     }
 
-    m_work_ids_generated_or_done += work_raw;
+    m_work_ids_generated_or_done += work_id;
     m_work_queued += work;
     m_work_count_total++;
 }
@@ -257,11 +225,11 @@ void Tester::startWork()
     // init threads
     for ( int i = 0; i < MAX_WORKERS; i++ )
     {
-        SimulationThread *t = new SimulationThread( i );
+        SimulationThread *const t = new SimulationThread( i );
         m_threads += t;
 
         t->m_price_data += &m_price_data_0[ i ];
-        t->m_price_data += &m_price_data_1[ i ];
+//        t->m_price_data += &m_price_data_1[ i ];
 
         t->ext_mutex = &m_work_mutex;
         t->ext_threads = &m_threads;
@@ -271,42 +239,44 @@ void Tester::startWork()
         t->ext_work_count_done = &m_work_count_done;
         t->ext_work_count_started = &m_work_count_started;
 
+        connect( t, &QThread::finished, this, &Tester::onThreadFinished );
+
         t->start();
-        t->setPriority( QThread::HighestPriority );
     }
 }
 
 void Tester::processFinishedWork()
 {
     QVector<SimulationTask*> work_to_delete;
+    QVector<QString> processed_results;
     int tasks_processed = 0;
 
     QMutexLocker lock0( &m_work_mutex );
     for ( QVector<SimulationTask*>::iterator i = m_work_done.begin(); i != m_work_done.end(); i++ )
     {
-        SimulationTask *task = *i;
+        SimulationTask *const &task = *i;
 
         // don't remove during iteration, queue for deletion
         work_to_delete += task;
         tasks_processed++;
+
+        // if no result, evict if policy allows
+        if ( RESULTS_EVICT_ZERO_SCORE && task->m_scores[ 0 ].isZeroOrLess() )
+            continue;
 
         // normalize scores
         for ( int score_type = 0; score_type < task->m_scores.size(); score_type++ )
             task->m_scores[ score_type ] = task->m_scores.value( score_type ) / MARKET_VARIATIONS;
 
         // prepend scores to simulation result
-        const QString score_str = QString( "1000d[%1]-300d[%2]-300d/1000d[%3]-peak[%4]-final[%5]:" )
-                .arg( task->m_scores[ 0 ], -12, QChar('0') )
-                .arg( task->m_scores[ 1 ], -12, QChar('0') )
-                .arg( task->m_scores[ 2 ], -12, QChar('0') )
-                .arg( task->m_scores[ 3 ], -12, QChar('0') )
-                .arg( task->m_scores[ 4 ], -12, QChar('0') );
+        const QString score_str = QString( "1000d[%1]-hiX[%2]-finalX[%3]-volscore[%4]:" )
+                .arg( task->m_scores[ 0 ].toString( 2 ), -6, QChar('0') )
+                .arg( task->m_scores[ 1 ].toString( 2 ), -6, QChar('0') )
+                .arg( task->m_scores[ 2 ].toString( 2 ), -6, QChar('0') )
+                .arg( task->m_scores[ 3 ].toString( 2 ), -6, QChar('0') );
 
         task->m_simulation_result.prepend( score_str );
-
-//        const QString score_out = QString( "------------------------------------------------------------------------------------\n%1\n%2" )
-//                                   .arg( task->m_simulation_result )
-//                                   .arg( task->m_alpha_readout );
+        processed_results += task->m_simulation_result;
 
         // copy scores into local data
         for ( int score_type = 0; score_type < task->m_scores.size(); score_type++ )
@@ -317,7 +287,7 @@ void Tester::processFinishedWork()
             m_highscores_by_score[ score_type ].insert( score, task->m_simulation_result );
         }
 
-        m_work_results_unsaved[ task->getRaw() ] = task->m_simulation_result;
+        m_work_results_unsaved[ task->getUniqueID() ] = task->m_simulation_result;
     }
 
     // cleanup finished work
@@ -343,25 +313,42 @@ void Tester::processFinishedWork()
 
     QTextStream out_savefile( &savefile );
 
-    printHighScores( m_highscores_by_score[ 0 ], out_savefile, "1000d" );
-    printHighScores( m_highscores_by_score[ 1 ], out_savefile, "300d" );
-    printHighScores( m_highscores_by_score[ 2 ], out_savefile, "300d/1000d" );
-    printHighScores( m_highscores_by_score[ 3 ], out_savefile, "PEAK" );
-    printHighScores( m_highscores_by_score[ 4 ], out_savefile, "FINAL" );
+    printHighScores( m_highscores_by_score[ 0 ], out_savefile, " 1000d " );
+    printHighScores( m_highscores_by_score[ 1 ], out_savefile, " PEAK " );
+    printHighScores( m_highscores_by_score[ 2 ], out_savefile, " FINAL " );
+    printHighScores( m_highscores_by_score[ 3 ], out_savefile, " VOLSCORE " );
 
     // save the buffer
     out_savefile.flush();
     savefile.close();
 
+    // trim scores maps
+    trimHighScores( m_highscores_by_score[ 0 ], m_highscores_by_result[ 0 ] );
+    trimHighScores( m_highscores_by_score[ 1 ], m_highscores_by_result[ 1 ] );
+    trimHighScores( m_highscores_by_score[ 2 ], m_highscores_by_result[ 2 ] );
+    trimHighScores( m_highscores_by_score[ 3 ], m_highscores_by_result[ 3 ] );
+
     kDebug() << QString( "[%1 of %2] %3% done, %4 threads active" )
                  .arg( m_work_count_done )
-                 .arg( m_work_count_total )
-                 .arg( Coin( m_work_count_done ) / Coin( m_work_count_total ) * 100 )
+                 .arg( Tester::WORK_INFINITE ? "inf" : QString( "%1" ).arg( m_work_count_total ) )
+                 .arg( Tester::WORK_INFINITE ? "0" : QString( "%1" ).arg( Coin( m_work_count_done ) / Coin( m_work_count_total ) * 100 ) )
                  .arg( m_threads.size() );
+
+    if ( RESULTS_OUTPUT_NEWLY_FINISHED )
+    {
+        kDebug() << processed_results.size() << "fresh work results:";
+        for ( QVector<QString>::const_iterator i = processed_results.begin(); i != processed_results.end(); i++ )
+            kDebug() << *i;
+    }
 
     // save unsaved work
     saveFinishedWork();
 
+    // if infinite work, generate more work
+    if ( WORK_RANDOM && WORK_INFINITE )
+        fillRandomWorkQueue();
+
+    // exit when we are done
     if ( m_work_queued.size() == 0 &&
          m_work_done.size() == 0 &&
          m_work_count_total == m_work_count_done )
@@ -377,12 +364,12 @@ void Tester::printHighScores( const QMultiMap<Coin, QString> &scores, QTextStrea
 {
     Global::centerString( description, QChar('='), 40 );
 
-    out << description;
+    out << description << "\n";
     kDebug() << description;
 
     const int score_count = scores.size();
     int scores_iterated = 0;
-    for ( QMultiMap<Coin, QString>::const_iterator j = scores.constBegin(); j != scores.constEnd(); j++ )
+    for ( QMultiMap<Coin, QString>::const_iterator j = scores.begin(); j != scores.end(); j++ )
     {
         // note: this is a multimap, so we can see identical scores with different configurations
 
@@ -390,13 +377,39 @@ void Tester::printHighScores( const QMultiMap<Coin, QString> &scores, QTextStrea
         if ( ++scores_iterated < score_count - print_count +1 )
             continue;
 
-        out << j.value();
+        out << j.value() << "\n";
         kDebug() << j.value();
     }
 }
 
+void Tester::trimHighScores( QMultiMap<Coin, QString> &scores, QMap<QString, Coin> &scores_by_result )
+{
+    // check if we should trim
+    if ( scores.size() < RESULTS_OUTPUT )
+        return;
+
+    QMultiMap<Coin, QString> new_scores;
+    QMap<QString, Coin> new_scores_by_result;
+
+    // assemble trimmed version of maps
+    for ( QMultiMap<Coin, QString>::const_iterator i = scores.end() - RESULTS_OUTPUT; i != scores.end(); i++ )
+    {
+        new_scores.insert( i.key(), i.value() );
+        new_scores_by_result.insert( i.value(), i.key() );
+    }
+
+    // copy into maps
+    scores = new_scores;
+    scores_by_result = new_scores_by_result;
+}
+
 void Tester::saveFinishedWork()
 {
+    // if we aren't using saved work, empty the unsaved work
+    if ( !USE_SAVED_WORK )
+        m_work_results_unsaved.clear();
+
+    // return on empty unsaved work
     if ( m_work_results_unsaved.isEmpty() )
         return;
 
@@ -415,23 +428,22 @@ void Tester::saveFinishedWork()
     // save state
     int work_ids_saved_count = 0;
     QVector<QByteArray> work_ids_raw_saved;
-    for ( QMap<QByteArray, QString>::const_iterator i = m_work_results_unsaved.constBegin(); i != m_work_results_unsaved.constEnd(); i++ )
+    for ( QMap<QByteArray, QString>::const_iterator i = m_work_results_unsaved.begin(); i != m_work_results_unsaved.end(); i++ )
     {
-        QByteArray work_id = i.key().toHex();
+        const QByteArray work_id = i.key().toHex();
         const QString &work_result = i.value();
 
         // save id
         out_savefile << work_id << ' ';
 
         // save scores
-        for ( QMap<int, QMap<QString, Coin>>::const_iterator j = m_highscores_by_result.constBegin(); j != m_highscores_by_result.constEnd(); j++ )
+        for ( QMap<int, QMap<QString, Coin>>::const_iterator j = m_highscores_by_result.begin(); j != m_highscores_by_result.end(); j++ )
             out_savefile << j.value()[ work_result ] << ' ';
 
         // save result
         out_savefile << work_result << '\n';
 
         // transfer into saved map, and queue for removal from unsaved map
-        m_work_results_saved[ work_id ] = i.value();
         work_ids_raw_saved += i.key();
         work_ids_saved_count++;
     }
@@ -455,7 +467,7 @@ void Tester::loadFinishedWork()
     if ( !loadfile.open( QIODevice::ReadWrite | QIODevice::Text ) )
     {
         kDebug() << "local error: couldn't load stats file" << path;
-        return;
+        qFatal( "failed" );
     }
 
     if ( loadfile.bytesAvailable() == 0 )
@@ -464,42 +476,55 @@ void Tester::loadFinishedWork()
     QList<QByteArray> data = loadfile.readAll().split( '\n' );
     int results_loaded = 0;
 
+    QMap<int, QMultiMap<Coin, QString>> m_highscores_by_score_tmp; // for each score type, store kv<score,id>
+
     QByteArray work_id;
-    QString result, score_0, score_1, score_2, score_3, score_4;
-    for ( int i = 0; i < data.size(); i++ )
+    QString result, score_0, score_1, score_2, score_3;
+    const int data_length = data.size() -1; // skip last line
+    for ( int i = 0; i < data_length; i++ )
     {
         QList<QByteArray> line_data = data[ i ].split( ' ' );
 
-        // skip last empty line
-        if ( line_data.size() != 7 )
-            continue;
+        // fatal, warn about possible corruption
+        if ( line_data.size() != 6 )
+        {
+            kDebug() << "loadFinishedWork() failed, line" << i +1 << "is corrupt, data:" << data[ i ];
+            exit( 10 );
+        }
 
         work_id = QByteArray::fromHex( line_data[ 0 ] );
-        result = line_data[ 6 ];
+        result = line_data[ 5 ];
 
-        // TODO: add loops for this
+        // TODO: only add top 50 scores to m_highscores_by_result;
         score_0 = line_data[ 1 ];
         score_1 = line_data[ 2 ];
         score_2 = line_data[ 3 ];
         score_3 = line_data[ 4 ];
-        score_4 = line_data[ 5 ];
 
-        m_highscores_by_result[ 0 ][ result ] = score_0;
-        m_highscores_by_result[ 1 ][ result ] = score_1;
-        m_highscores_by_result[ 2 ][ result ] = score_2;
-        m_highscores_by_result[ 3 ][ result ] = score_3;
-        m_highscores_by_result[ 4 ][ result ] = score_4;
-
-        m_highscores_by_score[ 0 ].insert( score_0, result );
-        m_highscores_by_score[ 1 ].insert( score_1, result );
-        m_highscores_by_score[ 2 ].insert( score_2, result );
-        m_highscores_by_score[ 3 ].insert( score_3, result );
-        m_highscores_by_score[ 4 ].insert( score_4, result );
+        m_highscores_by_score_tmp[ 0 ].insert( score_0, result );
+        m_highscores_by_score_tmp[ 1 ].insert( score_1, result );
+        m_highscores_by_score_tmp[ 2 ].insert( score_2, result );
+        m_highscores_by_score_tmp[ 3 ].insert( score_3, result );
 
         m_work_ids_generated_or_done += work_id;
-        m_work_results_saved[ work_id ] = result;
 
         results_loaded++;
+    }
+
+    // only load top RESULTS_OUTPUT scores into long-term ram
+    for ( int i = 0; i < 4; i++ )
+    {
+        if ( m_highscores_by_score_tmp[ i ].size() < RESULTS_OUTPUT )
+            continue;
+
+        for ( QMultiMap<Coin, QString>::const_iterator j = m_highscores_by_score_tmp[ i ].end() - RESULTS_OUTPUT; j != m_highscores_by_score_tmp[ i ].end(); j++ )
+        {
+            const Coin &score = j.key();
+            const QString &result = j.value();
+
+            m_highscores_by_result[ i ][ result ] = score;
+            m_highscores_by_score[ i ].insert( score, result );
+        }
     }
 
     kDebug() << "loaded" << results_loaded << "historical work results";
@@ -512,4 +537,15 @@ void Tester::onWorkTimer()
     processFinishedWork();
 
     m_work_timer->start();
+}
+
+void Tester::onThreadFinished()
+{
+    QMutexLocker lock0( &m_work_mutex );
+
+    if ( m_threads.isEmpty() )
+    {
+        lock0.unlock();
+        processFinishedWork();
+    }
 }

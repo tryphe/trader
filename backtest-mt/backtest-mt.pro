@@ -4,8 +4,8 @@ QMAKE_CXXFLAGS = -O3
 QMAKE_CFLAGS = -O3
 
 CONFIG += c++14 c++17
-CONFIG += RELEASE
-#CONFIG += DEBUG
+CONFIG += release
+#CONFIG += debug
 
 LIBS += -lgmp
 
@@ -27,6 +27,7 @@ SOURCES += main.cpp \
     tester.cpp
 
 HEADERS += \
+    ../daemon/build-config.h \
     ../daemon/global.h \
     ../daemon/alphatracker.h \
     ../daemon/coinamount.h \
