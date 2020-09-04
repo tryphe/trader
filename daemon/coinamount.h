@@ -13,6 +13,8 @@ public:
     Coin( QString amount );
     Coin( qreal amount );
 
+    void clear();
+
     Coin& operator =( const QString &s );
     Coin& operator =( const Coin &c );
     Coin& operator /=( const QString &s );

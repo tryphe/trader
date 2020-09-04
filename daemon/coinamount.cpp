@@ -43,6 +43,11 @@ Coin::Coin( qreal amount )
     mpz_init_set_str( b, qrealToSubsatoshis( amount ).toLocal8Bit().data(), CoinAmount::str_base );
 }
 
+void Coin::clear()
+{
+    mpz_set_ui( b, 0 );
+}
+
 Coin &Coin::operator =( const QString &in )
 {
     mpz_set_str( b, qstringToSubsatoshis( in ).toLocal8Bit().data(), CoinAmount::str_base );
@@ -266,6 +271,7 @@ Coin::operator QString() const
 
 QString Coin::toString( const int decimals = CoinAmount::subsatoshi_decimals ) const
 {
+    // thread-safe static opt
     static QMap<Qt::HANDLE, std::vector<char>> buffer_map;
     std::vector<char> &buffer = buffer_map[ QThread::currentThreadId() ];
 //    std::vector<char> buffer;

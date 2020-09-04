@@ -20,6 +20,10 @@ void CoinAmountTest::testUnit()
     assert( c == "0.03888888" );
     assert( c.toSubSatoshiString() == "0.0388888850000000" );
 
+    // Coin::clear()
+    c.clear();
+    assert( c == Coin() );
+
     // Coin( QString amount )
     // Coin( qreal amount )
     assert( Coin() == "0.00000000" );
