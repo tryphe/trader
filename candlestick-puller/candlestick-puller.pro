@@ -3,6 +3,9 @@ QT = core network
 TARGET = candlestick-puller
 TEMPLATE = app
 
+CONFIG += c++14 c++17
+CONFIG += release
+
 LIBS += -lgmp
 
 SOURCES += \
@@ -21,4 +24,3 @@ HEADERS += \
 
 DISTFILES += \
     README.md
-

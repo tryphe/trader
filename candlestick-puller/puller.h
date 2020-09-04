@@ -52,8 +52,9 @@ private:
     qint64 last_sample_secs{ 0 };
     qint64 requests_made{ 0 };
     qint64 requests_parsed{ 0 };
+    qint64 replies_empty{ 0 };
 
-    PriceData price_data;
+    PriceAggregatorConfig price_data;
     QDateTime current_date;
     QString current_market;
     QString filename;
