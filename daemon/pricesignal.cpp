@@ -142,8 +142,6 @@ const Coin &PriceSignal::getSignal()
 
 const Coin &PriceSignal::getSignalSMA()
 {
-//    qDebug() << &*this << "actual size" << samples.size();
-
     const int samples_size = samples.size();
     if ( samples_size < 1 )
         return CoinAmount::ZERO;
@@ -175,8 +173,7 @@ const Coin &PriceSignal::getSignalSMAR()
 
 const Coin &PriceSignal::getSignalRSI()
 {
-    const int samples_size = samples.size();
-    if ( samples_size < 1 )
+    if ( samples.size() < 1 )
         return CoinAmount::ZERO;
 
     if ( !( current_avg_gain.isGreaterThanZero() && current_avg_loss.isGreaterThanZero() ) )
@@ -192,8 +189,7 @@ const Coin &PriceSignal::getSignalRSI()
 
 const Coin &PriceSignal::getSignalRSIR()
 {
-    const int samples_size = samples.size();
-    if ( samples_size < 1 )
+    if ( samples.size() < 1 )
         return CoinAmount::ZERO;
 
     if ( !( current_avg_gain.isGreaterThanZero() && current_avg_loss.isGreaterThanZero() ) )
@@ -215,8 +211,7 @@ const Coin &PriceSignal::getSignalRSIR()
 
 const Coin &PriceSignal::getSignalRSIRES()
 {
-    const int samples_size = samples.size();
-    if ( samples_size < 1 )
+    if ( samples.size() < 1 )
         return CoinAmount::ZERO;
 
     if ( !( current_avg_gain.isGreaterThanZero() && current_avg_loss.isGreaterThanZero() ) )
@@ -225,13 +220,8 @@ const Coin &PriceSignal::getSignalRSIRES()
     // rs = gain / loss
     s = current_avg_gain / current_avg_loss;
 
-    // we want to return a value from 0-2, >1 oversold, <1 overbought, so we use the formula:
-    // rsi == 1 / (2 - (2 / (1 + rs))) == CoinAmount::COIN / ( CoinAmount::COIN * 2 - ( CoinAmount::COIN * 2 / ( CoinAmount::COIN  + rs ) ) )
-    // simplified as:
-    // rsi == 0.5 + 1 / (2 * rs) == ( CoinAmount::SATOSHI * 50000000 ) + CoinAmount::COIN / ( 2 * rs )
     static const Coin HALF_COIN = CoinAmount::SATOSHI * 50000000;
-    // fast = HALF_COIN + CoinAmount::COIN / ( s * 2 );
-    s += s; // add s instead of multiplying by 2
+    s += s;
     w = HALF_COIN + CoinAmount::COIN / s;
 
     // get embedded PriceSignal and check for zero
@@ -247,8 +237,7 @@ const Coin &PriceSignal::getSignalRSIRES()
 
 const Coin &PriceSignal::getSignalEMA()
 {
-    const int samples_size = samples.size();
-    if ( samples_size < 1 )
+    if ( samples.size() < 1 )
         return CoinAmount::ZERO;
 
     wt.clear();
@@ -277,8 +266,7 @@ const Coin &PriceSignal::getSignalEMA()
 
 const Coin &PriceSignal::getSignalEMAR()
 {
-    const int samples_size = samples.size();
-    if ( samples_size < 1 )
+    if ( samples.size() < 1 )
         return CoinAmount::ZERO;
 
     wt.clear();
@@ -316,8 +304,7 @@ const Coin &PriceSignal::getSignalEMAR()
 
 const Coin &PriceSignal::getSignalWMA()
 {
-    const int samples_size = samples.size();
-    if ( samples_size < 1 )
+    if ( samples.size() < 1 )
         return CoinAmount::ZERO;
 
     wt.clear();
@@ -345,8 +332,7 @@ const Coin &PriceSignal::getSignalWMA()
 
 const Coin &PriceSignal::getSignalWMAR()
 {
-    const int samples_size = samples.size();
-    if ( samples_size < 1 )
+    if ( samples.size() < 1 )
         return CoinAmount::ZERO;
 
     wt.clear();
@@ -408,8 +394,8 @@ void PriceSignal::addSampleRSIRISR(const Coin &sample)
     if ( embedded_signal != nullptr ) // SMARatio, WMARatio, EMARatio, RSIRatio
         embedded_signal->addSample( sample );
 
+    // note: we could call removeExcessSamples here, but setting max samples size =1 never returns a valid rsi value, so skip it
     const int samples_size = samples.size();
-
     if ( samples_size < 2 )
         return;
 
