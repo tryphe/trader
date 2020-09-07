@@ -5,6 +5,7 @@
 #include "../daemon/market.h"
 #include "../daemon/misctypes.h"
 #include "../daemon/priceaggregator.h"
+#include "../daemon/pricesignal.h"
 #include "../daemon/sprucev2.h"
 
 #include <QString>
@@ -17,25 +18,27 @@
 
 struct SignalContainer
 {
+    ~SignalContainer() { while( !strategy_signals.isEmpty() ) delete strategy_signals.takeFirst(); }
+
+    void initSignals( const int signal_count );
     bool isStrategyInitialized();
 
-    Signal price_signal;
-    QVector<Signal> strategy_signals;
-    QString filename;
+    PriceSignal price_signal;
+    QVector<PriceSignal*> strategy_signals;
     qint64 current_idx{ 0 };
 };
 
 struct StrategyArgs
 {
     StrategyArgs() {}
-    StrategyArgs( const SignalType _type, const int _fast, const int _slow, const Coin &_weight )
+    StrategyArgs( const PriceSignalType _type, const int _fast, const int _slow, const Coin &_weight )
         : type( _type ),
           length_fast( _fast ),
           length_slow( _slow ),
           weight( _weight )
     {}
 
-    SignalType type{ SMA };
+    PriceSignalType type{ SMA };
 
     quint16 length_fast{ 0 }, length_slow{ 0 };
     Coin weight{ CoinAmount::COIN };
@@ -64,7 +67,7 @@ struct StrategyArgs
 
 struct SimulationTask
 {
-    QByteArray getUniqueID();
+    QByteArray &getUniqueID();
 
     void addStrategyArgs( const StrategyArgs &new_args ) { m_strategy_args += new_args; }
 
@@ -110,8 +113,11 @@ private:
     void run() override;
     void runSimulation( const QMap<Market, PriceData> *const &price_data );
 
-    // new
-    QMap<QString, PriceData> m_signal_cache;
+    QVector<SignalContainer> m_signals;
+    PriceSignal m_base_capital_sma0;
+    SpruceV2 sp;
+    Coin initial_btc_value, highest_btc_value, simulation_cutoff_value, total_volume;
+    qint64 m_latest_ts;
 };
 
 #endif // SIMULATIONTHREAD_H

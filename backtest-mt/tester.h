@@ -16,35 +16,38 @@ class QTimer;
 class SimulationThread;
 class SimulationTask;
 
-//#define OUTPUT_BASE_CAPITAL
-#define OUTPUT_SIMULATION_TIME
-
 class Tester : public QObject
 {
     Q_OBJECT
 
 public:
-    static const bool USE_CANDLES_FROM_THIS_DIRECTORY = true; // note: true for realtime, false for backtest
-    static const bool OUTPUT_QTY_TARGETS = false;              // note: true for realtime, false for backtest
+//#define OUTPUT_BASE_CAPITAL
+//#define OUTPUT_SIMULATION_TIME
 
-    static const int MAX_WORKERS = 1;
+    static const bool USE_CANDLES_FROM_THIS_DIRECTORY = false;
+    static const bool OUTPUT_QTY_TARGETS = false;
+
+    static const int MAX_WORKERS = 4;
     static const int MARKET_VARIATIONS = 1;
     static const bool USE_SAVED_WORK = false;
-    static const int BASE_INTERVAL = 100; // note: when base interval is 100, signal interval is 1, and vice versa
-//    static const int SIGNAL_INTERVAL = 1;
-    static const int RELATIVE_SATS_TRADED_PER_BASE_INTERVAL = 50000; // note: 50000 for both
-    static const int PRICE_SIGNAL_LENGTH = 1;                     // note: 1 for realtime, 10 for backtest
-    static const int PRICE_SIGNAL_BIAS = -1;                      // note: -1 for realtime, 1 for backtest
+    static const int BASE_INTERVAL = 1;
+    static const int CANDLE_INTERVAL_SECS = 300;
+    static const int RELATIVE_SATS_TRADED_PER_BASE_INTERVAL = 50000;
+    static const int PRICE_SIGNAL_LENGTH = 15;
+    static const int PRICE_SIGNAL_BIAS = 5;
+    static const int ACTUAL_CANDLE_INTERVAL_SECS = CANDLE_INTERVAL_SECS * BASE_INTERVAL;
 
-    static const bool WORK_RANDOM = false;
+    static const bool WORK_RANDOM = true;
     static const int WORK_RANDOM_TRIES_MAX = 100000;
-    static const bool WORK_INFINITE = false; // regenerate work each RESULTS_OUTPUT_INTERVAL_SECS
-    static const int WORK_UNITS_BUFFER = 250000;
+    static const bool WORK_INFINITE = true; // regenerate work each RESULTS_OUTPUT_INTERVAL_SECS
+    static const int WORK_UNITS_BUFFER = 165000;
     static const int WORK_SAMPLES_START_OFFSET = 0;
+    static const bool WORK_SAMPLES_BASE_LEVELER = true; // level the base samples so our latest 5min candle is always used in the current getSignal
 
     static const int RESULTS_OUTPUT = 50; // print x best results
     static const int RESULTS_OUTPUT_INTERVAL_SECS = 300; // print and process results every x ms
-    static const bool RESULTS_OUTPUT_NEWLY_FINISHED = true;
+    static const int RESULTS_OUTPUT_THREAD_SECS = 30; // 0 = print thread message every work unit start, >0 = output only every n secs
+    static const bool RESULTS_OUTPUT_NEWLY_FINISHED = false;
     static const bool RESULTS_EVICT_ZERO_SCORE = true; // evict 0 scores from results for resource savings
 
     explicit Tester();
@@ -57,6 +60,7 @@ public:
     void fillRandomWorkQueue();
     void generateWork();
     void generateRandomWork();
+    void generateWorkFromResultString( const QString &construct );
     void startWork();
     void processFinishedWork();
 

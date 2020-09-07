@@ -18,6 +18,8 @@ SOURCES += main.cpp \
     ../daemon/coinamount_test.cpp \
     ../daemon/market.cpp \
     ../daemon/position.cpp \
+    ../daemon/pricesignal.cpp \
+    ../daemon/pricesignal_test.cpp \
     ../daemon/sprucev2.cpp \
     ../daemon/priceaggregator.cpp \
     ../libbase58/base58.c \
@@ -34,6 +36,8 @@ HEADERS += \
     ../daemon/coinamount_test.h \
     ../daemon/market.h \
     ../daemon/position.h \
+    ../daemon/pricesignal.h \
+    ../daemon/pricesignal_test.h \
     ../daemon/sprucev2.h \
     ../daemon/priceaggregator.h \
     ../daemon/misctypes.h \

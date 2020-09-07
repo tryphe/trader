@@ -5,6 +5,8 @@
 #include "../daemon/coinamount_test.h"
 #include "../daemon/global.h"
 #include "../daemon/misctypes.h"
+#include "../daemon/pricesignal.h"
+#include "../daemon/pricesignal_test.h"
 #include "../daemon/priceaggregator.h"
 
 #include <math.h>
@@ -27,13 +29,12 @@
 
 Tester::Tester()
 {
-
 //    exit( 0 );
 
     CoinAmountTest c;
     c.test();
 
-    SignalTest t;
+    PriceSignalTest t;
     t.test();
 
     // load data
@@ -136,32 +137,44 @@ void Tester::reindexPriceData( PriceData &data, const int interval )
     if ( interval < 2 )
         return;
 
-    QVector<Coin> newdata;
-    Signal base = Signal( SMA, interval );
+    PriceSignal base = PriceSignal( SMA, interval );
 
-    int interval_counter = 0;
-    for ( QVector<Coin>::const_iterator i = data.data.begin(); i < data.data.end(); i++ )
+    int interval_counter = 0, skipped_count = 0, data_overwrite_idx = 0;
+    const int original_data_size = data.data.size();
+    const int skip_n = WORK_SAMPLES_BASE_LEVELER ? data.data.size() % interval : 0;
+    const auto &data_end = data.data.end();
+    for ( auto i = data.data.begin(); i < data_end; i++ )
     {
+        // skip the first WORK_SAMPLES_BASE_START_OFFSET base samples
+        if ( WORK_SAMPLES_BASE_LEVELER && skipped_count++ < skip_n )
+        {
+            data.data_start_secs += CANDLE_INTERVAL_SECS; // push start time ahead for each candle we skip
+            continue;
+        }
+
         const Coin &sample = *i;
         const bool should_run = ++interval_counter % interval == 0;
 
         // add sample to base every iteration
         base.addSample( sample );
 
+//        kDebug() << "sample" << interval_counter;
+
         // check if we should add base to newdata
         if ( !should_run )
             continue;
 
-        // reset counter, add base to newdata
+//        kDebug() << "created new candle";
+
+        // reset counter, overwrite already used candle with new combined candle
         interval_counter = 0;
-        newdata += base.getSignal();
+        data.data[ data_overwrite_idx++ ] = base.getSignal();
     }
 
-    kDebug() << "reindexed price data," << data.data.size() << "->" << newdata.size() << "samples";
+    while ( data.data.size() > data_overwrite_idx )
+        data.data.removeLast();
 
-    // copy new data over old data
-    data.data = newdata;
-    assert( newdata.size() == data.data.size() );
+    kDebug() << "reindexed price data," << original_data_size - skip_n << "->" << data.data.size() << "samples";
 }
 
 void Tester::fillRandomWorkQueue()
@@ -191,6 +204,7 @@ void Tester::generateWork()
     work->m_markets_tested += m_price_data_0.first().keys().toVector();
 //    work->m_markets_tested += m_price_data_1.first().keys().toVector();
 
+    m_work_ids_generated_or_done += work->getUniqueID();;
     m_work_queued += work;
     m_work_count_total++;
 }
@@ -198,6 +212,9 @@ void Tester::generateWork()
 void Tester::generateRandomWork()
 {
     SimulationTask *work = new SimulationTask;
+
+    work->m_allocation_func = 1;
+    ///
 
     // add markets
     work->m_markets_tested += m_price_data_0.first().keys().toVector();
@@ -216,6 +233,62 @@ void Tester::generateRandomWork()
     }
 
     m_work_ids_generated_or_done += work_id;
+    m_work_queued += work;
+    m_work_count_total++;
+}
+
+void Tester::generateWorkFromResultString( const QString &construct )
+{   // reads the alloc func and sig args from a simulation result string. does not verify the string or read other args.
+    SimulationTask *work = new SimulationTask;
+
+    // read alloc func
+    const int alloc_func_start = construct.indexOf( "func[" ) +5;
+    const int alloc_func_end = construct.indexOf( "]", alloc_func_start );
+    const int alloc_func = construct.mid( alloc_func_start, alloc_func_end - alloc_func_start ).toInt();
+
+//    kDebug() << "func" << alloc_func;
+    work->m_allocation_func = alloc_func;
+
+    // add markets
+    work->m_markets_tested += m_price_data_0.first().keys().toVector();
+
+    // read sigs
+    const QList<QString> arg_sections = construct.split( QChar(']') );
+    for ( QList<QString>::const_iterator i = arg_sections.begin(); i != arg_sections.end(); i++ )
+    {
+        const QString &arg = *i;
+
+        // look for sig marker
+        if ( !arg.contains( "sig" ) )
+            continue;
+
+        const QList<QString> sig_parts = arg.split( QChar('[') );
+        if ( sig_parts.size() < 2 )
+            continue;
+
+        const QString sig_back = sig_parts.value( 1 );
+        const QList<QString> sig_args = sig_back.split( QChar('/') );
+
+        if ( sig_args.size() < 4 )
+            continue;
+
+//        kDebug() << sig_idx << sig_args;
+        work->addStrategyArgs( StrategyArgs( static_cast<PriceSignalType>( sig_args[ 0 ].toInt() ),
+                                             sig_args[ 1 ].toInt(),
+                                             sig_args[ 2 ].toInt(),
+                                             sig_args[ 3 ] ) );
+    }
+
+    // delete work on empty args or duplicate work id
+//    const QByteArray &work_id = work->getUniqueID();
+//    if ( work->m_strategy_args.isEmpty() || m_work_ids_generated_or_done.contains( work_id ) )
+//    {
+//        m_work_skipped_duplicate++;
+//        delete work;
+//        return;
+//    }
+
+//    m_work_ids_generated_or_done += work_id;
     m_work_queued += work;
     m_work_count_total++;
 }
@@ -269,7 +342,7 @@ void Tester::processFinishedWork()
             task->m_scores[ score_type ] = task->m_scores.value( score_type ) / MARKET_VARIATIONS;
 
         // prepend scores to simulation result
-        const QString score_str = QString( "1000d[%1]-hiX[%2]-finalX[%3]-volscore[%4]:" )
+        const QString score_str = QString( "1200d[%1]-hiX[%2]-finalX[%3]-volscore[%4]:" )
                 .arg( task->m_scores[ 0 ].toString( 2 ), -6, QChar('0') )
                 .arg( task->m_scores[ 1 ].toString( 2 ), -6, QChar('0') )
                 .arg( task->m_scores[ 2 ].toString( 2 ), -6, QChar('0') )
@@ -313,7 +386,7 @@ void Tester::processFinishedWork()
 
     QTextStream out_savefile( &savefile );
 
-    printHighScores( m_highscores_by_score[ 0 ], out_savefile, " 1000d " );
+    printHighScores( m_highscores_by_score[ 0 ], out_savefile, " 1200d " );
     printHighScores( m_highscores_by_score[ 1 ], out_savefile, " PEAK " );
     printHighScores( m_highscores_by_score[ 2 ], out_savefile, " FINAL " );
     printHighScores( m_highscores_by_score[ 3 ], out_savefile, " VOLSCORE " );
@@ -328,15 +401,16 @@ void Tester::processFinishedWork()
     trimHighScores( m_highscores_by_score[ 2 ], m_highscores_by_result[ 2 ] );
     trimHighScores( m_highscores_by_score[ 3 ], m_highscores_by_result[ 3 ] );
 
-    kDebug() << QString( "[%1 of %2] %3% done, %4 threads active" )
+    kDebug() << QString( "[%1 of %2] %3% done, %4 threads active, %5 new work results processed" )
                  .arg( m_work_count_done )
-                 .arg( Tester::WORK_INFINITE ? "inf" : QString( "%1" ).arg( m_work_count_total ) )
-                 .arg( Tester::WORK_INFINITE ? "0" : QString( "%1" ).arg( Coin( m_work_count_done ) / Coin( m_work_count_total ) * 100 ) )
-                 .arg( m_threads.size() );
+                 .arg( Tester::WORK_RANDOM && Tester::WORK_INFINITE ? "inf" : QString( "%1" ).arg( m_work_count_total ) )
+                 .arg( Tester::WORK_RANDOM && Tester::WORK_INFINITE ? "0" : QString( "%1" ).arg( Coin( m_work_count_done ) / Coin( m_work_count_total ) * 100 ) )
+                 .arg( m_threads.size() )
+                 .arg( processed_results.size() );
 
     if ( RESULTS_OUTPUT_NEWLY_FINISHED )
     {
-        kDebug() << processed_results.size() << "fresh work results:";
+        kDebug() << "new work results:";
         for ( QVector<QString>::const_iterator i = processed_results.begin(); i != processed_results.end(); i++ )
             kDebug() << *i;
     }
@@ -349,9 +423,10 @@ void Tester::processFinishedWork()
         fillRandomWorkQueue();
 
     // exit when we are done
-    if ( m_work_queued.size() == 0 &&
+    if ( m_threads.isEmpty()
+         /*m_work_queued.size() == 0 &&
          m_work_done.size() == 0 &&
-         m_work_count_total == m_work_count_done )
+         m_work_count_total == m_work_count_done*/ )
     {
         kDebug() << "done!";
         lock0.unlock();
@@ -401,6 +476,8 @@ void Tester::trimHighScores( QMultiMap<Coin, QString> &scores, QMap<QString, Coi
     // copy into maps
     scores = new_scores;
     scores_by_result = new_scores_by_result;
+
+//    kDebug() << "scores trimmed to" << scores.size() << scores_by_result.size();
 }
 
 void Tester::saveFinishedWork()
@@ -495,7 +572,6 @@ void Tester::loadFinishedWork()
         work_id = QByteArray::fromHex( line_data[ 0 ] );
         result = line_data[ 5 ];
 
-        // TODO: only add top 50 scores to m_highscores_by_result;
         score_0 = line_data[ 1 ];
         score_1 = line_data[ 2 ];
         score_2 = line_data[ 3 ];
@@ -510,6 +586,7 @@ void Tester::loadFinishedWork()
 
         results_loaded++;
     }
+//    kDebug() << "loaded" << m_work_ids_generated_or_done.size() << "work ids";
 
     // only load top RESULTS_OUTPUT scores into long-term ram
     for ( int i = 0; i < 4; i++ )
@@ -525,6 +602,8 @@ void Tester::loadFinishedWork()
             m_highscores_by_result[ i ][ result ] = score;
             m_highscores_by_score[ i ].insert( score, result );
         }
+
+//        kDebug() << "filled indices for scores" << i << ", sizes:" << m_highscores_by_result[ i ].size() << m_highscores_by_score[ i ].size();
     }
 
     kDebug() << "loaded" << results_loaded << "historical work results";
@@ -533,16 +612,13 @@ void Tester::loadFinishedWork()
 void Tester::onWorkTimer()
 {
     m_work_timer->stop();
-
     processFinishedWork();
-
     m_work_timer->start();
 }
 
 void Tester::onThreadFinished()
 {
     QMutexLocker lock0( &m_work_mutex );
-
     if ( m_threads.isEmpty() )
     {
         lock0.unlock();
