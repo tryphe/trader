@@ -15,10 +15,6 @@ void PriceSignalTest::test()
     /// test SMA with max_samples = 10
     sma.setSignalArgs( SMA, 10 );
     sma.addSample( Coin("1") );
-
-    //        qDebug() << sma.getCurrentSamples();
-    //        qDebug() << sma.getSignalSMA() << Coin( sma.getSignal() );
-
     sma.addSample( Coin("2") );
     sma.addSample( Coin("3") );
 

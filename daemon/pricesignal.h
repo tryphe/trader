@@ -46,6 +46,7 @@ public:
     const Coin &getSignalSMAR();
     const Coin &getSignalRSI();
     const Coin &getSignalRSIR();
+    const Coin &getSignalRSIRES();
     const Coin &getSignalEMA();
     const Coin &getSignalEMAR();
     const Coin &getSignalWMA();
@@ -91,7 +92,5 @@ private:
     int fast_length{ 0 }, slow_length{ 0 };
     PriceSignal *embedded_signal{ nullptr };
 };
-
-
 
 #endif // PRICESIGNAL_H

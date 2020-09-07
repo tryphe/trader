@@ -12,7 +12,7 @@ PriceSignal::PriceSignal(const PriceSignalType _type, const int _fast_length, co
     getsignal_internal += std::bind( &PriceSignal::getSignalSMAR, this );
     getsignal_internal += std::bind( &PriceSignal::getSignalWMAR, this );
     getsignal_internal += std::bind( &PriceSignal::getSignalEMAR, this );
-    getsignal_internal += std::bind( &PriceSignal::getSignalRSIR, this );
+    getsignal_internal += std::bind( &PriceSignal::getSignalRSIRES, this );
 
     using std::placeholders::_1;
     addsample_internal += std::bind( &PriceSignal::addSampleSMASMAR, this, _1 );
@@ -51,7 +51,11 @@ void PriceSignal::setSignalArgs(const PriceSignalType _type, const int _fast_len
 
         // if there's no slow length, don't use embedded PriceSignal
         if ( slow_length < 1 )
+        {
+            // enable internal function without embedded signal
+            getsignal_internal[ RSIRatio ] = std::bind( &PriceSignal::getSignalRSIR, this );
             return;
+        }
 
         // if RSIR, embed RSIR, otherwise embed non-ratioized version of the PriceSignal type
         const PriceSignalType embedded_type = type == RSIRatio ? RSIRatio :
@@ -75,7 +79,7 @@ void PriceSignal::applyWeight(Coin &signal) const
 {
     if ( signal > CoinAmount::COIN )
         signal *= weight;
-    else //if ( ret < CoinAmount::COIN )
+    else
         signal /= weight;
 }
 
@@ -182,7 +186,7 @@ const Coin &PriceSignal::getSignalRSI()
     s = current_avg_gain / current_avg_loss;
     // classical RSI: rsi = 100 - (100 / (1 + rs)) == CoinAmount::COIN * 100 - ( CoinAmount::COIN * 100 / ( CoinAmount::COIN  + rs ) )
     static const Coin ONE_HUNDRED = CoinAmount::COIN * 100;
-    getsignal_result = ONE_HUNDRED - ( ONE_HUNDRED / ( CoinAmount::COIN  + s ) );
+    getsignal_result = ONE_HUNDRED - ONE_HUNDRED / ( CoinAmount::COIN  + s );
     return getsignal_result;
 }
 
@@ -204,11 +208,31 @@ const Coin &PriceSignal::getSignalRSIR()
     // rsi == 0.5 + 1 / (2 * rs) == ( CoinAmount::SATOSHI * 50000000 ) + CoinAmount::COIN / ( 2 * rs )
     static const Coin HALF_COIN = CoinAmount::SATOSHI * 50000000;
     // fast = HALF_COIN + CoinAmount::COIN / ( s * 2 );
-    s += s;
+    s += s; // add s instead of multiplying by 2
     w = HALF_COIN + CoinAmount::COIN / s;
+    return w;
+}
 
-    if ( slow_length < 1 )
-        return w;
+const Coin &PriceSignal::getSignalRSIRES()
+{
+    const int samples_size = samples.size();
+    if ( samples_size < 1 )
+        return CoinAmount::ZERO;
+
+    if ( !( current_avg_gain.isGreaterThanZero() && current_avg_loss.isGreaterThanZero() ) )
+        return CoinAmount::ZERO;
+
+    // rs = gain / loss
+    s = current_avg_gain / current_avg_loss;
+
+    // we want to return a value from 0-2, >1 oversold, <1 overbought, so we use the formula:
+    // rsi == 1 / (2 - (2 / (1 + rs))) == CoinAmount::COIN / ( CoinAmount::COIN * 2 - ( CoinAmount::COIN * 2 / ( CoinAmount::COIN  + rs ) ) )
+    // simplified as:
+    // rsi == 0.5 + 1 / (2 * rs) == ( CoinAmount::SATOSHI * 50000000 ) + CoinAmount::COIN / ( 2 * rs )
+    static const Coin HALF_COIN = CoinAmount::SATOSHI * 50000000;
+    // fast = HALF_COIN + CoinAmount::COIN / ( s * 2 );
+    s += s; // add s instead of multiplying by 2
+    w = HALF_COIN + CoinAmount::COIN / s;
 
     // get embedded PriceSignal and check for zero
     s = embedded_signal->getSignal();
