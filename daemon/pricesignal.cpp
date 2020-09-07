@@ -44,43 +44,43 @@ void PriceSignal::setSignalArgs(const PriceSignalType _type, const int _fast_len
     clear();
 
     // if ratioized type, initialize embedded slow length
-    if ( type > RSI )
+    if ( type <= RSI )
+        return;
+
+    // assert that we initialized the recursive PriceSignal length. slow_length should not be <1, except if RSIRatio, which doesn't require a slow length
+    assert( type == RSIRatio || slow_length > 0 );
+
+    // if there's no slow length, don't use embedded PriceSignal
+    if ( slow_length < 1 )
     {
-        // assert that we initialized the recursive PriceSignal length. slow_length should not be <1, except if RSIRatio, which doesn't require a slow length
-        assert( type == RSIRatio || slow_length > 0 );
-
-        // if there's no slow length, don't use embedded PriceSignal
-        if ( slow_length < 1 )
-        {
-            // enable internal function without embedded signal
-            getsignal_internal[ RSIRatio ] = std::bind( &PriceSignal::getSignalRSIR, this );
-            return;
-        }
-
-        // if RSIR, embed RSIR, otherwise embed non-ratioized version of the PriceSignal type
-        const PriceSignalType embedded_type = type == RSIRatio ? RSIRatio :
-                                                            static_cast<PriceSignalType>( type -4 );
-
-        // initialize if null
-        if ( embedded_signal == nullptr )
-        {
-            embedded_signal = new PriceSignal( embedded_type, slow_length );
-        }
-        // reinitialize if not null
-        else
-        {
-            embedded_signal->setSignalArgs( embedded_type, slow_length );
-            embedded_signal->clear();
-        }
+        // enable internal function without embedded signal
+        getsignal_internal[ RSIRatio ] = std::bind( &PriceSignal::getSignalRSIR, this );
+        return;
     }
+
+    // if RSIR, embed RSIR, otherwise embed non-ratioized version of the PriceSignal type
+    const PriceSignalType embedded_type = type == RSIRatio ? RSIRatio : static_cast<PriceSignalType>( type -4 );
+
+    // initialize if null
+    if ( embedded_signal == nullptr )
+    {
+        embedded_signal = new PriceSignal( embedded_type, slow_length );
+        return;
+    }
+
+    // reinitialize if not null
+    embedded_signal->setSignalArgs( embedded_type, slow_length );
 }
 
 void PriceSignal::applyWeight(Coin &signal) const
 {
-    if ( signal > CoinAmount::COIN )
+    if ( signal >= CoinAmount::COIN )
+    {
         signal *= weight;
-    else
-        signal /= weight;
+        return;
+    }
+
+   signal /= weight;
 }
 
 void PriceSignal::setMaxSamples(const int max)
@@ -93,11 +93,18 @@ void PriceSignal::setMaxSamples(const int max)
 
 void PriceSignal::removeExcessSamples()
 {
-    while ( samples_max > 0 && samples.size() > samples_max )
+//    while ( samples_max > 0 && samples.size() > samples_max )
+//        samples.removeFirst();
+
+    if ( samples_max < 1 )
+        return;
+
+    int sz = samples.size();
+    while ( sz-- > samples_max )
         samples.removeFirst();
 }
 
-void PriceSignal::clear() // note: call clear() before setting new type with setType()
+void PriceSignal::clear()
 {
     samples.clear();
 
@@ -389,6 +396,7 @@ void PriceSignal::addSampleSMASMAR(const Coin &sample)
 void PriceSignal::addSampleRSIRISR(const Coin &sample)
 {
     samples.push_back( sample );
+    removeExcessSamples();
 
     // push embedded sample
     if ( embedded_signal != nullptr ) // SMARatio, WMARatio, EMARatio, RSIRatio
@@ -418,9 +426,12 @@ void PriceSignal::addSampleRSIRISR(const Coin &sample)
                 const Coin &current = *it;
 
                 if ( current.isLessThanZero() )
+                {
                     total_loss += -current;
-                else
-                    total_gain += current;
+                    continue;
+                }
+
+                total_gain += current;
             }
 
             current_avg_gain = total_gain / samples_max;
@@ -429,15 +440,12 @@ void PriceSignal::addSampleRSIRISR(const Coin &sample)
             // we don't use this after this block is executed, clear it
             gain_loss.clear();
         }
-    }
-    else
-    {
-        // avg_gain_loss == ( previous * ( period-1 ) + current_gain_loss ) / period
-        current_avg_gain = ( current_avg_gain * ( samples_max -1 ) + ( current_gain_loss.isLessThanZero() ? CoinAmount::ZERO : current_gain_loss ) ) / samples_max;
-        current_avg_loss = ( current_avg_loss * ( samples_max -1 ) + ( current_gain_loss.isGreaterThanZero() ? CoinAmount::ZERO : -current_gain_loss ) ) / samples_max;
+        return;
     }
 
-    removeExcessSamples();
+    // avg_gain_loss == ( previous * ( period-1 ) + current_gain_loss ) / period
+    current_avg_gain = ( current_avg_gain * ( samples_max -1 ) + ( current_gain_loss.isLessThanZero() ? CoinAmount::ZERO : current_gain_loss ) ) / samples_max;
+    current_avg_loss = ( current_avg_loss * ( samples_max -1 ) + ( current_gain_loss.isGreaterThanZero() ? CoinAmount::ZERO : -current_gain_loss ) ) / samples_max;
 }
 
 void PriceSignal::addSampleWMAEMAWMAREMAR(const Coin &sample)
@@ -453,21 +461,19 @@ void PriceSignal::addSampleWMAEMAWMAREMAR(const Coin &sample)
 
 bool PriceSignal::hasSignal() const
 {
-    bool ret = true;
-
     // check for empty samples
     if ( samples.isEmpty() )
-        ret = false;
+        return false;
     // check for samples < max
-    else if ( getCurrentSamples() < samples_max )
-        ret = false;
+    if ( getCurrentSamples() < samples_max )
+        return false;
     // check for unpopulated rsi
-    else if ( ( type == RSIRatio || type == RSI ) &&
-              !( current_avg_gain.isGreaterThanZero() && current_avg_loss.isGreaterThanZero() ) )
-        ret = false;
+    if ( ( type == RSIRatio || type == RSI ) &&
+        !( current_avg_gain.isGreaterThanZero() && current_avg_loss.isGreaterThanZero() ) )
+        return false;
     // incorporate recursive state
-    else if ( embedded_signal != nullptr )
-        ret &= embedded_signal->hasSignal();
+    if ( embedded_signal != nullptr )
+        return embedded_signal->hasSignal();
 
-    return ret;
+    return true;
 }
