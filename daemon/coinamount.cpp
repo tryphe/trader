@@ -225,14 +225,14 @@ bool Coin::operator >=( const Coin &c ) const
 
 Coin Coin::operator -() const
 {
-    return isZeroOrLess() ? Coin() - *this :
-                            *this * ( Coin() - CoinAmount::COIN );
+    return isZeroOrLess() ? CoinAmount::ZERO - *this :
+                            *this * ( CoinAmount::ZERO - CoinAmount::COIN );
 }
 
 Coin Coin::abs() const
 {
     return isGreaterThanZero() ? *this :
-                                 Coin() - *this;
+                                 CoinAmount::ZERO - *this;
 }
 
 Coin Coin::pow( int p ) const
@@ -274,7 +274,6 @@ QString Coin::toString( const int decimals = CoinAmount::subsatoshi_decimals ) c
     // thread-safe static opt
     static QMap<Qt::HANDLE, std::vector<char>> buffer_map;
     std::vector<char> &buffer = buffer_map[ QThread::currentThreadId() ];
-//    std::vector<char> buffer;
 
     // resize the buffer to how many base10 bytes we'll need
     size_t buffer_size = mpz_sizeinbase( b, CoinAmount::str_base ) +2; // "two extra bytes for a possible minus sign, and null-terminator."
@@ -285,7 +284,7 @@ QString Coin::toString( const int decimals = CoinAmount::subsatoshi_decimals ) c
     mpz_get_str( buffer.data(), CoinAmount::str_base, b );
     QString ret( buffer.data() );
 
-    // alternative method which uses malloc/free, about 2.5% slower than std::vector
+    // alternative method which uses malloc/free, slower than std::vector
 //    char *c = mpz_get_str( nullptr, 10, b );
 //    ret.insert( 0, c );
 //    free( c );
@@ -301,7 +300,7 @@ QString Coin::toString( const int decimals = CoinAmount::subsatoshi_decimals ) c
         int diff = CoinAmount::subsatoshi_decimals - decimals;
         ret.chop( diff );
 
-        // update sz1
+        // update sz
         if ( sz <= CoinAmount::satoshi_decimals )
             sz = 0;
         else
@@ -357,7 +356,7 @@ int Coin::toInt() const
 
     // convert to int
     bool ok = false;
-    int ret = str.toInt( &ok );
+    const int ret = str.toInt( &ok );
 
     // check for valid int
     if ( !ok )
@@ -378,7 +377,7 @@ quint32 Coin::toUInt32() const
 
     // convert to int
     bool ok = false;
-    quint32 ret = str.toULong( &ok );
+    const quint32 ret = str.toULong( &ok );
 
     // check for valid int
     if ( !ok )

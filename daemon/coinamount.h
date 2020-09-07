@@ -83,6 +83,7 @@ namespace CoinAmount
 
 // note: there MUST NOT be any Coin::operators used here as we might recursively reference another
 // uninitialized static variable, which is undefined and will break things
+static const Coin ZERO;
 static const Coin COIN = QString( "1" );
 static const Coin COIN_PARTS = QString( "10000000000000000" );
 static const Coin SATOSHI_PARTS = QString( "100000000" );
@@ -220,7 +221,7 @@ static inline void toSatoshiFormat( QString &s, int decimals = satoshi_decimals 
             s.at( 1 ) == CoinAmount::zero_exp )
         s.remove( 0, 1 );
 
-    int dec_idx = s.indexOf( CoinAmount::decimal_exp );
+    const int dec_idx = s.indexOf( CoinAmount::decimal_exp );
 
     // add zeroes on end
     decimals++;
