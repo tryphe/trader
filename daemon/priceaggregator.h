@@ -3,6 +3,7 @@
 
 #include "coinamount.h"
 #include "misctypes.h"
+#include "pricesignal.h"
 #include "global.h"
 
 #include <QString>
@@ -25,9 +26,7 @@ struct PriceData
     PriceData() {}
     ~PriceData() {}
 
-    qint64 start_secs{ 0 };
     qint64 data_start_secs{ 0 };
-    Signal base_ma;
     QVector<Coin> data;
 };
 
@@ -40,26 +39,28 @@ struct PriceAggregatorConfig
 {
     PriceAggregatorConfig();
     PriceAggregatorConfig( const QString &_market,
-                           const int _small_ma_interval_secs,
-                           const int _signal_ma_interval_secs,
-                           const int _signal_ma_length,
+                           const int _base_interval_secs,
+                           const int _base_len,
+                           const int _strategy_length,
+                           const int _strategy_length_internal_option0,
+                           const int _interval_counter = 0,
                            const Coin jumpstart_price = Coin() );
 
     void jumpstart( const Coin &price );
 
     // data in the config file
     QString market;
-    int small_ma_interval_secs{ 60 }; // record new sample for price every x secs
-    int getSmallMALength() const { return signal_ma_interval_secs / small_ma_interval_secs; }
-    int signal_ma_interval_secs{ 84600 }; // save price ma every x secs, default 1 day
-    int signal_ma_length{ 365 }; // combine this many 1 day ma samples for our signal price
+
+    int base_interval_secs{ 0 }; // record new sample for price every x secs
+    int base_length{ 0 };
+    int strategy_length{ 0 };
 
     // TODO: these should be a stack and interval/lengths should be in PriceData
     // data in the small_ma file
-    PriceData small_ma;
+    PriceData base_data;
 
     // data in the signal ma file
-    PriceData signal_ma;
+    PriceSignal signal_base, signal_strategy;
 };
 
 /* PriceAggregator
@@ -81,11 +82,11 @@ public:
     static QString getSettingsPath();
     static QString getSamplesPath( const QString &market, const qint64 interval_secs );
 
-    static void savePriceSamples( const QString &market, const qint64 sample_interval, const qint64 data_start_secs, const QVector<Coin> &data );
-    static bool loadPriceSamples( PriceData &data, const QString &path, const int ma_length, const int ma_interval );
+    static void savePriceSamples(const PriceAggregatorConfig &config , const QString filename_override = QString() );
+    static bool loadPriceSamples( PriceData &data, const QString &path );
 
     Spread getSpread( const QString &market ) const;
-    Coin getSignalMA( const QString &market ) const;
+    Coin getStrategySignal( const QString &market );
 
     void addPersistentMarket( const PriceAggregatorConfig &config );
 
