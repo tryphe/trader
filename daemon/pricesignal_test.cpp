@@ -13,7 +13,6 @@ void PriceSignalTest::test()
     assert( sma.getSignal() == Coin("3.5") );
 
     /// test SMA with max_samples = 10
-    // TODO: figure out why sma.getSignal() == 0 if constructor sma = PriceSignal( SMA, 10 ); is used here
     sma.setSignalArgs( SMA, 10 );
     sma.addSample( Coin("1") );
 
