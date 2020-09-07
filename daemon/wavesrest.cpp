@@ -783,13 +783,14 @@ void WavesREST::parseNewOrder( const QJsonObject &info, Request *const &request 
                 return;
             }
 
+            // note: banning disabled for now
             // cancel enough to meet asset_required amount, and ban from flux phases for 1hr
-            if ( asset1_required > asset1_available )
-                engine->getPositionMan()->cancelFluxOrders( asset1, asset1_required, asset1_available, 3600 );
+//            if ( asset1_required > asset1_available )
+//                engine->getPositionMan()->cancelFluxOrders( asset1, asset1_required, asset1_available, 3600 );
 
-            // ditto
-            if ( asset2_required > asset2_available )
-                engine->getPositionMan()->cancelFluxOrders( asset2, asset2_required, asset2_available, 3600 );
+//            // ditto
+//            if ( asset2_required > asset2_available )
+//                engine->getPositionMan()->cancelFluxOrders( asset2, asset2_required, asset2_available, 3600 );
 
             return;
         }

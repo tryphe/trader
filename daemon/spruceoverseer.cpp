@@ -22,7 +22,6 @@
 #include <QTimer>
 
 const bool expand_spread_base_down = false; // true = getSpreadForSide always expands down for base greed value before applying other effects
-const bool prices_uses_avg = true; // false = assemble widest combined spread between all exchanges, true = average spreads between all exchanges
 
 SpruceOverseer::SpruceOverseer( EngineMap *_engine_map, PriceAggregator *_price_aggregator, SpruceV2 *_spruce )
     : QObject( nullptr ),
@@ -40,7 +39,7 @@ SpruceOverseer::SpruceOverseer( EngineMap *_engine_map, PriceAggregator *_price_
 
     // autosave spruce settings
     autosave_timer = new QTimer( this );
-    connect( autosave_timer, &QTimer::timeout, this, &SpruceOverseer::onSaveSpruceSettings );
+    connect( autosave_timer, &QTimer::timeout, this, &SpruceOverseer::onBackupAndSave );
     autosave_timer->setTimerType( Qt::VeryCoarseTimer );
     autosave_timer->start( 60000 * 60 ); // set default to 1hr
 
@@ -84,7 +83,13 @@ void SpruceOverseer::onSpruceUp()
                                   .arg( side == SIDE_BUY ? "B" : "S" )
                                   .arg( is_midspread_phase ? "all" : flux_market ); // todo: put selected market here in market loop
 
-        // initialize duplicity spread (used only for flux phase)
+        // stats: turn visualization on for midspread phase, otherwise turn off
+        if ( is_midspread_phase )
+            spruce->setVisualization( true );
+        else
+            spruce->setVisualization( false );
+
+        // initialize duplicity spread
         Spread spread_duplicity;
         if ( !is_midspread_phase )
         {
@@ -97,8 +102,7 @@ void SpruceOverseer::onSpruceUp()
             }
         }
 
-        spruce->clearCurrentPrices();
-        spruce->clearSignalPrices();
+        spruce->clearCurrentAndSignalPrices();
         for ( QVector<QString>::const_iterator i = alpha_markets.begin(); i != alpha_markets.end(); i++ )
         {
             const Market market = *i;
@@ -128,17 +132,26 @@ void SpruceOverseer::onSpruceUp()
             }
 
             // check signal price
-            const Coin signal_price = price_aggregator->getSignalMA( market );
-            if ( signal_price.isZeroOrLess() )
+            QVector<Coin> signal_prices;
+
+            // if we didn't specify 'setmanualqtytarget', read signals
+            if ( !spruce->hasManualQuantityToShortLong() )
             {
-                kDebug() << "spruceoverseer error:" << market << "signal price" << signal_price << "was invalid for phase" << phase_name;
-                return;
+                signal_prices += price_aggregator->getStrategySignal( market );
+
+                // look for bad signal prices
+                for ( int i = 0; i < signal_prices.size(); i++ )
+                {
+                    if ( signal_prices.at( i ).isGreaterThanZero() )
+                        continue;
+
+                    kDebug() << "spruceoverseer error:" << market << "signal price" << i << ":" << signal_prices.at( i ) << "was invalid for phase" << phase_name;
+                    return;
+                }
             }
 
             //kDebug() << currency << "signal" << signal_price << "diffusion price" << diffusion_price;
-
-            spruce->setSignalPrice( currency, signal_price );
-            spruce->setCurrentPrice( currency, diffusion_price );
+            spruce->setCurrentPriceSignal( currency, diffusion_price, signal_prices );
         }
 
         // on the sell side of the midspread phase, the result is the same as the buy side, so skip it
@@ -146,10 +159,14 @@ void SpruceOverseer::onSpruceUp()
         {
             // calculate amount to short/long, and fail if necessary
             if ( !spruce->calculateAmountToShortLong() )
+            {
+                kDebug() << "error: calculateAmountToShortLong() failed";
                 return;
+            }
         }
 
         const QMap<QString,Coin> &qty_to_shortlong_map = spruce->getQuantityToShortLongMap();
+//        kDebug() << "qsl map:" << qty_to_shortlong_map;
 
         for ( QMap<quint8, Engine*>::const_iterator e = engine_map->begin(); e != engine_map->end(); e++ )
         {
@@ -168,7 +185,7 @@ void SpruceOverseer::onSpruceUp()
                                                     .arg( market );
 
                 // get market allocation for this exchange and apply to qty_to_shortlong
-                const Coin market_allocation = spruce->getExchangeAllocation( exchange_market_key );
+                const Coin market_alloc_ratio = spruce->getExchangeAllocation( exchange_market_key, is_midspread_phase );
 
                 // continue on zero market allocation for this engine
                 if ( market_allocation.isZeroOrLess() )
@@ -199,7 +216,7 @@ void SpruceOverseer::onSpruceUp()
                                                  ( side == SIDE_BUY ) ? buy_price : sell_price;
                 runCancellors( engine, market, side, phase_name, cancel_thresh_price );
 
-                const Coin qty_to_shortlong = i.value() * market_allocation;
+                const Coin qty_to_shortlong = i.value() * market_alloc_ratio;
                 const bool is_buy = qty_to_shortlong.isZeroOrLess();
 
                 // disable snapback if we flipped to the other side
@@ -230,8 +247,13 @@ void SpruceOverseer::onSpruceUp()
                 const Coin order_size_limit = order_size_default * order_nice;
 
                 // cache amount to short/long
-                const Coin amount_to_shortlong = spruce->getCurrentPrice( market.getQuote() ) * qty_to_shortlong;
+                const Coin current_market_price = spruce->getCurrentPrice( market.getQuote() );
+                const Coin amount_to_shortlong = current_market_price * qty_to_shortlong;
                 const Coin amount_to_shortlong_abs = amount_to_shortlong.abs();
+                const Coin amount_to_shortlong_effective = amount_to_shortlong_abs - order_size_limit;
+                const Coin qty_to_shortlong_effective = amount_to_shortlong_effective / current_market_price;
+
+                if ( amount_to_shortlong_effective )
 
                 // measure how close amount_to_sl is to hitting the limit
                 const Coin pct_progress = amount_to_shortlong_abs / order_size_limit.abs() * 100;
@@ -250,17 +272,17 @@ void SpruceOverseer::onSpruceUp()
                                                  .arg( COLOR_NONE ) )
                         // if flux phase, print nothing. if midstate, print spaces if snapback disabled,
                         // if snapback is enabled, print "snap" with the color of the side with snapback active
-                        .arg( !is_midspread_phase ? QString() :
+                        .arg( !is_midspread_phase ? QString( "    " ) :
                               QString( "%1%2%3" ).arg( is_snapback_buys_enabled  ? COLOR_GREEN :
                                                        is_snapback_sells_enabled ? COLOR_RED :
                                                                                    COLOR_NONE )
                                                  .arg( is_snapback_buys_enabled || is_snapback_sells_enabled ? "snap" : "    " )
                                                  .arg( COLOR_NONE ) )
                         .arg( side == SIDE_BUY ? buy_price : sell_price )
-                        .arg( qty_to_shortlong.toString( 4 ), 12 )
-                        .arg( amount_to_shortlong.toString( 4 ), 9 ) // print amount to s/l
+                        .arg( Coin( qty_to_shortlong_effective ).toString( 4 ), 12 ) // note: two toString() to workaround a nit display bug
+                        .arg( Coin( amount_to_shortlong.toString( 4 ) ).toString( 4 ), 9 ) // print amount to s/l
                         .arg( ( is_buy ? -order_size_limit : order_size_limit ).toString( 4 ), -13 ) // print amount to s/l less the nice buffer (the actionable amount)
-                        .arg( pct_progress.toString( 1 ), 5 )
+                        .arg( pct_progress.toString( 1 ), 7 )
                         .arg( spruce_active_for_side.toString( 4 ), 8 );
 
                 if ( is_midspread_phase )
@@ -278,6 +300,8 @@ void SpruceOverseer::onSpruceUp()
                      snapback_state &&
                      amount_to_shortlong_abs < order_size_limit ) // make sure we are under the limit if we are disabling, to avoid enable/disable loop
                 {
+                    kDebug() << "[SpruceOverseer] debug: trying to disable snapback for" << market << side;
+
                     // disable snapback
                     spruce->setSnapbackState( market, side, false, buy_price );
 
@@ -371,19 +395,29 @@ void SpruceOverseer::onSpruceUp()
                 const quint16 ORDER_CHUNKS_FLUX = spruce->getOrdersPerSideFlux();
                 const quint16 ORDER_CHUNKS_MIDSPREAD = spruce->getOrdersPerSideMidspread();
                 const Coin order_size = ( is_midspread_phase ) ?
-                            std::max( order_size_default * ORDER_CHUNKS_MIDSPREAD, ( amount_to_shortlong_abs - spruce_active_for_side - order_size_limit ) / ORDER_CHUNKS_MIDSPREAD ) :
+                            std::max( order_size_default /* ORDER_CHUNKS_MIDSPREAD*/, ( amount_to_shortlong_abs - spruce_active_for_side - order_size_limit ) / ORDER_CHUNKS_MIDSPREAD ) :
                             std::max( order_size_default, ( amount_to_shortlong_abs - order_size_limit ) / ORDER_CHUNKS_FLUX ); // note: spruce_active_for_side is excluded here because the flux is variant
 
                 // don't go over the abs value of our new projected position, and also regard nice value
                 if ( spruce_active_for_side + order_size > amount_to_shortlong_abs - order_size_limit )
                     continue;
 
+                if ( is_midspread_phase )
+                    kDebug() << message_out;
                 // append minimum spread distance to message (there is no distance for the midspread phase)
-                if ( !is_midspread_phase )
+                else // ( !is_midspread_phase )
+                {
                     message_out += QString( " | dst %1" )
                                     .arg( spread_distance_limit.toString( 4 ) );
 
-                kDebug() << message_out;
+                    kDebug() << message_out;
+                }
+
+                // reduce ub chance, not a ping-pong order, don't supply both prices
+                if ( is_buy )
+                    sell_price = Coin();
+                else
+                    buy_price = Coin();
 
                 // queue the order if we aren't paper trading
 #if !defined(PAPER_TRADE)
@@ -511,7 +545,7 @@ Spread SpruceOverseer::getSpreadForSide( const QString &market, quint8 side, boo
 
     /// step 3: adjust spread by distance chosen
     // ensure the spread is more profitable than base greed value
-    Coin spread_distance_base = spruce->getOrderGreed();
+    const Coin spread_distance_base = spruce->getOrderGreed();
     const Coin limit = std::min( spread_distance_base + greed_reduce, spruce->getOrderGreedMinimum() );
 
     // contract our spread in the direction specified
@@ -663,7 +697,7 @@ void SpruceOverseer::saveStats()
     savefile.close();
 }
 
-void SpruceOverseer::onSaveSpruceSettings()
+void SpruceOverseer::onBackupAndSave()
 {
     if ( !spruce->isActive() )
         return;
@@ -676,7 +710,6 @@ void SpruceOverseer::onSaveSpruceSettings()
     if ( QFile::exists( settings_path ) )
     {
         QString new_settings_path = Global::getOldLogsPath() + QDir::separator() + "spruce.settings." + QString::number( QDateTime::currentSecsSinceEpoch() );
-        kDebug() << "backing up spruce settings...";
 
         if ( QFile::copy( settings_path, new_settings_path ) )
         {
@@ -693,7 +726,6 @@ void SpruceOverseer::onSaveSpruceSettings()
     if ( QFile::exists( stats_path ) )
     {
         QString new_stats_path = Global::getOldLogsPath() + QDir::separator() + "stats." + QString::number( QDateTime::currentSecsSinceEpoch() );
-        kDebug() << "backing up spruce stats...";
 
         if ( QFile::copy( stats_path, new_stats_path ) )
         {
@@ -705,6 +737,15 @@ void SpruceOverseer::onSaveSpruceSettings()
             kDebug() << "local error: couldn't backup spruce stats file to" << new_stats_path;
         }
     }
+
+    saveSettings();
+    saveStats();
+    price_aggregator->save();
+
+    kDebug() << "info: settings and stats have been backed up and saved";
+
+    // also read new manual qty targets
+    spruce->readManulQtyTargetsFile();
 }
 
 void SpruceOverseer::runCancellors( Engine *engine, const QString &market, const quint8 side, const QString &phase_name, const Coin &flux_price )
@@ -786,19 +827,20 @@ void SpruceOverseer::runCancellors( Engine *engine, const QString &market, const
                                             .arg( market );
 
         // get market allocation
-        const QString currency = Market( market ).getQuote();
+        const QString &currency = Market( market ).getQuote();
         const Coin active_amount = engine->positions->getActiveSpruceEquityTotal( market, phase_name, side_actual, flux_price );
-        const Coin amount_to_shortlong = spruce->getExchangeAllocation( exchange_market_key ) * spruce->getCurrentPrice( currency ) * spruce->getQuantityToShortLongByCurrency( currency );
+        const Coin amount_to_shortlong = spruce->getExchangeAllocation( exchange_market_key, is_midspread_phase ) * spruce->getCurrentPrice( currency ) * spruce->getQuantityToShortLongByCurrency( currency );
 
         // get active tolerance
         const Coin nice_zero_bound = spruce->getOrderNiceZeroBound( market, side_actual, is_midspread_phase );
         const Coin zero_bound_tolerance = spruce->getOrderSize( market ) * nice_zero_bound;
 
         /// cancellor 2: look for active amount > amount_to_shortlong + order_size_limit
-        if ( ( side_actual == SIDE_BUY  && amount_to_shortlong.isZeroOrLess() &&
-               active_amount - zero_bound_tolerance > amount_to_shortlong.abs() ) ||
-             ( side_actual == SIDE_SELL && amount_to_shortlong.isGreaterThanZero() &&
-               active_amount - zero_bound_tolerance > amount_to_shortlong.abs() ) )
+        if ( !spruce->hasManualQuantityToShortLong() &&
+             ( ( side_actual == SIDE_BUY  && amount_to_shortlong.isZeroOrLess() &&
+                 active_amount - zero_bound_tolerance > amount_to_shortlong.abs() ) ||
+               ( side_actual == SIDE_SELL && amount_to_shortlong.isGreaterThanZero() &&
+                 active_amount - zero_bound_tolerance > amount_to_shortlong.abs() ) ) )
         {
             engine->positions->cancel( pos, false, CANCELLING_FOR_SPRUCE_2 );
             continue;

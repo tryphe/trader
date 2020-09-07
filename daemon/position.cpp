@@ -286,7 +286,7 @@ void Position::applyOffset( qreal _offset, bool sentiment )
     }
     //
 
-    const Coin fee = engine != nullptr ? engine->getSettings()->fee : Coin();
+    const Coin fee = engine != nullptr ? engine->getSettings()->fee : CoinAmount::ZERO;
 
     // calculate profit multipler while avoiding div0
     Coin profit_multiplier;

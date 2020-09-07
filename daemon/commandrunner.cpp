@@ -63,6 +63,7 @@ CommandRunner::CommandRunner( const quint8 _engine_type, Engine *_e, QVector<Bas
     command_map.insert( "getshortlong", std::bind( &CommandRunner::command_getshortlong, this, _1 ) );
     command_map.insert( "gethibuylosell", std::bind( &CommandRunner::command_gethibuylosell, this, _1 ) );
     command_map.insert( "setmarketsettings", std::bind( &CommandRunner::command_setmarketsettings, this, _1 ) );
+    command_map.insert( "getsprucevisual", std::bind( &CommandRunner::command_getsprucevisual, this, _1 ) );
     command_map.insert( "setmarketoffset", std::bind( &CommandRunner::command_setmarketoffset, this, _1 ) );
     command_map.insert( "setmarketsentiment", std::bind( &CommandRunner::command_setmarketsentiment, this, _1 ) );
     command_map.insert( "setnaminterval", std::bind( &CommandRunner::command_setnaminterval, this, _1 ) );
@@ -90,6 +91,7 @@ CommandRunner::CommandRunner( const quint8 _engine_type, Engine *_e, QVector<Bas
     command_map.insert( "setspruceinterval", std::bind( &CommandRunner::command_setspruceinterval, this, _1 ) );
     command_map.insert( "setsprucebasecurrency", std::bind( &CommandRunner::command_setsprucebasecurrency, this, _1 ) );
     command_map.insert( "setspruceqty", std::bind( &CommandRunner::command_setspruceqty, this, _1 ) );
+    command_map.insert( "setsprucemanualqtytarget", std::bind( &CommandRunner::command_setsprucemanualqtytarget, this, _1 ) );
     command_map.insert( "setsprucebetamarket", std::bind( &CommandRunner::command_setsprucebetamarket, this, _1 ) );
     command_map.insert( "setspruceordergreed", std::bind( &CommandRunner::command_setspruceordergreed, this, _1 ) );
     command_map.insert( "setspruceordersize", std::bind( &CommandRunner::command_setspruceordersize, this, _1 ) );
@@ -99,11 +101,15 @@ CommandRunner::CommandRunner( const quint8 _engine_type, Engine *_e, QVector<Bas
     command_map.insert( "setspruceordernicecustom", std::bind( &CommandRunner::command_setspruceordernicecustom, this, _1 ) );
     command_map.insert( "setspruceordernicemarketoffset", std::bind( &CommandRunner::command_setspruceordernicemarketoffset, this, _1 ) );
     command_map.insert( "setspruceallocation", std::bind( &CommandRunner::command_setspruceallocation, this, _1 ) );
+    command_map.insert( "setsprucephaseallocation", std::bind( &CommandRunner::command_setsprucephaseallocation, this, _1 ) );
     command_map.insert( "setsprucesnapback", std::bind( &CommandRunner::command_setsprucesnapback, this, _1 ) );
     command_map.insert( "setsprucesnapbacktrigger1", std::bind( &CommandRunner::command_setsprucesnapbacktrigger1, this, _1 ) );
     command_map.insert( "setsprucesnapbacktrigger2", std::bind( &CommandRunner::command_setsprucesnapbacktrigger2, this, _1 ) );
+    command_map.insert( "setsprucealloc", std::bind( &CommandRunner::command_setsprucealloc, this, _1 ) );
     command_map.insert( "setpricetracking", std::bind( &CommandRunner::command_setpricetracking, this, _1 ) );
+    command_map.insert( "setsprucesavebasecapital", std::bind( &CommandRunner::command_setsprucesavebasecapital, this, _1 ) );
     command_map.insert( "getmidspreadstatus", std::bind( &CommandRunner::command_getmidspreadstatus, this, _1 ) );
+    command_map.insert( "getsprucebasecapital", std::bind( &CommandRunner::command_getsprucebasecapital, this, _1 ) );
     command_map.insert( "getstatus", std::bind( &CommandRunner::command_getstatus, this, _1 ) );
     command_map.insert( "getconfig", std::bind( &CommandRunner::command_getconfig, this, _1 ) );
     command_map.insert( "getinternal", std::bind( &CommandRunner::command_getinternal, this, _1 ) );
@@ -621,6 +627,13 @@ void CommandRunner::command_gethibuylosell( QStringList &args )
         kDebug() << i.value();
 }
 
+void CommandRunner::command_getsprucevisual( QStringList &args )
+{
+    Q_UNUSED( args )
+
+    kDebug() << "\n" + spruce_overseer->spruce->getVisualization();
+}
+
 void CommandRunner::command_setmarketsettings( QStringList &args )
 {
     if ( !checkArgs( args, 9 ) ) return;
@@ -865,6 +878,14 @@ void CommandRunner::command_setspruceqty( QStringList &args )
     kDebug() << "spruce set current qty for" << args.value( 1 ) << args.value( 2 );
 }
 
+void CommandRunner::command_setsprucemanualqtytarget( QStringList &args )
+{
+    if ( !checkArgs( args, 2 ) ) return;
+
+    spruce_overseer->spruce->setManualQuantityTarget( args.value( 1 ), args.value( 2 ) );
+    kDebug() << "spruce set manual qty target for" << args.value( 1 ) << args.value( 2 );
+}
+
 void CommandRunner::command_setsprucebetamarket( QStringList &args )
 {
     if ( !checkArgs( args, 1 ) ) return;
@@ -977,6 +998,16 @@ void CommandRunner::command_setspruceallocation( QStringList &args )
                                                     Coin( args.value( 2 ) ) );
 }
 
+void CommandRunner::command_setsprucephaseallocation( QStringList &args )
+{
+    if ( !checkArgs( args, 2 ) ) return;
+
+    spruce_overseer->spruce->setPhaseAllocation( args.value( 1 ),
+                                                 args.value( 2 ) );
+
+    kDebug() << "noflux alloc:" << args.value( 1 ) << "flux alloc:" << args.value( 2 );
+}
+
 void CommandRunner::command_setsprucesnapback( QStringList &args )
 {
     if ( !checkArgs( args, 1 ) ) return;
@@ -1009,24 +1040,52 @@ void CommandRunner::command_setsprucesnapbacktrigger2( QStringList &args )
     kDebug() << "spruce snapback trigger 2 ma samples:" << spruce_overseer->spruce->getSnapbackTrigger2MASamples()
                                          << "ma ratio:" << spruce_overseer->spruce->getSnapbackTrigger2MARatio()
                                     << "initial ratio:" << spruce_overseer->spruce->getSnapbackTrigger2InitialRatio()
-                                 << "message interval:" << spruce_overseer->spruce->getSnapbackTrigger2MessageInterval();
+                                    << "message interval:" << spruce_overseer->spruce->getSnapbackTrigger2MessageInterval();
+}
+
+void CommandRunner::command_setsprucealloc( QStringList &args )
+{
+    if ( !checkArgs( args, 1 ) ) return;
+
+    spruce_overseer->spruce->setAllocationFunction( args.value( 1 ).toInt() );
+    kDebug() << "spruce allocation function is" << spruce_overseer->spruce->getAllocationFunctionIndex();
+}
+
+void CommandRunner::command_setsprucesavebasecapital( QStringList &args )
+{
+    if ( !checkArgs( args, 3 ) ) return;
+
+    const bool state = args.value( 1 ) == "true" ? true : false;
+    const qint64 last_save = args.value( 2 ).toLongLong();
+    const qint64 interval = args.value( 3 ).toLongLong();
+
+    spruce_overseer->spruce->setSaveBaseCapital( state, last_save, interval );
 }
 
 void CommandRunner::command_setpricetracking( QStringList &args )
 {
-    if ( !checkArgs( args, 4, 6 ) ) return;
+    if ( !checkArgs( args, 6, 7 ) ) return;
 
     PriceAggregatorConfig config( args.value( 1 ),
                                   args.value( 2 ).toLongLong(),
                                   args.value( 3 ).toLongLong(),
                                   args.value( 4 ).toLongLong(),
-                                  Coin( args.value( 5 ) ) );
+                                  args.value( 5 ).toLongLong(),
+                                  args.value( 6 ).toLongLong(),
+                                  Coin( args.value( 7 ) ) );
     price_aggregator->addPersistentMarket( config );
 }
 
 void CommandRunner::command_spruceup( QStringList & )
 {
     spruce_overseer->onSpruceUp();
+}
+
+void CommandRunner::command_getsprucebasecapital( QStringList &args )
+{
+    Q_UNUSED( args )
+
+    kDebug() << spruce_overseer->spruce->getBaseCapital();
 }
 
 void CommandRunner::command_getmidspreadstatus( QStringList &args )
@@ -1166,9 +1225,7 @@ void CommandRunner::command_savemarket( QStringList &args )
 void CommandRunner::command_save( QStringList &args )
 {
     Q_UNUSED( args )
-    spruce_overseer->saveSettings();
-    spruce_overseer->saveStats();
-    price_aggregator->save();
+    spruce_overseer->onBackupAndSave();
 }
 
 void CommandRunner::command_sendcommand( QStringList &args )

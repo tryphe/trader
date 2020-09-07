@@ -87,10 +87,10 @@ Position *Engine::addPosition( QString market_input, quint8 side, QString buy_pr
                                       SIDE_BUY;
 
         // invert cross-prices
-        Coin new_buy_price = CoinAmount::COIN / sell_price;
-        Coin new_sell_price = CoinAmount::COIN / buy_price;
-        Coin new_size = ( side == SIDE_BUY ) ? new_buy_price * order_size :
-                                               new_sell_price * order_size;
+        const Coin new_buy_price = Coin( sell_price ).isZeroOrLess() ? Coin() : CoinAmount::COIN / sell_price;
+        const Coin new_sell_price = Coin( buy_price ).isZeroOrLess() ? Coin() : CoinAmount::COIN / buy_price;
+        const Coin new_size = ( side == SIDE_BUY ) ? new_buy_price * order_size :
+                                                     new_sell_price * order_size;
 
         // set new prices/size
         buy_price = new_buy_price;

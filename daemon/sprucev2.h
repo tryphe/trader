@@ -4,13 +4,13 @@
 #include "build-config.h"
 #include "coinamount.h"
 #include "market.h"
+#include "pricesignal.h"
 #include "misctypes.h"
 
 #include <functional>
 
 #include <QString>
 #include <QMap>
-#include <QMultiMap>
 #include <QVector>
 #include <QList>
 
@@ -24,8 +24,8 @@ struct BaseCapitalModulator
         ma_slow_threshold = thresh;
     }
 
-    Signal ma_slow;
-    Signal ma_fast;
+    PriceSignal ma_slow;
+    PriceSignal ma_fast;
     Coin base_row_modulation;
     Coin ma_slow_threshold;
 };
@@ -39,34 +39,41 @@ public:
     void clear();
 
     void clearCurrentQtys();
-    void setCurrentQty( const QString &currency, const Coin &qty ) { m_current_qty[ currency ] = qty; }
+    void setCurrentQty( const QString &currency, const Coin &qty );
+    Coin &getCurrentQty( const QString &currency ) { return m_current_qty[ currency ]; }
+    QMap<QString, Coin> &getCurrentQtyMap() { return m_current_qty; }
 
-    void setCurrentPriceSignal( const QString &currency, const Coin &price, const Coin &signal_price ) { m_current_price[ currency ] = price;
-                                                                                                         m_signal_price[ currency ] = signal_price; }
-    void clearPrices();
+    void setCurrentPriceAndSignal( const QString &currency, const Coin &price, const QVector<Coin> &signal_prices ) { m_current_price[ currency ] = price;
+                                                                                                                      m_signal[ currency ] = signal_prices; }
+    void clearCurrentAndSignalPrices();
     void clearCurrentPrices();
+    void clearSignalPrices();
     void setCurrentPrice( const QString &currency, const Coin &price ) { m_current_price[ currency ] = price; }
     Coin getCurrentPrice( const QString &currency ) const { return m_current_price.value( currency ); }
     QMap<QString, Coin> &getCurrentPrices() { return m_current_price; }
 
-    void clearSignalPrices();
-    void setSignalPrice( const QString &currency, const Coin &signal_price ) { m_signal_price[ currency ] = signal_price; }
-    QMap<QString, Coin> &getSignalPrices() { return m_signal_price; }
-
     bool calculateAmountToShortLong(); // run to get amount to sl
-    void doCapitalMomentumModulation( const Coin &base_capital ); // run every m_base_ma_length period
+//    void doCapitalMomentumModulation( const Coin &base_capital ); // run every m_base_ma_length period
 
     Coin getQuantityToShortLongByCurrency( const QString &currency ) { return m_qty_to_sl.value( currency ); }
-    Coin getQuantityToShortLongByMarket( const Market &market ) { return market.getBase() != getBaseCurrency() ? Coin() : m_qty_to_sl.value( market.getQuote() ); }
     QMap<QString, Coin> &getQuantityToShortLongMap() { return m_qty_to_sl; }
+
+    void readManulQtyTargetsFile();
+    bool calculateAmountToShortLongManual();
+    bool hasManualQuantityToShortLong() const { return !m_qty_target_manual.isEmpty(); }
+    void setManualQuantityTarget( const QString &currency, const Coin &qty ) { m_qty_target_manual[ currency ] = qty; }
 
     void adjustCurrentQty( const QString &currency, const Coin &qty );
 
-    void setAllocationFunction( const int index ) { m_allocation_function_index = std::min( std::max( 0, index ), m_allocaton_function_vec.size() -1 ); }
+    void setAllocationFunction( const int index );
     int getAllocationFunctionIndex() const { return m_allocation_function_index; }
 
     void setVisualization( const bool enabled ) { m_visualize = enabled; }
+    bool getVisualizationState() const { return m_visualize; }
     QString getVisualization();
+#ifndef SPRUCE_PERFORMANCE_TWEAKS_ENABLED
+    QMap<QString, Coin> &getQSLTarget() { return m_qty_target_visualized; }
+#endif
 
     void setIntervalSecs( const qint64 secs ) { m_interval_secs = secs; }
     qint64 getIntervalSecs() const { return m_interval_secs; }
@@ -75,11 +82,16 @@ public:
     QString getBaseCurrency() const { return m_base_currency.isEmpty() ? "disabled" : m_base_currency; }
     Coin getBaseCapital();
 
-    void addBaseModulator( const BaseCapitalModulator &modulator ) { m_modulator += modulator; }
-    int getBaseModulatorCount() const { return m_modulator.size(); }
+    void setSaveBaseCapital ( const bool state, const qint64 last_save, const qint64 interval ) { m_save_base_capital = state; m_save_base_capital_last_secs = last_save; m_save_base_capital_interval = interval; }
+    bool isSaveBaseCapitalEnabled() const { return m_save_base_capital; }
+    void tryToSaveBaseCapital();
 
-    Coin getExchangeAllocation( const QString &exchange_market );
+//    void addBaseModulator( const BaseCapitalModulator &modulator ) { m_modulator += modulator; }
+//    int getBaseModulatorCount() const { return m_modulator.size(); }
+
+    Coin getExchangeAllocation( const QString &exchange_market, bool is_noflux_phase );
     void setExchangeAllocation( const QString &exchange_market_key, const Coin allocation );
+    void setPhaseAllocation( const Coin &noflux_alloc, const Coin &flux_alloc );
 
     void setOrderGreed( Coin ratio ) { m_order_greed = ratio; }
     void setOrderRandomBuy( Coin r ) { m_order_greed_buy_randomness = r; }
@@ -115,7 +127,7 @@ public:
                                                                                                                        m_order_nice_market_offset_zerobound_sells.value( market ); }
 
     // snapback state settings
-    void setSnapbackState( const QString &market, const quint8 side, const bool state, const Coin price = Coin(), const Coin amount_to_shortlong_abs = Coin() );
+    void setSnapbackState( const QString &market, const quint8 side, const bool state, const Coin &price = CoinAmount::ZERO, const Coin &amount_to_shortlong_abs = CoinAmount::ZERO );
     bool getSnapbackState( const QString &market, const quint8 side ) const;
     void setSnapbackRatio( const Coin &r ) { m_snapback_ratio = r; }
     Coin getSnapbackRatio() const { return m_snapback_ratio; }
@@ -177,8 +189,8 @@ private:
     Coin allocationFunc1( const Coin &rp ) { return rp * rp; } // y=x^2
     Coin allocationFunc2( const Coin &rp ) { return rp + Coin("1"); } // y=x+1
     Coin allocationFunc3( const Coin &rp ) { return rp / ( rp + Coin("3") ); } // y=x/(x+3)
-    Coin allocationFunc4( const Coin &rp ) { const Coin b = Coin("5") * rp; return ( rp * rp * rp ) - ( b * b ) +  ( Coin("9") * rp ); } // y=x^3 - 5x^2 + 9x
-    Coin allocationFunc5( const Coin &rp ) { const Coin b = Coin("3") * rp; return ( rp * rp * rp ) - ( b * b ) +  ( Coin("3") * rp ); } // y=x^3 - 3x^2 + 3x
+    Coin allocationFunc4( const Coin &rp ) { return std::max( CoinAmount::SATOSHI, -CoinAmount::COIN * 25 + ( rp * rp ) ); }
+    Coin allocationFunc5( const Coin &rp ) { return std::max( CoinAmount::SATOSHI, -CoinAmount::COIN * 75 + ( rp * rp ) ); }
     Coin allocationFunc6( const Coin &rp ) { return rp * ( ( rp * rp ) - rp +  CoinAmount::COIN ); } // y=x^3 - x^2 + x
     Coin allocationFunc7( const Coin &rp ) { return std::max( CoinAmount::SATOSHI, Coin("-0.08") + rp * ( ( rp - CoinAmount::COIN ) * rp + Coin("0.3334") ) ); }
     Coin allocationFunc8( const Coin &rp ) { return std::max( CoinAmount::SATOSHI, Coin("-0.18") + rp * ( ( rp - CoinAmount::COIN ) * rp + Coin("0.3334") ) ); }
@@ -193,25 +205,44 @@ private:
     Coin allocationFunc17( const Coin &rp ) { return ( rp * rp ) + Coin("0.7"); }
     Coin allocationFunc18( const Coin &rp ) { return ( rp * rp ) + Coin("1.3"); }
     Coin allocationFunc19( const Coin &rp ) { return ( rp * rp ) + Coin("1.9"); }
+    Coin allocationFunc20( const Coin &rp ) { return std::max( CoinAmount::SATOSHI, Coin("-1.66") + ( rp * rp ) ); }
+    Coin allocationFunc21( const Coin &rp ) { return std::max( CoinAmount::SATOSHI, Coin("-0.85") + ( rp * rp ) ); }
+    Coin allocationFunc22( const Coin &rp ) { return ( ( rp * rp ) - ( Coin("3") * rp ) + Coin("3") ) * rp; } // y=x(x^2 - 3x + 3)
 
     QString m_base_currency;
 
-    QMap<QString/*currency*/, Coin> m_current_qty, m_qty_to_sl;
-    QMap<QString/*currency*/, Coin> m_current_price, m_signal_price; // note: prices are in base
+    // todo: make these into vectors
+    QMap<QString/*currency*/, Coin> m_current_qty, m_qty_to_sl, m_current_price;
+    QMap<QString/*currency*/, QVector<Coin>> m_signal;
+//    QVector<QString> m_currencies;
 
-    QVector<BaseCapitalModulator> m_modulator;
+    //QVector<BaseCapitalModulator> m_modulator;
+
+    Coin m_phase_alloc_noflux, m_phase_alloc_flux;
 
     QVector<std::function<Coin(const Coin&)>> m_allocaton_function_vec;
+    std::function<Coin(const Coin&)> alloc_func;
     int m_allocation_function_index{ 0 };
     bool m_visualize{ false };
+
+    QVector<Coin> base_row, rp;
+
+    bool m_save_base_capital{ false };
+    qint64 m_save_base_capital_last_secs{ 0 };
+    qint64 m_save_base_capital_interval{ 0 };
     ///
 
     /// non-essential, for external stats only
 #ifndef SPRUCE_PERFORMANCE_TWEAKS_ENABLED
     QVector<QString> m_visualization_rows;
     QString m_visualized_row_cache;
+    QMap<QString/*currency*/, Coin> m_qty_target_visualized;
 #endif
     ///
+
+    // manual quantity target map
+    QMap<QString/*currency*/, Coin> m_qty_target_manual;
+    bool m_manual_spruceup_ran{ false };
 
     /// old spruce functionality, retain for SpruceOverseer compat
     QMap<QString, Coin> per_exchange_market_allocations; // note: market allocations are 0:1
@@ -232,7 +263,7 @@ private:
                           m_snapback_trigger1_count_buys, m_snapback_trigger1_count_sells;
 
     // note: trigger mechanism #2 has an amount_to_sl_ma that triggers when it crosses under ma * SNAPBACK_TRIGGER2_RATIO
-    QMap<QString, Signal> m_snapback_trigger2_sl_abs_ma_buys, m_snapback_trigger2_sl_abs_ma_sells;
+    QMap<QString, PriceSignal> m_snapback_trigger2_sl_abs_ma_buys, m_snapback_trigger2_sl_abs_ma_sells;
     QMap<QString, Coin> m_snapback_trigger2_trigger_sl_abs_initial_buys, m_snapback_trigger2_trigger_sl_abs_initial_sells;
 
     // snapback mechanism settings

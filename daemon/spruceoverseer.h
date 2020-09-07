@@ -50,7 +50,7 @@ signals:
 
 public Q_SLOTS:
     void onSpruceUp();
-    void onSaveSpruceSettings();
+    void onBackupAndSave();
 
 private:
     void runCancellors( Engine *engine, const QString &market, const quint8 side, const QString &strategy, const Coin &flux_price );

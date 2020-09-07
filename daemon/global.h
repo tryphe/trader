@@ -14,7 +14,7 @@
 #include <QCryptographicHash>
 #include <QRandomGenerator>
 #include <QMessageAuthenticationCode>
-#include <QSslSocket>
+//#include <QSslSocket>
 #include <QDebug>
 
 #define kDebug QMessageLogger( __FILE__, __LINE__, Q_FUNC_INFO ).debug().noquote
@@ -218,11 +218,11 @@ static inline const QString printVectorqint32( const QVector<qint32> &vec )
 
 static inline QString getBuildString()
 {
-    return QString( "trader[%1]  qt[%2]  gmp[%3]  ssl[%4]  built[%5 %6]" )
+    return QString( "trader[%1]  qt[%2]  gmp[%3] built[%4 %5]" )
             .arg( BUILD_VERSION )
             .arg( QT_VERSION_STR )
             .arg( __gmp_version )
-            .arg( QSslSocket::sslLibraryBuildVersionString() )
+//            .arg( QSslSocket::sslLibraryBuildVersionString() )
             .arg( __DATE__ )
             .arg( __TIME__ );
 }
