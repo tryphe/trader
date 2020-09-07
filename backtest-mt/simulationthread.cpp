@@ -20,11 +20,8 @@
 
 void SignalContainer::initSignals(const int signal_count)
 {
-    while ( !strategy_signals.isEmpty() )
-        delete strategy_signals.takeFirst();
-
-    for ( int i = 0; i < signal_count; i++ )
-        strategy_signals += new PriceSignal();
+    strategy_signals.clear();
+    strategy_signals.resize( signal_count );
 
     price_signal.clear();
     current_idx = 0;
@@ -34,7 +31,7 @@ bool SignalContainer::isStrategyInitialized()
 {
     const int STRATEGY_COUNT = strategy_signals.size();
     for ( int i = 0; i < STRATEGY_COUNT; i++ )
-        if ( !strategy_signals[ i ]->hasSignal() )
+        if ( !strategy_signals[ i ].hasSignal() )
             return false;
 
     return true;
@@ -282,7 +279,7 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
 //        const Market &market = i.key();
         const PriceData &data = i.value();
         SignalContainer &container = m_signals[ market_i ];
-        QVector<PriceSignal*> &strategy_signals = container.strategy_signals;
+        QVector<PriceSignal> &strategy_signals = container.strategy_signals;
         PriceSignal &price_signal = container.price_signal;
         qint64 &current_idx = container.current_idx;
 
@@ -297,14 +294,14 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
 
         j = 0;
         const auto &strategy_signals_end = strategy_signals.end();
-        for ( QVector<PriceSignal*>::iterator it = strategy_signals.begin(); it != strategy_signals_end; ++it )
+        for ( QVector<PriceSignal>::iterator it = strategy_signals.begin(); it != strategy_signals_end; ++it )
         {
             const StrategyArgs &args = m_work->m_strategy_args.value( j++ );
-            PriceSignal *strategy_signal = *it;
+            PriceSignal &strategy_signal = *it;
 
-            strategy_signal->setSignalArgs( args.type, args.length_fast, args.length_slow, args.weight );
+            strategy_signal.setSignalArgs( args.type, args.length_fast, args.length_slow, args.weight );
 //            strategy_signal.setCounterMax( Tester::SIGNAL_INTERVAL );
-            assert( strategy_signal->getSignal().isZero() );
+            assert( strategy_signal.getSignal().isZero() );
         }
 
         // fill all signals until strategy signals are non-zero
@@ -332,9 +329,9 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
             for ( auto it = strategy_signals.begin(); it != strategy_signals_end; ++it )
             {
                 const StrategyArgs &args = m_work->m_strategy_args.value( j++ );
-                auto *strategy_signal = *it;
+                auto &strategy_signal = *it;
 
-                strategy_signal->addSample( price );
+                strategy_signal.addSample( price );
             }
         }
     }
@@ -405,7 +402,7 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
             const Market &market = price_it.key();
             const auto &data = price_it.value().data;
             SignalContainer &container = m_signals[ market_i ];
-            QVector<PriceSignal*> &strategy_signals = container.strategy_signals;
+            QVector<PriceSignal> &strategy_signals = container.strategy_signals;
             PriceSignal &price_signal = container.price_signal;
             qint64 &current_idx = container.current_idx;
 
@@ -426,14 +423,14 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
             // add strategy sample
             signal_values.clear();
             const auto &strategy_signals_end = strategy_signals.end();
-            for ( QVector<PriceSignal*>::iterator i = strategy_signals.begin(); i != strategy_signals_end; i++ )
+            for ( QVector<PriceSignal>::iterator i = strategy_signals.begin(); i != strategy_signals_end; i++ )
             {
                 // add price sample to signal
-                PriceSignal *&strategy_signal = *i;
-                strategy_signal->addSample( price );
+                PriceSignal &strategy_signal = *i;
+                strategy_signal.addSample( price );
 
                 // add signal value to signals
-                const Coin &signal_value = strategy_signal->getSignal();
+                const Coin &signal_value = strategy_signal.getSignal();
                 if ( signal_value.isZeroOrLess() )
                 {
                     kDebug() << "warning: aborted simulation on bad strategy signal value:" << signal_value;

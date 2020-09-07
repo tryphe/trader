@@ -18,13 +18,13 @@
 
 struct SignalContainer
 {
-    ~SignalContainer() { while( !strategy_signals.isEmpty() ) delete strategy_signals.takeFirst(); }
+    ~SignalContainer() { }
 
     void initSignals( const int signal_count );
     bool isStrategyInitialized();
 
     PriceSignal price_signal;
-    QVector<PriceSignal*> strategy_signals;
+    QVector<PriceSignal> strategy_signals;
     qint64 current_idx{ 0 };
 };
 
