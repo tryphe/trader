@@ -8,7 +8,6 @@
 #include <QString>
 #include <QVector>
 #include <QQueue>
-#include <QDebug>
 
 enum PriceSignalType
 {
@@ -19,7 +18,9 @@ enum PriceSignalType
     SMARatio, // 4
     WMARatio, // 5
     EMARatio, // 6
-    RSIRatio  // 7
+    RSIRatio, // 7
+    HMA       // 8
+//    GMA       // 9
 };
 
 class PriceSignal
@@ -51,11 +52,15 @@ public:
     const Coin &getSignalEMAR();
     const Coin &getSignalWMA();
     const Coin &getSignalWMAR();
+    const Coin &getSignalHMA();
+//    const Coin &getSignalGMA();
 
     void addSample( const Coin &sample );
     void addSampleSMASMAR( const Coin &sample );
-    void addSampleRSIRISR( const Coin &sample );
+    void addSampleRSIRISRRSIRES( const Coin &sample );
     void addSampleWMAEMAWMAREMAR( const Coin &sample );
+    void addSampleHMA( const Coin &sample );
+//    void addSampleGMA( const Coin &sample );
 
     bool hasSignal() const;
 

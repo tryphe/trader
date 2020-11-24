@@ -3,6 +3,11 @@
 
 #include <functional>
 
+#include <QString>
+#include <QVector>
+#include <QQueue>
+#include <QDebug>
+
 PriceSignal::PriceSignal(const PriceSignalType _type, const int _fast_length, const int _slow_length, const Coin &_weight)
 {
     getsignal_internal += std::bind( &PriceSignal::getSignalSMA, this );
@@ -13,16 +18,20 @@ PriceSignal::PriceSignal(const PriceSignalType _type, const int _fast_length, co
     getsignal_internal += std::bind( &PriceSignal::getSignalWMAR, this );
     getsignal_internal += std::bind( &PriceSignal::getSignalEMAR, this );
     getsignal_internal += std::bind( &PriceSignal::getSignalRSIRES, this );
+    getsignal_internal += std::bind( &PriceSignal::getSignalHMA, this );
+//    getsignal_internal += std::bind( &PriceSignal::getSignalGMA, this );
 
     using std::placeholders::_1;
     addsample_internal += std::bind( &PriceSignal::addSampleSMASMAR, this, _1 );
     addsample_internal += std::bind( &PriceSignal::addSampleWMAEMAWMAREMAR, this, _1 );
     addsample_internal += std::bind( &PriceSignal::addSampleWMAEMAWMAREMAR, this, _1 );
-    addsample_internal += std::bind( &PriceSignal::addSampleRSIRISR, this, _1 );
+    addsample_internal += std::bind( &PriceSignal::addSampleRSIRISRRSIRES, this, _1 );
     addsample_internal += std::bind( &PriceSignal::addSampleSMASMAR, this, _1 );
     addsample_internal += std::bind( &PriceSignal::addSampleWMAEMAWMAREMAR, this, _1 );
     addsample_internal += std::bind( &PriceSignal::addSampleWMAEMAWMAREMAR, this, _1 );
-    addsample_internal += std::bind( &PriceSignal::addSampleRSIRISR, this, _1 );
+    addsample_internal += std::bind( &PriceSignal::addSampleRSIRISRRSIRES, this, _1 );
+    addsample_internal += std::bind( &PriceSignal::addSampleHMA, this, _1 );
+//    addsample_internal += std::bind( &PriceSignal::addSampleGMA, this, _1 );
 
     setSignalArgs( _type, _fast_length, _slow_length, _weight );
 }
@@ -44,7 +53,7 @@ void PriceSignal::setSignalArgs(const PriceSignalType _type, const int _fast_len
     clear();
 
     // if ratioized type, initialize embedded slow length
-    if ( type <= RSI )
+    if ( type <= RSI || type > RSIRatio )
         return;
 
     // assert that we initialized the recursive PriceSignal length. slow_length should not be <1, except if RSIRatio, which doesn't require a slow length
@@ -80,7 +89,7 @@ void PriceSignal::applyWeight(Coin &signal) const
         return;
     }
 
-   signal /= weight;
+    signal /= weight;
 }
 
 void PriceSignal::setMaxSamples(const int max)
@@ -93,9 +102,6 @@ void PriceSignal::setMaxSamples(const int max)
 
 void PriceSignal::removeExcessSamples()
 {
-//    while ( samples_max > 0 && samples.size() > samples_max )
-//        samples.removeFirst();
-
     if ( samples_max < 1 )
         return;
 
@@ -153,7 +159,7 @@ const Coin &PriceSignal::getSignalSMA()
     if ( samples_size < 1 )
         return CoinAmount::ZERO;
 
-    // fast = sum / samples_size;
+    // sma = sum / samples_size;
     getsignal_result = sum / samples_size;
     return getsignal_result;
 }
@@ -374,7 +380,41 @@ const Coin &PriceSignal::getSignalWMAR()
     return getsignal_result;
 }
 
-void PriceSignal::addSample(const Coin &sample)
+const Coin &PriceSignal::getSignalHMA()
+{
+    const int samples_size = samples.size();
+    if ( samples_size < 1 )
+        return CoinAmount::ZERO;
+
+    // hma = samples_size / reciprocal_sum;
+    getsignal_result = CoinAmount::COIN * samples_size / sum;
+    return getsignal_result;
+}
+
+//const Coin &PriceSignal::getSignalGMA()
+//{
+//    const int samples_size = samples.size();
+//    if ( samples_size < 1 )
+//        return CoinAmount::ZERO;
+
+//    getsignal_result = CoinAmount::COIN;
+
+//    qDebug() << "samples=" << samples_size;
+
+//    const QList<Coin>::const_iterator data_end = samples.end();
+//    for ( QList<Coin>::const_iterator i = samples.begin(); i != data_end; i++ )
+//    {
+
+//        getsignal_result *= *i;
+//        qDebug() << "sample=" << *i << getsignal_result;
+//    }
+//    qDebug() << "result=" << getsignal_result;
+
+//    getsignal_result = getsignal_result.root_newton( samples_size );
+//    return getsignal_result;
+//}
+
+void PriceSignal::addSample( const Coin &sample )
 {
     addsample_internal.at( type )( sample );
 }
@@ -393,7 +433,7 @@ void PriceSignal::addSampleSMASMAR(const Coin &sample)
         sum -= samples.takeFirst();
 }
 
-void PriceSignal::addSampleRSIRISR(const Coin &sample)
+void PriceSignal::addSampleRSIRISRRSIRES(const Coin &sample)
 {
     samples.push_back( sample );
     removeExcessSamples();
@@ -416,7 +456,7 @@ void PriceSignal::addSampleRSIRISR(const Coin &sample)
         gain_loss += current_gain_loss;
 
         // if we have enough gain/loss samples, measure rsi
-        if ( gain_loss.size() == samples_max )
+        if ( gain_loss.size() >= samples_max )
         {
             // measure gain/loss
             Coin total_gain, total_loss;
@@ -443,9 +483,11 @@ void PriceSignal::addSampleRSIRISR(const Coin &sample)
         return;
     }
 
+    const bool gain_loss_positive = current_gain_loss.isGreaterThanZero();
+
     // avg_gain_loss == ( previous * ( period-1 ) + current_gain_loss ) / period
-    current_avg_gain = ( current_avg_gain * ( samples_max -1 ) + ( current_gain_loss.isLessThanZero() ? CoinAmount::ZERO : current_gain_loss ) ) / samples_max;
-    current_avg_loss = ( current_avg_loss * ( samples_max -1 ) + ( current_gain_loss.isGreaterThanZero() ? CoinAmount::ZERO : -current_gain_loss ) ) / samples_max;
+    current_avg_gain = ( current_avg_gain * ( samples_max -1 ) + ( !gain_loss_positive ? CoinAmount::ZERO :  current_gain_loss ) ) / samples_max;
+    current_avg_loss = ( current_avg_loss * ( samples_max -1 ) + (  gain_loss_positive ? CoinAmount::ZERO : -current_gain_loss ) ) / samples_max;
 }
 
 void PriceSignal::addSampleWMAEMAWMAREMAR(const Coin &sample)
@@ -458,6 +500,28 @@ void PriceSignal::addSampleWMAEMAWMAREMAR(const Coin &sample)
 
     removeExcessSamples();
 }
+
+void PriceSignal::addSampleHMA( const Coin &sample )
+{
+    samples.push_back( CoinAmount::COIN / sample );
+
+    // push embedded sample
+//    if ( embedded_signal != nullptr ) // SMARatio, WMARatio, EMARatio, RSIRatio
+//        embedded_signal->addSample( sample );
+
+    sum += samples.last();
+
+    while ( samples_max > 0 && samples.size() > samples_max )
+        sum -= samples.takeFirst();
+}
+
+//void PriceSignal::addSampleGMA( const Coin &sample )
+//{
+//    samples.push_back( CoinAmount::COIN + sample );
+
+//    while ( samples_max > 0 && samples.size() > samples_max )
+//        samples.removeFirst();
+//}
 
 bool PriceSignal::hasSignal() const
 {
