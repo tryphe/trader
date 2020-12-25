@@ -23,6 +23,7 @@
 #include "wavesutil_test.h"
 #include "wavesaccount_test.h"
 #include "../qbase58/qbase58_test.h"
+#include "pricesignal_test.h"
 
 #include <QByteArray>
 #include <QTimer>
@@ -155,7 +156,7 @@ Trader::Trader( QObject *parent )
     CoinAmountTest coin_test;
     coin_test.test();
 
-    SignalTest signal_test;
+    PriceSignalTest signal_test;
     signal_test.test();
 
     DiffusionPhaseManTest phaseman_test;

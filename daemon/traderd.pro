@@ -30,6 +30,8 @@ SOURCES += main.cpp \
     position.cpp \
     engine.cpp \
     positionman.cpp \
+    pricesignal.cpp \
+    pricesignal_test.cpp \
     priceaggregator.cpp \
     spruceoverseer.cpp \
     spruceoverseer_test.cpp \
@@ -115,6 +117,8 @@ HEADERS += build-config.h \
     engine.h \
     positiondata.h \
     positionman.h \
+    pricesignal.h \
+    pricesignal_test.h \
     priceaggregator.h \
     spruceoverseer.h \
     spruceoverseer_test.h \
