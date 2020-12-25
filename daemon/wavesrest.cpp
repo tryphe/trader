@@ -68,7 +68,7 @@ void WavesREST::init()
     market_data_timer = new QTimer( this );
     market_data_timer->setTimerType( Qt::VeryCoarseTimer );
     connect( market_data_timer, &QTimer::timeout, this, &WavesREST::onCheckMarketData );
-    market_data_timer->start( WAVES_TIMER_INTERVAL_MARKET_DATA );
+    market_data_timer->start( WAVES_TIMER_INTERVAL_MARKET_DATA_INITIAL );
 
     connect( ticker_timer, &QTimer::timeout, this, &WavesREST::onCheckTicker );
     ticker_timer->start( WAVES_TIMER_INTERVAL_TICKER );
@@ -337,9 +337,11 @@ void WavesREST::onNamReply( QNetworkReply * const &reply )
     {
         const bool contains_html = data.contains( QByteArray( "<html" ) ) || data.contains( QByteArray( "<HTML" ) );
 
-        // reduce size of cloudflare errors
+        // reduce size of cloudflare errors or truncated json replies
         if ( contains_html )
             data = QByteArray( "<html error>" );
+        else if ( data.size() > 512 )
+            data = QByteArray( "<bigass truncated object>" );
 
         kDebug() << "local warning: nam reply got html reponse for" << path << ":" << data;
     }
@@ -407,9 +409,9 @@ void WavesREST::checkTicker( bool ignore_flow_control )
         return;
     }
 
-//    kDebug() << "checking next ticker" << tracked_markets.value( next_ticker_index_to_query );
+//    kDebug() << "checking next ticker" << tracked_markets.value( next_ticker_index_to_query ) << "out of" << tracked_markets.size() << "markets total";
 
-    Market market = tracked_markets.value( next_ticker_index_to_query );
+    const Market market = tracked_markets.value( next_ticker_index_to_query );
 
     const QString price_alias = account.getAliasByAsset( market.getBase() );
     const QString amount_alias = account.getAliasByAsset( market.getQuote() );
@@ -462,6 +464,9 @@ void WavesREST::onCheckCancellingOrders()
 
 void WavesREST::parseMarketData( const QJsonObject &info )
 {
+    // set the timer to a larger interval once we receive a valid reply
+    market_data_timer->start( WAVES_TIMER_INTERVAL_MARKET_DATA );
+
     //kDebug() << "market data" << info;
 
     if ( !info.contains( "matcherPublicKey" ) ||
@@ -530,7 +535,7 @@ void WavesREST::parseMarketData( const QJsonObject &info )
             market_info.price_ticksize = CoinAmount::SATOSHI;
     }
 
-    // update tickers
+    // update all tickers initially
     if ( !initial_ticker_update_done )
     {
         for ( int i = 0; i < tracked_markets.size(); i++ )
@@ -722,6 +727,10 @@ void WavesREST::parseNewOrder( const QJsonObject &info, Request *const &request 
         kDebug() << "local waves error: found response for queued position, but postion is null" << info;
         return;
     }
+
+    // if the position is already set, return (this does happen)
+    if ( engine->getPositionMan()->isActive( request->pos ) )
+        return;
 
     // check that the position is queued and not set
     if ( !engine->getPositionMan()->isQueued( request->pos ) )
