@@ -91,7 +91,6 @@ CommandRunner::CommandRunner( const quint8 _engine_type, Engine *_e, QVector<Bas
     command_map.insert( "setspruceinterval", std::bind( &CommandRunner::command_setspruceinterval, this, _1 ) );
     command_map.insert( "setsprucebasecurrency", std::bind( &CommandRunner::command_setsprucebasecurrency, this, _1 ) );
     command_map.insert( "setspruceqty", std::bind( &CommandRunner::command_setspruceqty, this, _1 ) );
-    command_map.insert( "setsprucemanualqtytarget", std::bind( &CommandRunner::command_setsprucemanualqtytarget, this, _1 ) );
     command_map.insert( "setsprucebetamarket", std::bind( &CommandRunner::command_setsprucebetamarket, this, _1 ) );
     command_map.insert( "setspruceordergreed", std::bind( &CommandRunner::command_setspruceordergreed, this, _1 ) );
     command_map.insert( "setspruceordersize", std::bind( &CommandRunner::command_setspruceordersize, this, _1 ) );
@@ -105,11 +104,13 @@ CommandRunner::CommandRunner( const quint8 _engine_type, Engine *_e, QVector<Bas
     command_map.insert( "setsprucesnapback", std::bind( &CommandRunner::command_setsprucesnapback, this, _1 ) );
     command_map.insert( "setsprucesnapbacktrigger1", std::bind( &CommandRunner::command_setsprucesnapbacktrigger1, this, _1 ) );
     command_map.insert( "setsprucesnapbacktrigger2", std::bind( &CommandRunner::command_setsprucesnapbacktrigger2, this, _1 ) );
-    command_map.insert( "setsprucealloc", std::bind( &CommandRunner::command_setsprucealloc, this, _1 ) );
     command_map.insert( "setpricetracking", std::bind( &CommandRunner::command_setpricetracking, this, _1 ) );
-    command_map.insert( "setsprucesavebasecapital", std::bind( &CommandRunner::command_setsprucesavebasecapital, this, _1 ) );
+    command_map.insert( "setspruceallocpower", std::bind( &CommandRunner::command_setspruceallocpower, this, _1 ) );
+    command_map.insert( "setsprucedollarratio", std::bind( &CommandRunner::command_setsprucedollarratio, this, _1 ) );
+    command_map.insert( "setsprucefavorability", std::bind( &CommandRunner::command_setsprucefavorability, this, _1 ) );
     command_map.insert( "getmidspreadstatus", std::bind( &CommandRunner::command_getmidspreadstatus, this, _1 ) );
     command_map.insert( "getsprucebasecapital", std::bind( &CommandRunner::command_getsprucebasecapital, this, _1 ) );
+    command_map.insert( "getsprucetargets", std::bind( &CommandRunner::command_getsprucetargets, this, _1 ) );
     command_map.insert( "getstatus", std::bind( &CommandRunner::command_getstatus, this, _1 ) );
     command_map.insert( "getconfig", std::bind( &CommandRunner::command_getconfig, this, _1 ) );
     command_map.insert( "getinternal", std::bind( &CommandRunner::command_getinternal, this, _1 ) );
@@ -631,7 +632,7 @@ void CommandRunner::command_getsprucevisual( QStringList &args )
 {
     Q_UNUSED( args )
 
-    kDebug() << "\n" + spruce_overseer->spruce->getVisualization();
+//    kDebug() << "\n" + spruce_overseer->spruce->getVisualization();
 }
 
 void CommandRunner::command_setmarketsettings( QStringList &args )
@@ -878,14 +879,6 @@ void CommandRunner::command_setspruceqty( QStringList &args )
     kDebug() << "spruce set current qty for" << args.value( 1 ) << args.value( 2 );
 }
 
-void CommandRunner::command_setsprucemanualqtytarget( QStringList &args )
-{
-    if ( !checkArgs( args, 2 ) ) return;
-
-    spruce_overseer->spruce->setManualQuantityTarget( args.value( 1 ), args.value( 2 ) );
-    kDebug() << "spruce set manual qty target for" << args.value( 1 ) << args.value( 2 );
-}
-
 void CommandRunner::command_setsprucebetamarket( QStringList &args )
 {
     if ( !checkArgs( args, 1 ) ) return;
@@ -1043,25 +1036,6 @@ void CommandRunner::command_setsprucesnapbacktrigger2( QStringList &args )
                                     << "message interval:" << spruce_overseer->spruce->getSnapbackTrigger2MessageInterval();
 }
 
-void CommandRunner::command_setsprucealloc( QStringList &args )
-{
-    if ( !checkArgs( args, 1 ) ) return;
-
-    spruce_overseer->spruce->setAllocationFunction( args.value( 1 ).toInt() );
-    kDebug() << "spruce allocation function is" << spruce_overseer->spruce->getAllocationFunctionIndex();
-}
-
-void CommandRunner::command_setsprucesavebasecapital( QStringList &args )
-{
-    if ( !checkArgs( args, 3 ) ) return;
-
-    const bool state = args.value( 1 ) == "true" ? true : false;
-    const qint64 last_save = args.value( 2 ).toLongLong();
-    const qint64 interval = args.value( 3 ).toLongLong();
-
-    spruce_overseer->spruce->setSaveBaseCapital( state, last_save, interval );
-}
-
 void CommandRunner::command_setpricetracking( QStringList &args )
 {
     if ( !checkArgs( args, 6, 7 ) ) return;
@@ -1076,6 +1050,50 @@ void CommandRunner::command_setpricetracking( QStringList &args )
     price_aggregator->addPersistentMarket( config );
 }
 
+void CommandRunner::command_setspruceallocpower( QStringList &args )
+{
+    if ( !checkArgs( args, 1 ) ) return;
+
+    const int power = args.value( 1 ).toInt();
+
+    if ( power < 1 )
+    {
+        kDebug() << "local error: invalid alloc power <1:" << power;
+        return;
+    }
+
+    spruce_overseer->spruce->setAllocPower( power );
+
+    kDebug() << "spruce set alloc power:" << spruce_overseer->spruce->getAllocPower();
+}
+
+void CommandRunner::command_setsprucedollarratio( QStringList &args )
+{
+    if ( !checkArgs( args, 1 ) ) return;
+
+    spruce_overseer->spruce->setDollarRatio( args.value( 1 ) );
+
+    kDebug() << "spruce set dollar ratio:" << spruce_overseer->spruce->getDollarRatio();
+}
+
+void CommandRunner::command_setsprucefavorability( QStringList &args )
+{
+    if ( !checkArgs( args, 2 ) ) return;
+
+    // check args
+    const QString currency = args.value( 1 );
+    const Coin favorability = Coin( args.value( 2 ) );
+    if ( currency.isEmpty() || favorability.isLessThanZero() )
+    {
+        kDebug() << "local error: invalid favorability:" << currency << favorability;
+        return;
+    }
+
+    spruce_overseer->spruce->setCurrencyFavorability( currency, favorability );
+
+    kDebug() << "spruce set" << currency << "favorability:" << spruce_overseer->spruce->getCurrencyFavorability( currency );
+}
+
 void CommandRunner::command_spruceup( QStringList & )
 {
     spruce_overseer->onSpruceUp();
@@ -1086,6 +1104,15 @@ void CommandRunner::command_getsprucebasecapital( QStringList &args )
     Q_UNUSED( args )
 
     kDebug() << spruce_overseer->spruce->getBaseCapital();
+}
+
+void CommandRunner::command_getsprucetargets( QStringList &args )
+{
+    Q_UNUSED( args )
+
+    kDebug() << "target" << spruce_overseer->spruce->getBaseCurrency() << "amounts:"
+             << spruce_overseer->spruce->getTargetAmounts();
+    kDebug() << "target percentages:" << spruce_overseer->spruce->getTargetPercentages();
 }
 
 void CommandRunner::command_getmidspreadstatus( QStringList &args )

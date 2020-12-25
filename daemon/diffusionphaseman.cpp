@@ -6,7 +6,7 @@
 
 DiffusionPhaseMan::DiffusionPhaseMan() {}
 
-DiffusionPhaseMan::DiffusionPhaseMan( QVector<QString> _markets)
+DiffusionPhaseMan::DiffusionPhaseMan( QVector<QString> _markets )
 {
     setMarkets( _markets );
 }
@@ -77,5 +77,5 @@ void DiffusionPhaseMan::next()
 
 bool DiffusionPhaseMan::atEnd() const
 {
-    return m_phase_selected >= m_phases.size() || m_phase_selected < 0; // TODO: remove second condition when we use size_t
+    return m_phase_selected >= m_phases.size() || m_phase_selected < 0; // TODO: remove second condition when we use size_type
 }

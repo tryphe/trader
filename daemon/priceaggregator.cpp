@@ -114,7 +114,7 @@ void PriceAggregator::savePriceSamples( const PriceAggregatorConfig &config, con
     QTextStream out( &savefile );
     // prepend a marker, and the start date
     out << QString( "p %1" ).arg( config.base_data.data_start_secs );
-    for ( auto i = config.base_data.data.begin(); i != config.base_data.data.end(); i++ )
+    for ( QVector<Coin>::const_iterator i = config.base_data.data.begin(); i != config.base_data.data.end(); i++ )
         out << QChar(' ') << (*i).toCompact();
 
     // close file
@@ -413,7 +413,7 @@ void PriceAggregator::loadPrices()
         }
 
         // load price samples into signals
-        for ( auto j = config.base_data.data.begin(); j != config.base_data.data.end(); j++ )
+        for ( QVector<Coin>::const_iterator j = config.base_data.data.begin(); j != config.base_data.data.end(); j++ )
         {
             const Coin &price = *j;
 

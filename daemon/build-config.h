@@ -1,8 +1,7 @@
 #ifndef BUILDCONFIG_H
 #define BUILDCONFIG_H
 
-#define PRODUCTION_BOT
-#define BUILD_VERSION "1.82i"
+#define BUILD_VERSION "1.83h6"
 
 /// select your exchanges
 #define BITTREX_ENABLED
@@ -15,8 +14,6 @@
 #define BINANCE_TICKER_ONLY
 #define POLONIEX_TICKER_ONLY
 //#define WAVES_TICKER_ONLY
-
-#define SPRUCE_PERFORMANCE_TWEAKS_ENABLED
 
 /// where to print logs
 #define PRINT_LOGS_TO_CONSOLE
@@ -37,5 +34,9 @@
 
 /// spread contraction on aggressive spread
 #define SPREAD_CONTRACT_RATIO "0.5"
+
+/// coin options
+#define COIN_CATCH_DIV0
+#define COIN_CATCH_INF
 
 #endif // BUILDCONFIG_H

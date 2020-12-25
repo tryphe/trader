@@ -502,32 +502,32 @@ void Engine::updateStatsAndPrintFill( const QString &fill_type, Market market, c
     alpha->addAlpha( market, side, amount, price );
     alpha->addDailyVolume( QDateTime::currentSecsSinceEpoch(), amount );
 
-    if ( strategy_tag.contains( "flux" ) )
+//    if ( strategy_tag.contains( "flux" ) )
+//    {
+    // beta order, adjust both quantities. assume all fills are strategy orders
+    if ( alpha_market_0.isValid() && alpha_market_1.isValid() )
     {
-        // beta order, adjust both quantities
-        if ( alpha_market_0.isValid() && alpha_market_1.isValid() )
-        {
-            const Coin quantity_offset_0 = ( side == SIDE_BUY ) ? -market_0_quantity
-                                                                :  market_0_quantity;
-            const Coin quantity_offset_1 = ( side == SIDE_BUY ) ?  quantity
-                                                                : -quantity;
+        const Coin quantity_offset_0 = ( side == SIDE_BUY ) ? -market_0_quantity
+                                                            :  market_0_quantity;
+        const Coin quantity_offset_1 = ( side == SIDE_BUY ) ?  quantity
+                                                            : -quantity;
 
-            spruce->adjustCurrentQty( alpha_market_0.getQuote(), quantity_offset_0 );
-            spruce->adjustCurrentQty( alpha_market_1.getQuote(), quantity_offset_1 );
-        }
-        // normal order, subtract the qty of the alt (base doesn't need changing)
-        else
-        {
-            // add qty changes to spruce strat
-            const Coin quantity_offset = ( side == SIDE_BUY ) ?  quantity
-                                                              : -quantity;
-            const Coin amount_offset = ( side == SIDE_BUY ) ? -amount
-                                                            :  amount;
-
-            spruce->adjustCurrentQty( market.getQuote(), quantity_offset );
-            spruce->adjustCurrentQty( market.getBase(), amount_offset );
-        }
+        spruce->adjustCurrentQty( alpha_market_0.getQuote(), quantity_offset_0 );
+        spruce->adjustCurrentQty( alpha_market_1.getQuote(), quantity_offset_1 );
     }
+    // normal order, subtract the qty of the alt (base doesn't need changing)
+    else
+    {
+        // add qty changes to spruce strat
+        const Coin quantity_offset = ( side == SIDE_BUY ) ?  quantity
+                                                          : -quantity;
+        const Coin amount_offset = ( side == SIDE_BUY ) ? -amount
+                                                        :  amount;
+
+        spruce->adjustCurrentQty( market.getQuote(), quantity_offset );
+        spruce->adjustCurrentQty( market.getBase(), amount_offset );
+    }
+//    }
 
     if ( getVerbosity() > 0 )
     {
@@ -737,7 +737,7 @@ void Engine::processOpenOrders( QVector<QString> &order_numbers, QMultiHash<QStr
     }
 
     // now we can look for local positions to invalidate based on if the order exists
-    // (except bittrex, which is laggy. we'll just use the history there for fills)
+    // (except bittrex, which is laggy. we'll just use the fill history there for fills)
     if ( engine_type != ENGINE_BITTREX )
     {
         QVector<Position*> filled_orders;

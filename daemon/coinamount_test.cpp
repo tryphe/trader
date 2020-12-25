@@ -1,9 +1,10 @@
 #include "coinamount_test.h"
-#include "global.h"
 #include "coinamount.h"
+#include "build-config.h"
 
 #include <assert.h>
 
+#include <QVariant>
 #include <QtMath>
 
 void CoinAmountTest::test()
@@ -388,10 +389,12 @@ void CoinAmountTest::testPractical()
     assert( Coin( std::numeric_limits<quint64>::max() ) == "18446744073709551616.00000000" );
 
     // test infinity trap
+#if defined(COIN_CATCH_INF)
     assert( CoinAmount::toSubsatoshiFormatExpr( std::numeric_limits<qreal>::infinity() ) == "0.0000000000000000" );
     assert( CoinAmount::toSubsatoshiFormatExpr( -std::numeric_limits<qreal>::infinity() ) == "0.0000000000000000" );
     assert( CoinAmount::toSatoshiFormatExpr( std::numeric_limits<qreal>::infinity() ) == "0.00000000" );
     assert( CoinAmount::toSatoshiFormatExpr( -std::numeric_limits<qreal>::infinity() ) == "0.00000000" );
+#endif
 
     // sanity testing
     assert( CoinAmount::COIN.isGreaterThanZero() ); // also avoids div0 in tests

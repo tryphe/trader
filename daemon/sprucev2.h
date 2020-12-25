@@ -43,37 +43,31 @@ public:
     Coin &getCurrentQty( const QString &currency ) { return m_current_qty[ currency ]; }
     QMap<QString, Coin> &getCurrentQtyMap() { return m_current_qty; }
 
-    void setCurrentPriceAndSignal( const QString &currency, const Coin &price, const QVector<Coin> &signal_prices ) { m_current_price[ currency ] = price;
-                                                                                                                      m_signal[ currency ] = signal_prices; }
-    void clearCurrentAndSignalPrices();
+    void setCurrentPriceAndSignal( const QString &currency, const Coin &price ) { m_current_price[ currency ] = price; }
     void clearCurrentPrices();
-    void clearSignalPrices();
     void setCurrentPrice( const QString &currency, const Coin &price ) { m_current_price[ currency ] = price; }
     Coin getCurrentPrice( const QString &currency ) const { return m_current_price.value( currency ); }
     QMap<QString, Coin> &getCurrentPrices() { return m_current_price; }
+    void setCurrentPrices( QMap<QString, Coin> &prices ) { m_current_price = prices; }
 
-    bool calculateAmountToShortLong(); // run to get amount to sl
-//    void doCapitalMomentumModulation( const Coin &base_capital ); // run every m_base_ma_length period
+    bool calculateAmountToShortLong( bool is_midspread_phase = false ); // run to get amount to sl
+
+    // initializers, for production
+    void productionReadAveragesFile();
+    void productionSetStrategyParams();
+
+    // initializers, for simulation
+    void setStrategyParams( const QMap<QString, Coin> &_averages, const QMap<QString, Coin> &_favorability );
 
     Coin getQuantityToShortLongByCurrency( const QString &currency ) { return m_qty_to_sl.value( currency ); }
     QMap<QString, Coin> &getQuantityToShortLongMap() { return m_qty_to_sl; }
 
-    void readManulQtyTargetsFile();
-    bool calculateAmountToShortLongManual();
-    bool hasManualQuantityToShortLong() const { return !m_qty_target_manual.isEmpty(); }
-    void setManualQuantityTarget( const QString &currency, const Coin &qty ) { m_qty_target_manual[ currency ] = qty; }
-
     void adjustCurrentQty( const QString &currency, const Coin &qty );
 
-    void setAllocationFunction( const int index );
-    int getAllocationFunctionIndex() const { return m_allocation_function_index; }
-
-    void setVisualization( const bool enabled ) { m_visualize = enabled; }
-    bool getVisualizationState() const { return m_visualize; }
-    QString getVisualization();
-#ifndef SPRUCE_PERFORMANCE_TWEAKS_ENABLED
-    QMap<QString, Coin> &getQSLTarget() { return m_qty_target_visualized; }
-#endif
+    void setAllocPower( const int power ) { m_alloc_power = power; }
+    int getAllocPower() { return m_alloc_power; }
+    void setCurrencyFavorability( const QString &currency, const Coin &favorability_multiple ) { m_favorability [ currency ] = favorability_multiple; }
+    Coin getCurrencyFavorability( const QString &currency ) { return m_favorability[ currency ]; }
 
     void setIntervalSecs( const qint64 secs ) { m_interval_secs = secs; }
     qint64 getIntervalSecs() const { return m_interval_secs; }
@@ -81,13 +75,12 @@ public:
     void setBaseCurrency( QString currency ) { m_base_currency = currency; }
     QString getBaseCurrency() const { return m_base_currency.isEmpty() ? "disabled" : m_base_currency; }
     Coin getBaseCapital();
+    QMap<QString, Coin> getTargetAmounts() { return m_target_amounts; }
+    QMap<QString, Coin> getTargetPercentages() { return m_target_percentages; }
+    Coin getTargetPercentage( const QString &currency ) const { return m_target_percentages[ currency ]; }
 
-    void setSaveBaseCapital ( const bool state, const qint64 last_save, const qint64 interval ) { m_save_base_capital = state; m_save_base_capital_last_secs = last_save; m_save_base_capital_interval = interval; }
-    bool isSaveBaseCapitalEnabled() const { return m_save_base_capital; }
-    void tryToSaveBaseCapital();
-
-//    void addBaseModulator( const BaseCapitalModulator &modulator ) { m_modulator += modulator; }
-//    int getBaseModulatorCount() const { return m_modulator.size(); }
+    void setDollarRatio( Coin r ) { m_dollar_short_ratio = r; }
+    Coin getDollarRatio() const { return m_dollar_short_ratio; }
 
     Coin getExchangeAllocation( const QString &exchange_market, bool is_noflux_phase );
     void setExchangeAllocation( const QString &exchange_market_key, const Coin allocation );
@@ -105,10 +98,10 @@ public:
     Coin getOrderTrailingLimit( quint8 side ) const { return side == SIDE_BUY ? ( m_order_greed - m_order_greed_buy_randomness ) : CoinAmount::COIN - m_order_greed_sell_randomness; }
 
     void setOrderNice( const quint8 side, Coin nice, bool midspread_phase );
-    Coin getOrderNice( const QString &market, const quint8 side, bool midspread_phase );
+    Coin getOrderNice( const QString &currency, const quint8 side, bool midspread_phase );
 
     void setOrderNiceZeroBound( const quint8 side, Coin nice, bool midspread_phase );
-    Coin getOrderNiceZeroBound( const QString &market, const quint8 side, bool midspread_phase ) const;
+    Coin getOrderNiceZeroBound (const QString &currency, const quint8 side, bool midspread_phase ) const;
 
     // spread reduction sensitivity
     void setOrderNiceSpreadPut( const quint8 side, Coin nice ) { ( side == SIDE_BUY ) ? m_order_nice_spreadput_buys = nice :
@@ -175,7 +168,7 @@ public:
     void setMarketSellMax( Coin marketmax ) { m_market_sell_max = marketmax; }
     Coin getMarketSellMax( QString market = "" ) const;
     void setOrderSize( Coin ordersize ) { m_order_size = ordersize; }
-    Coin getOrderSize( QString market = "" ) const;
+    Coin getOrderSize() const { return m_order_size; }
 
     static inline Coin getUniversalMinOrderSize()
     {
@@ -185,64 +178,51 @@ public:
 
 private:
     /// new essential
-    Coin allocationFunc0( const Coin &rp ) { return rp; } // y=x
-    Coin allocationFunc1( const Coin &rp ) { return rp * rp; } // y=x^2
-    Coin allocationFunc2( const Coin &rp ) { return rp + Coin("1"); } // y=x+1
-    Coin allocationFunc3( const Coin &rp ) { return rp / ( rp + Coin("3") ); } // y=x/(x+3)
-    Coin allocationFunc4( const Coin &rp ) { return std::max( CoinAmount::SATOSHI, -CoinAmount::COIN * 25 + ( rp * rp ) ); }
-    Coin allocationFunc5( const Coin &rp ) { return std::max( CoinAmount::SATOSHI, -CoinAmount::COIN * 75 + ( rp * rp ) ); }
-    Coin allocationFunc6( const Coin &rp ) { return rp * ( ( rp * rp ) - rp +  CoinAmount::COIN ); } // y=x^3 - x^2 + x
-    Coin allocationFunc7( const Coin &rp ) { return std::max( CoinAmount::SATOSHI, Coin("-0.08") + rp * ( ( rp - CoinAmount::COIN ) * rp + Coin("0.3334") ) ); }
-    Coin allocationFunc8( const Coin &rp ) { return std::max( CoinAmount::SATOSHI, Coin("-0.18") + rp * ( ( rp - CoinAmount::COIN ) * rp + Coin("0.3334") ) ); }
-    Coin allocationFunc9( const Coin &rp ) { return std::max( CoinAmount::SATOSHI, Coin("-0.28") + rp * ( ( rp - CoinAmount::COIN ) * rp + Coin("0.3334") ) ); }
-    Coin allocationFunc10( const Coin &rp ) { return std::max( CoinAmount::SATOSHI, Coin("-0.1") + rp * ( ( rp - CoinAmount::COIN ) * rp + Coin("0.3334") ) ); }
-    Coin allocationFunc11( const Coin &rp ) { return std::max( CoinAmount::SATOSHI, Coin("-0.210") + rp * ( ( rp - CoinAmount::COIN ) * rp + Coin("0.3334") ) ); }
-    Coin allocationFunc12( const Coin &rp ) { return std::max( CoinAmount::SATOSHI, Coin("-0.3") + rp * ( ( rp - CoinAmount::COIN ) * rp + Coin("0.3334") )); }
-    Coin allocationFunc13( const Coin &rp ) { return std::max( CoinAmount::SATOSHI, Coin("-0.16") + rp * ( Coin("0.3333") + ( Coin("-1") + rp ) * rp ) ); }
-    Coin allocationFunc14( const Coin &rp ) { return std::max( CoinAmount::SATOSHI, Coin("-0.68") + ( rp * rp ) ); }
-    Coin allocationFunc15( const Coin &rp ) { return std::max( CoinAmount::SATOSHI, Coin("-1.02") + ( rp * rp ) ); }
-    Coin allocationFunc16( const Coin &rp ) { return std::max( CoinAmount::SATOSHI, Coin("-1.36") + ( rp * rp ) ); }
-    Coin allocationFunc17( const Coin &rp ) { return ( rp * rp ) + Coin("0.7"); }
-    Coin allocationFunc18( const Coin &rp ) { return ( rp * rp ) + Coin("1.3"); }
-    Coin allocationFunc19( const Coin &rp ) { return ( rp * rp ) + Coin("1.9"); }
-    Coin allocationFunc20( const Coin &rp ) { return std::max( CoinAmount::SATOSHI, Coin("-1.66") + ( rp * rp ) ); }
-    Coin allocationFunc21( const Coin &rp ) { return std::max( CoinAmount::SATOSHI, Coin("-0.85") + ( rp * rp ) ); }
-    Coin allocationFunc22( const Coin &rp ) { return ( ( rp * rp ) - ( Coin("3") * rp ) + Coin("3") ) * rp; } // y=x(x^2 - 3x + 3)
+//    Coin allocationFunc0( const Coin &rp ) { return rp; } // y=x
+//    Coin allocationFunc1( const Coin &rp ) { return rp * rp; } // y=x^2
+//    Coin allocationFunc2( const Coin &rp ) { return rp + Coin("1"); } // y=x+1
+//    Coin allocationFunc3( const Coin &rp ) { return rp / ( rp + Coin("3") ); } // y=x/(x+3)
+//    Coin allocationFunc4( const Coin &rp ) { return std::max( CoinAmount::SATOSHI, -CoinAmount::COIN * 25 + ( rp * rp ) ); }
+//    Coin allocationFunc5( const Coin &rp ) { return std::max( CoinAmount::SATOSHI, -CoinAmount::COIN * 75 + ( rp * rp ) ); }
+//    Coin allocationFunc6( const Coin &rp ) { return rp * ( ( rp * rp ) - rp +  CoinAmount::COIN ); } // y=x^3 - x^2 + x
+//    Coin allocationFunc7( const Coin &rp ) { return std::max( CoinAmount::SATOSHI, Coin("-0.08") + rp * ( ( rp - CoinAmount::COIN ) * rp + Coin("0.3334") ) ); }
+//    Coin allocationFunc8( const Coin &rp ) { return std::max( CoinAmount::SATOSHI, Coin("-0.18") + rp * ( ( rp - CoinAmount::COIN ) * rp + Coin("0.3334") ) ); }
+//    Coin allocationFunc9( const Coin &rp ) { return std::max( CoinAmount::SATOSHI, Coin("-0.28") + rp * ( ( rp - CoinAmount::COIN ) * rp + Coin("0.3334") ) ); }
+//    Coin allocationFunc10( const Coin &rp ) { return std::max( CoinAmount::SATOSHI, Coin("-0.1") + rp * ( ( rp - CoinAmount::COIN ) * rp + Coin("0.3334") ) ); }
+//    Coin allocationFunc11( const Coin &rp ) { return std::max( CoinAmount::SATOSHI, Coin("-0.210") + rp * ( ( rp - CoinAmount::COIN ) * rp + Coin("0.3334") ) ); }
+//    Coin allocationFunc12( const Coin &rp ) { return std::max( CoinAmount::SATOSHI, Coin("-0.3") + rp * ( ( rp - CoinAmount::COIN ) * rp + Coin("0.3334") )); }
+//    Coin allocationFunc13( const Coin &rp ) { return std::max( CoinAmount::SATOSHI, Coin("-0.16") + rp * ( Coin("0.3333") + ( Coin("-1") + rp ) * rp ) ); }
+//    Coin allocationFunc14( const Coin &rp ) { return std::max( CoinAmount::SATOSHI, Coin("-0.68") + ( rp * rp ) ); }
+//    Coin allocationFunc15( const Coin &rp ) { return std::max( CoinAmount::SATOSHI, Coin("-1.02") + ( rp * rp ) ); }
+//    Coin allocationFunc16( const Coin &rp ) { return std::max( CoinAmount::SATOSHI, Coin("-1.36") + ( rp * rp ) ); }
+//    Coin allocationFunc17( const Coin &rp ) { return ( rp * rp ) + Coin("0.7"); }
+//    Coin allocationFunc18( const Coin &rp ) { return ( rp * rp ) + Coin("1.3"); }
+//    Coin allocationFunc19( const Coin &rp ) { return ( rp * rp ) + Coin("1.9"); }
+//    Coin allocationFunc20( const Coin &rp ) { return std::max( CoinAmount::SATOSHI, Coin("-1.66") + ( rp * rp ) ); }
+//    Coin allocationFunc21( const Coin &rp ) { return std::max( CoinAmount::SATOSHI, Coin("-0.85") + ( rp * rp ) ); }
+//    Coin allocationFunc22( const Coin &rp ) { return ( ( rp * rp ) - ( Coin("3") * rp ) + Coin("3") ) * rp; } // y=x(x^2 - 3x + 3)
 
     QString m_base_currency;
 
     // todo: make these into vectors
     QMap<QString/*currency*/, Coin> m_current_qty, m_qty_to_sl, m_current_price;
-    QMap<QString/*currency*/, QVector<Coin>> m_signal;
-//    QVector<QString> m_currencies;
-
-    //QVector<BaseCapitalModulator> m_modulator;
 
     Coin m_phase_alloc_noflux, m_phase_alloc_flux;
 
-    QVector<std::function<Coin(const Coin&)>> m_allocaton_function_vec;
-    std::function<Coin(const Coin&)> alloc_func;
-    int m_allocation_function_index{ 0 };
-    bool m_visualize{ false };
+//    QVector<std::function<Coin(const Coin&)>> m_allocaton_function_vec;
+//    std::function<Coin(const Coin&)> alloc_func;
+//    int m_allocation_function_index{ 0 };
+//    bool m_visualize{ false };
 
-    QVector<Coin> base_row, rp;
+    Coin m_dollar_short_ratio;
+    QMap<QString/*currency*/, Coin> m_average;
+    QMap<QString/*currency*/, Coin> m_favorability;
+    int m_alloc_power{ 1 };
 
-    bool m_save_base_capital{ false };
-    qint64 m_save_base_capital_last_secs{ 0 };
-    qint64 m_save_base_capital_interval{ 0 };
+    // for output only
+    QMap<QString/*currency*/, Coin> m_target_amounts;
+    QMap<QString/*currency*/, Coin> m_target_percentages;
     ///
-
-    /// non-essential, for external stats only
-#ifndef SPRUCE_PERFORMANCE_TWEAKS_ENABLED
-    QVector<QString> m_visualization_rows;
-    QString m_visualized_row_cache;
-    QMap<QString/*currency*/, Coin> m_qty_target_visualized;
-#endif
-    ///
-
-    // manual quantity target map
-    QMap<QString/*currency*/, Coin> m_qty_target_manual;
-    bool m_manual_spruceup_ran{ false };
 
     /// old spruce functionality, retain for SpruceOverseer compat
     QMap<QString, Coin> per_exchange_market_allocations; // note: market allocations are 0:1

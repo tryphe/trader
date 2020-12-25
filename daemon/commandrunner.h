@@ -97,7 +97,6 @@ private:
     void command_setspruceinterval( QStringList &args );
     void command_setsprucebasecurrency( QStringList &args );
     void command_setspruceqty( QStringList &args );
-    void command_setsprucemanualqtytarget( QStringList &args );
     void command_setsprucebetamarket( QStringList &args );
     void command_setspruceordergreed( QStringList &args );
     void command_setspruceordersize( QStringList &args );
@@ -111,11 +110,13 @@ private:
     void command_setsprucesnapback( QStringList &args );
     void command_setsprucesnapbacktrigger1( QStringList &args );
     void command_setsprucesnapbacktrigger2( QStringList &args );
-    void command_setsprucealloc( QStringList &args );
     void command_setpricetracking( QStringList &args );
-    void command_setsprucesavebasecapital( QStringList &args );
+    void command_setspruceallocpower( QStringList &args );
+    void command_setsprucedollarratio( QStringList &args );
+    void command_setsprucefavorability( QStringList &args );
     void command_spruceup( QStringList &args );
     void command_getsprucebasecapital( QStringList &args );
+    void command_getsprucetargets( QStringList &args );
     void command_getmidspreadstatus( QStringList &args );
     void command_getstatus( QStringList &args );
     void command_getconfig( QStringList &args );

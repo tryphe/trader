@@ -8,32 +8,32 @@
 
 SpruceV2::SpruceV2()
 {
-    using std::placeholders::_1;
-    m_allocaton_function_vec += std::bind( &SpruceV2::allocationFunc0, this, _1 );
-    m_allocaton_function_vec += std::bind( &SpruceV2::allocationFunc1, this, _1 );
-    m_allocaton_function_vec += std::bind( &SpruceV2::allocationFunc2, this, _1 );
-    m_allocaton_function_vec += std::bind( &SpruceV2::allocationFunc3, this, _1 );
-    m_allocaton_function_vec += std::bind( &SpruceV2::allocationFunc4, this, _1 );
-    m_allocaton_function_vec += std::bind( &SpruceV2::allocationFunc5, this, _1 );
-    m_allocaton_function_vec += std::bind( &SpruceV2::allocationFunc6, this, _1 );
-    m_allocaton_function_vec += std::bind( &SpruceV2::allocationFunc7, this, _1 );
-    m_allocaton_function_vec += std::bind( &SpruceV2::allocationFunc8, this, _1 );
-    m_allocaton_function_vec += std::bind( &SpruceV2::allocationFunc9, this, _1 );
-    m_allocaton_function_vec += std::bind( &SpruceV2::allocationFunc10, this, _1 );
-    m_allocaton_function_vec += std::bind( &SpruceV2::allocationFunc11, this, _1 );
-    m_allocaton_function_vec += std::bind( &SpruceV2::allocationFunc12, this, _1 );
-    m_allocaton_function_vec += std::bind( &SpruceV2::allocationFunc13, this, _1 );
-    m_allocaton_function_vec += std::bind( &SpruceV2::allocationFunc14, this, _1 );
-    m_allocaton_function_vec += std::bind( &SpruceV2::allocationFunc15, this, _1 );
-    m_allocaton_function_vec += std::bind( &SpruceV2::allocationFunc16, this, _1 );
-    m_allocaton_function_vec += std::bind( &SpruceV2::allocationFunc17, this, _1 );
-    m_allocaton_function_vec += std::bind( &SpruceV2::allocationFunc18, this, _1 );
-    m_allocaton_function_vec += std::bind( &SpruceV2::allocationFunc19, this, _1 );
-    m_allocaton_function_vec += std::bind( &SpruceV2::allocationFunc20, this, _1 );
-    m_allocaton_function_vec += std::bind( &SpruceV2::allocationFunc21, this, _1 );
-    m_allocaton_function_vec += std::bind( &SpruceV2::allocationFunc22, this, _1 );
+//    using std::placeholders::_1;
+//    m_allocaton_function_vec += std::bind( &SpruceV2::allocationFunc0, this, _1 );
+//    m_allocaton_function_vec += std::bind( &SpruceV2::allocationFunc1, this, _1 );
+//    m_allocaton_function_vec += std::bind( &SpruceV2::allocationFunc2, this, _1 );
+//    m_allocaton_function_vec += std::bind( &SpruceV2::allocationFunc3, this, _1 );
+//    m_allocaton_function_vec += std::bind( &SpruceV2::allocationFunc4, this, _1 );
+//    m_allocaton_function_vec += std::bind( &SpruceV2::allocationFunc5, this, _1 );
+//    m_allocaton_function_vec += std::bind( &SpruceV2::allocationFunc6, this, _1 );
+//    m_allocaton_function_vec += std::bind( &SpruceV2::allocationFunc7, this, _1 );
+//    m_allocaton_function_vec += std::bind( &SpruceV2::allocationFunc8, this, _1 );
+//    m_allocaton_function_vec += std::bind( &SpruceV2::allocationFunc9, this, _1 );
+//    m_allocaton_function_vec += std::bind( &SpruceV2::allocationFunc10, this, _1 );
+//    m_allocaton_function_vec += std::bind( &SpruceV2::allocationFunc11, this, _1 );
+//    m_allocaton_function_vec += std::bind( &SpruceV2::allocationFunc12, this, _1 );
+//    m_allocaton_function_vec += std::bind( &SpruceV2::allocationFunc13, this, _1 );
+//    m_allocaton_function_vec += std::bind( &SpruceV2::allocationFunc14, this, _1 );
+//    m_allocaton_function_vec += std::bind( &SpruceV2::allocationFunc15, this, _1 );
+//    m_allocaton_function_vec += std::bind( &SpruceV2::allocationFunc16, this, _1 );
+//    m_allocaton_function_vec += std::bind( &SpruceV2::allocationFunc17, this, _1 );
+//    m_allocaton_function_vec += std::bind( &SpruceV2::allocationFunc18, this, _1 );
+//    m_allocaton_function_vec += std::bind( &SpruceV2::allocationFunc19, this, _1 );
+//    m_allocaton_function_vec += std::bind( &SpruceV2::allocationFunc20, this, _1 );
+//    m_allocaton_function_vec += std::bind( &SpruceV2::allocationFunc21, this, _1 );
+//    m_allocaton_function_vec += std::bind( &SpruceV2::allocationFunc22, this, _1 );
 
-    alloc_func = m_allocaton_function_vec.at( m_allocation_function_index );
+//    alloc_func = m_allocaton_function_vec.at( m_allocation_function_index );
 
     /// user settings
     m_order_size = "0.005";
@@ -71,7 +71,7 @@ void SpruceV2::clear()
 
     // clear prices
     clearCurrentQtys();
-    clearCurrentAndSignalPrices();
+    clearCurrentPrices();
 
     // clear target qtys
     m_qty_to_sl.clear();
@@ -93,405 +93,275 @@ void SpruceV2::setCurrentQty( const QString &currency, const Coin &qty )
     m_current_qty[ currency ] = qty;
 }
 
-void SpruceV2::clearCurrentAndSignalPrices()
-{
-    m_current_price.clear();
-    m_signal.clear();
-}
-
 void SpruceV2::clearCurrentPrices()
 {
     m_current_price.clear();
 }
 
-void SpruceV2::clearSignalPrices()
+bool SpruceV2::calculateAmountToShortLong( bool is_midspread_phase )
 {
-    m_signal.clear();
-}
+    // clear qty_to_sl. incase we fail, it should not give any signals.
+    m_qty_to_sl.clear();
 
-bool SpruceV2::calculateAmountToShortLong()
-{
-#if defined(PRODUCTION_BOT)
-    // log base capital if settings allow
-    tryToSaveBaseCapital();
-
-    // if we set the allocs manually, trade those allocs instead of automatically calculating the allocs
-    if ( hasManualQuantityToShortLong() )
-        return calculateAmountToShortLongManual();
-#endif
-    static const QList<QString> clist = m_current_qty.keys();
-    Coin base_capital;
-    int base_currency_index, i, j, rp_idx;
-
-    base_row.clear();
-    rp.clear();
-
-    if ( m_signal.isEmpty() )
+    if ( m_average.isEmpty() )
     {
-        kDebug() << "[Diffusion] error: m_signal is empty";
+        kDebug() << "local error: tried to calculateAmountToShortLong() but average map is empty";
         return false;
     }
 
-    // compute row of ratios for base currency
-    const int signal_count = m_signal.first().size();
-    const auto &clist_end = clist.end();
-    for ( QList<QString>::const_iterator i = clist.begin(); i != clist_end; i++ )
+    if ( m_favorability.isEmpty() )
     {
-        const QString &currency = *i;
-        const Coin &qty = m_current_qty.value( currency );
-
-        // record base row
-        if ( currency == m_base_currency )
-        {
-            base_currency_index = base_row.size();
-            base_row += CoinAmount::COIN;
-            base_capital += qty;
-            continue;
-        }
-
-        // if non-base row, compute product of signals
-        Coin combined_signal;
-        for ( j = 0; j < signal_count; j++ )
-        {
-            const Coin &signal = m_signal[ currency ][ j ];
-
-            // combined_signal *= signal, but optimize for one less multiplication operation
-            if ( combined_signal.isZeroOrLess() )
-                combined_signal = signal;
-            else
-                combined_signal *= signal;
-
-//            kDebug() << currency << "sig" << j << signal;
-        }
-//        kDebug() << currency << "combined signal" << combined_signal;
-
-        const Coin &price = m_current_price.value( currency );
-        if ( price.isZeroOrLess() || combined_signal.isZeroOrLess() )
-        {
-            kDebug() << "[Diffusion] error: invalid price or signal for" << currency << ":" << price << combined_signal;
-            return false;
-        }
-
-        const Coin pq = price * qty;
-
-        base_row += combined_signal;
-        base_capital += pq;
+        kDebug() << "local error: tried to calculateAmountToShortLong() but favorability is empty or alt_alloc <=0";
+        return false;
     }
 
-//    kDebug() << "base row:" << base_row;
+//    kDebug() << "prices:" << m_current_price;
 
-    // compute row products, and generate a cross-table for looking at externally (we don't need it, but it's nice to look at)
-    const int base_row_size = base_row.size();
-    for ( i = 0; i < base_row_size; i++ )
+    const QString dollar_currency = "USDN";
+    const QVector<QString> excluded_currencies = QVector<QString>() << "USDT";
+    const Coin dollar_avg = m_average[ dollar_currency ];
+    const Coin dollar_price = m_current_price[ dollar_currency ];
+
+    if ( dollar_avg.isZeroOrLess() )
     {
-        // compute cross-ratio and row product
-        rp += CoinAmount::COIN;
-        rp_idx = rp.size() -1;
-        Coin &row_product = rp[ rp_idx ];
-
-        for ( j = 0; j < base_row.size(); j++ )
-        {
-            const Coin ratio = base_row.at( j ) / base_row.at( i );
-
-            // place ratio into commutative row product
-            row_product = std::max( CoinAmount::SATOSHI, row_product * ratio );
-            //row_product *= ratio;
-
-#ifndef SPRUCE_PERFORMANCE_TWEAKS_ENABLED
-            if ( m_visualize )
-            {
-                if ( i == 0 )
-                    m_visualization_rows.clear();
-
-                if ( j == 0 )
-                    m_visualized_row_cache.clear();
-
-                // insert space if necessary
-                if ( m_visualized_row_cache.isEmpty() )
-                    m_visualized_row_cache += QString( "%1 | " ).arg( clist.value( i ), -6 );
-
-                // insert ratio
-                m_visualized_row_cache += QString( "%1%2%3  " )
-                                   .arg( ratio > CoinAmount::COIN ? COLOR_GREEN :
-                                         ratio < CoinAmount::COIN ? COLOR_RED :
-                                                                    COLOR_NONE )
-                                   .arg( ratio.toString( 2 ), 4 )
-                                   .arg( COLOR_NONE );
-            }
-#endif
-        }
-
-//        assert( row_product.isGreaterThanZero() );
-
-        // do base row modulation
-//        if ( i == base_currency_index && !m_modulator.isEmpty() )
-//        {
-//            // cache nonbase_makeup / base_makeup
-////            const Coin makeup_ratio = nonbase_makeup / std::max( CoinAmount::SATOSHI, base_makeup );
-
-//            for ( QVector<BaseCapitalModulator>::const_iterator j = m_modulator.begin(); j != m_modulator.end(); j++ )
-//            {
-//                const BaseCapitalModulator &modulator = *j;
-
-//                if ( modulator.ma_slow.getMaxSamples() > 0 &&
-//                     modulator.ma_slow.getCurrentSamples() == modulator.ma_slow.getMaxSamples() ) // note: maybe try without this line too
-//                {
-//                    const Coin threshold = modulator.ma_slow.getSignal() * modulator.ma_slow_threshold;
-//                    const Coin fast = modulator.ma_fast.getSignal();
-
-//                    assert( fast.isGreaterThanZero() && threshold.isGreaterThanZero() );
-
-//                    if ( fast < threshold )
-//                        row_product *= /*makeup_ratio **/ ( threshold / fast ) * modulator.base_row_modulation;
-
-//                    // clamp outputs < 1sat
-//                    if ( row_product.isLessThanZero() )
-//                        row_product = CoinAmount::SATOSHI;
-//                }
-//            }
-//        }
-#ifndef SPRUCE_PERFORMANCE_TWEAKS_ENABLED
-        if ( m_visualize )
-        {
-            m_visualized_row_cache += QString( "| %1" ).arg( rp.at( rp_idx ).toString( 2 ), -4 );
-            m_visualization_rows += m_visualized_row_cache;
-        }
-#endif
+        kDebug() << "local error: could not detect average for" << dollar_currency;
+        return false;
     }
 
-    //kDebug() << "rp:" << rp;
-
-    // for each row product, plot z-value and accumulate total zt
-    QVector<Coin> &z = base_row; // reuse base_row
-    z.clear();
-    Coin zt;
-
-    const auto &rp_end = rp.end();
-    if ( m_allocation_function_index == 0 )
+    if ( dollar_price.isZeroOrLess() )
     {
-        for ( QVector<Coin>::const_iterator i = rp.begin(); i != rp_end; i++ )
-        {
-            // run allocation func
-            const Coin &rp_value = *i;
-
-            if ( !rp_value.isGreaterThanZero() )
-                qFatal( QString( "fatal: z-value <=0 for alloc func %1 for input %2" )
-                         .arg( m_allocation_function_index )
-                         .arg( rp_value )
-                         .toLocal8Bit() );
-
-            z += rp_value;
-            zt += rp_value;
-        }
-    }
-    else
-    {
-        for ( QVector<Coin>::const_iterator i = rp.begin(); i != rp_end; i++ )
-        {
-            // run allocation func
-            const Coin &rp_value = *i;
-            const Coin &z_value = alloc_func( rp_value );
-
-            if ( !z_value.isGreaterThanZero() )
-                qFatal( QString( "fatal: z-value <=0 for alloc func %1 for input %2" )
-                         .arg( m_allocation_function_index )
-                         .arg( rp_value )
-                         .toLocal8Bit() );
-
-            z += z_value;
-            zt += z_value;
-        }
+        kDebug() << "local error: could not detect price for" << dollar_currency;
+        return false;
     }
 
-//    kDebug() << "z_score:" << z;
-//    kDebug() << "zt:" << zt;
-
-    // compute z/zt for final allocation
-    QVector<Coin> &alloc = rp; // reuse rp
-    alloc.clear();
-    int &row = i;
-    row = 0;
-    const auto &z_end = z.end();
-    for ( QVector<Coin>::const_iterator i = z.begin(); i != z_end; i++ )
-    {
-        const Coin &z_score = *i;
-        const Coin new_alloc = z_score / zt;
-        alloc += new_alloc;
-#ifndef SPRUCE_PERFORMANCE_TWEAKS_ENABLED
-        if ( m_visualize )
-        {
-            m_visualization_rows[ row ].append( QString( " | %1" )
-                                                 .arg( new_alloc.toString( 2 ) ) );
-
-            row++;
-        }
-#endif
-    }
-
-//  const Coin &base_alloc = alloc.at( base_currency_index );
-//    kDebug() << alloc.at( base_currency_index );
-
-    // compute new amount for each currency: alloc[ currency ] * base_capital;
-    QVector<Coin> &new_base_amount = base_row; // reuse base_row
-    new_base_amount.clear();
-    const auto &alloc_end = alloc.end();
-    for ( QVector<Coin>::const_iterator i = alloc.begin(); i != alloc_end; i++ )
-    {
-        const Coin &alloc = *i;
-        new_base_amount += alloc * base_capital;
-    }
-
-    //kDebug() << "new base amount:" << new_base_amount;
-
-    // compute target qty: m_qty_to_sl = m_currency_qty - ( new_base_amount / m_current_price )
-    for ( i = 0; i < base_row_size; i++ )
-    {
-#ifndef SPRUCE_PERFORMANCE_TWEAKS_ENABLED
-        const QString &_currency = clist.at( i );
-        const Coin &_current_price = ( _currency == m_base_currency ) ? CoinAmount::COIN : m_current_price.value( _currency );
-        const Coin &_base = new_base_amount.at( i );
-
-        m_qty_target_visualized[ _currency ] = _base / _current_price;
-//        kDebug() << _currency << m_qty_target_visualized[ _currency ];
-#endif
-
-        if ( i == base_currency_index )
-            continue;
-
-        const QString &currency = clist.at( i );
-        const Coin &current_price = m_current_price.value( currency );
-        const Coin &base = new_base_amount.at( i );
-        const Coin &current_qty = m_current_qty.value( currency );
-
-        m_qty_to_sl[ Market( m_base_currency, currency ) ] = current_qty - ( base / current_price );
-    }
-
-    return true;
-}
-
-//void SpruceV2::doCapitalMomentumModulation( const Coin &base_capital )
-//{
-//    // add base capital to fast/slow ma
-//    for ( QVector<BaseCapitalModulator>::iterator i = m_modulator.begin(); i != m_modulator.end(); i++ )
-//    {
-//        (*i).ma_fast.addSample( base_capital );
-//        (*i).ma_slow.addSample( base_capital );
-//    }
-//}
-
-void SpruceV2::readManulQtyTargetsFile()
-{
-    // open qty targets file, but only if targets are already set
-    if ( !hasManualQuantityToShortLong() )
-        return;
-
-    // if we didn't set prices yet, getbasecapital is unknown
-    if ( getBaseCapital().isZeroOrLess() )
-        return;
-
-    kDebug() << "processing qtytargets...";
-
-    const QString path = Global::getTraderPath() + QDir::separator() + "candles" + QDir::separator() + "qtytargets";
-    QFile loadfile( path );
-
-    if ( !loadfile.open( QIODevice::ReadOnly | QIODevice::Text ) ||
-         loadfile.bytesAvailable() == 0 )
-    {
-        kDebug() << "local error: couldn't load qtytargets or file is empty" << path;
-        return;
-    }
-
-    // check for valid data
-    QString data = loadfile.readAll();
-    if ( !data.endsWith( "\n\n" ) )
-    {
-        kDebug() << "local error: aborted loading manual qty targets, qtytargets file doesn't end in two line breaks";
-        return;
-    }
-    data.chop( 2 );
-
-    QList<QString> lines = data.split( QChar( '\n' ) );
-    int line_num = 0;
-    Coin simulation_base_capital;
-    for ( QList<QString>::const_iterator i = lines.begin(); i != lines.end(); i++ )
-    {
-        const QString &current_line = *i;
-
-        // load simulation base capital
-        if ( line_num == 0 )
-        {
-            simulation_base_capital = current_line;
-            if ( simulation_base_capital.isZeroOrLess() )
-            {
-                kDebug() << "local error: aborted loading manual qty targets, simulation base capital <=0:" << current_line;
-                return;
-            }
-        }
-        // load currency, qty
-        else
-        {
-            QList<QString> args = current_line.split( QChar( ' ' ) );
-            if ( args.size() != 2 )
-            {
-                kDebug() << "local error: aborted loading manual qty targets, bad args size for line" << line_num << ":" << current_line;
-                return;
-            }
-
-            const QString &currency = args.first();
-            const Coin qty = args.value( 1 );
-
-            // check for bad qty
-            if ( qty.isLessThanZero() )
-            {
-                kDebug() << "local error: aborted loading manual qty targets, bad qty value" << qty << "for line" << line_num << ":" << current_line;
-                return;
-            }
-
-            // check if already exists (so we don't accidentally put another currency in)
-            if ( !m_qty_target_manual.contains( currency ) )
-            {
-                kDebug() << "local error: aborted loading manual qty targets, currency" << currency << "not found in m_qty_target_manual";
-                return;
-            }
-
-            // if the value is different, update and print
-            const Coin new_qty = qty * ( getBaseCapital() / simulation_base_capital );
-            if ( new_qty != m_qty_target_manual.value( currency ) )
-            {
-                m_qty_target_manual[ currency ] = new_qty;
-                kDebug() << "m_qty_target_manual[" << currency << "] =" << new_qty;
-            }
-        }
-
-        line_num++;
-    }
-}
-
-bool SpruceV2::calculateAmountToShortLongManual()
-{
-    m_qty_to_sl.clear();
-
-    for ( QMap<QString, Coin>::const_iterator i = m_qty_target_manual.begin(); i != m_qty_target_manual.end(); i++ )
+    // recompute btc pair averages in dollar terms
+    QMap<QString, Coin> average_dollar_terms;
+    for ( QMap<QString, Coin>::const_iterator i = m_average.begin(); i != m_average.end(); i++ )
     {
         const QString &currency = i.key();
-        const Coin &qty_target = i.value();
+        const Coin &avg = i.value();
 
-        if ( currency == m_base_currency )
-            continue;
+        if ( currency == dollar_currency )
+            average_dollar_terms[ dollar_currency ] = CoinAmount::COIN / avg;
+        else if ( !excluded_currencies.contains( currency ) )
+            average_dollar_terms[ currency ] = avg / dollar_avg;
+    }
+//    kDebug() << "avg dollar terms" << average_dollar_terms;
 
-        if ( !m_current_qty.contains( currency ) )
+    // recompute prices in dollar terms
+    QMap<QString, Coin> price_dollar_terms;
+    for ( QMap<QString, Coin>::const_iterator i = m_current_price.begin(); i != m_current_price.end(); i++ )
+    {
+        const QString &currency = i.key();
+        const Coin &price = i.value();
+
+        if ( currency == dollar_currency )
+            price_dollar_terms[ dollar_currency ] = CoinAmount::COIN / price;
+        else
+            price_dollar_terms[ currency ] = price / dollar_price;
+    }
+//    kDebug() << "price dollar terms" << price_dollar_terms;
+
+    // iterate each currency we have, construct a rating
+    QMap<QString/*currency*/, Coin> rating;
+    Coin lowest_rating;
+    for ( QMap<QString/*currency*/, Coin>::const_iterator i = average_dollar_terms.begin(); i != average_dollar_terms.end(); i++ )
+    {
+        const QString &currency = i.key();
+        const Coin &dollar_avg = i.value();
+        const Coin &dollar_price = price_dollar_terms[ currency ];
+
+        // throw warning message on invalid dollar_avg
+        if ( dollar_avg.isZeroOrLess() )
         {
-            kDebug() << "error: m_current_qty doesn't contain currency" << currency;
-            return false;
+            kDebug() << "local warning: invalid dollar_avg:" << currency << dollar_avg;
+            continue;
         }
 
-        // qsl = have - should_have
-        m_qty_to_sl[ Market( m_base_currency, currency ) ] = m_current_qty.value( currency ) - qty_target;
-//        kDebug() << currency << "qsl" << m_qty_to_sl[ currency ];
+        // throw warning message on invalid dollar_price
+        if ( dollar_price.isZeroOrLess() )
+        {
+            kDebug() << "local warning: invalid dollar_price:" << currency << dollar_price;
+            continue;
+        }
+
+        const Coin current_rating = dollar_avg / dollar_price;
+
+        // if dollars, set BTC rating
+        if ( currency == dollar_currency )
+            rating[ getBaseCurrency() ] = current_rating;
+        else
+            rating[ currency ] = current_rating;
+
+        // store lowest rating
+        if ( lowest_rating.isZero() || current_rating < lowest_rating )
+            lowest_rating = current_rating;
     }
 
-    m_manual_spruceup_ran = true;
+//    kDebug() << "ratings:" << rating;
+
+    QMap<QString/*currency*/, Coin> rating_over_lowest;
+    for ( QMap<QString/*currency*/, Coin>::const_iterator i = rating.begin(); i != rating.end(); i++ )
+    {
+        const QString &currency = i.key();
+        const Coin &rating = i.value();
+
+        const Coin rol = ( rating / lowest_rating ).pow( m_alloc_power );
+
+        rating_over_lowest[ currency ] = rol;
+    }
+
+//    kDebug() << "rating_over_lowest:" << rating_over_lowest;
+
+    // compute rol * favorability = RLF, and total RLF
+    QMap<QString/*currency*/, Coin> rlf;
+    Coin rlft;
+    Coin ft;
+    for ( QMap<QString/*currency*/, Coin>::const_iterator i = rating_over_lowest.begin(); i != rating_over_lowest.end(); i++ )
+    {
+        const QString &currency = i.key();
+        const Coin &rl = i.value();
+        const Coin &favorability = m_favorability[ currency ];
+
+        const Coin rlf_current = rl * favorability;
+
+        rlf[ currency ] = rlf_current;
+
+        // record RLFT and FT
+        rlft += rlf_current;
+        ft += favorability;
+    }
+
+//    kDebug() << "rlf:" << rlf;
+
+    // get BTCVT
+    const Coin btcvt = getBaseCapital();
+    if ( btcvt.isZeroOrLess() )
+    {
+        kDebug() << "local error: base capital is zero";
+        return false;
+    }
+
+    QMap<QString/*currency*/, Coin> target_amounts, target_percentages;
+
+    // calculate dollar short ratio, btcvt less dsr, usd alloc
+    const Coin &dsr = m_dollar_short_ratio;
+    const Coin btcvtldr = btcvt * ( CoinAmount::COIN - dsr );
+    const Coin usda = dsr * btcvt;
+
+    target_amounts[ dollar_currency ] = usda;
+    target_percentages[ dollar_currency ] = dsr;
+
+//    kDebug() << "btcvt:" << btcvt;
+
+    // compute BTCVT*RLF[currency]/RLFT = base currency alloc
+    for ( QMap<QString/*currency*/, Coin>::const_iterator i = rlf.begin(); i != rlf.end(); i++ )
+    {
+        const QString &currency = i.key();
+        const Coin &rlf = i.value();
+
+        const Coin target_amount = btcvtldr * rlf / rlft;
+
+        // save to member map
+        target_amounts[ currency ] = target_amount;
+        target_percentages[ currency ] = target_amount / btcvt;
+    }
+
+    // compute target = x / price
+    for ( QMap<QString/*currency*/, Coin>::const_iterator i = target_amounts.begin(); i != target_amounts.end(); i++ )
+    {
+        const QString &currency = i.key();
+
+        if ( currency == getBaseCurrency() )
+            continue;
+
+        const Coin &amount = i.value();
+        const Coin target_qty = amount / m_current_price[ currency ];
+
+        m_qty_to_sl[ Market( m_base_currency, currency ) ] = getCurrentQty( currency ) - target_qty;
+    }
+
+    // if noflux phase, record end status
+    if ( is_midspread_phase )
+    {
+        m_target_amounts = target_amounts;
+        m_target_percentages = target_percentages;
+
+//        kDebug() << "target amounts:" << m_target_amounts;
+//        kDebug() << "target percentages:" << m_target_percentages;
+//        kDebug() << "m_qty_to_sl:" << m_qty_to_sl;
+    }
+
     return true;
+}
+
+void SpruceV2::productionReadAveragesFile()
+{
+    m_average.clear();
+
+    //// read avgoutput file
+    const QString avgoutput_path = Global::getTraderPath() + QDir::separator() + "candles" + QDir::separator() + "avgoutput";
+
+    // open the file
+    QFile f( avgoutput_path );
+    if ( !f.open( QFile::ReadOnly | QFile::Text ) )
+    {
+        kDebug() << "local error: couldn't open" << avgoutput_path;
+        return;
+    }
+
+    // read all the data
+    const QByteArray average_data = f.readAll();
+    f.close();
+
+    // read lines into map
+    QList<QByteArray> average_lines = average_data.split( '\n' );
+
+    // ensure that the file ends properly (maybe it was being written while we tried to read it)
+    if ( !average_data.endsWith( QByteArray( "\n\n" ) ) )
+    {
+        kDebug() << "local error: avgoutput file does not end in two line breaks";
+        return;
+    }
+
+    // parse each line
+    for ( int i = 0; i < average_lines.size(); i++ )
+    {
+        const QByteArray &line = average_lines[ i ];
+
+        // skip empty lines
+        if ( line.isEmpty() )
+            continue;
+
+        const QList<QByteArray> args = line.split( ' ' );
+
+        // skip line if there wasn't 2 arguments
+        if ( args.size() != 2 )
+            continue;
+
+        const Market market = QString( args[ 0 ] );
+        const Coin avg = QString( args[ 1 ] );
+
+        // check for valid args
+        if ( !market.isValid() || avg.isZeroOrLess() )
+        {
+            kDebug() << "local error: invalid avgoutput line:" << line;
+            return;
+        }
+
+        m_average[ market.getQuote() ] = avg;
+
+        // duplicate USDT into USDN
+        // TODO: add a vector of vectors of duplicated markets
+        if ( market.getQuote() == "USDT" )
+            m_average[ "USDN" ] = avg;
+    }
+}
+
+void SpruceV2::setStrategyParams( const QMap<QString, Coin> &_averages, const QMap<QString, Coin> &_favorability )
+{
+    m_average = _averages;
+    m_favorability = _favorability;
 }
 
 void SpruceV2::adjustCurrentQty( const QString &currency, const Coin &qty )
@@ -499,21 +369,18 @@ void SpruceV2::adjustCurrentQty( const QString &currency, const Coin &qty )
     m_current_qty[ currency ] += qty;
 }
 
-void SpruceV2::setAllocationFunction( const int index )
-{
-    m_allocation_function_index = std::min( std::max( 0, index ), m_allocaton_function_vec.size() -1 );
-    alloc_func = m_allocaton_function_vec.at( m_allocation_function_index );
-}
+//void SpruceV2::setAllocationFunction( const int index )
+//{
+//    m_allocation_function_index = std::min( std::max( 0, index ), m_allocaton_function_vec.size() -1 );
+//    alloc_func = m_allocaton_function_vec.at( m_allocation_function_index );
+//}
 
-QString SpruceV2::getVisualization()
-{
-    QString ret;
-#ifndef SPRUCE_PERFORMANCE_TWEAKS_ENABLED
-    for( QVector<QString>::const_iterator i = m_visualization_rows.begin(); i != m_visualization_rows.end(); i++ )
-        ret += *i + "\n";
-#endif
-    return ret;
-}
+//QString SpruceV2::getVisualization()
+//{
+//    QString ret;
+
+//    return ret;
+//}
 
 Coin SpruceV2::getBaseCapital()
 {
@@ -542,36 +409,7 @@ Coin SpruceV2::getBaseCapital()
     return ret;
 }
 
-void SpruceV2::tryToSaveBaseCapital()
-{
-    if ( !m_save_base_capital || // check if should save
-         m_save_base_capital_interval < 1 || // check for bad interval
-         m_save_base_capital_last_secs > QDateTime::currentSecsSinceEpoch() - m_save_base_capital_interval || // check for too recent
-         getBaseCapital().isZeroOrLess() ) // base capital isn't initialized, market prices aren't set
-        return;
 
-    // open base capital file
-    const QString path = Global::getTraderPath() + QDir::separator() + "basecapital";
-
-    QFile savefile( path );
-    if ( !savefile.open( QIODevice::WriteOnly | QIODevice::Text | QIODevice::Append ) )
-    {
-        kDebug() << "local error: couldn't open base capital log file" << path;
-        return;
-    }
-
-    QTextStream out_savefile( &savefile );
-
-    // push base capital
-    out_savefile << getBaseCapital() << '\n';
-
-    // save the buffer
-    out_savefile.flush();
-    savefile.close();
-
-    // update timestamp
-    m_save_base_capital_last_secs = QDateTime::currentSecsSinceEpoch();
-}
 
 Coin SpruceV2::getExchangeAllocation( const QString &exchange_market_key, bool is_noflux_phase )
 {
@@ -622,19 +460,24 @@ void SpruceV2::setOrderNice( const quint8 side, Coin nice, bool midspread_phase 
                           ( side == SIDE_BUY ) ? m_order_nice_buys = nice : m_order_nice_sells = nice;
 }
 
-Coin SpruceV2::getOrderNice( const QString &market, const quint8 side, bool midspread_phase )
+Coin SpruceV2::getOrderNice( const QString &currency, const quint8 side, bool midspread_phase )
 {
     // get base nice value for side
     const Coin base = ( midspread_phase ) ? ( side == SIDE_BUY ) ? m_order_nice_custom_buys : m_order_nice_custom_sells :
                                             ( side == SIDE_BUY ) ? m_order_nice_buys : m_order_nice_sells;
 
     // apply per-market offset to side base
-    const Coin base_with_offset = ( side == SIDE_BUY ) ? base + m_order_nice_market_offset_buys.value( market ) :
-                                                         base + m_order_nice_market_offset_sells.value( market );
+    const Coin base_with_offset = ( side == SIDE_BUY ) ? base + m_order_nice_market_offset_buys.value( Market( m_base_currency, currency ) ) :
+                                                         base + m_order_nice_market_offset_sells.value( Market( m_base_currency, currency ) );
 
     // apply snapback ratio (or not) to base+offset
-    return ( getSnapbackState( market, side ) ) ? base_with_offset * m_snapback_ratio :
-                                                  base_with_offset;
+    Coin ret = ( getSnapbackState( Market( m_base_currency, currency ), side ) ) ? base_with_offset * m_snapback_ratio :
+                                                                                   base_with_offset;
+
+    // scale the value based on how much allocation the market gets
+    ret *= getTargetPercentage( currency );
+
+    return ret;
 }
 
 void SpruceV2::setOrderNiceZeroBound( const quint8 side, Coin nice, bool midspread_phase )
@@ -643,13 +486,17 @@ void SpruceV2::setOrderNiceZeroBound( const quint8 side, Coin nice, bool midspre
                           ( side == SIDE_BUY ) ? m_order_nice_zerobound_buys = nice : m_order_nice_zerobound_sells = nice;
 }
 
-Coin SpruceV2::getOrderNiceZeroBound( const QString &market, const quint8 side, bool midspread_phase ) const
+Coin SpruceV2::getOrderNiceZeroBound( const QString &currency, const quint8 side, bool midspread_phase ) const
 {
-    const Coin base = ( midspread_phase ) ? ( side == SIDE_BUY ) ? m_order_nice_custom_zerobound_buys : m_order_nice_custom_zerobound_sells :
-                                            ( side == SIDE_BUY ) ? m_order_nice_zerobound_buys : m_order_nice_zerobound_sells;
+    Coin ret = ( midspread_phase ) ? ( side == SIDE_BUY ) ? m_order_nice_custom_zerobound_buys : m_order_nice_custom_zerobound_sells :
+                                           ( side == SIDE_BUY ) ? m_order_nice_zerobound_buys : m_order_nice_zerobound_sells;
 
-    return ( side == SIDE_BUY ) ? base + m_order_nice_market_offset_zerobound_buys.value( market ) :
-                                  base + m_order_nice_market_offset_zerobound_sells.value( market );
+    ( side == SIDE_BUY ) ? ret += m_order_nice_market_offset_zerobound_buys.value( Market( m_base_currency, currency ) ) :
+                           ret += m_order_nice_market_offset_zerobound_sells.value( Market( m_base_currency, currency ) );
+
+    ret *= getTargetPercentage( currency );
+
+    return ret;
 }
 
 void SpruceV2::setSnapbackState( const QString &market, const quint8 side, const bool state, const Coin &price, const Coin &amount_to_shortlong_abs )
@@ -657,12 +504,11 @@ void SpruceV2::setSnapbackState( const QString &market, const quint8 side, const
     // store last trigger2 failure message, but clear when the entire mechanism resets below
     static QMap<QString, qint64> last_trigger2_message;
 
-    const bool opposite_side = ( side == SIDE_BUY ) ? SIDE_SELL : SIDE_BUY;
-    const bool other_side_state = getSnapbackState( market, opposite_side );
-
     // if we are turning the state on, and the state of the other side of this market is enabled, disable it directly
     // note: this should almost never happen, as once the amount_to_sl is under the nice limit, snapback  will disable.
     //       if it flips to the other side before disabling, it won't catch the check and we must disable it here.
+    const bool opposite_side = ( side == SIDE_BUY ) ? SIDE_SELL : SIDE_BUY;
+    const bool other_side_state = getSnapbackState( market, opposite_side );
     if ( state && other_side_state )
     {
         opposite_side == SIDE_BUY ? m_snapback_state_buys[ market ] = false :
@@ -731,7 +577,7 @@ void SpruceV2::setSnapbackState( const QString &market, const quint8 side, const
     // do trigger
     if ( state )
     {
-         PriceSignal &amount_to_sl_abs_signal = ( side == SIDE_BUY ) ? m_snapback_trigger2_sl_abs_ma_buys[ market ] :
+        PriceSignal &amount_to_sl_abs_signal = ( side == SIDE_BUY ) ? m_snapback_trigger2_sl_abs_ma_buys[ market ] :
                                                                  m_snapback_trigger2_sl_abs_ma_sells[ market ];
 
         // iterate trigger mechanism #1 and return if we didn't hit the threshold
@@ -757,7 +603,7 @@ void SpruceV2::setSnapbackState( const QString &market, const quint8 side, const
                  amount_to_sl_abs_signal.setMaxSamples( m_snapback_trigger2_ma_samples );
 
             // add sample
-            amount_to_sl_abs_signal.addSample( amount_to_shortlong_abs );
+            amount_to_sl_abs_signal.addSampleSMASMAR( amount_to_shortlong_abs );
 
             // trigger2 is finished if:
             // amount to shortlong abs < average of the last SNAPBACK_TRIGGER2_MA_SAMPLES * SNAPBACK_TRIGGER2_MA_RATIO
@@ -765,7 +611,7 @@ void SpruceV2::setSnapbackState( const QString &market, const quint8 side, const
             // we crossed the original trigger #2 price * SNAPBACK_TRIGGER2_PRICE_RATIO;
             QString trigger2_description_str;
             bool trigger2 = false;
-            const Coin threshold1 = m_snapback_trigger2_ma_ratio * amount_to_sl_abs_signal.getSignal();
+            const Coin threshold1 = m_snapback_trigger2_ma_ratio * amount_to_sl_abs_signal.getSignalSMA();
             const Coin threshold2 = m_snapback_trigger2_initial_ratio * ( side == SIDE_BUY ?
                                     m_snapback_trigger2_trigger_sl_abs_initial_buys.value( market ) :
                                     m_snapback_trigger2_trigger_sl_abs_initial_sells.value( market ) );
@@ -863,13 +709,6 @@ QString SpruceV2::getSaveState()
     // save base
     ret += QString( "setsprucebasecurrency %1\n" ).arg( getBaseCurrency() );
 
-    // save base capital log status
-    if ( m_save_base_capital )
-        ret += QString( "setsprucesavebasecapital %1 %2 %3\n" )
-                .arg( "true" )
-                .arg( m_save_base_capital_last_secs )
-                .arg( m_save_base_capital_interval );
-
     // save spread tolerances
     ret += QString( "setspruceordergreed %1 %2 %3 %4\n" )
             .arg( m_order_greed )
@@ -916,12 +755,25 @@ QString SpruceV2::getSaveState()
                                                                .arg( m_snapback_trigger2_initial_ratio )
                                                                .arg( m_snapback_trigger2_message_interval );
 
-    // save alloc function
-    ret += QString( "setsprucealloc %1\n" ).arg( m_allocation_function_index );
-
     // save phase allocations
     ret += QString( "setsprucephaseallocation %1 %2\n" ).arg( m_phase_alloc_noflux )
                                                         .arg( m_phase_alloc_flux );
+
+    // save scoring power
+    ret += QString( "setspruceallocpower %1\n" ).arg( m_alloc_power );
+
+    // save manual dollar ratio
+    ret += QString( "setsprucedollarratio %1\n" ).arg( m_dollar_short_ratio );
+
+    // save market favorability map
+    for ( QMap<QString,Coin>::const_iterator i = m_favorability.begin(); i != m_favorability.end(); i++ )
+    {
+        const QString &currency = i.key();
+        const Coin &favorability = i.value();
+
+        ret += QString( "setsprucefavorability %1 %2\n" ).arg( currency )
+                                                         .arg( favorability );
+    }
 
     // save order nice market offsets
     for ( QMap<QString,Coin>::const_iterator i = m_order_nice_market_offset_buys.begin(); i != m_order_nice_market_offset_buys.end(); i++ )
@@ -965,17 +817,6 @@ QString SpruceV2::getSaveState()
                 .arg( qty );
     }
 
-    // save optional target current quantities
-    for ( QMap<QString, Coin>::const_iterator i = m_qty_target_manual.begin(); i != m_qty_target_manual.end(); i++ )
-    {
-        const QString &currency = i.key();
-        const Coin &qty = i.value();
-
-        ret += QString( "setsprucemanualqtytarget %1 %2\n" )
-                .arg( currency )
-                .arg( qty );
-    }
-
     // save beta markets
     for ( QList<Market>::const_iterator i = m_markets_beta.begin(); i != m_markets_beta.end(); i++ )
     {
@@ -984,11 +825,4 @@ QString SpruceV2::getSaveState()
     }
 
     return ret;
-}
-
-Coin SpruceV2::getOrderSize( QString market ) const
-{
-    Q_UNUSED( market )
-
-    return m_order_size;
 }
