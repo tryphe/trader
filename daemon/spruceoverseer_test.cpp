@@ -110,7 +110,10 @@ void SpruceOverseerTest::test( SpruceOverseer *o, Engine *engine )
 //    kDebug() << "sell spread random:" << o->getSpreadForSide( TEST_MARKET, SIDE_SELL, true, false, true, true );
 //    kDebug() << "sell spread reduce:" << o->getSpreadForSide( TEST_MARKET, SIDE_SELL, true, false, false, false, Coin( "0.01" ) );
 
-    // invalidate ticker update time
+    // clear TEST_1 from alpha markets
+    o->spruce->clear();
+
+    // clean dirty engine stuff
     for ( quint8 type = 0; type < 4; type++ )
         if ( engine->rest_arr.value( type ) != nullptr )
             engine->rest_arr.value( type )->ticker_update_time = 0;
