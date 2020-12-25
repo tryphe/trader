@@ -12,6 +12,7 @@ SOURCES += \
         ../daemon/coinamount.cpp \
         ../daemon/market.cpp \
         ../daemon/priceaggregator.cpp \
+        ../daemon/pricesignal.cpp \
         main.cpp \
         puller.cpp
 
@@ -20,6 +21,7 @@ HEADERS += \
         ../daemon/coinamount.h \
         ../daemon/market.h \
         ../daemon/priceaggregator.h \
+        ../daemon/pricesignal.h \
         puller.h
 
 DISTFILES += \

@@ -17,6 +17,8 @@
 #include <QFile>
 #include <QCoreApplication>
 
+static const qint64 TIMEOUT_SECS = 900; // if no response is met within this time, exit the application
+
 Puller::Puller() :
     QObject()
 {
@@ -158,10 +160,21 @@ void Puller::onSendNameQueue()
     QNetworkReply *reply = nam->get( req->request );
     nam_queue_sent.insert( reply, req->id );
     delete req;
+
+    // update application end time. each request we send, we must end some time after that incase we have timeouts and such, since they are not handled. (maybe TODO)
+    // this application should be run as a periodic job so if it fails on one run, it will pick up the slack next run.
+    application_end_secs = QDateTime::currentSecsSinceEpoch() + TIMEOUT_SECS;
 }
 
 void Puller::onCheckFinished()
 {
+    // check if this application has timed out
+    if ( application_end_secs != 0 && QDateTime::currentSecsSinceEpoch() > application_end_secs )
+    {
+        qDebug() << "candlestick pulling timed out, exiting.";
+        exit( 1 );
+    }
+
     // if not done, return
     if ( !( waiting_for_final_reply && requests_made == requests_parsed ) )
         return;
