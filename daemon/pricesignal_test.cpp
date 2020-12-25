@@ -1,6 +1,8 @@
 #include "pricesignal_test.h"
 #include "pricesignal.h"
 
+#include <QDebug>
+
 void PriceSignalTest::test()
 {
     /// test SMA with max samples = 0
@@ -157,4 +159,11 @@ void PriceSignalTest::test()
     rsir.addSample( Coin("46.22" ) );
     rsir.addSample( Coin("45.64" ) );
     assert( rsir.getSignal() == "1.26056324" );
+
+    // calculate harmonic mean
+    PriceSignal hma( HMA, 3 );
+    hma.addSample( Coin("4" ) );
+    hma.addSample( Coin("4" ) );
+    hma.addSample( Coin("1" ) );
+    assert( hma.getSignal() == "2.00000000" );
 }
