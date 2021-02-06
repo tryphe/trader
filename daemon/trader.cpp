@@ -248,31 +248,43 @@ void Trader::handleCommand( QString &s )
 {
     //kDebug() << "[Trader] got command:" << s;
 
-    if ( s.startsWith( QString( "bittrex " ), Qt::CaseInsensitive ) )
+    CommandRunner *command_runner = nullptr;
+
+    // identify the exchange
+    if ( s.startsWith( BITTREX_EXCHANGE_STR, Qt::CaseInsensitive ) )
     {
-        s = s.mid( 8 );
-        command_runner_trex->runCommandChunk( s );
+        s = s.mid( BITTREX_EXCHANGE_STR.size() +1 );
+        command_runner = command_runner_trex;
     }
-    else if ( s.startsWith( QString( "binance " ), Qt::CaseInsensitive ) )
+    else if ( s.startsWith( BINANCE_EXCHANGE_STR, Qt::CaseInsensitive ) )
     {
-        s = s.mid( 8 );
-        command_runner_bnc->runCommandChunk( s );
+        s = s.mid( BINANCE_EXCHANGE_STR.size() +1 );
+        command_runner = command_runner_bnc;
     }
-    else if ( s.startsWith( QString( "poloniex " ), Qt::CaseInsensitive ) )
+    else if ( s.startsWith( POLONIEX_EXCHANGE_STR, Qt::CaseInsensitive ) )
     {
-        s = s.mid( 9 );
-        command_runner_polo->runCommandChunk( s );
+        s = s.mid( POLONIEX_EXCHANGE_STR.size() +1 );
+        command_runner = command_runner_polo;
     }
-    else if ( s.startsWith( QString( "waves " ), Qt::CaseInsensitive ) )
+    else if ( s.startsWith( WAVES_EXCHANGE_STR, Qt::CaseInsensitive ) )
     {
-        s = s.mid( 6 );
-        command_runner_waves->runCommandChunk( s );
+        s = s.mid( WAVES_EXCHANGE_STR.size() +1 );
+        command_runner = command_runner_waves;
     }
     else
     {
         kDebug() << "[Trader] bad exchange prefix:" << s;
         return;
     }
+
+    // check for unbuilt exchange
+    if ( command_runner == nullptr )
+    {
+        kDebug() << "[Trader] called exchange that wasn't built, aborting command:" << s;
+        return;
+    }
+
+    command_runner->runCommandChunk( s );
 }
 
 void Trader::handleExitSignal()
