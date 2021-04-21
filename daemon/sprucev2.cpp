@@ -103,12 +103,27 @@ bool SpruceV2::calculateAmountToShortLong( bool is_midspread_phase )
     // clear qty_to_sl. incase we fail, it should not give any signals.
     m_qty_to_sl.clear();
 
+    // check if there are no averages
     if ( m_average.isEmpty() )
     {
         kDebug() << "local error: tried to calculateAmountToShortLong() but average map is empty";
         return false;
     }
 
+    // check if any of the averages are zero
+    for ( QMap<QString, Coin>::const_iterator i = m_average.begin(); i != m_average.end(); i++ )
+    {
+        const QString &currency = i.key();
+        const Coin &avg = i.value();
+
+        if ( avg.isZeroOrLess() )
+        {
+            kDebug() << "local error: m_average for" << currency << "is zero or less";
+            return false;
+        }
+    }
+
+    // check if there are no favorabilities
     if ( m_favorability.isEmpty() )
     {
         kDebug() << "local error: tried to calculateAmountToShortLong() but favorability is empty or alt_alloc <=0";
@@ -293,75 +308,6 @@ bool SpruceV2::calculateAmountToShortLong( bool is_midspread_phase )
     }
 
     return true;
-}
-
-void SpruceV2::productionReadAveragesFile()
-{
-    m_average.clear();
-
-    //// read avgoutput file
-    const QString avgoutput_path = Global::getTraderPath() + QDir::separator() + "candles" + QDir::separator() + "avgoutput";
-
-    // open the file
-    QFile f( avgoutput_path );
-    if ( !f.open( QFile::ReadOnly | QFile::Text ) )
-    {
-        kDebug() << "local error: couldn't open" << avgoutput_path;
-        return;
-    }
-
-    // read all the data
-    const QByteArray average_data = f.readAll();
-    f.close();
-
-    // read lines into map
-    QList<QByteArray> average_lines = average_data.split( '\n' );
-
-    // ensure that the file ends properly (maybe it was being written while we tried to read it)
-    if ( !average_data.endsWith( QByteArray( "\n\n" ) ) )
-    {
-        kDebug() << "local error: avgoutput file does not end in two line breaks";
-        return;
-    }
-
-    // parse each line
-    for ( int i = 0; i < average_lines.size(); i++ )
-    {
-        const QByteArray &line = average_lines[ i ];
-
-        // skip empty lines
-        if ( line.isEmpty() )
-            continue;
-
-        const QList<QByteArray> args = line.split( ' ' );
-
-        // skip line if there wasn't 2 arguments
-        if ( args.size() != 2 )
-            continue;
-
-        const Market market = QString( args[ 0 ] );
-        const Coin avg = QString( args[ 1 ] );
-
-        // check for valid args
-        if ( !market.isValid() || avg.isZeroOrLess() )
-        {
-            kDebug() << "local error: invalid avgoutput line:" << line;
-            return;
-        }
-
-        m_average[ market.getQuote() ] = avg;
-
-        // duplicate USDT into USDN
-        // TODO: add a vector of vectors of duplicated markets
-        if ( market.getQuote() == "USDT" )
-            m_average[ "USDN" ] = avg;
-    }
-}
-
-void SpruceV2::setStrategyParams( const QMap<QString, Coin> &_averages, const QMap<QString, Coin> &_favorability )
-{
-    m_average = _averages;
-    m_favorability = _favorability;
 }
 
 void SpruceV2::adjustCurrentQty( const QString &currency, const Coin &qty )
@@ -563,8 +509,8 @@ void SpruceV2::setSnapbackState( const QString &market, const quint8 side, const
             trigger1_last_time_quotient = current_time_quotient;
 
         // reset trigger #2 ma
-        side == SIDE_BUY ? m_snapback_trigger2_sl_abs_ma_buys[ market ] =  PriceSignal( SMA, m_snapback_trigger2_ma_samples ) :
-                           m_snapback_trigger2_sl_abs_ma_sells[ market ] =  PriceSignal( SMA, m_snapback_trigger2_ma_samples );
+        side == SIDE_BUY ? m_snapback_trigger2_sl_abs_ma_buys[ market ] =  PriceSignal( HMA, m_snapback_trigger2_ma_samples ) :
+                           m_snapback_trigger2_sl_abs_ma_sells[ market ] =  PriceSignal( HMA, m_snapback_trigger2_ma_samples );
 
         // reset trigger #2 failure message
         last_trigger2_message[ market ] = 0;
@@ -578,7 +524,7 @@ void SpruceV2::setSnapbackState( const QString &market, const quint8 side, const
     if ( state )
     {
         PriceSignal &amount_to_sl_abs_signal = ( side == SIDE_BUY ) ? m_snapback_trigger2_sl_abs_ma_buys[ market ] :
-                                                                 m_snapback_trigger2_sl_abs_ma_sells[ market ];
+                                                                      m_snapback_trigger2_sl_abs_ma_sells[ market ];
 
         // iterate trigger mechanism #1 and return if we didn't hit the threshold
         if ( trigger1_count < m_snapback_trigger1_iterations )
@@ -603,7 +549,7 @@ void SpruceV2::setSnapbackState( const QString &market, const quint8 side, const
                  amount_to_sl_abs_signal.setMaxSamples( m_snapback_trigger2_ma_samples );
 
             // add sample
-            amount_to_sl_abs_signal.addSampleSMASMAR( amount_to_shortlong_abs );
+            amount_to_sl_abs_signal.addSampleHMA( amount_to_shortlong_abs );
 
             // trigger2 is finished if:
             // amount to shortlong abs < average of the last SNAPBACK_TRIGGER2_MA_SAMPLES * SNAPBACK_TRIGGER2_MA_RATIO
@@ -611,7 +557,7 @@ void SpruceV2::setSnapbackState( const QString &market, const quint8 side, const
             // we crossed the original trigger #2 price * SNAPBACK_TRIGGER2_PRICE_RATIO;
             QString trigger2_description_str;
             bool trigger2 = false;
-            const Coin threshold1 = m_snapback_trigger2_ma_ratio * amount_to_sl_abs_signal.getSignalSMA();
+            const Coin threshold1 = m_snapback_trigger2_ma_ratio * amount_to_sl_abs_signal.getSignalHMA();
             const Coin threshold2 = m_snapback_trigger2_initial_ratio * ( side == SIDE_BUY ?
                                     m_snapback_trigger2_trigger_sl_abs_initial_buys.value( market ) :
                                     m_snapback_trigger2_trigger_sl_abs_initial_sells.value( market ) );
@@ -765,7 +711,7 @@ QString SpruceV2::getSaveState()
     // save manual dollar ratio
     ret += QString( "setsprucedollarratio %1\n" ).arg( m_dollar_short_ratio );
 
-    // save market favorability map
+    // save currency favorability map
     for ( QMap<QString,Coin>::const_iterator i = m_favorability.begin(); i != m_favorability.end(); i++ )
     {
         const QString &currency = i.key();
@@ -773,6 +719,16 @@ QString SpruceV2::getSaveState()
 
         ret += QString( "setsprucefavorability %1 %2\n" ).arg( currency )
                                                          .arg( favorability );
+    }
+
+    // save currency longterm signal map
+    for ( QMap<QString,Coin>::const_iterator i = m_average.begin(); i != m_average.end(); i++ )
+    {
+        const QString &currency = i.key();
+        const Coin &signal = i.value();
+
+        ret += QString( "setsprucelongtermsignal %1 %2\n" ).arg( currency )
+                                                           .arg( signal );
     }
 
     // save order nice market offsets

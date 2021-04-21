@@ -52,13 +52,6 @@ public:
 
     bool calculateAmountToShortLong( bool is_midspread_phase = false ); // run to get amount to sl
 
-    // initializers, for production
-    void productionReadAveragesFile();
-    void productionSetStrategyParams();
-
-    // initializers, for simulation
-    void setStrategyParams( const QMap<QString, Coin> &_averages, const QMap<QString, Coin> &_favorability );
-
     Coin getQuantityToShortLongByCurrency( const QString &currency ) { return m_qty_to_sl.value( currency ); }
     QMap<QString, Coin> &getQuantityToShortLongMap() { return m_qty_to_sl; }
 
@@ -68,6 +61,9 @@ public:
     int getAllocPower() { return m_alloc_power; }
     void setCurrencyFavorability( const QString &currency, const Coin &favorability_multiple ) { m_favorability [ currency ] = favorability_multiple; }
     Coin getCurrencyFavorability( const QString &currency ) { return m_favorability[ currency ]; }
+
+    void setCurrencyLongtermSignal( const QString &currency, const Coin &signal ) { m_average[ currency ] = signal; }
+    Coin getCurrencyLongtermSignal( const QString &currency ) { return m_average[ currency ]; }
 
     void setIntervalSecs( const qint64 secs ) { m_interval_secs = secs; }
     qint64 getIntervalSecs() const { return m_interval_secs; }
