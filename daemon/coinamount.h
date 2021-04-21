@@ -1,6 +1,8 @@
 #ifndef COINAMOUNT_H
 #define COINAMOUNT_H
 
+#include "build-config.h"
+
 #include <gmp.h>
 #include <QString>
 
@@ -49,6 +51,8 @@ public:
     Coin operator -() const;
     Coin abs() const;
     Coin pow( const int p ) const;
+//    Coin root_slow( const int n, const Coin &precision = Coin( "0.00000001" ) );
+//    Coin root_newton( const int n, const Coin &precision = Coin( "0.000000000001" ) );
 
     bool isZero() const;
     bool isZeroOrLess() const;
@@ -73,6 +77,10 @@ public:
     void truncateByTicksize( QString ticksize );
     Coin truncatedByTicksize( QString ticksize );
     static Coin ticksizeFromDecimals( int dec );
+
+    static const int str_base = 10;
+    static const int subsatoshi_decimals = 16;
+    static const int satoshi_decimals = 8;
 
 private:
     mpz_t b;
@@ -99,11 +107,8 @@ static const QChar zero_exp = QChar( '0' );
 static const QChar one_exp = QChar( '1' );
 static const QChar minus_exp = QChar( '-' );
 static const QChar plus_exp = QChar( '+' );
-static const int str_base = 10;
-static const int subsatoshi_decimals = 16;
-static const int satoshi_decimals = 8;
 
-static inline void toSatoshiFormat( QString &s, int decimals = satoshi_decimals )
+static inline void toSatoshiFormat( QString &s, int decimals = Coin::satoshi_decimals )
 {
     // trimmed() alternative
     int sz0 = s.size();
@@ -244,11 +249,13 @@ static inline QString toSatoshiFormatStrExpr( QString s )
 
 static inline QString toSatoshiFormat( qreal &r )
 {
+#if defined(COIN_CATCH_INF)
     if ( r == std::numeric_limits<qreal>::infinity() ||
          r == -std::numeric_limits<qreal>::infinity() )
         r = 0.;
+#endif
 
-    return QString::number( r, 'f', CoinAmount::satoshi_decimals );
+    return QString::number( r, 'f', Coin::satoshi_decimals );
 }
 static inline QString toSatoshiFormatExpr( qreal r )
 {
@@ -257,11 +264,13 @@ static inline QString toSatoshiFormatExpr( qreal r )
 
 static inline QString toSubsatoshiFormat( qreal &r )
 {
+#if defined(COIN_CATCH_INF)
     if ( r == std::numeric_limits<qreal>::infinity() ||
          r == -std::numeric_limits<qreal>::infinity() )
         r = 0.;
+#endif
 
-    return QString::number( r, 'f', CoinAmount::subsatoshi_decimals );
+    return QString::number( r, 'f', Coin::subsatoshi_decimals );
 }
 static inline QString toSubsatoshiFormatExpr( qreal r )
 {
