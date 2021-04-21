@@ -1,16 +1,16 @@
 #ifndef BUILDCONFIG_H
 #define BUILDCONFIG_H
 
-#define BUILD_VERSION "1.83h6"
+#define BUILD_VERSION "1.83i6"
 
 /// select your exchanges
-#define BITTREX_ENABLED
+//#define BITTREX_ENABLED
 #define BINANCE_ENABLED
 #define POLONIEX_ENABLED
 #define WAVES_ENABLED
 
 /// universal exchange options
-#define BITTREX_TICKER_ONLY
+//#define BITTREX_TICKER_ONLY
 #define BINANCE_TICKER_ONLY
 #define POLONIEX_TICKER_ONLY
 //#define WAVES_TICKER_ONLY
