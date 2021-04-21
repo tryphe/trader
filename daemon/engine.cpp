@@ -189,10 +189,10 @@ Position *Engine::addPosition( QString market_input, quint8 side, QString buy_pr
 
     // anti-stupid check: did we put in a taker price that's <>10% of the current bid/ask?
     if ( !is_override && is_taker &&
-        ( ( side == SIDE_SELL && info.spread.bid.ratio( 0.9 ) > Coin( sell_price ) ) ||  // bid * 0.9 > sell_price
-          ( side == SIDE_SELL && info.spread.bid.ratio( 1.1 ) < Coin( sell_price ) ) ||  // bid * 1.1 < sell_price
-          ( side == SIDE_BUY && info.spread.ask.ratio( 1.1 ) < Coin( buy_price ) ) ||  // ask * 1.1 < buy_price
-          ( side == SIDE_BUY && info.spread.ask.ratio( 0.9 ) > Coin( buy_price ) ) ) ) // ask * 0.9 > buy_price
+        ( ( side == SIDE_SELL && info.spread.ask.ratio( 0.8 ) > Coin( sell_price ) ) || // ask * 0.9 > sell_price
+          ( side == SIDE_SELL && info.spread.ask.ratio( 1.2 ) < Coin( sell_price ) ) || // ask * 1.1 < sell_price
+          ( side == SIDE_BUY && info.spread.bid.ratio( 1.2 ) < Coin( buy_price ) ) ||   // bid * 1.1 < buy_price
+          ( side == SIDE_BUY && info.spread.bid.ratio( 0.8 ) < Coin( buy_price ) ) ) )  // bid * 0.9 > buy_price
     {
         kDebug() << "local error: taker sell_price:" << sell_price << "buy_price:" << buy_price << "is >10% from spread, aborting order. add '-override' if intentional.";
         return nullptr;
