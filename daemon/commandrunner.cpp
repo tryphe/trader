@@ -108,6 +108,7 @@ CommandRunner::CommandRunner( const quint8 _engine_type, Engine *_e, QVector<Bas
     command_map.insert( "setspruceallocpower", std::bind( &CommandRunner::command_setspruceallocpower, this, _1 ) );
     command_map.insert( "setsprucedollarratio", std::bind( &CommandRunner::command_setsprucedollarratio, this, _1 ) );
     command_map.insert( "setsprucefavorability", std::bind( &CommandRunner::command_setsprucefavorability, this, _1 ) );
+    command_map.insert( "setsprucelongtermsignal", std::bind( &CommandRunner::command_setsprucelongtermsignal, this, _1 ) );
     command_map.insert( "getmidspreadstatus", std::bind( &CommandRunner::command_getmidspreadstatus, this, _1 ) );
     command_map.insert( "getsprucebasecapital", std::bind( &CommandRunner::command_getsprucebasecapital, this, _1 ) );
     command_map.insert( "getsprucetargets", std::bind( &CommandRunner::command_getsprucetargets, this, _1 ) );
@@ -1092,6 +1093,24 @@ void CommandRunner::command_setsprucefavorability( QStringList &args )
     spruce_overseer->spruce->setCurrencyFavorability( currency, favorability );
 
     kDebug() << "spruce set" << currency << "favorability:" << spruce_overseer->spruce->getCurrencyFavorability( currency );
+}
+
+void CommandRunner::command_setsprucelongtermsignal( QStringList &args )
+{
+    if ( !checkArgs( args, 2 ) ) return;
+
+    // check args
+    const QString currency = args.value( 1 );
+    const Coin signal = Coin( args.value( 2 ) );
+    if ( currency.isEmpty() || signal.isLessThanZero() )
+    {
+        kDebug() << "local error: invalid signal:" << currency << signal;
+        return;
+    }
+
+    spruce_overseer->spruce->setCurrencyLongtermSignal( currency, signal );
+
+    kDebug() << "spruce set" << currency << "signal:" << spruce_overseer->spruce->getCurrencyLongtermSignal( currency );
 }
 
 void CommandRunner::command_spruceup( QStringList & )

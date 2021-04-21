@@ -114,6 +114,7 @@ private:
     void command_setspruceallocpower( QStringList &args );
     void command_setsprucedollarratio( QStringList &args );
     void command_setsprucefavorability( QStringList &args );
+    void command_setsprucelongtermsignal( QStringList &args );
     void command_spruceup( QStringList &args );
     void command_getsprucebasecapital( QStringList &args );
     void command_getsprucetargets( QStringList &args );
