@@ -74,9 +74,6 @@ void SpruceOverseer::onSpruceUp()
     if ( m_phase_man.getMarketCount() < alpha_markets.size() )
         m_phase_man.setMarkets( alpha_markets );
 
-    // read avgoutput file
-    spruce->productionReadAveragesFile();
-
     // go through each phase for each side for each market relevant to each phase
     for ( m_phase_man.begin(); !m_phase_man.atEnd(); m_phase_man.next() )
     {
@@ -183,7 +180,7 @@ void SpruceOverseer::onSpruceUp()
                 if ( market_alloc_ratio.isZeroOrLess() )
                     continue;
 
-                QString order_type = "onetime";
+                QString order_type = "onetime-override-";
                 Coin buy_price, sell_price;
 
                 // set price for order
@@ -334,7 +331,7 @@ void SpruceOverseer::onSpruceUp()
                     {
                         spread_reduce = ( amount_to_shortlong_abs / spread_put_threshold ) * ( CoinAmount::SATOSHI * 100000 );
 
-                        const Spread collapsed_spread = getSpreadForSide( market, side, true, false, true, true, spread_reduce );
+                        const Spread collapsed_spread = getSpreadForSide( market, side, true, false, false, false, spread_reduce );
                         if ( collapsed_spread.isValid() )
                         {
                             buy_price = collapsed_spread.bid;
