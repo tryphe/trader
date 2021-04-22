@@ -328,7 +328,7 @@ void SpruceV2::adjustCurrentQty( const QString &currency, const Coin &qty )
 //    return ret;
 //}
 
-Coin SpruceV2::getBaseCapital()
+Coin SpruceV2::getBaseCapital() const
 {
     Coin ret;
     const QMap<QString, Coin>::const_iterator end = m_current_qty.end();
@@ -354,8 +354,6 @@ Coin SpruceV2::getBaseCapital()
 
     return ret;
 }
-
-
 
 Coin SpruceV2::getExchangeAllocation( const QString &exchange_market_key, bool is_noflux_phase )
 {
@@ -422,6 +420,9 @@ Coin SpruceV2::getOrderNice( const QString &currency, const quint8 side, bool mi
 
     // scale the value based on how much allocation the market gets
     ret *= getTargetPercentage( currency );
+
+    // scale the value to base capital
+    ret *= getBaseCapital();
 
     return ret;
 }

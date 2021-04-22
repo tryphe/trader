@@ -70,7 +70,7 @@ public:
 
     void setBaseCurrency( QString currency ) { m_base_currency = currency; }
     QString getBaseCurrency() const { return m_base_currency.isEmpty() ? "disabled" : m_base_currency; }
-    Coin getBaseCapital();
+    Coin getBaseCapital() const;
     QMap<QString, Coin> getTargetAmounts() { return m_target_amounts; }
     QMap<QString, Coin> getTargetPercentages() { return m_target_percentages; }
     Coin getTargetPercentage( const QString &currency ) const { return m_target_percentages[ currency ]; }
@@ -102,8 +102,8 @@ public:
     // spread reduction sensitivity
     void setOrderNiceSpreadPut( const quint8 side, Coin nice ) { ( side == SIDE_BUY ) ? m_order_nice_spreadput_buys = nice :
                                                                                         m_order_nice_spreadput_sells = nice; }
-    Coin getOrderNiceSpreadPut( const quint8 side ) const { return ( side == SIDE_BUY ) ? m_order_nice_spreadput_buys :
-                                                                                          m_order_nice_spreadput_sells; }
+    Coin getOrderNiceSpreadPut( const quint8 side ) const { return ( side == SIDE_BUY ) ? m_order_nice_spreadput_buys * getBaseCapital() :
+                                                                                          m_order_nice_spreadput_sells * getBaseCapital(); }
 
     // nice+zero bound offets for each market+side on all phases
     void setOrderNiceMarketOffset( const QString &market, const quint8 side, Coin offset ) { ( side == SIDE_BUY ) ? m_order_nice_market_offset_buys[ market ] = offset :

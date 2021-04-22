@@ -21,7 +21,7 @@
 #define PRINT_LOGS_TO_FILE_COLOR
 
 /// to make trades with the strategy, comment this out
-//#define PAPER_TRADE
+#define PAPER_TRADE
 
 /// what to log
 //#define PRINT_LOGS_WITH_FUNCTION_NAMES
