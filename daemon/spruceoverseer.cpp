@@ -423,7 +423,7 @@ void SpruceOverseer::onSpruceUp()
         }
 
         // clear cache for this phase
-        spruce->buildCache();
+        spruce->clearCache();
     }
 
     // set spruce prices to midspread so getBaseCapital is consistent with the spread
