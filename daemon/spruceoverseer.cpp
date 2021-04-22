@@ -153,6 +153,15 @@ void SpruceOverseer::onSpruceUp()
             }
         }
 
+        // cache base capital
+        const Coin base_capital = spruce->getBaseCapital();
+
+        if ( base_capital.isZeroOrLess() )
+        {
+            kDebug() << "spruceoverseer error: base capital is" << base_capital;
+            return;
+        }
+
         const QMap<QString,Coin> &qty_to_shortlong_map = spruce->getQuantityToShortLongMap();
 //        kDebug() << "qsl map:" << qty_to_shortlong_map;
 
@@ -232,8 +241,7 @@ void SpruceOverseer::onSpruceUp()
 
                 // cache some order settings
                 const Coin order_size_default = spruce->getOrderSize();
-                const Coin order_nice = spruce->getOrderNice( market.getQuote(), side, is_midspread_phase );
-                const Coin order_size_limit = order_size_default * order_nice;
+                const Coin order_size_limit = base_capital * spruce->getOrderNice( market.getQuote(), side, is_midspread_phase );
 
                 // cache amount to short/long
                 const Coin current_market_price = spruce->getCurrentPrice( market.getQuote() );
@@ -322,7 +330,7 @@ void SpruceOverseer::onSpruceUp()
                 Coin spread_distance_limit;
                 if ( !is_midspread_phase )
                 {
-                    const Coin spread_put_threshold = order_size_default * spruce->getOrderNiceSpreadPut( side );
+                    const Coin spread_put_threshold = spruce->getOrderNiceSpreadPut( side ) * base_capital;
 
                     // reduce spread if pending amount to shortlong is greater than size * order_nice_spreadput
                     Coin spread_reduce;
