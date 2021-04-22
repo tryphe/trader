@@ -80,6 +80,16 @@ void SpruceV2::clear()
     m_markets_beta.clear();
 }
 
+void SpruceV2::buildCache()
+{
+    m_base_capital_cached = getBaseCapital();
+}
+
+void SpruceV2::clearCache()
+{
+    m_base_capital_cached.clear();
+}
+
 void SpruceV2::clearCurrentQtys()
 {
     m_current_qty.clear();
@@ -330,6 +340,10 @@ void SpruceV2::adjustCurrentQty( const QString &currency, const Coin &qty )
 
 Coin SpruceV2::getBaseCapital() const
 {
+    // return cached value if we built the cache for this phase
+    if ( m_base_capital_cached.isGreaterThanZero() )
+        return m_base_capital_cached;
+
     Coin ret;
     const QMap<QString, Coin>::const_iterator end = m_current_qty.end();
     for( QMap<QString, Coin>::const_iterator i = m_current_qty.begin(); i != end; i++ )
@@ -444,6 +458,18 @@ Coin SpruceV2::getOrderNiceZeroBound( const QString &currency, const quint8 side
     ret *= getTargetPercentage( currency );
 
     return ret;
+}
+
+void SpruceV2::setOrderNiceSpreadPut( const quint8 side, Coin nice )
+{
+    ( side == SIDE_BUY ) ? m_order_nice_spreadput_buys = nice :
+                           m_order_nice_spreadput_sells = nice;
+}
+
+Coin SpruceV2::getOrderNiceSpreadPut( const quint8 side ) const
+{
+    return ( side == SIDE_BUY ) ? m_order_nice_spreadput_buys * /*getTargetPercentage( currency ) * */getBaseCapital() :
+                                  m_order_nice_spreadput_sells * /*getTargetPercentage( currency ) * */ getBaseCapital();
 }
 
 void SpruceV2::setSnapbackState( const QString &market, const quint8 side, const bool state, const Coin &price, const Coin &amount_to_shortlong_abs )

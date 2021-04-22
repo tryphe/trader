@@ -138,6 +138,9 @@ void SpruceOverseer::onSpruceUp()
             spruce->setCurrentPrice( currency, diffusion_price );
         }
 
+        // after we set the prices, build cache for base capital and other things for each phase
+        spruce->buildCache();
+
         // copy prices to set back at the end of this function
         if ( is_midspread_phase )
             midspread_prices = spruce->getCurrentPrices();
@@ -418,6 +421,9 @@ void SpruceOverseer::onSpruceUp()
 #endif
             }
         }
+
+        // clear cache for this phase
+        spruce->buildCache();
     }
 
     // set spruce prices to midspread so getBaseCapital is consistent with the spread

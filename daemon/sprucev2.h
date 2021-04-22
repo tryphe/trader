@@ -38,6 +38,9 @@ public:
 
     void clear();
 
+    void buildCache();
+    void clearCache();
+
     void clearCurrentQtys();
     void setCurrentQty( const QString &currency, const Coin &qty );
     Coin &getCurrentQty( const QString &currency ) { return m_current_qty[ currency ]; }
@@ -100,10 +103,8 @@ public:
     Coin getOrderNiceZeroBound (const QString &currency, const quint8 side, bool midspread_phase ) const;
 
     // spread reduction sensitivity
-    void setOrderNiceSpreadPut( const quint8 side, Coin nice ) { ( side == SIDE_BUY ) ? m_order_nice_spreadput_buys = nice :
-                                                                                        m_order_nice_spreadput_sells = nice; }
-    Coin getOrderNiceSpreadPut( const quint8 side ) const { return ( side == SIDE_BUY ) ? m_order_nice_spreadput_buys * getBaseCapital() :
-                                                                                          m_order_nice_spreadput_sells * getBaseCapital(); }
+    void setOrderNiceSpreadPut( const quint8 side, Coin nice );
+    Coin getOrderNiceSpreadPut( const quint8 side ) const;
 
     // nice+zero bound offets for each market+side on all phases
     void setOrderNiceMarketOffset( const QString &market, const quint8 side, Coin offset ) { ( side == SIDE_BUY ) ? m_order_nice_market_offset_buys[ market ] = offset :
@@ -214,6 +215,8 @@ private:
     QMap<QString/*currency*/, Coin> m_average;
     QMap<QString/*currency*/, Coin> m_favorability;
     int m_alloc_power{ 1 };
+
+    Coin m_base_capital_cached;
 
     // for output only
     QMap<QString/*currency*/, Coin> m_target_amounts;
