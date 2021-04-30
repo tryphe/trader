@@ -54,6 +54,9 @@ public:
     void saveMarket( QString market, qint32 num_orders = 15 );
     void loadSettings();
 
+    QString getEngineTypeFancyStr() const { return QString( "[Engine %1]" ).arg( engine_type_str ); }
+    QString getEngineTypeStr() const { return engine_type_str; }
+
     PositionMan *getPositionMan() const { return positions; }
     EngineSettings *getSettings() const { return settings; }
 
@@ -98,6 +101,7 @@ public:
 
     QVector<QString/*order_id*/> orders_for_polling;
 
+    QString engine_type_str;
     quint8 engine_type{ 0 };
     SpruceV2 *spruce{ nullptr };
     QVector<BaseREST*> rest_arr;

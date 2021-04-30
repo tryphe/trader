@@ -31,7 +31,13 @@ Engine::Engine( const quint8 _engine_type )
 {
     engine_type = _engine_type;
 
-    kDebug() << "[Engine" << engine_type << "]";
+    engine_type_str = ( engine_type == ENGINE_BITTREX  ) ? "Bittrex" :
+                      ( engine_type == ENGINE_BINANCE  ) ? "Binance" :
+                      ( engine_type == ENGINE_POLONIEX ) ? "Poloniex" :
+                      ( engine_type == ENGINE_WAVES    ) ? "Waves" :
+                                                          "Unknown";
+
+    kDebug() << getEngineTypeFancyStr();
 
     start_time = QDateTime::currentDateTime();
 
@@ -54,7 +60,7 @@ Engine::~Engine()
     positions = nullptr;
     settings = nullptr;
 
-    kDebug() << "[Engine] done.";
+    kDebug() << getEngineTypeFancyStr() << "done.";
 }
 
 Position *Engine::addPosition( QString market_input, quint8 side, QString buy_price, QString sell_price,
@@ -64,7 +70,7 @@ Position *Engine::addPosition( QString market_input, quint8 side, QString buy_pr
     // don't add a position on an exchange without a key and secret
     if ( rest_arr.value( engine_type )->isKeyOrSecretUnset() )
     {
-        kDebug() << "local error: tried to add a new position on exchange" << engine_type << "but key or secret is unset";
+        kDebug() << getEngineTypeFancyStr() << "local error: tried to add a new position but key or secret is unset";
         return nullptr;
     }
 
@@ -72,7 +78,7 @@ Position *Engine::addPosition( QString market_input, quint8 side, QString buy_pr
     Market market = Market( market_input );
     if ( !market.isValid() )
     {
-        kDebug() << "local error: incorrect market format. you used '" << market_input
+        kDebug() << getEngineTypeFancyStr() << "local error: incorrect market format. you used '" << market_input
                  << "'. please use universal market format 'base_quote' or 'base-quote'. for example 'BTC_DOGE' or 'BTC-DOGE'";
         return nullptr;
     }
@@ -107,7 +113,7 @@ Position *Engine::addPosition( QString market_input, quint8 side, QString buy_pr
     // check if bid/ask price exists
     if ( !info.spread.isValid() )
     {
-        kDebug() << "local error: ticker has not been read yet. (try again)";
+        kDebug() << getEngineTypeFancyStr() << "local error: ticker has not been read yet. (try again)";
         return nullptr;
     }
 
@@ -130,14 +136,14 @@ Position *Engine::addPosition( QString market_input, quint8 side, QString buy_pr
     // check for incorrect order type
     if ( !is_active && !is_ghost && !is_onetime )
     {
-        kDebug() << "local error: please specify 'active', 'ghost', or 'onetime' for the order type";
+        kDebug() << getEngineTypeFancyStr() << "local error: please specify 'active', 'ghost', or 'onetime' for the order type";
         return nullptr;
     }
 
     // check for blank argument
     if ( buy_price.isEmpty() || sell_price.isEmpty() || order_size.isEmpty() )
     {
-        kDebug() << "local error: an argument was empty. mkt:" << market << "lo:" << buy_price << "hi:"
+        kDebug() << getEngineTypeFancyStr() << "local error: an argument was empty. mkt:" << market << "lo:" << buy_price << "hi:"
                  << sell_price << "sz:" << order_size;
         return nullptr;
     }
@@ -145,14 +151,14 @@ Position *Engine::addPosition( QString market_input, quint8 side, QString buy_pr
     // somebody fucked up
     if ( side != SIDE_SELL && side != SIDE_BUY )
     {
-        kDebug() << "local error: invalid 'side'" << side;
+        kDebug() << getEngineTypeFancyStr() << "local error: invalid 'side'" << side;
         return nullptr;
     }
 
     // don't permit landmark type (uses market indices) with one-time orders
     if ( landmark && is_onetime )
     {
-        kDebug() << "local error: can't use landmark order type with one-time order";
+        kDebug() << getEngineTypeFancyStr() << "local error: can't use landmark order type with one-time order";
         return nullptr;
     }
 
@@ -163,7 +169,7 @@ Position *Engine::addPosition( QString market_input, quint8 side, QString buy_pr
          ( is_onetime && side == SIDE_SELL && Coin( sell_price ).isZeroOrLess() ) ||
          ( is_onetime && !alternate_size.isEmpty() && Coin( alternate_size ).isZeroOrLess() ) )
     {
-        kDebug() << "local error: tried to set bad" << ( is_onetime ? "one-time" : "ping-pong" ) << "order. hi price"
+        kDebug() << getEngineTypeFancyStr() << "local error: tried to set bad" << ( is_onetime ? "one-time" : "ping-pong" ) << "order. hi price"
                  << sell_price << "lo price" << buy_price << "size" << order_size << "alternate size" << alternate_size;
         return nullptr;
     }
@@ -177,7 +183,7 @@ Position *Engine::addPosition( QString market_input, quint8 side, QString buy_pr
          sell_price.size() > formatted_sell_price.size() ||
          order_size.size() > formatted_order_size.size() )
     {
-        kDebug() << "local error: too many decimals in one of these values: sell_price:"
+        kDebug() << getEngineTypeFancyStr() << "local error: too many decimals in one of these values: sell_price:"
                  << sell_price << "buy_price:" << buy_price << "order_size:" << order_size << "alternate_size:" << alternate_size;
         return nullptr;
     }
@@ -194,7 +200,7 @@ Position *Engine::addPosition( QString market_input, quint8 side, QString buy_pr
           ( side == SIDE_BUY && info.spread.bid.ratio( 1.2 ) < Coin( buy_price ) ) ||   // bid * 1.1 < buy_price
           ( side == SIDE_BUY && info.spread.bid.ratio( 0.8 ) < Coin( buy_price ) ) ) )  // bid * 0.9 > buy_price
     {
-        kDebug() << "local error: taker sell_price:" << sell_price << "buy_price:" << buy_price << "is >10% from spread, aborting order. add '-override' if intentional.";
+        kDebug() << getEngineTypeFancyStr() << "local error: taker sell_price:" << sell_price << "buy_price:" << buy_price << "is >10% from spread, aborting order. add '-override' if intentional.";
         return nullptr;
     }
 
@@ -224,7 +230,7 @@ Position *Engine::addPosition( QString market_input, quint8 side, QString buy_pr
           pos->amount.isZeroOrLess() ||
           pos->quantity.isZeroOrLess() )
     {
-        kDebug() << "local warning: failed to set order because of invalid value:" << market << pos->side << pos->buy_price << pos->sell_price << pos->amount << pos->quantity << indices << landmark;
+        kDebug() << getEngineTypeFancyStr() << "local warning: failed to set order because of invalid value:" << market << pos->side << pos->buy_price << pos->sell_price << pos->amount << pos->quantity << indices << landmark;
         if ( pos ) delete pos;
         return nullptr;
     }
@@ -238,7 +244,7 @@ Position *Engine::addPosition( QString market_input, quint8 side, QString buy_pr
 
     if ( pos->amount < minimum_order_size - CoinAmount::SATOSHI )
     {
-        kDebug() << "local warning: failed to set order: size" << pos->amount << "is under the minimum size" << minimum_order_size;
+        kDebug() << getEngineTypeFancyStr() << "local warning: failed to set order: size" << pos->amount << "is under the minimum size" << minimum_order_size;
         return nullptr;
     }
 
@@ -254,7 +260,7 @@ Position *Engine::addPosition( QString market_input, quint8 side, QString buy_pr
              ( pos->side == SIDE_SELL && pos->sell_price.isGreaterThanZero() && sell_limit.isGreaterThanZero() && pos->sell_price > sell_limit ) )
         {
             if ( pos->is_onetime ) // if ping-pong, don't warn
-                kDebug() << "local warning: hit PERCENT_PRICE limit for" << market << buy_limit << sell_limit << "for pos" << pos->stringifyOrderWithoutOrderID();
+                kDebug() << getEngineTypeFancyStr() << "local warning: hit PERCENT_PRICE limit for" << market << buy_limit << sell_limit << "for pos" << pos->stringifyOrderWithoutOrderID();
             delete pos;
             return nullptr;
         }
@@ -346,14 +352,14 @@ void Engine::fillNQ( const QString &order_id, qint8 fill_type , quint8 extra_dat
     // check for correct value
     if ( fill_type < 1 || fill_type > 5 )
     {
-        kDebug() << "local error: unexpected fill type" << fill_type << "for order" << order_id;
+        kDebug() << getEngineTypeFancyStr() << "local error: unexpected fill type" << fill_type << "for order" << order_id;
         return;
     }
 
     // prevent unsafe execution
     if ( order_id.isEmpty() || !positions->isValidOrderID( order_id ) )
     {
-        kDebug() << "local warning: uuid not found in positions:" << order_id << "fill_type:" << fill_type << "(hint: getorder timeout is probably too low)";
+        kDebug() << getEngineTypeFancyStr() << "local warning: uuid not found in positions:" << order_id << "fill_type:" << fill_type << "(hint: getorder timeout is probably too low)";
         return;
     }
 
@@ -362,7 +368,7 @@ void Engine::fillNQ( const QString &order_id, qint8 fill_type , quint8 extra_dat
     // we should never get here, because we call isPositionOrderID, but check anyways
     if ( !pos )
     {
-        kDebug() << "local error: badptr in fillNQ, orderid" << order_id << "fill_type" << fill_type;
+        kDebug() << getEngineTypeFancyStr() << "local error: badptr in fillNQ, orderid" << order_id << "fill_type" << fill_type;
         return;
     }
 
@@ -424,12 +430,12 @@ void Engine::updateStatsAndPrintFill( const QString &fill_type, Market market, c
     // check for valid inputs. amount or quantity must exist, and all others must be valid
     if ( amount.isZeroOrLess() && quantity.isZeroOrLess() )
     {
-        kDebug() << "engine error: amount and quantity are both <= zero for" << market << order_id << "amount:" << amount << "qty:" << quantity << "@" << price;
+        kDebug() << getEngineTypeFancyStr() << "local error: amount and quantity are both <= zero for" << market << order_id << "amount:" << amount << "qty:" << quantity << "@" << price;
         return;
     }
     else if ( price.isZeroOrLess() )
     {
-        kDebug() << "engine error: price is <= zero for" << market << order_id << "amount:" << amount << "qty:" << quantity << "@" << price;
+        kDebug() << getEngineTypeFancyStr() << "local error: price is <= zero for" << market << order_id << "amount:" << amount << "qty:" << quantity << "@" << price;
         return;
     }
 
@@ -447,7 +453,7 @@ void Engine::updateStatsAndPrintFill( const QString &fill_type, Market market, c
         // check for valid price
         if ( !is_testing && !price_in_btc.isGreaterThanZero() )
         {
-            kDebug() << "engine error: ticker price is <= zero for" << Market( base_currency, market.getBase() ) << order_id << "amount:" << amount << "qty:" << quantity << "@" << price << "ticker:" << price_in_btc;
+            kDebug() << getEngineTypeFancyStr() << "local error: ticker price is <= zero for" << Market( base_currency, market.getBase() ) << order_id << "amount:" << amount << "qty:" << quantity << "@" << price << "ticker:" << price_in_btc;
             return;
         }
 
@@ -610,7 +616,7 @@ void Engine::processOpenOrders( QVector<QString> &order_numbers, QMultiHash<QStr
         const QString &amount = info.amount;
         const QString &order_number = info.order_number;
 
-        //kDebug() << "processing order" << order_number << market << side << amount << "@" << price;
+        //kDebug() << getEngineTypeFancyStr() << "processing order" << order_number << market << side << amount << "@" << price;
 
         // if we ran cancelall, try to cancel this order
         if ( positions->isRunningCancelAll() )
@@ -627,7 +633,7 @@ void Engine::processOpenOrders( QVector<QString> &order_numbers, QMultiHash<QStr
             // cancel stray orders
             if ( !positions->isValidOrderID( order_number ) )
             {
-                kDebug() << "cancelling non-bot order" << market << side << amount << "@" << price << "id:" << order_number;
+                kDebug() << getEngineTypeFancyStr() << "cancelling non-bot order" << market << side << amount << "@" << price << "id:" << order_number;
 
                 // send a one time cancel request for orders we don't own
                 sendCancel( order_number, nullptr, market );
@@ -690,7 +696,7 @@ void Engine::processOpenOrders( QVector<QString> &order_numbers, QMultiHash<QStr
             // we have seen the stray order at least once before, measure the grace time
             else if ( current_time - order_grace_times.value( order_number ) > settings->stray_grace_time_limit )
             {
-                kDebug() << "queued cancel for stray order" << market << side << amount << "@" << price << "id:" << order_number;
+                kDebug() << getEngineTypeFancyStr() << "queued cancel for stray order" << market << side << amount << "@" << price << "id:" << order_number;
                 stray_orders += order_number;
 
                 // for waves, we need to record the market also
@@ -703,7 +709,7 @@ void Engine::processOpenOrders( QVector<QString> &order_numbers, QMultiHash<QStr
     // if we were cancelling orders, just return here
     if ( positions->isRunningCancelAll() )
     {
-        kDebug() << "cancelled" << ct_cancelled << "orders," << ct_all << "orders total";
+        kDebug() << getEngineTypeFancyStr() << "cancelled" << ct_cancelled << "orders," << ct_all << "orders total";
         positions->setRunningCancelAll( false ); // reset state to default
         return;
     }
@@ -711,7 +717,7 @@ void Engine::processOpenOrders( QVector<QString> &order_numbers, QMultiHash<QStr
     // cancel stray orders
     if ( stray_orders.size() > 50 )
     {
-        kDebug() << "local warning: mitigating cancelling >50 stray orders";
+        kDebug() << getEngineTypeFancyStr() << "local warning: mitigating cancelling >50 stray orders";
     }
     else
     {
@@ -732,7 +738,7 @@ void Engine::processOpenOrders( QVector<QString> &order_numbers, QMultiHash<QStr
          !order_numbers.size() && // the orderbook is blank
          positions->active().size() >= 20 ) // we have some orders, don't make it too low (if it's 2 or 3, we might fill all those orders at once, and the mitigation leads to the orders never getting filled)
     {
-        kDebug() << "local warning: blank orderbook flash has been mitigated!";
+        kDebug() << getEngineTypeFancyStr() << "local warning: blank orderbook flash has been mitigated!";
         return;
     }
 
@@ -920,7 +926,7 @@ void Engine::processTicker( BaseREST *base_rest_module, const QMap<QString, Spre
 
         // show warning we if we found equal bid/ask
         if ( found_equal_bid_ask )
-            kDebug() << "local error: found ask <= bid for at least one market";
+            kDebug() << getEngineTypeFancyStr() << "local error: found ask <= bid for at least one market";
     }
 }
 
@@ -1067,7 +1073,7 @@ void Engine::saveMarket( QString market, qint32 num_orders )
 
     if ( !savefile.open( QIODevice::WriteOnly | QIODevice::Text ) )
     {
-        kDebug() << "local error: couldn't open savemarket file" << path;
+        kDebug() << getEngineTypeFancyStr() << "local error: couldn't open savemarket file" << path;
         return;
     }
 
@@ -1117,7 +1123,7 @@ void Engine::saveMarket( QString market, qint32 num_orders )
         // bad index check
         if ( buys.isEmpty() && sells.isEmpty() )
         {
-            kDebug() << "local error: couldn't buy or sell indices for market" << current_market;
+            kDebug() << getEngineTypeFancyStr() << "local error: couldn't buy or sell indices for market" << current_market;
             continue;
         }
 
@@ -1154,13 +1160,13 @@ void Engine::saveMarket( QString market, qint32 num_orders )
         if ( current_index > 0 )
             saved_market_count++;
 
-        kDebug() << "saved market" << current_market << "with" << current_index << "indices";
+        kDebug() << getEngineTypeFancyStr() << "saved market" << current_market << "with" << current_index << "indices";
     }
 
     // if we didn't save any markets, just exit
     if ( saved_market_count == 0 )
     {
-        kDebug() << "no markets saved";
+        kDebug() << getEngineTypeFancyStr() << "no markets saved";
         return;
     }
 
@@ -1176,7 +1182,7 @@ void Engine::loadSettings()
 
     if ( !loadfile.open( QIODevice::ReadOnly | QIODevice::Text ) )
     {
-        kDebug() << "local warning: couldn't load optional engine settings file" << path;
+        kDebug() << getEngineTypeFancyStr() << "local warning: couldn't load optional engine settings file" << path;
         return;
     }
 
@@ -1185,7 +1191,7 @@ void Engine::loadSettings()
 
     // emit new lines
     QString data = loadfile.readAll();
-    kDebug() << "[Engine] loaded optional engine settings," << data.size() << "bytes.";
+    kDebug() << getEngineTypeFancyStr() << "loaded optional engine settings," << data.size() << "bytes.";
 
     emit gotUserCommandChunk( data );
 }
@@ -1248,13 +1254,13 @@ void Engine::checkMaintenance()
     if ( maintenance_triggered || maintenance_time <= 0 || maintenance_time > QDateTime::currentMSecsSinceEpoch() )
         return;
 
-    kDebug() << "doing maintenance routine for epoch" << maintenance_time;
+    kDebug() << getEngineTypeFancyStr() << "doing maintenance routine for epoch" << maintenance_time;
 
     saveMarket( ALL );
     positions->cancelLocal( ALL );
     maintenance_triggered = true;
 
-    kDebug() << "maintenance routine finished";
+    kDebug() << getEngineTypeFancyStr() << "maintenance routine finished";
 }
 
 void Engine::printInternal()
@@ -1275,7 +1281,7 @@ void Engine::findBetterPrice( Position *const &pos )
 {
     if ( engine_type == ENGINE_BITTREX )
     {
-        kDebug() << "local warning: tried to run findBetterPrice() on bittrex but does not a have post-only mode";
+        kDebug() << getEngineTypeFancyStr() << "local warning: tried to run findBetterPrice() but exchange does not a have post-only mode";
         return;
     }
 
