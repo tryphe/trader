@@ -134,7 +134,6 @@ private:
     QDateTime start_time;
 
     // primitives
-    qint64 m_last_orderbook_processed_time{ 0 };
     qint64 maintenance_time{ 0 };
     bool maintenance_triggered{ false };
     bool is_testing{ false };
