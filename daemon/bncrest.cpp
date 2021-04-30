@@ -17,7 +17,7 @@
 BncREST::BncREST( Engine *_engine , QNetworkAccessManager *_nam )
   : BaseREST( _engine )
 {
-    kDebug() << "[BncREST]";
+    kDebug() << getExchangeFancyStr();
 
     nam = _nam;
     connect( nam, &QNetworkAccessManager::finished, this, &BncREST::onNamReply );
@@ -36,7 +36,7 @@ BncREST::~BncREST()
     exchangeinfo_timer = nullptr;
     ratelimit_timer = nullptr;
 
-    kDebug() << "[BncREST] done.";
+    kDebug() << getExchangeFancyStr() << "done.";
 }
 
 void BncREST::init()
@@ -92,7 +92,7 @@ void BncREST::sendNamQueue()
     const qint32 ratelimit_window = ratelimit_minute;
     if ( binance_weight > ratelimit_window )
     {
-        kDebug() << "local warning: hit ratelimit_window" << ratelimit_window;
+        kDebug() << getExchangeFancyStr() << "local warning: hit ratelimit_window" << ratelimit_window;
         return;
     }
 
@@ -165,7 +165,7 @@ void BncREST::sendNamQueue()
 
             if ( orders_today >= ratelimit_day )
             {
-                kDebug() << "local warning: we are over the daily order ratelimit" << ratelimit_day;
+                kDebug() << getExchangeFancyStr() << "local warning: we are over the daily order ratelimit" << ratelimit_day;
                 continue;
             }
 
@@ -183,7 +183,7 @@ void BncREST::sendNamRequest( Request *const &request )
     // check for valid pos
     if ( request->pos != nullptr && !engine->getPositionMan()->isValid( request->pos ) )
     {
-        kDebug() << "local warning: caught nam request with invalid position";
+        kDebug() << getExchangeFancyStr() << "local warning: caught nam request with invalid position";
         nam_queue.removeOne( request );
         return;
     }
@@ -295,7 +295,7 @@ void BncREST::sendNamRequest( Request *const &request )
 
     if ( !reply )
     {
-        kDebug() << "local error: failed to generate a valid QNetworkReply";
+        kDebug() << getExchangeFancyStr() << "local error: failed to generate a valid QNetworkReply";
         return;
     }
 
@@ -464,7 +464,8 @@ void BncREST::onNamReply( QNetworkReply *const &reply )
         }
 
         // print the command and the invalid data
-        kDebug() << QString( "nam error for %1: %2" )
+        kDebug() << QString( "%1 nam error for %2: %3" )
+                    .arg( getExchangeFancyStr() )
                     .arg( api_command )
                     .arg( QString::fromLocal8Bit( data ) );
     }
@@ -496,7 +497,7 @@ void BncREST::onNamReply( QNetworkReply *const &reply )
     else
     {
         // parse unknown command
-        kDebug() << "nam reply:" << api_command << data;
+        kDebug() << getExchangeFancyStr() << "unknown nam reply:" << api_command << data;
     }
 
     // cleanup
@@ -573,14 +574,14 @@ void BncREST::parseBuySell( Request *const &request, const QJsonObject &response
     // check if we have a position recorded for this request
     if ( !request->pos )
     {
-        kDebug() << "local error: found response for queued position, but postion is null";
+        kDebug() << getExchangeFancyStr() << "local error: found response for queued position, but postion is null";
         return;
     }
 
     // check that the position is queued and not set
     if ( !engine->getPositionMan()->isQueued( request->pos ) )
     {
-        kDebug() << "local warning: position from response not found in positions_queued";
+        kDebug() << getExchangeFancyStr() << "local warning: position from response not found in positions_queued";
         return;
     }
 
@@ -604,7 +605,7 @@ void BncREST::parseBuySell( Request *const &request, const QJsonObject &response
 
     if ( !response.contains( "orderId" ) )
     {
-        kDebug() << "local error: tried to parse order but id was blank:" << response;
+        kDebug() << getExchangeFancyStr() << "local error: tried to parse order but id was blank:" << response;
         return;
     }
 
@@ -622,7 +623,7 @@ void BncREST::parseCancelOrder( Request *const &request, const QJsonObject &resp
     // prevent unsafe access
     if ( !pos || !engine->getPositionMan()->isActive( pos ) )
     {
-        kDebug() << "successfully cancelled non-local order:" << response;
+        kDebug() << getExchangeFancyStr() << "successfully cancelled non-local order:" << response;
         return;
     }
 
@@ -648,11 +649,11 @@ void BncREST::parseCancelOrder( Request *const &request, const QJsonObject &resp
     // check if it failed it some other way (we want it to complain)
     if ( response.value( "status" ).toString() != "CANCELED" )
     {
-        kDebug() << "local error: cancel failed:" << response << "for pos" << pos->stringifyOrder();
+        kDebug() << getExchangeFancyStr() << "local error: cancel failed:" << response << "for pos" << pos->stringifyOrder();
         return;
     }
 
-    kDebug() << "successfully cancelled order:" << response;
+    kDebug() << getExchangeFancyStr() << "successfully cancelled order:" << response;
 
     engine->processCancelledOrder( pos );
 }
@@ -722,7 +723,7 @@ void BncREST::parseReturnBalances( const QJsonObject &obj )
 
     if ( !obj[ "balances" ].isArray() )
     {
-        kDebug() << "api error: couldn't parse balances:" << obj;
+        kDebug() << getExchangeFancyStr() << "api error: couldn't parse balances:" << obj;
         return;
     }
 
@@ -834,7 +835,7 @@ void BncREST::parseTicker( const QJsonArray &info, qint64 request_time_sent_ms )
 
     if ( !market_aliases_not_found.isEmpty() )
     {
-        kDebug() << "local warning: couldn't find market alias for binance markets" << market_aliases_not_found;
+        kDebug() << getExchangeFancyStr() << "local warning: couldn't find market alias for markets" << market_aliases_not_found;
         onCheckExchangeInfo(); // read markets again
     }
 
@@ -908,7 +909,7 @@ void BncREST::parseExchangeInfo( const QJsonObject &obj )
                 if ( price_tick.isGreaterThanZero() )
                     market_info.price_ticksize = price_tick;
                 else
-                    kDebug() << "local error: failed to parse 'tickSize'" << filter;
+                    kDebug() << getExchangeFancyStr() << "local error: failed to parse 'tickSize'" << filter;
             }
             else if ( filter_type == "LOT_SIZE" )
             {
@@ -918,7 +919,7 @@ void BncREST::parseExchangeInfo( const QJsonObject &obj )
                 if ( quantity_tick.isGreaterThanZero() )
                     market_info.quantity_ticksize = quantity_tick;
                 else
-                    kDebug() << "local error: failed to parse 'stepSize'" << filter;
+                    kDebug() << getExchangeFancyStr() << "local error: failed to parse 'stepSize'" << filter;
             }
             else if ( filter_type == "PERCENT_PRICE" )
             {
@@ -932,7 +933,7 @@ void BncREST::parseExchangeInfo( const QJsonObject &obj )
                     market_info.price_max_mul = max;
                 }
                 else
-                    kDebug() << "local error: failed to parse 'multiplierDown' 'multiplierUp'" << filter;
+                    kDebug() << getExchangeFancyStr() << "local error: failed to parse 'multiplierDown' 'multiplierUp'" << filter;
             }
         }
     }

@@ -37,6 +37,9 @@ struct BaseREST : public QObject
     void removeRequest( const QString &api_command, const QString &body );
     void deleteReply( QNetworkReply *const &reply, Request *const &request );
 
+    QString getExchangeStr() const { return exchange_string; }
+    QString getExchangeFancyStr() const { return QString( "[REST %1]" ).arg( exchange_string ); }
+
     QQueue<Request*> nam_queue; // queue for requests so we can load balance timestamp/hmac generation
     QHash<QNetworkReply*,Request*> nam_queue_sent; // request tracking queue
 

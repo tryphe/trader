@@ -19,7 +19,7 @@
 TrexREST::TrexREST( Engine *_engine, QNetworkAccessManager *_nam )
   : BaseREST( _engine )
 {
-    kDebug() << "[TrexREST]";
+    kDebug() << getExchangeFancyStr();
 
     nam = _nam;
     connect( nam, &QNetworkAccessManager::finished, this, &TrexREST::onNamReply );
@@ -36,7 +36,7 @@ TrexREST::~TrexREST()
     order_history_timer = nullptr;
 #endif
 
-    kDebug() << "[TrexREST] done.";
+    kDebug() << getExchangeFancyStr() << "done.";
 }
 
 void TrexREST::init()
@@ -168,7 +168,7 @@ void TrexREST::sendNamRequest( Request *const &request )
     // check for valid pos
     if ( request->pos != nullptr && !engine->getPositionMan()->isValid( request->pos ) )
     {
-        kDebug() << "local warning: caught nam request with invalid position";
+        kDebug() << getExchangeFancyStr() << "local warning: caught nam request with invalid position";
         nam_queue.removeOne( request );
         return;
     }
@@ -220,7 +220,7 @@ void TrexREST::sendNamRequest( Request *const &request )
 
     if ( !reply )
     {
-        kDebug() << "local error: failed to generate a valid QNetworkReply";
+        kDebug() << getExchangeFancyStr() << "local error: failed to generate a valid QNetworkReply";
         return;
     }
 
@@ -316,7 +316,7 @@ void TrexREST::onNamReply( QNetworkReply *const &reply )
             // prevent unallocated access (if we are cancelling it should be an active order)
             if ( !pos || !engine->getPositionMan()->isActive( pos ) )
             {
-                kDebug() << "unknown cancel reply:" << data;
+                kDebug() << getExchangeFancyStr() << "unknown cancel reply:" << data;
 
                 deleteReply( reply, request );
                 return;
@@ -378,7 +378,7 @@ void TrexREST::onNamReply( QNetworkReply *const &reply )
                 // don't re-send the request if we got this error after we set the order
                 if ( request->pos->order_set_time > 0 )
                 {
-                    kDebug() << "local warning: avoiding re-sent request for order already set";
+                    kDebug() << getExchangeFancyStr() << "local warning: avoiding re-sent request for order already set";
                     deleteReply( reply, request );
                     return;
                 }
@@ -400,7 +400,8 @@ void TrexREST::onNamReply( QNetworkReply *const &reply )
         }
 
         // print a nice message saying if we resent the command and print the invalid data
-        kDebug() << QString( "%1nam error for %2: %3" )
+        kDebug() << QString( "%1 %2nam error for %3: %4" )
+                    .arg( getExchangeFancyStr() )
                     .arg( resent_command ? "(resent) " : "" )
                     .arg( api_command )
                     .arg( QString::fromLocal8Bit( data ) );
@@ -440,7 +441,7 @@ void TrexREST::onNamReply( QNetworkReply *const &reply )
     else
     {
         // parse unknown command
-        kDebug() << "nam reply:" << api_command << data;
+        kDebug() << getExchangeFancyStr() << "nam reply:" << api_command << data;
     }
 
     // cleanup
@@ -498,19 +499,17 @@ void TrexREST::wssTextMessageReceived( const QString &msg )
 
 void TrexREST::parseBuySell( Request *const &request, const QJsonObject &response )
 {
-    //kDebug();
-
     // check if we have a position recorded for this request
     if ( !request->pos )
     {
-        kDebug() << "local error: found response for queued position, but postion is null";
+        kDebug() << getExchangeFancyStr() << "local error: found response for queued position, but postion is null";
         return;
     }
 
     // check that the position is queued and not set
     if ( !engine->getPositionMan()->isQueued( request->pos ) )
     {
-        //kDebug() << "local warning: position from response not found in positions_queued";
+        //kDebug() << getExchangeFancyStr() << "local warning: position from response not found in positions_queued";
         return;
     }
 
@@ -523,7 +522,7 @@ void TrexREST::parseBuySell( Request *const &request, const QJsonObject &respons
 
     if ( !response.contains( "uuid" ) )
     {
-        kDebug() << "local warning: tried to parse order but id was blank:" << response;
+        kDebug() << getExchangeFancyStr() << "local warning: tried to parse order but id was blank:" << response;
         return;
     }
 
@@ -537,7 +536,7 @@ void TrexREST::parseCancelOrder( Request *const &request, const QJsonObject &res
     if ( !response.value( "success" ).toBool() )
     {
         // we shouldn't get here unless our code is bugged
-        kDebug() << "local error: cancel failed:" << response;
+        kDebug() << getExchangeFancyStr() << "local error: cancel failed:" << response;
         return;
     }
 
@@ -546,7 +545,7 @@ void TrexREST::parseCancelOrder( Request *const &request, const QJsonObject &res
     // prevent unsafe access
     if ( !pos || !engine->getPositionMan()->isActive( pos ) )
     {
-        kDebug() << "successfully cancelled non-local order:" << response;
+        kDebug() << getExchangeFancyStr() << "successfully cancelled non-local order:" << response;
         return;
     }
 
@@ -684,7 +683,7 @@ void TrexREST::parseGetOrder( const QJsonObject &order )
          !order.contains( "Type" ) ||
          !order.contains( "CommissionPaid" ) )
     {
-        kDebug() << "local error: required fields were missing in getorder" << order;
+        kDebug() << getExchangeFancyStr() << "local error: required fields were missing in getorder" << order;
         return;
     }
 
@@ -806,7 +805,7 @@ void TrexREST::parseOrderHistory( const QJsonObject &obj )
              !order.contains( "QuantityRemaining" ) ||
              !order.contains( "Commission" ) )
         {
-            kDebug() << "local warning: missing field in order history object:" << order;
+            kDebug() << getExchangeFancyStr() << "local warning: missing field in order history object:" << order;
             continue;
         }
 

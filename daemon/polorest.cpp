@@ -18,7 +18,7 @@
 PoloREST::PoloREST( Engine *_engine , QNetworkAccessManager *_nam )
   : BaseREST( _engine )
 {
-    kDebug() << "[PoloREST]";
+    kDebug() << getExchangeFancyStr();
 
     nam = _nam;
     connect( nam, &QNetworkAccessManager::finished, this, &PoloREST::onNamReply );
@@ -50,7 +50,7 @@ PoloREST::~PoloREST()
         wss = nullptr;
     }
 
-    kDebug() << "[PoloREST] done.";
+    kDebug() << getExchangeFancyStr() << "done.";
 }
 
 void PoloREST::init()
@@ -117,7 +117,7 @@ void PoloREST::sendNamRequest( Request *const &request )
     // check for valid pos
     if ( request->pos != nullptr && !engine->getPositionMan()->isValid( request->pos ) )
     {
-        kDebug() << "local warning: caught nam request with invalid position";
+        kDebug() << getExchangeFancyStr() << "local warning: caught nam request with invalid position";
         nam_queue.removeOne( request );
         return;
     }
@@ -191,7 +191,7 @@ void PoloREST::sendNamRequest( Request *const &request )
 
     if ( !reply )
     {
-        kDebug() << "local error: failed to generate a valid QNetworkReply";
+        kDebug() << getExchangeFancyStr() << "local error: failed to generate a valid QNetworkReply";
         return;
     }
 
@@ -241,7 +241,7 @@ void PoloREST::parseBuySell( Request *const &request, const QJsonObject &respons
     // check if we have a position recorded for this request
     if ( !request->pos )
     {
-        kDebug() << "local error: found response for queued position, but postion is null";
+        kDebug() << getExchangeFancyStr() << "local error: found response for queued position, but postion is null";
         return;
     }
 
@@ -261,7 +261,7 @@ void PoloREST::parseBuySell( Request *const &request, const QJsonObject &respons
 
     if ( !response.contains( "orderNumber" ) )
     {
-        kDebug() << "local error: tried to parse order but id was blank:" << response;
+        kDebug() << getExchangeFancyStr() << "local error: tried to parse order but id was blank:" << response;
         return;
     }
 
@@ -275,7 +275,7 @@ void PoloREST::parseCancelOrder( Request *const &request, const QJsonObject &res
     // check if it succeeded, if so "success"=1
     if ( response.value( "success" ).toInt() != 1 )
     {
-        kDebug() << "local error: cancel failed:" << response;
+        kDebug() << getExchangeFancyStr() << "local error: cancel failed:" << response;
         return;
     }
 
@@ -284,7 +284,7 @@ void PoloREST::parseCancelOrder( Request *const &request, const QJsonObject &res
     // prevent unsafe access
     if ( !pos || !engine->getPositionMan()->isActive( pos ) )
     {
-        kDebug() << "successfully cancelled non-local order:" << response;
+        kDebug() << getExchangeFancyStr() << "successfully cancelled non-local order:" << response;
         return;
     }
 
@@ -414,7 +414,7 @@ void PoloREST::parseFeeInfo( const QJsonObject &info )
     }
     else
     {
-        kDebug() << "local warning: fee was invalid:" << maker << taker << "fee info:" << info;
+        kDebug() << getExchangeFancyStr() << "local warning: fee was invalid:" << maker << taker << "fee info:" << info;
     }
 }
 
@@ -691,7 +691,8 @@ void PoloREST::onNamReply( QNetworkReply *const &reply )
         }
 
         // print a nice message saying if we resent the command and print the invalid data
-        kDebug() << QString( "%1nam error for %2: %3" )
+        kDebug() << QString( "%1 %2nam error for %3: %4" )
+                    .arg( getExchangeFancyStr() )
                     .arg( resent_command ? "(resent) " : "" )
                     .arg( api_command )
                     .arg( QString::fromLocal8Bit( data ) );
@@ -708,7 +709,7 @@ void PoloREST::onNamReply( QNetworkReply *const &reply )
 
         if ( error_str.startsWith( "Please do not make more than 8" ) )
         {
-            kDebug() << "throttling send queue for 3.5 seconds...";
+            kDebug() << getExchangeFancyStr() << "throttling send queue for 3.5 seconds...";
             poloniex_throttle_time = QDateTime::currentMSecsSinceEpoch() + 3500;
         }
 
@@ -721,7 +722,7 @@ void PoloREST::onNamReply( QNetworkReply *const &reply )
             // prevent unallocated access (if we are cancelling it should be an active order)
             if ( !pos || !engine->getPositionMan()->isValid( pos ) ) // check positions_all, these should be queued not active
             {
-                kDebug() << "unknown" << api_command << "reply:" << data;
+                kDebug() << getExchangeFancyStr() << "unknown" << api_command << "reply:" << data;
                 deleteReply( reply, request );
                 return;
             }
@@ -745,7 +746,7 @@ void PoloREST::onNamReply( QNetworkReply *const &reply )
             // prevent unallocated access (if we are cancelling it should be an active order)
             if ( !pos || !engine->getPositionMan()->isActive( pos ) )
             {
-                kDebug() << "unknown cancel reply:" << data;
+                kDebug() << getExchangeFancyStr() << "unknown cancel reply:" << data;
                 deleteReply( reply, request );
                 return;
             }
@@ -791,7 +792,7 @@ void PoloREST::onNamReply( QNetworkReply *const &reply )
                 // don't re-send the request if we got this error after we set the roder
                 if ( request->pos->order_set_time > 0 )
                 {
-                    kDebug() << "local warning: avoiding re-sent request for order already set";
+                    kDebug() << getExchangeFancyStr() << "local warning: avoiding re-sent request for order already set";
                     deleteReply( reply, request );
                     return;
                 }
@@ -819,18 +820,18 @@ void PoloREST::onNamReply( QNetworkReply *const &reply )
             // make sure our local nonce is older than the new calculated nonce
             if ( ok == true && request_nonce < new_nonce )
             {
-                kDebug() << "local info: nonce adjusted from" << request_nonce << "to" << new_nonce;
+                kDebug() << getExchangeFancyStr() << "local info: nonce adjusted from" << request_nonce << "to" << new_nonce;
                 request_nonce = new_nonce;
             }
             // if conversion failed, leave an error message
             else if ( ok == false )
             {
-                kDebug() << "local error: got nonce error but conversion failed";
+                kDebug() << getExchangeFancyStr() << "local error: got nonce error but conversion failed";
             }
             // if the nonce was old, leave an info message
             else
             {
-                kDebug() << "local info: got nonce error but new nonce" << new_nonce << "is older than local nonce" << request_nonce;
+                kDebug() << getExchangeFancyStr() << "local info: got nonce error but new nonce" << new_nonce << "is older than local nonce" << request_nonce;
             }
 
             if ( api_command == POLO_COMMAND_GETORDERS )
@@ -847,7 +848,8 @@ void PoloREST::onNamReply( QNetworkReply *const &reply )
         // don't print maintenance mode errors
         if ( error_str != "Currently in maintenance mode." )
             // print a nice message saying if we resent the command and print the invalid data
-            kDebug() << QString( "%1nam json error for %2: %3" )
+            kDebug() << QString( "%1 %2nam json error for %3: %4" )
+                        .arg( getExchangeFancyStr() )
                         .arg( resent_command ? "(resent) " : "" )
                         .arg( api_command )
                         .arg( error_str );
@@ -883,7 +885,7 @@ void PoloREST::onNamReply( QNetworkReply *const &reply )
     else
     {
         // parse unknown command
-        kDebug() << "nam reply:" << api_command << data;
+        kDebug() << getExchangeFancyStr() << "unknown nam reply:" << api_command << data;
     }
 
     // cleanup
@@ -915,7 +917,7 @@ void PoloREST::wssSendSubscriptions()
             { "sign", sign }
         };
 
-        kDebug() << "(wss) sending 1000 subscribe";
+        kDebug() << getExchangeFancyStr() << "(wss) sending 1000 subscribe";
         wssSendJsonObj( subscribe_account_notifications );
 
         wss_1000_subscribe_try_time = current_time;
@@ -931,7 +933,7 @@ void PoloREST::wssSendSubscriptions()
             { "channel", 1002 }
         };
 
-        kDebug() << "(wss) sending 1002 subscribe";
+        kDebug() << getExchangeFancyStr() << "(wss) sending 1002 subscribe";
         wssSendJsonObj( subscribe_1002 );
 
         wss_1002_subscribe_try_time = current_time;
@@ -1097,7 +1099,7 @@ void PoloREST::wssCheckConnection()
         orderbook_timer->setInterval( 120000 );
         ticker_timer->setInterval( 120000 );
 
-        kDebug() << "(wss) slowed down orderbook timer and price timer";
+        kDebug() << getExchangeFancyStr() << "(wss) slowed down orderbook timer and price timer";
     }
     // feed is old, restore intervals
     else if ( !wss_account_feed_is_up_to_date &&
@@ -1106,7 +1108,7 @@ void PoloREST::wssCheckConnection()
         orderbook_timer->setInterval( 5000 );
         ticker_timer->setInterval( 10000 );
 
-        kDebug() << "(wss) sped up orderbook timer and price timer";
+        kDebug() << getExchangeFancyStr() << "(wss) sped up orderbook timer and price timer";
     }
 }
 
@@ -1147,14 +1149,14 @@ void PoloREST::wssTextMessageReceived( const QString &msg )
 
     if ( message_type == 1000 && status > 0 )
     {
-        kDebug() << "(wss) 1000 account feed active";
+        kDebug() << getExchangeFancyStr() << "(wss) 1000 account feed active";
         wss_1000_state = true;
         return;
     }
 
     if ( message_type == 1002 && status > 0 )
     {
-        kDebug() << "(wss) 1002 price feed active";
+        kDebug() << getExchangeFancyStr() << "(wss) 1002 price feed active";
         wss_1002_state = true;
         return;
     }
@@ -1240,5 +1242,5 @@ void PoloREST::wssTextMessageReceived( const QString &msg )
     }
 
     // print unhandled message
-    kDebug() << "unhandled wss:" << msg;
+    kDebug() << getExchangeFancyStr() << "unhandled wss:" << msg;
 }

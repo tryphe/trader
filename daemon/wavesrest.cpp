@@ -33,7 +33,7 @@ static const int MAX_NEW_ORDERS_IN_FLIGHT = 2;
 WavesREST::WavesREST( Engine *_engine, QNetworkAccessManager *_nam )
     : BaseREST( _engine )
 {
-    kDebug() << "[WavesREST]";
+    kDebug() << getExchangeFancyStr();
 
     nam = _nam;
     connect( nam, &QNetworkAccessManager::finished, this, &WavesREST::onNamReply );
@@ -48,7 +48,7 @@ WavesREST::~WavesREST()
     delete market_data_timer;
     market_data_timer = nullptr;
 
-    kDebug() << "[WavesREST] done.";
+    kDebug() << getExchangeFancyStr() << "done.";
 }
 
 void WavesREST::init()
@@ -149,7 +149,7 @@ void WavesREST::sendNamRequest( Request * const &request )
     // check for valid pos
     if ( request->pos != nullptr && !engine->getPositionMan()->isValid( request->pos ) )
     {
-        kDebug() << "local warning: caught nam request with invalid position";
+        kDebug() << getExchangeFancyStr() << "local warning: caught nam request with invalid position";
         nam_queue.removeOne( request );
         return;
     }
@@ -205,7 +205,7 @@ void WavesREST::sendNamRequest( Request * const &request )
         const bool success = account.sign( sign_bytes, signature );
 
         if ( !success )
-            kDebug() << "local waves error: failed to sign for get my orders request";
+            kDebug() << getExchangeFancyStr() << "local error: failed to sign for get my orders request";
 
         // add signature and timestamp header
         nam_request.setRawHeader( "Signature", QBase58::encode( signature ) );
@@ -230,7 +230,7 @@ void WavesREST::sendNamRequest( Request * const &request )
 
     if ( !reply )
     {
-        kDebug() << "local error: failed to generate a valid QNetworkReply for api command" << request->api_command;
+        kDebug() << getExchangeFancyStr() << "local error: failed to generate a valid QNetworkReply for api command" << request->api_command;
         return;
     }
 
@@ -275,7 +275,7 @@ void WavesREST::sendCancelNonLocal( const QString &order_id, const QString &amou
                              .arg( amount_asset_alias )
                              .arg( price_asset_alias );
 
-    kDebug() << "local" << engine->engine_type << "info: sending manual cancel request for order_id" << order_id;
+    kDebug() << getExchangeFancyStr() << "local info: sending manual cancel request for order" << order_id;
     sendRequest( command, body );
 }
 
@@ -343,7 +343,7 @@ void WavesREST::onNamReply( QNetworkReply * const &reply )
         else if ( data.size() > 512 )
             data = QByteArray( "<bigass truncated object>" );
 
-        kDebug() << "local warning: nam reply got html reponse for" << path << ":" << data;
+        kDebug() << getExchangeFancyStr() << "local warning: nam reply got html reponse for" << path << ":" << data;
     }
     // handle matcher info response
     else if ( api_command.startsWith( "md" ) )
@@ -377,7 +377,7 @@ void WavesREST::onNamReply( QNetworkReply * const &reply )
     }
     else
     {
-        kDebug() << "local warning: nam reply of unknown command for command:" << api_command << "path:" << path << ":" << data;
+        kDebug() << getExchangeFancyStr() << "local warning: unknown nam reply for command:" << api_command << "path:" << path << ":" << data;
     }
 
     deleteReply( reply, request );
@@ -405,7 +405,7 @@ void WavesREST::checkTicker( bool ignore_flow_control )
     // if tracked markets are empty, skip ticker
     if ( tracked_markets.isEmpty() )
     {
-        kDebug() << "local warning: skipping querying ticker because tracked_markets is empty";
+        kDebug() << getExchangeFancyStr() << "local warning: skipping querying ticker because tracked_markets is empty";
         return;
     }
 
@@ -473,7 +473,7 @@ void WavesREST::parseMarketData( const QJsonObject &info )
          !info.contains( "markets" ) ||
          !info.value( "markets").isArray() )
     {
-        kDebug() << "nam reply error: couldn't find the correct fields in market data";
+        kDebug() << getExchangeFancyStr() << "nam reply error: couldn't find the correct fields in market data";
         return;
     }
 
@@ -502,7 +502,7 @@ void WavesREST::parseMarketData( const QJsonObject &info )
              amount_ticksize.isZeroOrLess() ||
              matcher_ticksize.isZeroOrLess() )
         {
-            kDebug() << "nam reply warning: caught empty market data value";
+            kDebug() << getExchangeFancyStr() << "nam reply warning: caught empty market data value";
             continue;
         }
 
@@ -552,7 +552,7 @@ void WavesREST::parseMarketStatus( const QJsonObject &info, Request *const &requ
 
     if ( url_split.size() != 5 )
     {
-        kDebug() << "local waves error: couldn't split market status args";
+        kDebug() << getExchangeFancyStr() << "local error: couldn't split market status args";
         return;
     }
 
@@ -566,7 +566,7 @@ void WavesREST::parseMarketStatus( const QJsonObject &info, Request *const &requ
     // check that market exists
     if ( !engine->getMarketInfoStructure().contains( market ) )
     {
-        kDebug() << "local waves warning: caught market" << market << "not in market info structure";
+        kDebug() << getExchangeFancyStr() << "local warning: caught market" << market << "not in market info structure";
         return;
     }
 
@@ -574,7 +574,7 @@ void WavesREST::parseMarketStatus( const QJsonObject &info, Request *const &requ
     if ( !info.contains( "bid" ) ||
          !info.contains( "ask" ) )
     {
-        kDebug() << "local waves warning: caught empty bid/ask data";
+        kDebug() << getExchangeFancyStr() << "local warning: caught empty bid/ask data";
         return;
     }
 
@@ -636,14 +636,14 @@ void WavesREST::parseOrderStatus( const QJsonObject &info, Request *const &reque
 {
     if ( !info.contains( "status" ) )
     {
-        kDebug() << "nam reply warning: caught bad order status data:" << info;
+        kDebug() << getExchangeFancyStr() << "nam reply warning: caught bad order status data:" << info;
         return;
     }
 
     // check if we have a position recorded for this request
     if ( !request->pos )
     {
-        kDebug() << "local waves error: found response for order status, but postion is null" << info;
+        kDebug() << getExchangeFancyStr() << "local error: found response for order status, but postion is null" << info;
         return;
     }
 
@@ -668,7 +668,7 @@ void WavesREST::parseOrderStatus( const QJsonObject &info, Request *const &reque
     // clamp qty to original amount
     if ( filled_quantity > pos->quantity )
     {
-        kDebug() << "local warning: processed filled quantity" << filled_quantity << "greater than position quantity" << pos->quantity << ", clamping to position quantity. ticksize" << market_info.quantity_ticksize << "filled_amount" << info.value( "filledAmount" ).toVariant().toULongLong();
+        kDebug() << getExchangeFancyStr() << "local warning: processed filled quantity" << filled_quantity << "greater than position quantity" << pos->quantity << ", clamping to position quantity. ticksize" << market_info.quantity_ticksize << "filled_amount" << info.value( "filledAmount" ).toVariant().toULongLong();
         filled_quantity = pos->quantity;
     }
 
@@ -701,7 +701,7 @@ void WavesREST::parseCancelOrder( const QJsonObject &info, Request *const &reque
     if ( status != "OrderCanceled" &&
          status != "OrderCancelRejected" )
     {
-        kDebug() << "local waves warning: bad cancel reply status:" << status << "info:" << info;
+        kDebug() << getExchangeFancyStr() << "local warning: bad cancel reply status:" << status << "info:" << info;
         return;
     }
 
@@ -710,7 +710,7 @@ void WavesREST::parseCancelOrder( const QJsonObject &info, Request *const &reque
     // prevent unsafe access
     if ( !pos || !engine->getPositionMan()->isActive( pos ) )
     {
-        kDebug() << "successfully cancelled non-local order:" << info;
+        kDebug() << getExchangeFancyStr() << "successfully cancelled non-local order:" << info;
         return;
     }
 
@@ -724,7 +724,7 @@ void WavesREST::parseNewOrder( const QJsonObject &info, Request *const &request 
     // check if we have a position recorded for this request
     if ( !request->pos )
     {
-        kDebug() << "local waves error: found response for queued position, but postion is null" << info;
+        kDebug() << getExchangeFancyStr() << "local error: found response for queued position, but postion is null" << info;
         return;
     }
 
@@ -747,13 +747,13 @@ void WavesREST::parseNewOrder( const QJsonObject &info, Request *const &request 
             const QString &amount_asset_alias = message.value( "amountAsset" ).toString();
             const QString &price_asset_alias = message.value( "priceAsset" ).toString();
 
-            kDebug() << "local waves warning: cancelling new position from response not found in positions_queued" << order_id << amount_asset_alias << price_asset_alias;
+            kDebug() << getExchangeFancyStr() << "local warning: cancelling new position from response not found in positions_queued" << order_id << amount_asset_alias << price_asset_alias;
 
             // send cancel request
             sendCancelNonLocal( order_id, amount_asset_alias, price_asset_alias );
         }
         else
-            kDebug() << "local waves error: got response for new position without message object" << info;
+            kDebug() << getExchangeFancyStr() << "local error: got response for new position without message object" << info;
 
         return;
     }
@@ -788,7 +788,7 @@ void WavesREST::parseNewOrder( const QJsonObject &info, Request *const &request 
             // check for valid parse
             if ( asset1.isEmpty() || asset2.isEmpty() || asset1_required.isZeroOrLess() || asset2_required.isZeroOrLess() )
             {
-                kDebug() << "local waves error: failed to parse low balance message:" << message << "asset1:" << asset1 << "asset2:" << asset2 << "asset2 requied:" << asset1_required << "asset2 required:" << asset2_required;
+                kDebug() << getExchangeFancyStr() << "local error: failed to parse low balance message:" << message << "asset1:" << asset1 << "asset2:" << asset2 << "asset2 requied:" << asset1_required << "asset2 required:" << asset2_required;
                 return;
             }
 
@@ -804,7 +804,7 @@ void WavesREST::parseNewOrder( const QJsonObject &info, Request *const &request 
             return;
         }
 
-        kDebug() << "local waves error: failed to set new order:" << message;
+        kDebug() << getExchangeFancyStr() << "local error: failed to set new order:" << message;
         return;
     }
 
