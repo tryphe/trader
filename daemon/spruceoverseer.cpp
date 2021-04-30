@@ -163,12 +163,7 @@ void SpruceOverseer::onSpruceUp()
         {
             Engine *engine = e.value();
 
-            // check if orderbooks are responsive for this engine
-            if ( !engine->isOrderBookResponsive() )
-            {
-                kDebug() << "[SpruceOverseer] orderbook is stale for engine" << engine->engine_type << ", skipping setting orders";
-                continue;
-            }
+            const bool is_exchange_responsive = engine->isOrderBookResponsive();
 
             for ( QMap<QString,Coin>::const_iterator i = qty_to_shortlong_map.begin(); i != qty_to_shortlong_map.end(); i++ )
             {
@@ -189,6 +184,13 @@ void SpruceOverseer::onSpruceUp()
                 // continue on zero market allocation for this engine
                 if ( market_alloc_ratio.isZeroOrLess() )
                     continue;
+
+                // if we have something allocated for this exchange, check if orderbooks are responsive for this engine
+                if ( !is_exchange_responsive )
+                {
+                    kDebug() << "[SpruceOverseer] engine" << engine->getEngineTypeStr() << " has market allocations but oderbooks are stale, skipping setting orders";
+                    continue;
+                }
 
                 QString order_type = "onetime-override-";
                 Coin buy_price, sell_price;
