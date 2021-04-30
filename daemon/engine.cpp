@@ -786,6 +786,9 @@ void Engine::processOpenOrders( QVector<QString> &order_numbers, QMultiHash<QStr
         // on other exchanges, process filled order
         processFilledOrders( filled_orders, FILL_ORDERLIST );
     }
+
+    // set last orderbook processed time
+    m_last_orderbook_processed_time = current_time;
 }
 
 void Engine::processTicker( BaseREST *base_rest_module, const QMap<QString, Spread> &ticker_data, qint64 request_time_sent_ms )
@@ -1261,6 +1264,11 @@ void Engine::printInternal()
 
     kDebug() << "diverge_converge: " << positions->getDCPending();
     kDebug() << "diverging_converging: " << positions->getDCMap();
+}
+
+bool Engine::isOrderBookResponsive() const
+{
+    return m_last_orderbook_processed_time > QDateTime::currentMSecsSinceEpoch() - settings->orderbook_stale_time;
 }
 
 void Engine::findBetterPrice( Position *const &pos )

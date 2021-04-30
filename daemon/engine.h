@@ -71,6 +71,8 @@ public:
     void setFluxCurrencyBan( const QString &currency, const qint64 ban_secs ) { m_flux_currency_ban_time[ currency ] = QDateTime::currentSecsSinceEpoch() + ban_secs; }
     bool isFluxCurrencyBanned( const QString &currency ) const { return m_flux_currency_ban_time.value( currency, qint64( 0 ) ) > QDateTime::currentSecsSinceEpoch(); }
 
+    bool isOrderBookResponsive() const;
+
     QDateTime getStartTime() const { return start_time; }
 
     QHash<QString, MarketInfo> &getMarketInfoStructure() { return market_info; }
@@ -128,6 +130,7 @@ private:
     QDateTime start_time;
 
     // primitives
+    qint64 m_last_orderbook_processed_time{ 0 };
     qint64 maintenance_time{ 0 };
     bool maintenance_triggered{ false };
     bool is_testing{ false };

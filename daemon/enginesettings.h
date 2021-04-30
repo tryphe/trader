@@ -50,6 +50,7 @@ struct EngineSettings
     qint64 stray_grace_time_limit{ 10000 }; // how long before we cancel stray orders, if enabled
     qint64 safety_delay_time; // safety delay, should be more than your ping by a second or two
     qint64 ticker_safety_delay_time; // ^
+    qint64 orderbook_stale_time{ 2 * 60000 }; // after this amount of time, orderbooks are considered stale and new orders are not set
 };
 
 #endif // ENGINESETTINGS_H

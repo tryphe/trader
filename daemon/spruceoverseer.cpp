@@ -163,6 +163,13 @@ void SpruceOverseer::onSpruceUp()
         {
             Engine *engine = e.value();
 
+            // check if orderbooks are responsive for this engine
+            if ( !engine->isOrderBookResponsive() )
+            {
+                kDebug() << "[SpruceOverseer] orderbook is stale for engine" << engine->engine_type << ", skipping setting orders";
+                continue;
+            }
+
             for ( QMap<QString,Coin>::const_iterator i = qty_to_shortlong_map.begin(); i != qty_to_shortlong_map.end(); i++ )
             {
                 const Market market = Market( i.key() );
