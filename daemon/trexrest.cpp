@@ -19,12 +19,11 @@
 TrexREST::TrexREST( Engine *_engine, QNetworkAccessManager *_nam )
   : BaseREST( _engine )
 {
+    exchange_string = BITTREX_EXCHANGE_STR;
     kDebug() << getExchangeFancyStr();
 
     nam = _nam;
     connect( nam, &QNetworkAccessManager::finished, this, &TrexREST::onNamReply );
-
-    exchange_string = BITTREX_EXCHANGE_STR;
 }
 
 TrexREST::~TrexREST()

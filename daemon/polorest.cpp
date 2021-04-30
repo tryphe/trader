@@ -18,12 +18,11 @@
 PoloREST::PoloREST( Engine *_engine , QNetworkAccessManager *_nam )
   : BaseREST( _engine )
 {
+    exchange_string = POLONIEX_EXCHANGE_STR;
     kDebug() << getExchangeFancyStr();
 
     nam = _nam;
     connect( nam, &QNetworkAccessManager::finished, this, &PoloREST::onNamReply );
-
-    exchange_string = POLONIEX_EXCHANGE_STR;
 }
 
 PoloREST::~PoloREST()

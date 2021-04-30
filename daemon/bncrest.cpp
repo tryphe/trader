@@ -17,12 +17,11 @@
 BncREST::BncREST( Engine *_engine , QNetworkAccessManager *_nam )
   : BaseREST( _engine )
 {
+    exchange_string = BINANCE_EXCHANGE_STR;
     kDebug() << getExchangeFancyStr();
 
     nam = _nam;
     connect( nam, &QNetworkAccessManager::finished, this, &BncREST::onNamReply );
-
-    exchange_string = BINANCE_EXCHANGE_STR;
 }
 
 BncREST::~BncREST()

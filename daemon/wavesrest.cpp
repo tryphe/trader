@@ -33,12 +33,11 @@ static const int MAX_NEW_ORDERS_IN_FLIGHT = 2;
 WavesREST::WavesREST( Engine *_engine, QNetworkAccessManager *_nam )
     : BaseREST( _engine )
 {
+    exchange_string = WAVES_EXCHANGE_STR;
     kDebug() << getExchangeFancyStr();
 
     nam = _nam;
     connect( nam, &QNetworkAccessManager::finished, this, &WavesREST::onNamReply );
-
-    exchange_string = WAVES_EXCHANGE_STR;
 }
 
 WavesREST::~WavesREST()
