@@ -601,7 +601,7 @@ void PoloREST::onCheckBotOrders()
 
 void PoloREST::onCheckTicker()
 {
-    if ( isCommandQueued( POLO_COMMAND_GETBOOKS ) || isCommandSent( POLO_COMMAND_GETBOOKS, 10 ) )
+    if ( isCommandQueued( POLO_COMMAND_GETBOOKS ) || isCommandSent( POLO_COMMAND_GETBOOKS ) )
         return;
 
     sendRequest( POLO_COMMAND_GETBOOKS, POLO_COMMAND_GETBOOKS_ARGS );
