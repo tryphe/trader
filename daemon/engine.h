@@ -99,6 +99,8 @@ public:
                                   const QString &strategy_tag, Coin amount, Coin quantity, Coin price,
                                   const Coin &btc_commission );
 
+    BaseREST *getRestBase() const { return rest_arr.value( engine_type ); }
+
     QVector<QString/*order_id*/> orders_for_polling;
 
     QString engine_type_str;

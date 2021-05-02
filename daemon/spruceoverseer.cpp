@@ -170,6 +170,10 @@ void SpruceOverseer::onSpruceUp()
                 continue;
             }
 
+            // if the rest module sent to many commands, wait for it
+            if ( engine->getRestBase()->yieldToFlowControl() )
+                continue;
+
             for ( QMap<QString,Coin>::const_iterator i = qty_to_shortlong_map.begin(); i != qty_to_shortlong_map.end(); i++ )
             {
                 const Market market = Market( i.key() );
