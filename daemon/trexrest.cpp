@@ -78,7 +78,7 @@ void TrexREST::init()
 void TrexREST::sendNamQueue()
 {
     // stop sending commands if server is unresponsive
-    if ( yieldToServer() )
+    if ( yieldToFlowControl() )
         return;
 
     // check for cancelled orders that we should poll for partial fills

@@ -90,7 +90,7 @@ void WavesREST::init()
 void WavesREST::sendNamQueue()
 {
     // stop sending commands if server is unresponsive
-    if ( yieldToServer() )
+    if ( yieldToFlowControl() )
         return;
 
     // check for orders that we should poll

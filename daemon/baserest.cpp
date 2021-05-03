@@ -86,26 +86,6 @@ bool BaseREST::yieldToFlowControl() const
              nam_queue_sent.size() >= limit_commands_sent );
 }
 
-bool BaseREST::yieldToServer( bool verbose ) const
-{
-    // stop sending commands if server is unresponsive
-    if ( nam_queue_sent.size() > limit_commands_sent )
-    {
-        // print something every 2 mins
-        static qint64 last_print_time = 0;
-        const qint64 current_time = QDateTime::currentMSecsSinceEpoch();
-        if ( verbose && last_print_time < current_time - 120000 )
-        {
-            kDebug() << "local" << engine->engine_type << "info: nam_queue_sent > limit_commands_sent, waiting.";
-            last_print_time = current_time;
-        }
-
-        return true;
-    }
-
-    return false;
-}
-
 void BaseREST::sendRequest( QString api_command, QString body, Position *pos, quint16 weight )
 {
     Request *delayed_request = new Request();

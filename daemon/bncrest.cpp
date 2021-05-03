@@ -84,7 +84,7 @@ void BncREST::sendNamQueue()
         return;
 
     // stop sending commands if server is unresponsive
-    if ( yieldToServer() )
+    if ( yieldToFlowControl() )
         return;
 
     // normalize ratelimit by our timer

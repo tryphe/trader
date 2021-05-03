@@ -508,7 +508,7 @@ void PoloREST::sendNamQueue()
         return;
 
     // stop sending commands if server is unresponsive
-    if ( yieldToServer() )
+    if ( yieldToFlowControl() )
         return;
 
     const qint64 current_time = QDateTime::currentMSecsSinceEpoch();

@@ -27,7 +27,6 @@ struct BaseREST : public QObject
     virtual void init() {}
 
     bool yieldToFlowControl() const;
-    bool yieldToServer( bool verbose = true ) const;
 
     void sendRequest( QString api_command, QString body = QLatin1String(), Position *pos = nullptr, quint16 weight = 0 );
 
