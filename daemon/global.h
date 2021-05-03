@@ -151,8 +151,8 @@ static const QLatin1String WAVES_MATCHER_URL                ( "https://matcher.w
 static const int WAVES_TIMER_INTERVAL_NAM_SEND              ( 200 );
 static const int WAVES_TIMER_INTERVAL_MARKET_DATA_INITIAL   ( 60000 );
 static const int WAVES_TIMER_INTERVAL_MARKET_DATA           ( 60000 * 60 * 24 );
-static const int WAVES_TIMER_INTERVAL_TICKER                ( 2000 );
-static const int WAVES_TIMER_INTERVAL_CHECK_MY_ORDERS       ( 30000 );
+static const int WAVES_TIMER_INTERVAL_TICKER                ( 1000 );
+static const int WAVES_TIMER_INTERVAL_CHECK_MY_ORDERS       ( 20000 );
 
 static const QLatin1String WAVES_COMMAND_GET_MATCHER_PUBKEY ( "pk-get-matcher" );
 static const QLatin1String WAVES_COMMAND_GET_MARKET_DATA    ( "md-get-matcher/orderbook" );

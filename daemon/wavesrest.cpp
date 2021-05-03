@@ -52,8 +52,8 @@ WavesREST::~WavesREST()
 
 void WavesREST::init()
 {
-    BaseREST::limit_commands_queued = 30; // stop checks if we are over this many commands queued
-    BaseREST::limit_commands_sent = 10; // stop checks if we are over this many commands sent
+    BaseREST::limit_commands_queued = 16; // stop checks if we are over this many commands queued
+    BaseREST::limit_commands_sent = 8; // stop checks if we are over this many commands sent
     engine->getSettings()->order_timeout = 60000 * 15; // extend order timeout (we don't want stray orders during ddos)
 
     // init asset maps
