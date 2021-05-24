@@ -143,7 +143,6 @@ bool SpruceV2::calculateAmountToShortLong( bool is_midspread_phase )
 //    kDebug() << "prices:" << m_current_price;
 
     const QString dollar_currency = "USDN";
-    const QVector<QString> excluded_currencies = QVector<QString>() << "USDT";
     const Coin dollar_avg = m_average[ dollar_currency ];
     const Coin dollar_price = m_current_price[ dollar_currency ];
 
@@ -168,7 +167,7 @@ bool SpruceV2::calculateAmountToShortLong( bool is_midspread_phase )
 
         if ( currency == dollar_currency )
             average_dollar_terms[ dollar_currency ] = CoinAmount::COIN / avg;
-        else if ( !excluded_currencies.contains( currency ) )
+        else
             average_dollar_terms[ currency ] = avg / dollar_avg;
     }
 //    kDebug() << "avg dollar terms" << average_dollar_terms;
