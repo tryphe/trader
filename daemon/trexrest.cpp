@@ -78,7 +78,7 @@ void TrexREST::init()
 void TrexREST::sendNamQueue()
 {
     // stop sending commands if server is unresponsive
-    if ( yieldToFlowControl() )
+    if ( yieldToFlowControlSent() )
         return;
 
     // check for cancelled orders that we should poll for partial fills
@@ -450,7 +450,7 @@ void TrexREST::onNamReply( QNetworkReply *const &reply )
 void TrexREST::checkBotOrders( bool ignore_flow_control )
 {
     // return on unset key/secret, or if we already queued this command
-    if ( !ignore_flow_control && ( isKeyOrSecretUnset() || isCommandQueued( TREX_COMMAND_GET_ORDERS ) || isCommandSent( TREX_COMMAND_GET_ORDERS, 10 ) ) )
+    if ( !ignore_flow_control && ( isKeyOrSecretUnset() || yieldToFlowControlQueue() || yieldToFlowControlSent() || isCommandQueued( TREX_COMMAND_GET_ORDERS ) || isCommandSent( TREX_COMMAND_GET_ORDERS, 10 ) ) )
         return;
 
     sendRequest( TREX_COMMAND_GET_ORDERS );

@@ -80,10 +80,19 @@ BaseREST::~BaseREST()
     kDebug() << "[BaseREST] done.";
 }
 
-bool BaseREST::yieldToFlowControl() const
+bool BaseREST::yieldToFlowControlQueue() const
 {
-    return ( nam_queue.size() >= limit_commands_queued ||
-             nam_queue_sent.size() >= limit_commands_sent );
+    return nam_queue.size() >= limit_commands_queued;
+}
+
+bool BaseREST::yieldToFlowControlSent() const
+{
+    return nam_queue_sent.size() >= limit_commands_sent;
+}
+
+bool BaseREST::isTickerStale() const
+{
+    return ticker_update_time < QDateTime::currentMSecsSinceEpoch() - 60000;
 }
 
 void BaseREST::sendRequest( QString api_command, QString body, Position *pos, quint16 weight )

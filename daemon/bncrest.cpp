@@ -84,7 +84,7 @@ void BncREST::sendNamQueue()
         return;
 
     // stop sending commands if server is unresponsive
-    if ( yieldToFlowControl() )
+    if ( yieldToFlowControlSent() )
         return;
 
     // normalize ratelimit by our timer
@@ -506,7 +506,7 @@ void BncREST::onNamReply( QNetworkReply *const &reply )
 void BncREST::checkBotOrders( bool ignore_flow_control )
 {
     // return on unset key/secret, or if we already queued this command
-    if ( !ignore_flow_control && ( isKeyOrSecretUnset() || isCommandQueued( BNC_COMMAND_GETORDERS ) || isCommandSent( BNC_COMMAND_GETORDERS, 10 ) ) )
+    if ( !ignore_flow_control && ( isKeyOrSecretUnset() || yieldToFlowControlQueue() || yieldToFlowControlSent() || isCommandQueued( BNC_COMMAND_GETORDERS ) || isCommandSent( BNC_COMMAND_GETORDERS, 10 ) ) )
         return;
 
     // get list of open orders

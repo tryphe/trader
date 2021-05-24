@@ -163,16 +163,26 @@ void SpruceOverseer::onSpruceUp()
         {
             Engine *engine = e.value();
 
-            // if we have something allocated for this exchange, check if orderbooks are responsive for this engine
+            // check if orderbooks are responsive for this engine
             if ( !engine->isOrderBookResponsive() )
             {
-                // kDebug() << "[SpruceOverseer] engine" << engine->getEngineTypeStr() << " has market allocations but oderbooks are stale, skipping setting orders";
+                kDebug() << "[SpruceOverseer] skipped engine" << engine->getEngineTypeStr() << "for stale orderbook";
                 continue;
             }
 
-            // if the rest module sent to many commands, wait for it
-            if ( engine->getRestBase()->yieldToFlowControl() )
+            // if the rest module queued or sent too many commands, wait for it
+            if ( engine->yieldToFlowControlQueue() || engine->yieldToFlowControlSent() )
+            {
+                kDebug() << "[SpruceOverseer] skipped engine" << engine->getEngineTypeStr() << "for flow control";
                 continue;
+            }
+
+            // if the rest module ticker is stale, wait for it
+            if ( engine->getRestBase()->isTickerStale() )
+            {
+                kDebug() << "[SpruceOverseer] skipped engine" << engine->getEngineTypeStr() << "for stale ticker";
+                continue;
+            }
 
             for ( QMap<QString,Coin>::const_iterator i = qty_to_shortlong_map.begin(); i != qty_to_shortlong_map.end(); i++ )
             {

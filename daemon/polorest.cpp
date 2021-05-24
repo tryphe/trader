@@ -508,7 +508,7 @@ void PoloREST::sendNamQueue()
         return;
 
     // stop sending commands if server is unresponsive
-    if ( yieldToFlowControl() )
+    if ( yieldToFlowControlSent() )
         return;
 
     const qint64 current_time = QDateTime::currentMSecsSinceEpoch();
@@ -588,7 +588,7 @@ void PoloREST::sendNamQueue()
 void PoloREST::checkBotOrders( bool ignore_flow_control )
 {
     // return on unset key/secret, or if we already queued this command
-    if ( !ignore_flow_control && ( isKeyOrSecretUnset() || isCommandQueued( POLO_COMMAND_GETORDERS ) || isCommandSent( POLO_COMMAND_GETORDERS, 10 ) ) )
+    if ( !ignore_flow_control && ( isKeyOrSecretUnset() || yieldToFlowControlQueue() || yieldToFlowControlSent() || isCommandQueued( POLO_COMMAND_GETORDERS ) || isCommandSent( POLO_COMMAND_GETORDERS, 10 ) ) )
         return;
 
     sendRequest( POLO_COMMAND_GETORDERS, POLO_COMMAND_GETORDERS_ARGS );

@@ -194,8 +194,6 @@ bool PriceAggregator::loadPriceSamples( PriceData &data, const QString &path )
 
 Spread PriceAggregator::getSpread( const QString &market ) const
 {
-    const qint64 epoch_msecs = QDateTime::currentMSecsSinceEpoch();
-
     Spread ret;
     quint16 samples = 0;
 
@@ -208,7 +206,7 @@ Spread PriceAggregator::getSpread( const QString &market ) const
             continue;
 
         // ensure ticker isn't stale
-        if ( engine->rest_arr.at( engine->engine_type )->ticker_update_time < epoch_msecs - 60000 )
+        if ( engine->getRestBase()->isTickerStale() )
             continue;
 
         const MarketInfo &info = engine->getMarketInfo( market );

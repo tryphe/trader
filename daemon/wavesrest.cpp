@@ -90,7 +90,7 @@ void WavesREST::init()
 void WavesREST::sendNamQueue()
 {
     // stop sending commands if server is unresponsive
-    if ( yieldToFlowControl() )
+    if ( yieldToFlowControlSent() )
         return;
 
     // check for orders that we should poll
@@ -394,7 +394,7 @@ void WavesREST::onCheckTicker()
 
 void WavesREST::checkTicker( bool ignore_flow_control )
 {
-    if ( !ignore_flow_control && yieldToFlowControl() )
+    if ( !ignore_flow_control && ( yieldToFlowControlQueue() || yieldToFlowControlSent() ) )
         return;
 
     // if the next index to query is bad, reset it
@@ -427,7 +427,7 @@ void WavesREST::checkTicker( bool ignore_flow_control )
 
 void WavesREST::checkBotOrders( bool ignore_flow_control )
 {
-    if ( !ignore_flow_control && yieldToFlowControl() )
+    if ( !ignore_flow_control && ( yieldToFlowControlQueue() || yieldToFlowControlSent() ) )
         return;
 
     sendRequest( QString( WAVES_COMMAND_GET_MY_ORDERS )
@@ -441,7 +441,7 @@ void WavesREST::onCheckBotOrders()
 
 void WavesREST::onCheckCancellingOrders()
 {
-    if ( yieldToFlowControl() )
+    if ( yieldToFlowControlQueue() || yieldToFlowControlSent() )
         return;
 
     // check for empty cancelling query orders

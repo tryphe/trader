@@ -93,7 +93,8 @@ public:
 
     void sendBuySell( Position *const &pos, bool quiet = false );
     void sendCancel( const QString &order_number, Position *const &pos, const Market &market = Market() );
-    bool yieldToFlowControl();
+    bool yieldToFlowControlQueue() const;
+    bool yieldToFlowControlSent() const;
 
     void updateStatsAndPrintFill( const QString &fill_type, Market market, const QString &order_id, quint8 side,
                                   const QString &strategy_tag, Coin amount, Coin quantity, Coin price,

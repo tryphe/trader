@@ -801,8 +801,9 @@ void Engine::processTicker( BaseREST *base_rest_module, const QMap<QString, Spre
     // update ticker update time
     base_rest_module->ticker_update_time = current_time;
 
-    // store deleted positions, because we can't delete and iterate a hash<>
+//    kDebug() << getEngineTypeFancyStr() << "processing ticker" << ticker_data.keys();
 
+    // store deleted positions, because we can't delete and iterate a hash<>
     for ( QMap<QString, Spread>::const_iterator i = ticker_data.begin(); i != ticker_data.end(); i++ )
     {
         const Market market = i.key();
@@ -1450,10 +1451,16 @@ void Engine::sendCancel( const QString &order_number, Position * const &pos, con
         reinterpret_cast<WavesREST*>( rest_arr.value( ENGINE_WAVES ) )->sendCancel( order_number, pos, market );
 }
 
-bool Engine::yieldToFlowControl()
+bool Engine::yieldToFlowControlQueue() const
 {
-    return rest_arr.value( engine_type ) != nullptr ? rest_arr.value( engine_type )->yieldToFlowControl() :
-                                                      false;
+    return getRestBase() != nullptr ? getRestBase()->yieldToFlowControlQueue() :
+                                      false;
+}
+
+bool Engine::yieldToFlowControlSent() const
+{
+    return getRestBase() != nullptr ? getRestBase()->yieldToFlowControlSent() :
+                                      false;
 }
 
 void Engine::onEngineMaintenance()
@@ -1570,7 +1577,7 @@ void Engine::onCheckTimeouts()
     for ( QSet<Position*>::const_iterator i = positions->queued().begin(); i != positions->queued().end(); i++ )
     {
         // flow control
-        if ( yieldToFlowControl() )
+        if ( yieldToFlowControlQueue() || yieldToFlowControlSent() )
             return;
 
         Position *const &pos = *i;
@@ -1592,7 +1599,7 @@ void Engine::onCheckTimeouts()
     for ( QSet<Position*>::const_iterator j = begin; j != end; j++ )
     {
         // flow control
-        if ( yieldToFlowControl() )
+        if ( yieldToFlowControlQueue() || yieldToFlowControlSent() )
             return;
 
         Position *const &pos = *j;

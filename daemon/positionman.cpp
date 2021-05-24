@@ -911,7 +911,7 @@ void PositionMan::converge( QMap<QString, QVector<qint32> > &market_map, quint8 
         }
 
         // flow control
-        if ( engine->yieldToFlowControl() )
+        if ( engine->yieldToFlowControlQueue() || engine->yieldToFlowControlSent() )
             return;
     }
 }
@@ -949,7 +949,7 @@ void PositionMan::diverge( QMap<QString, QVector<qint32> > &market_map )
         cancel( pos, true, CANCELLING_FOR_DC );
 
         // flow control
-        if ( engine->yieldToFlowControl() )
+        if ( engine->yieldToFlowControlQueue() || engine->yieldToFlowControlSent() )
             return;
     }
 }
@@ -1212,7 +1212,7 @@ void PositionMan::cancelFluxOrders( const QString &currency, const Coin &require
 void PositionMan::divergeConverge()
 {
     // flow control
-    if ( engine->yieldToFlowControl() )
+    if ( engine->yieldToFlowControlQueue() || engine->yieldToFlowControlSent() )
         return;
 
     QMap<QString/*market*/,qint32> market_hi_buy_idx; // calculate hi_buy position for each market
@@ -1376,7 +1376,7 @@ void PositionMan::checkBuySellCount()
                 buy_count--;
 
                 // flow control
-                if ( engine->yieldToFlowControl() )
+                if ( engine->yieldToFlowControlQueue() || engine->yieldToFlowControlSent() )
                     return;
             }
 
@@ -1398,7 +1398,7 @@ void PositionMan::checkBuySellCount()
             }
 
             // flow control
-            if ( engine->yieldToFlowControl() )
+            if ( engine->yieldToFlowControlQueue() || engine->yieldToFlowControlSent() )
                 return;
             ///
 
@@ -1411,7 +1411,7 @@ void PositionMan::checkBuySellCount()
                 sell_count--;
 
                 // flow control
-                if ( engine->yieldToFlowControl() )
+                if ( engine->yieldToFlowControlQueue() || engine->yieldToFlowControlSent() )
                     return;
             }
 
@@ -1433,7 +1433,7 @@ void PositionMan::checkBuySellCount()
             }
 
             // flow control
-            if ( engine->yieldToFlowControl() )
+            if ( engine->yieldToFlowControlQueue() || engine->yieldToFlowControlSent() )
                 return;
             ///
         }
