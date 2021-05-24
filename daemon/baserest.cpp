@@ -109,14 +109,7 @@ void BaseREST::sendRequest( QString api_command, QString body, Position *pos, qu
 
 bool BaseREST::isKeyOrSecretUnset() const
 {
-    // return on unset key
-    if ( keystore.isKeyOrSecretEmpty() )
-    {
-        kDebug() << "local warning: key or secret is empty";
-        return true;
-    }
-
-    return false;
+    return keystore.isKeyOrSecretEmpty() ? true : false;
 }
 
 bool BaseREST::isCommandQueued( const QString &api_command_prefix ) const
