@@ -163,6 +163,10 @@ void SpruceOverseer::onSpruceUp()
         {
             Engine *engine = e.value();
 
+            // if the exchange doesn't have a key set, don't make order requests
+            if ( engine->getRestBase()->isKeyOrSecretUnset() )
+                continue;
+
             // check if orderbooks are responsive for this engine
             if ( !engine->isOrderBookResponsive() )
             {
