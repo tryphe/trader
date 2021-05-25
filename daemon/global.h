@@ -185,6 +185,8 @@ static inline quint32 getSecureRandomRange32( const quint32 min, const quint32 m
 
     if ( min >= max )
         return min;
+    else if ( min == 0 && max == std::numeric_limits<quint32>::max() )
+        return QRandomGenerator::global()->generate();
 
     const quint32 diff = max - min +1;
     const quint32 remainder = max % diff;
@@ -193,6 +195,52 @@ static inline quint32 getSecureRandomRange32( const quint32 min, const quint32 m
     do
     {
         rand = QRandomGenerator::global()->generate();
+
+        // if diff = uint32::max, then the remainder is uint32::max -1, which sends us into a nearly infinite loop
+        // since we only have 1 value outside of our targetted range, break unless it's that one value
+        if ( diff == std::numeric_limits<quint32>::max() )
+        {
+            while ( rand == std::numeric_limits<quint32>::max() )
+            {
+                rand = QRandomGenerator::global()->generate();
+            }
+
+            break;
+        }
+    }
+    while ( rand >= max_val - remainder );
+
+    return min + ( rand % diff );
+}
+
+static inline quint64 getSecureRandomRange64( const quint64 min, const quint64 max )
+{
+    static const quint64 max_val = 0xFFFFFFFFFFFFFFFF;
+
+    if ( min >= max )
+        return min;
+    else if ( min == 0 && max == std::numeric_limits<quint64>::max() )
+        return QRandomGenerator::global()->generate64();
+
+    const quint64 diff = max - min +1;
+    const quint64 remainder = max % diff;
+
+    quint64 rand;
+    do
+    {
+        rand = QRandomGenerator::global()->generate64();
+
+        // if diff = uint64::max, then the remainder is uint64::max -1, which sends us into a nearly infinite loop
+        // since we only have 1 value outside of our targetted range, break unless it's that one value
+        if ( diff == std::numeric_limits<quint64>::max() )
+        {
+            while ( rand == std::numeric_limits<quint64>::max() )
+            {
+                rand = QRandomGenerator::global()->generate();
+            }
+
+            break;
+        }
     }
     while ( rand >= max_val - remainder );
 
