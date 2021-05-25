@@ -40,10 +40,6 @@ TrexREST::~TrexREST()
 
 void TrexREST::init()
 {
-    BaseREST::limit_commands_queued = 20; // stop checks if we are over this many commands queued
-    BaseREST::limit_commands_queued_dc_check = 7; // exit dc check if we are over this many commands queued
-    BaseREST::limit_commands_sent = 45; // stop checks if we are over this many commands sent
-    BaseREST::limit_timeout_yield = 6;
     BaseREST::market_cancel_thresh = 300; // limit for market order total for weighting cancels to be sent first
 
     // we use this to send the requests at a predictable rate

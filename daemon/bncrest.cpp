@@ -40,10 +40,6 @@ BncREST::~BncREST()
 
 void BncREST::init()
 {
-    BaseREST::limit_commands_queued = 35; // stop checks if we are over this many commands queued
-    BaseREST::limit_commands_queued_dc_check = 10; // exit dc check if we are over this many commands queued
-    BaseREST::limit_commands_sent = 60; // stop checks if we are over this many commands sent
-    BaseREST::limit_timeout_yield = 12;
     BaseREST::market_cancel_thresh = 300; // limit for market order total for weighting cancels to be sent first
 
     connect( send_timer, &QTimer::timeout, this, &BncREST::sendNamQueue );

@@ -55,10 +55,10 @@ struct BaseREST : public QObject
     qint64 orderbook_update_request_time{ 0 };
     qint64 ticker_update_time{ 0 };
     qint64 ticker_update_request_time{ 0 };
-    qint32 limit_commands_queued{ 35 }; // stop checks if we are over this many commands queued
+    qint32 limit_commands_queued{ 20 }; // stop checks if we are over this many commands queued
     qint32 limit_commands_queued_dc_check{ 10 }; // skip dc check if we are over this many commands queued
-    qint32 limit_commands_sent{ 35 }; // stop checks if we are over this many commands sent
-    qint32 limit_timeout_yield{ 12 };
+    qint32 limit_commands_sent{ 10 }; // stop checks if we are over this many commands sent
+    qint32 limit_timeout_yield{ 5 };
     qint32 market_cancel_thresh{ 300 }; // limit for market order total for weighting cancels to be sent first
 
     qint64 slippage_stale_time{ 500 }; // quiet time before we allow an order to be included in slippage price calculations

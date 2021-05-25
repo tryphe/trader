@@ -54,10 +54,6 @@ PoloREST::~PoloREST()
 
 void PoloREST::init()
 {
-    BaseREST::limit_commands_queued = 28; // stop checks if we are over this many commands queued
-    BaseREST::limit_commands_queued_dc_check = 10; // exit dc check if we are over this many commands queued
-    BaseREST::limit_commands_sent = 48; // stop checks if we are over this many commands sent
-    BaseREST::limit_timeout_yield = 5;
     BaseREST::market_cancel_thresh = 99; // limit for market order total for weighting cancels to be sent first
 
     // setup currency ids
