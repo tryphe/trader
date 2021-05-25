@@ -1,6 +1,7 @@
 #include "coinamount_test.h"
 #include "coinamount.h"
 #include "build-config.h"
+#include "global.h"
 
 #include <assert.h>
 
@@ -12,6 +13,7 @@ void CoinAmountTest::test()
     testUnit();
     testDoubleFailure();
     testPractical();
+    testRandom();
 }
 
 void CoinAmountTest::testUnit()
@@ -472,4 +474,47 @@ void CoinAmountTest::testPractical()
         test_coin *= 10;
         test_str += "0";
     }
+}
+
+void CoinAmountTest::testRandom()
+{
+    // test random( uint64::max, uint64::max ) == uint64::max
+    Coin test_coin = CoinAmount::SATOSHI * Global::getSecureRandomRange64( std::numeric_limits<quint64>::max(), std::numeric_limits<quint64>::max() );
+    assert( test_coin == CoinAmount::SATOSHI * std::numeric_limits<quint64>::max() );
+
+    // test toUIntSatoshis() extraction to uint64
+    assert( test_coin.toUIntSatoshis() == std::numeric_limits<quint64>::max() );
+
+    // test random( uint32::max, uint32::max ) == uint32::max
+    test_coin = CoinAmount::SATOSHI * Global::getSecureRandomRange32( std::numeric_limits<quint32>::max(), std::numeric_limits<quint32>::max() );
+    assert( test_coin == CoinAmount::SATOSHI * std::numeric_limits<quint32>::max() );
+
+    // test toUIntSatoshis() extraction to int64
+    assert( test_coin.toIntSatoshis() == std::numeric_limits<quint32>::max() );
+
+    // test random( uint16::max +1, uint32::max -1 )
+    test_coin = CoinAmount::SATOSHI * Global::getSecureRandomRange32( std::numeric_limits<quint16>::max() +1, std::numeric_limits<quint32>::max() -1 );
+    assert( test_coin >= CoinAmount::SATOSHI * std::numeric_limits<quint16>::max() + CoinAmount::SATOSHI &&
+            test_coin <= CoinAmount::SATOSHI * std::numeric_limits<quint32>::max() - CoinAmount::SATOSHI );
+
+    // test random( uint32::max +1, uint64::max -1 )
+    test_coin = CoinAmount::SATOSHI * Global::getSecureRandomRange64( (quint64) std::numeric_limits<quint32>::max() +1, std::numeric_limits<quint64>::max() -1 );
+    assert( test_coin >= CoinAmount::SATOSHI * std::numeric_limits<quint32>::max() + CoinAmount::SATOSHI &&
+            test_coin <= CoinAmount::SATOSHI * std::numeric_limits<quint64>::max() - CoinAmount::SATOSHI );
+
+    // test random( 0, uint32::max )
+    test_coin = CoinAmount::SATOSHI * Global::getSecureRandomRange32( 0, std::numeric_limits<quint32>::max() );
+    assert( test_coin >= Coin() && test_coin <= CoinAmount::SATOSHI * std::numeric_limits<quint32>::max() );
+
+    // test random( 0, uint32::max -1 )
+    test_coin = CoinAmount::SATOSHI * Global::getSecureRandomRange32( 0, std::numeric_limits<quint32>::max() -1 );
+    assert( test_coin >= Coin() && test_coin <= CoinAmount::SATOSHI * std::numeric_limits<quint32>::max() -1 );
+
+    // test random( 0, uint64::max )
+    test_coin = CoinAmount::SATOSHI * Global::getSecureRandomRange64( 0, std::numeric_limits<quint64>::max() );
+    assert( test_coin >= Coin() && test_coin <= CoinAmount::SATOSHI * std::numeric_limits<quint64>::max() );
+
+    // test random( 0, uint64::max -1 )
+    test_coin = CoinAmount::SATOSHI * Global::getSecureRandomRange64( 0, std::numeric_limits<quint64>::max() -1 );
+    assert( test_coin >= Coin() && test_coin <= CoinAmount::SATOSHI * std::numeric_limits<quint64>::max() -1 );
 }

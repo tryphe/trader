@@ -8,6 +8,7 @@ struct CoinAmountTest
     void testUnit();
     void testDoubleFailure();
     void testPractical();
+    void testRandom();
 };
 
 #endif // COINAMOUNT_TEST_H
