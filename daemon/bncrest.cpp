@@ -523,7 +523,7 @@ void BncREST::onCheckTicker()
     // check if wss disconnected
     wssCheckConnection();
 
-    if ( isCommandQueued( BNC_COMMAND_GETTICKER ) || isCommandSent( BNC_COMMAND_GETTICKER, 10 ) )
+    if ( isCommandQueued( BNC_COMMAND_GETTICKER ) || isCommandSent( BNC_COMMAND_GETTICKER, 5 ) )
         return;
 
     sendRequest( BNC_COMMAND_GETTICKER, "", nullptr, 2 );

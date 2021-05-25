@@ -472,7 +472,7 @@ void TrexREST::onCheckOrderHistory()
 
 void TrexREST::onCheckTicker()
 {
-    if ( isCommandQueued( TREX_COMMAND_GET_MARKET_SUMS ) || isCommandSent( TREX_COMMAND_GET_MARKET_SUMS, 10 ) )
+    if ( isCommandQueued( TREX_COMMAND_GET_MARKET_SUMS ) || isCommandSent( TREX_COMMAND_GET_MARKET_SUMS, 5 ) )
         return;
 
     sendRequest( TREX_COMMAND_GET_MARKET_SUMS );
