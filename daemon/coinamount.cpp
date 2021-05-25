@@ -419,14 +419,14 @@ quint32 Coin::toUInt32() const
     // check for valid int
     if ( !ok )
     {
-        qDebug() << "[Coin] local error: couldn't read integer out of" << str;
+        qDebug() << "[Coin] local error: couldn't read uint32 out of" << str;
         return 0;
     }
 
     return ret;
 }
 
-qint64 Coin::toIntSatoshis()
+qint64 Coin::toIntSatoshis() const
 {
     QString str = toString( Coin::satoshi_decimals );
 
@@ -440,7 +440,28 @@ qint64 Coin::toIntSatoshis()
     // check for valid int
     if ( !ok )
     {
-        qDebug() << "[Coin] local error: couldn't read integer out of" << str;
+        qDebug() << "[Coin] local error: couldn't read uint32 out of" << str;
+        return 0;
+    }
+
+    return ret;
+}
+
+quint64 Coin::toUIntSatoshis() const
+{
+    QString str = toString( Coin::satoshi_decimals );
+
+    // remove decimal
+    str.remove( str.size() - ( Coin::satoshi_decimals +1 ), 1 );
+
+    // convert to int
+    bool ok = false;
+    const quint64 ret = str.toULongLong( &ok );
+
+    // check for valid int
+    if ( !ok )
+    {
+        qDebug() << "[Coin] local error: couldn't read uint64 out of" << str;
         return 0;
     }
 
