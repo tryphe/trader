@@ -427,11 +427,14 @@ void WavesREST::checkTicker( bool ignore_flow_control )
 
 void WavesREST::checkBotOrders( bool ignore_flow_control )
 {
-    if ( !ignore_flow_control && ( yieldToFlowControlQueue() || yieldToFlowControlSent() ) )
+    const QString request_url = QString( WAVES_COMMAND_GET_MY_ORDERS )
+            .arg( QString( account.publicKeyB58() ) );
+
+    if ( !ignore_flow_control && ( isCommandQueued( request_url ) || isCommandSent( request_url, 5 ) ||
+                                   yieldToFlowControlQueue() || yieldToFlowControlSent() ) )
         return;
 
-    sendRequest( QString( WAVES_COMMAND_GET_MY_ORDERS )
-                  .arg( QString( account.publicKeyB58() ) ) );
+    sendRequest( request_url );
 }
 
 void WavesREST::onCheckBotOrders()
@@ -528,7 +531,7 @@ void WavesREST::parseMarketData( const QJsonObject &info )
 
         // some of these above values seem like nonsense, but only sometimes?
         // TODO: fix a bug so we don't have to do this
-        if ( market == "USDN_BTC" )
+        if ( market == "USDN_BTC" || market == "USDT_BTC" )
             market_info.price_ticksize = CoinAmount::SATOSHI *100;
         else if ( market == "USDN_USDT" )
             market_info.price_ticksize = CoinAmount::SATOSHI;
