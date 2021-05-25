@@ -398,7 +398,7 @@ int Coin::toInt() const
     // check for valid int
     if ( !ok )
     {
-        qDebug() << "[Coin] local error: couldn't read integer out of" << str;
+        qDebug() << "[Coin] local error: couldn't read int32 out of" << str;
         return 0;
     }
 
@@ -440,7 +440,7 @@ qint64 Coin::toIntSatoshis() const
     // check for valid int
     if ( !ok )
     {
-        qDebug() << "[Coin] local error: couldn't read uint32 out of" << str;
+        qDebug() << "[Coin] local error: couldn't read int64 out of" << str;
         return 0;
     }
 
