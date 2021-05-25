@@ -164,8 +164,8 @@ public:
     Coin getMarketBuyMax( QString market = "" ) const;
     void setMarketSellMax( Coin marketmax ) { m_market_sell_max = marketmax; }
     Coin getMarketSellMax( QString market = "" ) const;
-    void setOrderSize( Coin ordersize ) { m_order_size = ordersize; }
-    Coin getOrderSize() const { return m_order_size; }
+    void setOrderSize( Coin min, Coin max );
+    Coin getOrderSize() const;
 
     static inline Coin getUniversalMinOrderSize()
     {
@@ -226,7 +226,7 @@ private:
     /// old spruce functionality, retain for SpruceOverseer compat
     QMap<QString, Coin> per_exchange_market_allocations; // note: market allocations are 0:1
     Coin m_order_greed, m_order_greed_minimum, m_order_greed_buy_randomness, m_order_greed_sell_randomness, m_market_buy_max,
-    m_market_sell_max, m_order_size, m_order_nice_buys, m_order_nice_sells, m_order_nice_zerobound_buys, m_order_nice_zerobound_sells,
+    m_market_sell_max, m_order_size_min, m_order_size_max, m_order_nice_buys, m_order_nice_sells, m_order_nice_zerobound_buys, m_order_nice_zerobound_sells,
     m_order_nice_spreadput_buys, m_order_nice_spreadput_sells, m_order_nice_custom_buys, m_order_nice_custom_sells,
     m_order_nice_custom_zerobound_buys, m_order_nice_custom_zerobound_sells;
     QMap<QString, Coin> m_order_nice_market_offset_buys, m_order_nice_market_offset_sells, m_order_nice_market_offset_zerobound_buys,

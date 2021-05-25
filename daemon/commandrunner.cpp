@@ -905,9 +905,9 @@ void CommandRunner::command_setspruceordergreed( QStringList &args )
 
 void CommandRunner::command_setspruceordersize( QStringList &args )
 {
-    if ( !checkArgs( args, 1 ) ) return;
+    if ( !checkArgs( args, 1, 2 ) ) return;
 
-    spruce_overseer->spruce->setOrderSize( args.value( 1 ) );
+    spruce_overseer->spruce->setOrderSize( args.value( 1 ), args.value( 2 ) );
     kDebug() << "spruce ordersize is" << spruce_overseer->spruce->getOrderSize();
 }
 
