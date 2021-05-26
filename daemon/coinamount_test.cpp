@@ -493,7 +493,7 @@ void CoinAmountTest::testRandom()
     assert( test_coin.toIntSatoshis() == std::numeric_limits<quint32>::max() );
 
     // test random( uint16::max +1, uint32::max -1 )
-    test_coin = CoinAmount::SATOSHI * Global::getSecureRandomRange32( std::numeric_limits<quint16>::max() +1, std::numeric_limits<quint32>::max() -1 );
+    test_coin = CoinAmount::SATOSHI * Global::getSecureRandomRange32( (quint32) std::numeric_limits<quint16>::max() +1, std::numeric_limits<quint32>::max() -1 );
     assert( test_coin >= CoinAmount::SATOSHI * std::numeric_limits<quint16>::max() + CoinAmount::SATOSHI &&
             test_coin <= CoinAmount::SATOSHI * std::numeric_limits<quint32>::max() - CoinAmount::SATOSHI );
 
