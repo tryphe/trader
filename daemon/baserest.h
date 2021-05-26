@@ -34,12 +34,17 @@ struct BaseREST : public QObject
 
     bool isKeyOrSecretUnset() const;
     bool isCommandQueued( const QString &api_command_prefix ) const;
-    bool isCommandSent( const QString &api_command_prefix, qint32 min_times = 1 ) const;
+//    bool isCommandSent( const QString &api_command_prefix, qint32 min_times = 1 ) const;
     void removeRequest( const QString &api_command, const QString &body );
     void deleteReply( QNetworkReply *const &reply, Request *const &request );
 
     QString getExchangeStr() const { return exchange_string; }
     QString getExchangeFancyStr() const { return QString( "[REST %1]" ).arg( exchange_string ); }
+
+public Q_SLOTS:
+    void onCheckSentTimeouts();
+
+public:
 
     QQueue<Request*> nam_queue; // queue for requests so we can load balance timestamp/hmac generation
     QHash<QNetworkReply*,Request*> nam_queue_sent; // request tracking queue
@@ -57,7 +62,7 @@ struct BaseREST : public QObject
     qint64 ticker_update_request_time{ 0 };
     qint32 limit_commands_queued{ 20 }; // stop checks if we are over this many commands queued
     qint32 limit_commands_queued_dc_check{ 10 }; // skip dc check if we are over this many commands queued
-    qint32 limit_commands_sent{ 10 }; // stop checks if we are over this many commands sent
+    qint32 limit_commands_sent{ 100 }; // stop checks if we are over this many commands sent
     qint32 limit_timeout_yield{ 5 };
     qint32 market_cancel_thresh{ 300 }; // limit for market order total for weighting cancels to be sent first
 

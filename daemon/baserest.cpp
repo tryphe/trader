@@ -20,6 +20,7 @@ BaseREST::BaseREST( Engine *_engine )
     // this timer checks for nam requests that have been queued too long
     timeout_timer = new QTimer( this );
     connect( timeout_timer, &QTimer::timeout, engine, &Engine::onCheckTimeouts );
+    connect( timeout_timer, &QTimer::timeout, this, &BaseREST::onCheckSentTimeouts );
     timeout_timer->setTimerType( Qt::VeryCoarseTimer );
     timeout_timer->start( 30000 );
 
@@ -122,19 +123,19 @@ bool BaseREST::isCommandQueued( const QString &api_command_prefix ) const
     return false;
 }
 
-bool BaseREST::isCommandSent( const QString &api_command_prefix, qint32 min_times ) const
-{
-    qint32 times = 0;
+//bool BaseREST::isCommandSent( const QString &api_command_prefix, qint32 min_times ) const
+//{
+//    qint32 times = 0;
 
-    // check for getopenorders request in nam_queue
-    for ( QHash<QNetworkReply*,Request*>::const_iterator i = nam_queue_sent.begin(); i != nam_queue_sent.end(); i++ )
-    {
-        if ( (*i)->api_command.startsWith( api_command_prefix ) )
-            times++;
-    }
+//    // check for getopenorders request in nam_queue
+//    for ( QHash<QNetworkReply*,Request*>::const_iterator i = nam_queue_sent.begin(); i != nam_queue_sent.end(); i++ )
+//    {
+//        if ( (*i)->api_command.startsWith( api_command_prefix ) )
+//            times++;
+//    }
 
-    return times >= min_times;
-}
+//    return times >= min_times;
+//}
 
 void BaseREST::removeRequest( const QString &api_command, const QString &body )
 {
@@ -173,4 +174,19 @@ void BaseREST::deleteReply( QNetworkReply * const &reply, Request * const &reque
 
     // delete from heap
     reply->deleteLater();
+}
+
+void BaseREST::onCheckSentTimeouts()
+{
+    const qint64 current_time_ms = QDateTime::currentMSecsSinceEpoch();
+
+    // delete old network requests
+    for ( QHash<QNetworkReply*,Request*>::const_iterator i = nam_queue_sent.begin(); i != nam_queue_sent.end(); i++ )
+    {
+        Request *const &request = i.value();
+        QNetworkReply *const &reply = i.key();
+
+        if ( request->time_sent_ms < current_time_ms - 10 * 60000 )
+            deleteReply( reply, request );
+    }
 }
