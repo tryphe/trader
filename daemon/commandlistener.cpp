@@ -76,6 +76,11 @@ LocalClient::~LocalClient()
     m_sck->deleteLater();
 }
 
+QByteArray LocalClient::getSocketData() const
+{
+    return m_sck->readAll();
+}
+
 void LocalClient::handleDisconnected()
 {
     emit disconnected( this );
