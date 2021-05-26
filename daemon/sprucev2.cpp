@@ -36,8 +36,7 @@ SpruceV2::SpruceV2()
 //    alloc_func = m_allocaton_function_vec.at( m_allocation_function_index );
 
     /// user settings
-    m_order_size_min = "0.005";
-    m_order_size_max = "0.005";
+    m_order_size_sats_min = m_order_size_sats_max = 500000; // sats
     m_order_nice_buys = "2";
     m_order_nice_sells = "2";
     m_order_nice_zerobound_buys = "0";
@@ -690,8 +689,8 @@ QString SpruceV2::getSaveState()
             .arg( m_order_greed_sell_randomness );
 
     // save order size
-    ret += QString( "setspruceordersize %1 %2\n" ).arg( m_order_size_min )
-                                                  .arg( m_order_size_max );
+    ret += QString( "setspruceordersize %1 %2\n" ).arg( CoinAmount::SATOSHI * m_order_size_sats_min )
+                                                  .arg( CoinAmount::SATOSHI * m_order_size_sats_max );
 
     // save order count
     ret += QString( "setspruceordercount %1 %2\n" ).arg( m_orders_per_side_flux )
@@ -818,13 +817,12 @@ void SpruceV2::setOrderSize( Coin min, Coin max )
         max = min;
 
     // set min and max but clamp values to 64 bits because they are range inputs into our rand functions
-    m_order_size_min = std::min( min, CoinAmount::SATOSHI * std::numeric_limits<quint64>::max() );
-    m_order_size_max = std::min( max, CoinAmount::SATOSHI * std::numeric_limits<quint64>::max() );
+    m_order_size_sats_min = std::min( std::numeric_limits<quint64>::max(), min.toUIntSatoshis() );
+    m_order_size_sats_max = std::min( std::numeric_limits<quint64>::max(), max.toUIntSatoshis() );
 }
 
 Coin SpruceV2::getOrderSize() const
 {
-    return m_order_size_min == m_order_size_max ? m_order_size_min :
-           CoinAmount::SATOSHI * Global::getSecureRandomRange64( m_order_size_min.toUIntSatoshis(),
-                                                                 m_order_size_max.toUIntSatoshis() );
+    return m_order_size_sats_min == m_order_size_sats_max ? CoinAmount::SATOSHI * m_order_size_sats_min :
+           CoinAmount::SATOSHI * Global::getSecureRandomRange64( m_order_size_sats_min, m_order_size_sats_max );
 }
