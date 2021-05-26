@@ -584,7 +584,7 @@ void PoloREST::sendNamQueue()
 void PoloREST::checkBotOrders( bool ignore_flow_control )
 {
     // return on unset key/secret, or if we already queued this command
-    if ( !ignore_flow_control && ( isKeyOrSecretUnset() || yieldToFlowControlQueue() || yieldToFlowControlSent() || isCommandQueued( POLO_COMMAND_GETORDERS ) || isCommandSent( POLO_COMMAND_GETORDERS, 10 ) ) )
+    if ( !ignore_flow_control && ( isKeyOrSecretUnset() || yieldToFlowControlQueue() || yieldToFlowControlSent() || isCommandQueued( POLO_COMMAND_GETORDERS ) ) )
         return;
 
     sendRequest( POLO_COMMAND_GETORDERS, POLO_COMMAND_GETORDERS_ARGS );
@@ -597,7 +597,7 @@ void PoloREST::onCheckBotOrders()
 
 void PoloREST::onCheckTicker()
 {
-    if ( isCommandQueued( POLO_COMMAND_GETBOOKS ) || isCommandSent( POLO_COMMAND_GETBOOKS, 5 ) )
+    if ( isCommandQueued( POLO_COMMAND_GETBOOKS ) )
         return;
 
     sendRequest( POLO_COMMAND_GETBOOKS, POLO_COMMAND_GETBOOKS_ARGS );

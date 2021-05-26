@@ -502,7 +502,7 @@ void BncREST::onNamReply( QNetworkReply *const &reply )
 void BncREST::checkBotOrders( bool ignore_flow_control )
 {
     // return on unset key/secret, or if we already queued this command
-    if ( !ignore_flow_control && ( isKeyOrSecretUnset() || yieldToFlowControlQueue() || yieldToFlowControlSent() || isCommandQueued( BNC_COMMAND_GETORDERS ) || isCommandSent( BNC_COMMAND_GETORDERS, 10 ) ) )
+    if ( !ignore_flow_control && ( isKeyOrSecretUnset() || yieldToFlowControlQueue() || yieldToFlowControlSent() || isCommandQueued( BNC_COMMAND_GETORDERS ) ) )
         return;
 
     // get list of open orders
@@ -519,7 +519,7 @@ void BncREST::onCheckTicker()
     // check if wss disconnected
     wssCheckConnection();
 
-    if ( isCommandQueued( BNC_COMMAND_GETTICKER ) || isCommandSent( BNC_COMMAND_GETTICKER, 5 ) )
+    if ( isCommandQueued( BNC_COMMAND_GETTICKER ) )
         return;
 
     sendRequest( BNC_COMMAND_GETTICKER, "", nullptr, 2 );
@@ -528,7 +528,7 @@ void BncREST::onCheckTicker()
 void BncREST::onCheckExchangeInfo()
 { // happens every hour
 
-    if ( isCommandQueued( BNC_COMMAND_GETEXCHANGEINFO ) || isCommandSent( BNC_COMMAND_GETEXCHANGEINFO, 2 ) )
+    if ( isCommandQueued( BNC_COMMAND_GETEXCHANGEINFO ) )
         return;
 
     sendRequest( BNC_COMMAND_GETEXCHANGEINFO, "", nullptr, 1 );

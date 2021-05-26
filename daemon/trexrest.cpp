@@ -446,7 +446,7 @@ void TrexREST::onNamReply( QNetworkReply *const &reply )
 void TrexREST::checkBotOrders( bool ignore_flow_control )
 {
     // return on unset key/secret, or if we already queued this command
-    if ( !ignore_flow_control && ( isKeyOrSecretUnset() || yieldToFlowControlQueue() || yieldToFlowControlSent() || isCommandQueued( TREX_COMMAND_GET_ORDERS ) || isCommandSent( TREX_COMMAND_GET_ORDERS, 10 ) ) )
+    if ( !ignore_flow_control && ( isKeyOrSecretUnset() || yieldToFlowControlQueue() || yieldToFlowControlSent() || isCommandQueued( TREX_COMMAND_GET_ORDERS ) ) )
         return;
 
     sendRequest( TREX_COMMAND_GET_ORDERS );
@@ -460,7 +460,7 @@ void TrexREST::onCheckBotOrders()
 void TrexREST::onCheckOrderHistory()
 {
     // ensure key/secret is set and command is not queued
-    if ( isKeyOrSecretUnset() || isCommandQueued( TREX_COMMAND_GET_ORDER_HIST ) || isCommandSent( TREX_COMMAND_GET_ORDER_HIST, 10 ) )
+    if ( isKeyOrSecretUnset() || isCommandQueued( TREX_COMMAND_GET_ORDER_HIST ) )
         return;
 
     sendRequest( TREX_COMMAND_GET_ORDER_HIST );
@@ -468,7 +468,7 @@ void TrexREST::onCheckOrderHistory()
 
 void TrexREST::onCheckTicker()
 {
-    if ( isCommandQueued( TREX_COMMAND_GET_MARKET_SUMS ) || isCommandSent( TREX_COMMAND_GET_MARKET_SUMS, 5 ) )
+    if ( isCommandQueued( TREX_COMMAND_GET_MARKET_SUMS ) )
         return;
 
     sendRequest( TREX_COMMAND_GET_MARKET_SUMS );

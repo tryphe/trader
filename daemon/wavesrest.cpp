@@ -28,8 +28,6 @@
 #include <QDebug>
 #include <QDateTime>
 
-static const int MAX_NEW_ORDERS_IN_FLIGHT = 2;
-
 WavesREST::WavesREST( Engine *_engine, QNetworkAccessManager *_nam )
     : BaseREST( _engine )
 {
@@ -120,20 +118,20 @@ void WavesREST::sendNamQueue()
     {
         Request *const &request = *i;
 
-        // if 2 or more new order commands are in flight, wait for them
-        if ( request->api_command.startsWith( "on-" ) && isCommandSent( "on-", MAX_NEW_ORDERS_IN_FLIGHT ) )
-        {
-            // print something every 2 mins
-            static qint64 last_print_time = 0;
-            const qint64 current_time = QDateTime::currentMSecsSinceEpoch();
-            if ( last_print_time < current_time - 120000 )
-            {
-                //kDebug() << "local" << engine->engine_type << "info: too many new orders in flight, waiting.";
-                last_print_time = current_time;
-            }
+//        // if 2 or more new order commands are in flight, wait for them
+//        if ( request->api_command.startsWith( "on-" ) && isCommandSent( "on-", MAX_NEW_ORDERS_IN_FLIGHT ) )
+//        {
+//            // print something every 2 mins
+//            static qint64 last_print_time = 0;
+//            const qint64 current_time = QDateTime::currentMSecsSinceEpoch();
+//            if ( last_print_time < current_time - 120000 )
+//            {
+//                //kDebug() << "local" << engine->engine_type << "info: too many new orders in flight, waiting.";
+//                last_print_time = current_time;
+//            }
 
-            continue;
-        }
+//            continue;
+//        }
 
         sendNamRequest( request );
         // the request is added to sent_nam_queue and thus not deleted until the response is met
@@ -428,8 +426,7 @@ void WavesREST::checkBotOrders( bool ignore_flow_control )
     const QString request_url = QString( WAVES_COMMAND_GET_MY_ORDERS )
             .arg( QString( account.publicKeyB58() ) );
 
-    if ( !ignore_flow_control && ( isCommandQueued( request_url ) || isCommandSent( request_url, 5 ) ||
-                                   yieldToFlowControlQueue() || yieldToFlowControlSent() ) )
+    if ( !ignore_flow_control && ( isCommandQueued( request_url ) || yieldToFlowControlQueue() || yieldToFlowControlSent() ) )
         return;
 
     sendRequest( request_url );
