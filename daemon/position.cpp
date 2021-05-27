@@ -88,7 +88,7 @@ Position::Position( QString _market, quint8 _side, QString _buy_price, QString _
         if ( engine->engine_type == ENGINE_BINANCE )
         {
             // we want to "round" up or down each landmark order, in order to preserve our weighted profit ratio
-            shim = !engine ? CoinAmount::ORDER_SHIM : engine->getMarketInfo( market ).price_ticksize.ratio( 0.5 );
+            shim = ( engine == nullptr ) ? CoinAmount::ORDER_SHIM : engine->getMarketInfo( market ).price_ticksize.ratio( 0.5 );
         }
         else
         {

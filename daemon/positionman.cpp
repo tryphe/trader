@@ -95,7 +95,7 @@ Coin PositionMan::getHiBuyFlipPrice( const QString &market ) const
     Position *pos = getHighestBuyByPrice( market );
 
     // check pos
-    if ( !pos || !isActive( pos ) )
+    if ( pos == nullptr || !isActive( pos ) )
         return 0.;
 
     kDebug() << "hi_buy_flip" << pos->stringifyOrder();
@@ -108,7 +108,7 @@ Coin PositionMan::getLoSellFlipPrice( const QString &market ) const
     Position *pos = getLowestSellByPrice( market );
 
     // check pos
-    if ( !pos || !isActive( pos ) )
+    if ( pos == nullptr || !isActive( pos ) )
         return 0.;
 
     kDebug() << "lo_sell_flip" << pos->stringifyOrder();
@@ -778,7 +778,7 @@ void PositionMan::remove( Position * const &pos )
     {
         const Request *const &req = i.value();
 
-        if ( !req->pos )
+        if ( req->pos == nullptr )
             continue;
 
         // if we found -this- position, add it to deleted queue
@@ -1062,7 +1062,7 @@ void PositionMan::cancelLocal( QString market )
 void PositionMan::cancel( Position *const &pos, bool quiet, quint8 cancel_reason )
 {
     // check for position in ptr list
-    if ( !pos || !isValid( pos ) )
+    if ( pos == nullptr || !isValid( pos ) )
     {
         kDebug() << "local error: aborting dangerous cancel not found in positions_all";
         return;
@@ -1524,7 +1524,7 @@ void PositionMan::setNextLowest( const QString &market, quint8 side, bool landma
                                  indices, landmark, true );
 
     // check for valid ptr
-    if ( !pos )
+    if ( pos == nullptr )
         return;
 
     // flag as non-profitable api call (it's far from the spread)
@@ -1613,7 +1613,7 @@ void PositionMan::setNextHighest( const QString &market, quint8 side, bool landm
                                      indices, landmark, true );
 
     // check for valid ptr
-    if ( !pos )
+    if ( pos == nullptr )
         return;
 
     // flag as non-profitable api call (it's far from the spread)

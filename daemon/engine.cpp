@@ -224,14 +224,16 @@ Position *Engine::addPosition( QString market_input, quint8 side, QString buy_pr
     Position *const &pos = new Position( market, side, buy_price, sell_price, order_size, strategy_tag, indices, landmark, this );
 
     // check for correctly loaded position data and size
-    if ( !pos ||
+    if (  pos == nullptr ||
          !pos->market.isValid() ||
           pos->price.isZeroOrLess() ||
           pos->amount.isZeroOrLess() ||
           pos->quantity.isZeroOrLess() )
     {
         kDebug() << getEngineTypeFancyStr() << "local warning: failed to set order because of invalid value:" << market << pos->side << pos->buy_price << pos->sell_price << pos->amount << pos->quantity << indices << landmark;
-        if ( pos ) delete pos;
+        if ( pos != nullptr )
+            delete pos;
+
         return nullptr;
     }
 
@@ -366,7 +368,7 @@ void Engine::fillNQ( const QString &order_id, qint8 fill_type , quint8 extra_dat
     Position *const &pos = positions->getByOrderID( order_id );
 
     // we should never get here, because we call isPositionOrderID, but check anyways
-    if ( !pos )
+    if ( pos == nullptr )
     {
         kDebug() << getEngineTypeFancyStr() << "local error: badptr in fillNQ, orderid" << order_id << "fill_type" << fill_type;
         return;
@@ -663,7 +665,7 @@ void Engine::processOpenOrders( QVector<QString> &order_numbers, QMultiHash<QStr
                     Position *const &pos = *k;
 
                     // avoid nullptr
-                    if ( !pos )
+                    if ( pos == nullptr )
                         continue;
 
                     // we found a set order before we received the reply for it
@@ -753,7 +755,7 @@ void Engine::processOpenOrders( QVector<QString> &order_numbers, QMultiHash<QStr
             Position *const &pos = *k;
 
             // avoid nullptr
-            if ( !pos )
+            if ( pos == nullptr )
                 continue;
 
             // has the order been "set"? if not, we should skip it
@@ -866,7 +868,7 @@ void Engine::processTicker( BaseREST *base_rest_module, const QMap<QString, Spre
         {
             Position *const &pos = *j;
 
-            if ( !pos )
+            if ( pos == nullptr )
                 continue;
 
             const QString &market = pos->market;
@@ -1287,7 +1289,7 @@ void Engine::findBetterPrice( Position *const &pos )
     static const quint8 SLIPPAGE_ADDITIVE = 2;
 
     // bad ptr check
-    if ( !pos || !positions->isValid( pos ) )
+    if ( pos == nullptr || !positions->isValid( pos ) )
         return;
 
     bool is_buy = ( pos->side == SIDE_BUY );
@@ -1573,7 +1575,7 @@ void Engine::onCheckTimeouts()
 
     const qint64 current_time = QDateTime::currentMSecsSinceEpoch();
 
-    // look for timed out requests
+    // look for timed out positions
     for ( QSet<Position*>::const_iterator i = positions->queued().begin(); i != positions->queued().end(); i++ )
     {
         // flow control

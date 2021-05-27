@@ -33,7 +33,7 @@ FallbackListener::~FallbackListener()
 bool FallbackListener::openInputFile()
 {
     // the file is open and ready, exit
-    if ( input_file && input_file->isReadable() && input_file->isWritable() )
+    if ( input_file != nullptr && input_file->isReadable() && input_file->isWritable() )
         return true;
 
     QString input_file_path = Global::getTraderPath() + QDir::separator() + "in.txt";
@@ -46,7 +46,7 @@ bool FallbackListener::openInputFile()
     }
 
     // initialize input file if needed
-    if ( !input_file )
+    if ( input_file == nullptr )
     {
         input_file = new QFile( input_file_path );
         if ( !input_file->open( QIODevice::ReadWrite | QIODevice::Text ) )

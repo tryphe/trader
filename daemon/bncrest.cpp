@@ -100,7 +100,7 @@ void BncREST::sendNamQueue()
         Position *const &pos = request->pos;
 
         // check for valid pos
-        if ( !pos || !engine->getPositionMan()->isValid( pos ) )
+        if ( pos == nullptr || !engine->getPositionMan()->isValid( pos ) )
         {
             sorted_nam_queue.insert( Coin(), request );
             continue;
@@ -288,7 +288,7 @@ void BncREST::sendNamRequest( Request *const &request )
         reply = nam->sendCustomRequest( nam_request, "DELETE", query_bytes );
     }
 
-    if ( !reply )
+    if ( reply == nullptr )
     {
         kDebug() << getExchangeFancyStr() << "local error: failed to generate a valid QNetworkReply";
         return;
@@ -300,7 +300,7 @@ void BncREST::sendNamRequest( Request *const &request )
     last_request_sent_ms = current_time;
 }
 
-void BncREST::sendBuySell( Position * const &pos, bool quiet )
+void BncREST::sendBuySell( Position* const &pos, bool quiet )
 {
     if ( !quiet )
         kDebug() << QString( "queued          %1" )
@@ -437,7 +437,7 @@ void BncREST::onNamReply( QNetworkReply *const &reply )
 //        else if ( api_command == BUY || api_command == SELL )
 //        {
 //            // check for bad ptr, and the position should also be queued
-//            if ( !request->pos || !positions_queued.contains( request->pos ) )
+//            if ( request->pos == nullptr || !positions_queued.contains( request->pos ) )
 //            {
 //                deleteReply( reply, request );
 //                return;
@@ -567,7 +567,7 @@ void BncREST::parseBuySell( Request *const &request, const QJsonObject &response
     //kDebug();
 
     // check if we have a position recorded for this request
-    if ( !request->pos )
+    if ( request->pos == nullptr )
     {
         kDebug() << getExchangeFancyStr() << "local error: found response for queued position, but postion is null";
         return;
@@ -616,7 +616,7 @@ void BncREST::parseCancelOrder( Request *const &request, const QJsonObject &resp
     Position *const &pos = request->pos;
 
     // prevent unsafe access
-    if ( !pos || !engine->getPositionMan()->isActive( pos ) )
+    if ( pos == nullptr || !engine->getPositionMan()->isActive( pos ) )
     {
         kDebug() << getExchangeFancyStr() << "successfully cancelled non-local order:" << response;
         return;

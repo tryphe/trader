@@ -223,7 +223,7 @@ void WavesREST::sendNamRequest( Request * const &request )
                                   is_post ? nam->post( nam_request, request->body.toLocal8Bit() ) :
                                           nullptr;
 
-    if ( !reply )
+    if ( reply == nullptr )
     {
         kDebug() << getExchangeFancyStr() << "local error: failed to generate a valid QNetworkReply for api command" << request->api_command;
         return;
@@ -638,7 +638,7 @@ void WavesREST::parseOrderStatus( const QJsonObject &info, Request *const &reque
     }
 
     // check if we have a position recorded for this request
-    if ( !request->pos )
+    if ( request->pos == nullptr )
     {
         kDebug() << getExchangeFancyStr() << "local error: found response for order status, but postion is null" << info;
         return;
@@ -705,7 +705,7 @@ void WavesREST::parseCancelOrder( const QJsonObject &info, Request *const &reque
     Position *const &pos = request->pos;
 
     // prevent unsafe access
-    if ( !pos || !engine->getPositionMan()->isActive( pos ) )
+    if ( pos == nullptr || !engine->getPositionMan()->isActive( pos ) )
     {
         kDebug() << getExchangeFancyStr() << "successfully cancelled non-local order:" << info;
         return;
@@ -719,7 +719,7 @@ void WavesREST::parseCancelOrder( const QJsonObject &info, Request *const &reque
 void WavesREST::parseNewOrder( const QJsonObject &info, Request *const &request )
 {
     // check if we have a position recorded for this request
-    if ( !request->pos )
+    if ( request->pos == nullptr )
     {
         kDebug() << getExchangeFancyStr() << "local error: found response for queued position, but postion is null" << info;
         return;

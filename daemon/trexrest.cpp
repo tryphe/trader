@@ -100,7 +100,7 @@ void TrexREST::sendNamQueue()
         Position *const &pos = request->pos;
 
         // check for valid pos
-        if ( !pos || !engine->getPositionMan()->isValid( pos ) )
+        if ( pos == nullptr || !engine->getPositionMan()->isValid( pos ) )
         {
             sorted_nam_queue.insert( Coin(), request );
             continue;
@@ -213,7 +213,7 @@ void TrexREST::sendNamRequest( Request *const &request )
     // send REST message
     QNetworkReply *const &reply = nam->get( nam_request );
 
-    if ( !reply )
+    if ( reply == nullptr )
     {
         kDebug() << getExchangeFancyStr() << "local error: failed to generate a valid QNetworkReply";
         return;
@@ -309,7 +309,7 @@ void TrexREST::onNamReply( QNetworkReply *const &reply )
             Position *const &pos = request->pos;
 
             // prevent unallocated access (if we are cancelling it should be an active order)
-            if ( !pos || !engine->getPositionMan()->isActive( pos ) )
+            if ( pos == nullptr || !engine->getPositionMan()->isActive( pos ) )
             {
                 kDebug() << getExchangeFancyStr() << "unknown cancel reply:" << data;
 
@@ -364,7 +364,7 @@ void TrexREST::onNamReply( QNetworkReply *const &reply )
                  api_command == TREX_COMMAND_SELL )
             {
                 // check for bad ptr, and the position should also be queued
-                if ( !request->pos || !engine->getPositionMan()->isQueued( request->pos ) )
+                if ( request->pos == nullptr || !engine->getPositionMan()->isQueued( request->pos ) )
                 {
                     deleteReply( reply, request );
                     return;
@@ -495,7 +495,7 @@ void TrexREST::wssTextMessageReceived( const QString &msg )
 void TrexREST::parseBuySell( Request *const &request, const QJsonObject &response )
 {
     // check if we have a position recorded for this request
-    if ( !request->pos )
+    if ( request->pos == nullptr )
     {
         kDebug() << getExchangeFancyStr() << "local error: found response for queued position, but postion is null";
         return;
@@ -538,7 +538,7 @@ void TrexREST::parseCancelOrder( Request *const &request, const QJsonObject &res
     Position *const &pos = request->pos;
 
     // prevent unsafe access
-    if ( !pos || !engine->getPositionMan()->isActive( pos ) )
+    if ( pos == nullptr || !engine->getPositionMan()->isActive( pos ) )
     {
         kDebug() << getExchangeFancyStr() << "successfully cancelled non-local order:" << response;
         return;
@@ -822,7 +822,7 @@ void TrexREST::parseOrderHistory( const QJsonObject &obj )
         // make sure order number is valid
         Position *const &pos = engine->getPositionMan()->getByOrderID( order_id );
 
-        if ( order_id.isEmpty() || !pos )
+        if ( pos == nullptr || order_id.isEmpty() )
             continue;
 
         pos->btc_commission = btc_commission;
