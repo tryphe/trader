@@ -19,8 +19,8 @@ BaseREST::BaseREST( Engine *_engine )
 
     // this timer checks for nam requests that have been queued too long
     timeout_timer = new QTimer( this );
-    connect( timeout_timer, &QTimer::timeout, engine, &Engine::onCheckTimeouts );
     connect( timeout_timer, &QTimer::timeout, this, &BaseREST::onCheckSentTimeouts );
+    connect( timeout_timer, &QTimer::timeout, engine, &Engine::onCheckTimeouts );
     timeout_timer->setTimerType( Qt::VeryCoarseTimer );
     timeout_timer->start( 30000 );
 
@@ -159,7 +159,7 @@ void BaseREST::deleteReply( QNetworkReply * const &reply, Request * const &reque
     // remove from tracking queue
     if ( reply == nullptr || request == nullptr )
     {
-        kDebug() << "local error: got bad request/reply" << &request << &reply;
+        kDebug() << "local error: got null request/reply" << &request << &reply;
         return;
     }
 
@@ -180,13 +180,28 @@ void BaseREST::onCheckSentTimeouts()
 {
     const qint64 current_time_ms = QDateTime::currentMSecsSinceEpoch();
 
+    QVector<QNetworkReply*> old_replies;
+    QVector<Request*> old_requests;
+
     // delete old network requests
     for ( QHash<QNetworkReply*,Request*>::const_iterator i = nam_queue_sent.begin(); i != nam_queue_sent.end(); i++ )
     {
-        Request *const &request = i.value();
         QNetworkReply *const &reply = i.key();
+        Request *const &request = i.value();
 
         if ( request->time_sent_ms < current_time_ms - 10 * 60000 )
-            deleteReply( reply, request );
+        {
+            kDebug() << "info: deleting stale network request" << request->api_command;
+
+            // don't delete while iterating the array, store instead
+            old_replies += reply;
+            old_requests += request;
+        }
+    }
+
+    // actually delete the things
+    while ( !old_replies.isEmpty() )
+    {
+        deleteReply( old_replies.takeFirst(), old_requests.takeFirst() );
     }
 }
