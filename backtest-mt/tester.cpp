@@ -29,6 +29,31 @@
 
 Tester::Tester()
 {
+//    exit(0);
+
+//    int i;
+
+//    qint64 t0 = QDateTime::currentMSecsSinceEpoch();
+
+//    for ( int j = 0; j < 200000; j++ )
+//    {
+//        PriceSignal s;
+//        s.setMaxSamples( 1000 );
+
+//        for ( int k = 0; k < 10000; k++ )
+//        {
+//            s.addSample( CoinAmount::COIN );
+//        }
+//    }
+
+//    kDebug() << "1" << QDateTime::currentMSecsSinceEpoch() - t0;
+//    t0 = QDateTime::currentMSecsSinceEpoch();
+
+
+
+//    kDebug() << "2" << QDateTime::currentMSecsSinceEpoch() - t0;
+
+//    kDebug() << Coin("1") / 10000;
 //    exit( 0 );
 
     CoinAmountTest c;
@@ -46,6 +71,8 @@ Tester::Tester()
         kDebug() << "loading finished work...";
         loadFinishedWork();
     }
+
+//    generateWorkFromResultString( "1500d[9.7100]-hiX[86.610]-finalX[37.380]-volscore[30.930]:sig0[7/154/458/11.]-sig1[7/258/298/9.]-sig2[7/499/633/2.]-sig3[4/143/404/2.]-sig4[7/196/442/14.]-sig5[4/459/491/14.]-func[1]-take[50000]-startamt[1.43498065]-fee[10000]-candlelen[30000]-pricelen[15]-pricebias[5]-[+0]" );
 
     // generate work
     kDebug() << "generating work...";
@@ -171,6 +198,7 @@ void Tester::reindexPriceData( PriceData &data, const int interval )
         data.data[ data_overwrite_idx++ ] = base.getSignal();
     }
 
+    // trim old data
     while ( data.data.size() > data_overwrite_idx )
         data.data.removeLast();
 
@@ -201,10 +229,99 @@ void Tester::generateWork()
 {
     SimulationTask *work = new SimulationTask;
 
-    work->m_markets_tested += m_price_data_0.first().keys().toVector();
-//    work->m_markets_tested += m_price_data_1.first().keys().toVector();
+    /// test
+//    work->addStrategyArgs( StrategyArgs( RSIRatio,  40, 600, Coin("1.") ) );
+//    work->m_allocation_func = 1;
+    ///
 
-    m_work_ids_generated_or_done += work->getUniqueID();;
+    /// active strat
+    work->addStrategyArgs( StrategyArgs( SMARatio, 449, 659, Coin("1.") ) );
+    work->addStrategyArgs( StrategyArgs( SMARatio, 38,  148, Coin("2.") ) );
+    work->addStrategyArgs( StrategyArgs( SMARatio, 475, 579, Coin("6.") ) );
+    work->addStrategyArgs( StrategyArgs( RSIRatio, 301, 474, Coin("10.") ) );
+    work->addStrategyArgs( StrategyArgs( RSIRatio, 232, 257, Coin("8.") ) );
+    work->addStrategyArgs( StrategyArgs( SMARatio, 106, 465, Coin("7.") ) );
+    work->addStrategyArgs( StrategyArgs( RSIRatio, 287, 344, Coin("10.") ) );
+    work->m_allocation_func = 1;
+    ///
+
+    /// old brief strat
+//    work->addStrategyArgs( StrategyArgs( RSIRatio, 451, 677, Coin("2.") ) );
+//    work->addStrategyArgs( StrategyArgs( SMARatio, 302, 445, Coin("3.") ) );
+//    work->addStrategyArgs( StrategyArgs( RSIRatio, 222, 438, Coin("15.") ) );
+//    work->addStrategyArgs( StrategyArgs( SMARatio, 8,   155, Coin("10.") ) );
+//    work->addStrategyArgs( StrategyArgs( RSIRatio, 140, 577, Coin("10.") ) );
+//    work->m_allocation_func = 1;
+    ///
+
+    /// old strat
+//    work->addStrategyArgs( StrategyArgs( SMARatio, 147, 442, Coin("4.") ) );
+//    work->addStrategyArgs( StrategyArgs( RSIRatio, 130, 613, Coin("3.") ) );
+//    work->addStrategyArgs( StrategyArgs( SMARatio, 29,  211, Coin("7.") ) );
+//    work->addStrategyArgs( StrategyArgs( RSIRatio, 237, 337, Coin("3.") ) );
+//    work->addStrategyArgs( StrategyArgs( RSIRatio, 307, 362, Coin("11.") ) );
+//    work->m_allocation_func = 1;
+    ///
+
+    /// old strat
+//    work->addStrategyArgs( StrategyArgs( RSIRatio, 108, 643, Coin("9.5") ) );
+//    work->addStrategyArgs( StrategyArgs( RSIRatio, 263, 414, Coin("8.") ) );
+//    work->addStrategyArgs( StrategyArgs( SMARatio, 283, 405, Coin("5.5") ) );
+//    work->addStrategyArgs( StrategyArgs( EMARatio, 32,  299, Coin("7.") ) );
+//    work->m_allocation_func = 1;
+    ///
+
+    /// old active strat with different weights
+//    work->addStrategyArgs( StrategyArgs( RSIRatio, 108, 643, Coin("8.1") ) );
+//    work->addStrategyArgs( StrategyArgs( RSIRatio, 263, 414, Coin("10.7") ) );
+//    work->addStrategyArgs( StrategyArgs( SMARatio, 283, 405, Coin("1.6") ) );
+//    work->addStrategyArgs( StrategyArgs( EMARatio, 32,  299, Coin("7.5") ) );
+//    work->m_allocation_func = 1;
+    ///
+
+    /// old strat
+//    work->addStrategyArgs( StrategyArgs( RSIRatio, 27,  227, Coin("2.5") ) );
+//    work->addStrategyArgs( StrategyArgs( RSIRatio, 123, 486, Coin("11.5") ) );
+//    work->addStrategyArgs( StrategyArgs( SMARatio, 2,   76,  Coin("2.3") ) );
+//    work->addStrategyArgs( StrategyArgs( WMARatio, 5,   10,  Coin("1") ) );
+//    work->m_allocation_func = 1;
+    ///
+
+    /// old strat
+//    work->addStrategyArgs( StrategyArgs( RSIRatio, 27,  227, Coin("2.5") ) );
+//    work->addStrategyArgs( StrategyArgs( RSIRatio, 123, 486, Coin("11.5") ) );
+//    work->m_allocation_func = 0;
+    ///
+
+    /// old strat
+//    work->addStrategyArgs( StrategyArgs( RSIRatio, 30, 142, Coin("2") ) );
+//    work->addStrategyArgs( StrategyArgs( RSIRatio, 78, 139, Coin("1") ) );
+//    work->m_allocation_func = 0;
+    ///
+
+    /// old test strat
+//    work->addStrategyArgs( StrategyArgs( RSIRatio, 27,  227, Coin("2.5") ) );
+//    work->addStrategyArgs( StrategyArgs( RSIRatio, 123, 486, Coin("11.5") ) );
+//    work->addStrategyArgs( StrategyArgs( SMARatio, 2,   76,  Coin("2.3") ) );
+//    work->addStrategyArgs( StrategyArgs( WMARatio, 5,   10,  Coin("1") ) );
+//    work->m_allocation_func = 1;
+    ///
+
+    // add markets
+    work->m_markets_tested += m_price_data_0.first().keys().toVector();
+
+    // delete work on empty args or duplicate work id
+    const QByteArray &work_id = work->getUniqueID();
+    if ( WORK_PREVENT_RETRY && ( work->m_strategy_args.isEmpty() || m_work_ids_generated_or_done.contains( work_id ) ) )
+    {
+        m_work_skipped_duplicate++;
+        delete work;
+        return;
+    }
+
+    if ( WORK_PREVENT_RETRY )
+        m_work_ids_generated_or_done += work->getUniqueID();
+
     m_work_queued += work;
     m_work_count_total++;
 }
@@ -213,26 +330,140 @@ void Tester::generateRandomWork()
 {
     SimulationTask *work = new SimulationTask;
 
+    /// 1
+//    const int strategy_count = Global::getSecureRandomRange32( 2, 4 );
+//    work->m_strategy_args.resize( strategy_count );
+//    for ( int i = 0; i < strategy_count; i++ )
+//    {
+//        // SMAR or RSIR: Global::getSecureRandomRange32( 0, 1 ) == 0 ? SMARatio : RSIRatio
+//        // SMAR:RSIR:    static_cast<PriceSignalType>( Global::getSecureRandomRange32( SMARatio, RSIRatio ) );
+//        const PriceSignalType type = RSIRatio;//static_cast<PriceSignalType>( Global::getSecureRandomRange32( SMARatio, RSIRatio ) );
+
+//        const int length_fast = 2 + std::pow( Global::getSecureRandomRange32( 3, 28 ), 2 );
+//        const int length_slow = /*( type == RSIRatio && Global::getSecureRandomRange32( 0, 1 ) == 0 ) ? 0 :*/
+//                                2 + std::pow( Global::getSecureRandomRange32( 3, 28 ), 2 );
+
+//        if ( length_fast >= length_slow )
+//        {
+//            i--;
+//            continue;
+//        }
+
+//        assert( length_fast > 0 );
+//        assert( length_slow > 0 || type < SMARatio || type == RSIRatio );
+
+//        work->m_strategy_args[ i ].type = type;
+//        work->m_strategy_args[ i ].length_fast = length_fast;
+//        work->m_strategy_args[ i ].length_slow = length_slow;
+
+//        // check for duplicate type/lengths
+//        bool duplicate_lengths = false;
+//        for ( int j = 0; j < strategy_count; j++ )
+//        {
+//            if ( j != i && work->m_strategy_args[ i ].isEqualExcludingWeights( work->m_strategy_args[ j ] ) )
+//            {
+//                duplicate_lengths = true;
+//                break;
+//            }
+//        }
+
+//        // continue on duplicate
+//        if ( duplicate_lengths )
+//        {
+//            i--;
+//            continue;
+//        }
+
+//        // weight 1:15
+//        work->m_strategy_args[ i ].weight = CoinAmount::SATOSHI * 100000000 + CoinAmount::SATOSHI * 50000000 * Global::getSecureRandomRange32( 0, 28 );
+//    }
+
+//    work->m_allocation_func = Global::getSecureRandomRange32( 0, 22 );
+    /// 1
+
+    /// 2 random mixup
     work->m_allocation_func = 1;
+
+    QMap<PriceSignalType, int> signal_count;
+
+    const int signal_total = Global::getSecureRandomRange32( 4, 8 );
+    for ( int i = 0; i < signal_total; i++ )
+    {
+        // smar or rsir for now
+        const PriceSignalType t = Global::getSecureRandomRange32( 0, 1 ) == 0 ? SMARatio : RSIRatio;
+
+        // only allow <=3 of each type (2 or 3 seems good)
+//        if ( ++signal_count[ t ] > 4 )
+//        {
+//            --i;
+//            continue;
+//        }
+
+        const int fast = Global::getSecureRandomRange32( 2, 500 );
+        const int slow = Global::getSecureRandomRange32( fast +/*1*/20, 700 );
+        const Coin w = CoinAmount::COIN + CoinAmount::SATOSHI * 100000000 * Global::getSecureRandomRange32( 0, 14 );
+        work->addStrategyArgs( StrategyArgs( t, fast, slow, w ) );
+    }
+    ///
+
+    /// old style mixup, seems to work good
+//    work->m_strategy_args[ 0 ].type = RSIRatio;
+//    work->m_strategy_args[ 0 ].length_fast = Global::getSecureRandomRange32( 2, 500 );
+//    work->m_strategy_args[ 0 ].length_slow = Global::getSecureRandomRange32( work->m_strategy_args[ 0 ].length_fast +1, 1000 );
+//    work->m_strategy_args[ 0 ].weight = Coin("1") + CoinAmount::SATOSHI * 10000000 * Global::getSecureRandomRange32( 1, 110 );
+
+//    work->m_strategy_args[ 1 ].type = RSIRatio;
+//    work->m_strategy_args[ 1 ].length_fast = Global::getSecureRandomRange32( 2, 500 );
+//    work->m_strategy_args[ 1 ].length_slow = Global::getSecureRandomRange32( work->m_strategy_args[ 1 ].length_fast +1, 1000 );
+//    work->m_strategy_args[ 1 ].weight = Coin("1") + CoinAmount::SATOSHI * 10000000 * Global::getSecureRandomRange32( 1, 110 );
+
+//    work->m_strategy_args[ 2 ].type = SMARatio;
+//    work->m_strategy_args[ 2 ].length_fast = Global::getSecureRandomRange32( 1, 500 );
+//    work->m_strategy_args[ 2 ].length_slow = Global::getSecureRandomRange32( work->m_strategy_args[ 2 ].length_fast +1, 1000 );
+//    work->m_strategy_args[ 2 ].weight = Coin("1") + CoinAmount::SATOSHI * 10000000 * Global::getSecureRandomRange32( 1, 110 );
+
+//    work->m_strategy_args[ 3 ].type = static_cast<PriceSignalType>( Global::getSecureRandomRange32( 5, 6 ) );
+//    work->m_strategy_args[ 3 ].length_fast = Global::getSecureRandomRange32( 1, 500 );
+//    work->m_strategy_args[ 3 ].length_slow = Global::getSecureRandomRange32( work->m_strategy_args[ 3 ].length_fast +1, 1000 );
+//    work->m_strategy_args[ 3 ].weight = Coin("1") + CoinAmount::SATOSHI * 10000000 * Global::getSecureRandomRange32( 1, 110 );
+
+//    work->m_allocation_func = 1;//Global::getSecureRandomRange32( 0, 1 ) == 0 ? 0 : Global::getSecureRandomRange32( 1, 22 );
+    ///
+
+    /// refine weights
+//    work->m_allocation_func = 1;
+//    const Coin w0 = CoinAmount::COIN * Global::getSecureRandomRange32( 1, 2 );
+//    const Coin w1 = CoinAmount::COIN * Global::getSecureRandomRange32( 1, 3 );
+//    const Coin w2 = CoinAmount::COIN * Global::getSecureRandomRange32( 5, 7 );
+//    const Coin w3 = CoinAmount::COIN * Global::getSecureRandomRange32( 9, 11 );
+//    const Coin w4 = CoinAmount::COIN * Global::getSecureRandomRange32( 7, 9 );
+//    const Coin w5 = CoinAmount::COIN * Global::getSecureRandomRange32( 6, 8 );
+//    const Coin w6 = CoinAmount::COIN /* + CoinAmount::SATOSHI * 100000000*/ * Global::getSecureRandomRange32( 8, 11 );
+
+//    work->addStrategyArgs( StrategyArgs( SMARatio, 449, 659, w0 ) );
+//    work->addStrategyArgs( StrategyArgs( SMARatio, 38,  148, w1 ) );
+//    work->addStrategyArgs( StrategyArgs( SMARatio, 475, 579, w2 ) );
+//    work->addStrategyArgs( StrategyArgs( RSIRatio, 301, 474, w3 ) );
+//    work->addStrategyArgs( StrategyArgs( RSIRatio, 232, 257, w4 ) );
+//    work->addStrategyArgs( StrategyArgs( SMARatio, 106, 465, w5 ) );
+//    work->addStrategyArgs( StrategyArgs( RSIRatio, 287, 344, w6 ) );
     ///
 
     // add markets
     work->m_markets_tested += m_price_data_0.first().keys().toVector();
-//    work->m_markets_tested += m_price_data_1.first().keys().toVector();
-
-    // add basic args
-    work->m_samples_start_offset = WORK_SAMPLES_START_OFFSET;
 
     // if hash of raw data exists in QSet, skip adding duplicate work
     const QByteArray &work_id = work->getUniqueID();
-    if ( m_work_ids_generated_or_done.contains( work_id ) )
+    if ( WORK_PREVENT_RETRY && m_work_ids_generated_or_done.contains( work_id ) )
     {
         m_work_skipped_duplicate++;
         delete work;
         return;
     }
 
-    m_work_ids_generated_or_done += work_id;
+    if ( WORK_PREVENT_RETRY )
+        m_work_ids_generated_or_done += work_id;
+
     m_work_queued += work;
     m_work_count_total++;
 }
@@ -248,9 +479,6 @@ void Tester::generateWorkFromResultString( const QString &construct )
 
 //    kDebug() << "func" << alloc_func;
     work->m_allocation_func = alloc_func;
-
-    // add markets
-    work->m_markets_tested += m_price_data_0.first().keys().toVector();
 
     // read sigs
     const QList<QString> arg_sections = construct.split( QChar(']') );
@@ -279,16 +507,21 @@ void Tester::generateWorkFromResultString( const QString &construct )
                                              sig_args[ 3 ] ) );
     }
 
-    // delete work on empty args or duplicate work id
-//    const QByteArray &work_id = work->getUniqueID();
-//    if ( work->m_strategy_args.isEmpty() || m_work_ids_generated_or_done.contains( work_id ) )
-//    {
-//        m_work_skipped_duplicate++;
-//        delete work;
-//        return;
-//    }
+    // add markets
+    work->m_markets_tested += m_price_data_0.first().keys().toVector();
 
-//    m_work_ids_generated_or_done += work_id;
+    // delete work on empty args or duplicate work id
+    const QByteArray &work_id = work->getUniqueID();
+    if ( WORK_PREVENT_RETRY && ( work->m_strategy_args.isEmpty() || m_work_ids_generated_or_done.contains( work_id ) ) )
+    {
+        m_work_skipped_duplicate++;
+        delete work;
+        return;
+    }
+
+    if ( WORK_PREVENT_RETRY )
+        m_work_ids_generated_or_done += work_id;
+
     m_work_queued += work;
     m_work_count_total++;
 }
@@ -316,6 +549,10 @@ void Tester::startWork()
 
         t->start();
     }
+
+#if defined(OUTPUT_TOTAL_RUNTIME)
+    m_start_time = QDateTime::currentMSecsSinceEpoch();
+#endif
 }
 
 void Tester::processFinishedWork()
@@ -333,7 +570,7 @@ void Tester::processFinishedWork()
         work_to_delete += task;
         tasks_processed++;
 
-        // if no result, evict if policy allows
+        // if zero score, evict if RESULTS_EVICT_ZERO_SCORE policy is enabled
         if ( RESULTS_EVICT_ZERO_SCORE && task->m_scores[ 0 ].isZeroOrLess() )
             continue;
 
@@ -342,7 +579,7 @@ void Tester::processFinishedWork()
             task->m_scores[ score_type ] = task->m_scores.value( score_type ) / MARKET_VARIATIONS;
 
         // prepend scores to simulation result
-        const QString score_str = QString( "1200d[%1]-hiX[%2]-finalX[%3]-volscore[%4]:" )
+        const QString score_str = QString( "1500d[%1]-hiX[%2]-finalX[%3]-volscore[%4]:" )
                 .arg( task->m_scores[ 0 ].toString( 2 ), -6, QChar('0') )
                 .arg( task->m_scores[ 1 ].toString( 2 ), -6, QChar('0') )
                 .arg( task->m_scores[ 2 ].toString( 2 ), -6, QChar('0') )
@@ -386,7 +623,7 @@ void Tester::processFinishedWork()
 
     QTextStream out_savefile( &savefile );
 
-    printHighScores( m_highscores_by_score[ 0 ], out_savefile, " 1200d " );
+    printHighScores( m_highscores_by_score[ 0 ], out_savefile, " 1500d " );
     printHighScores( m_highscores_by_score[ 1 ], out_savefile, " PEAK " );
     printHighScores( m_highscores_by_score[ 2 ], out_savefile, " FINAL " );
     printHighScores( m_highscores_by_score[ 3 ], out_savefile, " VOLSCORE " );
@@ -429,6 +666,9 @@ void Tester::processFinishedWork()
          m_work_count_total == m_work_count_done*/ )
     {
         kDebug() << "done!";
+#if defined(OUTPUT_TOTAL_RUNTIME)
+        kDebug() << "total runtime" << QDateTime::currentMSecsSinceEpoch() - m_start_time << "ms";
+#endif
         lock0.unlock();
         this->~Tester();
         exit( 0 );
@@ -460,14 +700,15 @@ void Tester::printHighScores( const QMultiMap<Coin, QString> &scores, QTextStrea
 void Tester::trimHighScores( QMultiMap<Coin, QString> &scores, QMap<QString, Coin> &scores_by_result )
 {
     // check if we should trim
-    if ( scores.size() < RESULTS_OUTPUT )
+    if ( scores.size() < RESULTS_HIGH_SCORE_COUNT )
         return;
 
     QMultiMap<Coin, QString> new_scores;
     QMap<QString, Coin> new_scores_by_result;
 
     // assemble trimmed version of maps
-    for ( QMultiMap<Coin, QString>::const_iterator i = scores.end() - RESULTS_OUTPUT; i != scores.end(); i++ )
+    const QMultiMap<Coin, QString>::const_iterator &scores_end = scores.end();
+    for ( QMultiMap<Coin, QString>::const_iterator i = scores_end - RESULTS_HIGH_SCORE_COUNT; i != scores_end; i++ )
     {
         new_scores.insert( i.key(), i.value() );
         new_scores_by_result.insert( i.value(), i.key() );
@@ -507,11 +748,34 @@ void Tester::saveFinishedWork()
     QVector<QByteArray> work_ids_raw_saved;
     for ( QMap<QByteArray, QString>::const_iterator i = m_work_results_unsaved.begin(); i != m_work_results_unsaved.end(); i++ )
     {
-        const QByteArray work_id = i.key().toHex();
+        const QString work_id_hex = i.key().toHex();
         const QString &work_result = i.value();
 
+        // if result is not in the top scores, skip saving if policy allows
+        if ( RESULTS_EVICT_NON_HIGH_SCORE )
+        {
+            // check if the result is a high score
+            bool is_high_score = false;
+            for ( QMap<int, QMap<QString, Coin>>::const_iterator j = m_highscores_by_result.begin(); j != m_highscores_by_result.end(); j++ )
+            {
+                if ( j.value().contains( work_result ) )
+                    is_high_score = true;
+            }
+
+            // if not high score, skip iteration but mark the work as complete
+            if ( !is_high_score )
+            {
+                // if we are to prevent a retry, we keep it in the map
+                if ( !WORK_PREVENT_RETRY )
+                    m_work_ids_generated_or_done.remove( i.key() );
+
+                work_ids_raw_saved += i.key();
+                continue;
+            }
+        }
+
         // save id
-        out_savefile << work_id << ' ';
+        out_savefile << work_id_hex << ' ';
 
         // save scores
         for ( QMap<int, QMap<QString, Coin>>::const_iterator j = m_highscores_by_result.begin(); j != m_highscores_by_result.end(); j++ )
@@ -582,19 +846,20 @@ void Tester::loadFinishedWork()
         m_highscores_by_score_tmp[ 2 ].insert( score_2, result );
         m_highscores_by_score_tmp[ 3 ].insert( score_3, result );
 
-        m_work_ids_generated_or_done += work_id;
+        if ( WORK_PREVENT_RETRY )
+            m_work_ids_generated_or_done += work_id;
 
         results_loaded++;
     }
 //    kDebug() << "loaded" << m_work_ids_generated_or_done.size() << "work ids";
 
-    // only load top RESULTS_OUTPUT scores into long-term ram
+    // only load top RESULTS_HIGH_SCORE_COUNT scores into long-term ram
     for ( int i = 0; i < 4; i++ )
     {
-        if ( m_highscores_by_score_tmp[ i ].size() < RESULTS_OUTPUT )
+        if ( m_highscores_by_score_tmp[ i ].size() < RESULTS_HIGH_SCORE_COUNT )
             continue;
 
-        for ( QMultiMap<Coin, QString>::const_iterator j = m_highscores_by_score_tmp[ i ].end() - RESULTS_OUTPUT; j != m_highscores_by_score_tmp[ i ].end(); j++ )
+        for ( QMultiMap<Coin, QString>::const_iterator j = m_highscores_by_score_tmp[ i ].end() - RESULTS_HIGH_SCORE_COUNT; j != m_highscores_by_score_tmp[ i ].end(); j++ )
         {
             const Coin &score = j.key();
             const QString &result = j.value();

@@ -24,6 +24,7 @@ struct SignalContainer
     bool isStrategyInitialized();
 
     PriceSignal price_signal;
+    QVector<Coin> price_signal_cache;
     QVector<PriceSignal> strategy_signals;
     qint64 current_idx{ 0 };
 };
@@ -74,14 +75,13 @@ struct SimulationTask
     // general options
     QVector<QVector<Market>> m_markets_tested;
 
-    quint32 m_samples_start_offset{ 0 };
     QVector<StrategyArgs> m_strategy_args;
     quint8 m_allocation_func{ 0 };
 
     // results
     QString m_simulation_result;
     QString m_alpha_readout;
-    QMap<quint8, Coin> m_scores;
+    QVector<Coin> m_scores;
 
     // cached raw bytes of the options, for getRaw()
     QByteArray m_unique_id;
@@ -113,11 +113,12 @@ private:
     void run() override;
     void runSimulation( const QMap<Market, PriceData> *const &price_data );
 
+    QString m_signals_str;
     QVector<SignalContainer> m_signals;
     PriceSignal m_base_capital_sma0;
     SpruceV2 sp;
     Coin initial_btc_value, highest_btc_value, simulation_cutoff_value, total_volume;
-    qint64 m_latest_ts;
+    qint64 m_latest_ts, m_latest_ts_price_cache;
 };
 
 #endif // SIMULATIONTHREAD_H

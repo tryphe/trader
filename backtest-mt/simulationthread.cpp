@@ -51,9 +51,8 @@ QByteArray &SimulationTask::getUniqueID()
     raw_s << Tester::PRICE_SIGNAL_LENGTH;
     raw_s << Tester::RELATIVE_SATS_TRADED_PER_BASE_INTERVAL;
     raw_s << Tester::WORK_SAMPLES_START_OFFSET;
-    raw_s << m_samples_start_offset;
     raw_s << m_allocation_func;
-    assert( raw.size() == 21 );
+    assert( raw.size() == 17 );
 
     // assemble sorted strategy list to detect collisions from variant combinations of identical strategies
     QVector<QByteArray> strategy_list;
@@ -113,8 +112,7 @@ void SimulationThread::run()
     static qint64 last_message_secs = 0;
 
     // init persistent thread stuff
-    m_base_capital_sma0.setMaxSamples( qint64( 1200 * 24 * 60 * 60 ) / Tester::ACTUAL_CANDLE_INTERVAL_SECS ); // 1200 days
-
+    m_base_capital_sma0.setMaxSamples( qint64( 1500 * 24 * 60 * 60 ) / Tester::ACTUAL_CANDLE_INTERVAL_SECS ); // 1500 days
 
     assert( ext_mutex != nullptr );
     assert( ext_work_done != nullptr );
@@ -173,7 +171,6 @@ void SimulationThread::run()
 void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &price_data )
 {
     static const Coin MINIMUM_ORDER_SIZE = Coin("0.01");
-    static const Coin FEE = CoinAmount::SATOSHI * 5000 * 2; // note: this is fee *2
     static const int BASE_INTERVAL = Tester::BASE_INTERVAL;
     static const int PRICE_SIGNAL_OFFSET = Tester::PRICE_SIGNAL_LENGTH + Tester::PRICE_SIGNAL_BIAS;
     const int STRATEGY_COUNT = m_work->m_strategy_args.size();
@@ -184,16 +181,16 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
 
     static_assert( BASE_INTERVAL > 0 );
     static_assert( Tester::ACTUAL_CANDLE_INTERVAL_SECS > 0 );
-    assert( FEE.isGreaterThanZero() );
     assert( m_price_data.size() > 0 );
 
-    // init inner strategy signals
+    // init strategy signals
     m_signals.resize( price_data->size() );
-    for ( int i = 0; i < m_signals.size(); i++ )
-        m_signals[ i ].initSignals( STRATEGY_COUNT );
+    const QVector<SignalContainer>::const_iterator &m_signals_end = m_signals.end();
+    for ( QVector<SignalContainer>::iterator i = m_signals.begin(); i != m_signals_end; i++ )
+        i->initSignals( STRATEGY_COUNT );
 
     // construct signals string
-    QString signals_str;
+    m_signals_str.clear();
     for ( int i = 0; i < STRATEGY_COUNT; i++ )
     {
         const StrategyArgs &args = m_work->m_strategy_args.value( i );
@@ -202,7 +199,7 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
                                         .arg( i )
                                         .arg( args.operator QString() );
 
-        signals_str += current_signal;
+        m_signals_str += current_signal;
 //        m_signals[ i ].filename = current_signal.replace( "/", "_" ).prepend( "signal_cache/" );
 
 //        // if cache file exists, load cache
@@ -219,6 +216,11 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
     highest_btc_value.clear();
     simulation_cutoff_value.clear();
     total_volume.clear();
+
+#if defined(PRICE_SIGNAL_CACHED_DEF)
+    const bool should_use_price_signal_cache = !m_signals.first().price_signal_cache.isEmpty();
+    uint32_t price_signal_cache_idx = 0;
+#endif
 
 //    AlphaTracker alpha;
     sp.clear();
@@ -253,7 +255,6 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
     /// step 1: initialize price data and fill signal samples while seeking ahead
     m_latest_ts = 0;
 //    QString latest_ts_market;
-
     /// calculate latest index-0 timestamp out of all markets
     const auto &price_data_end0 = price_data->end();
     for ( QMap<Market, PriceData>::const_iterator i = price_data->begin(); i != price_data_end0; i++ )
@@ -267,11 +268,19 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
         m_latest_ts = data.data_start_secs;
 //        latest_ts_market = market;
     }
+#if defined(PRICE_SIGNAL_CACHED_DEF)
+    // we are filling the cache, store latest ts
+    if ( !should_use_price_signal_cache )
+        m_latest_ts_price_cache = m_latest_ts;
+#endif
 
     /// step 2: construct current prices and signals loop from a common starting point m_latest_ts
-    int market_i = -1, j;
+#if defined(REPAIR_INDEX_FRAGMENTATION)
     QVector<qint64> indices_elapsed;
     indices_elapsed.resize( m_signals.size() );
+#endif
+    int market_i = -1, j;
+
     for ( QMap<Market, PriceData>::const_iterator i = price_data->begin(); i != price_data_end0; i++ )
     {
         ++market_i;
@@ -284,7 +293,7 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
         qint64 &current_idx = container.current_idx;
 
         // init start data idx
-        current_idx = m_work->m_samples_start_offset + ( m_latest_ts - data.data_start_secs ) / Tester::ACTUAL_CANDLE_INTERVAL_SECS;
+        current_idx = Tester::WORK_SAMPLES_START_OFFSET + ( m_latest_ts - data.data_start_secs ) / Tester::ACTUAL_CANDLE_INTERVAL_SECS;
 
 //        kDebug() << i.key() << "start idx" << current_idx;
 
@@ -312,7 +321,7 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
             if ( price_ahead_idx == data.data.size() )
             {
                 // print signals config so we can reproduce it later
-                kDebug() << "warning: reached end before signals could be initialized" << signals_str;
+                kDebug() << "warning: reached end before signals could be initialized" << m_signals_str;
                 return;
             }
 
@@ -320,7 +329,9 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
             const Coin &price = data.data[ current_idx ];
             const Coin &price_ahead = data.data[ price_ahead_idx ];
             ++current_idx;
+#if defined(REPAIR_INDEX_FRAGMENTATION)
             ++indices_elapsed[ market_i ];
+#endif
 
             // add to price signal
             price_signal.addSample( price_ahead );
@@ -336,7 +347,9 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
         }
     }
 
+#if defined(REPAIR_INDEX_FRAGMENTATION)
     /// index fragmentation check, check that the number of indices elapsed for each market is the same
+    /// only necessary for buggy signal lengths.
     /// TODO: fix this. this should actually be done in the loop above and the samples skipped here should
     ///       be incorporated into the signals rather than skipped.
     qint64 elapsed_min = std::numeric_limits<qint64>::max(), elapsed_max = 0;
@@ -372,13 +385,14 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
 
         kDebug() << "warning: repaired index fragmentation" << indices_elapsed;
     }
+#endif
 
     /// step 3: loop until out of data samples. each iteration: set price, update ma, run simulation
-    Coin ORDER_SIZE_LIMIT;
+    Coin ORDER_SIZE_LIMIT, FEE;
     int price_ahead_idx;
     bool at_end = false;
     qint64 total_samples = 0; // total sample count, not per-market
-    Coin base_capital, qty_abs, amt_abs;
+    Coin base_capital, qty_abs, amt_abs, price_signal_value;
     QVector<Coin> signal_values, take_price;
     const QString base_currency = sp.getBaseCurrency();
     QMap<Market, PriceData>::const_iterator price_it;
@@ -390,11 +404,15 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
 
     while ( !at_end )
     {
-        sp.clearCurrentAndSignalPrices();
+//        sp.clearCurrentAndSignalPrices();
+        sp.clearCurrentPrices();
         total_samples += BASE_INTERVAL;
 
         //kDebug() << "time:" << m_current_date.toString() << "run simulation:" << should_run_simulation;
         market_i = -1;
+#if defined(PRICE_SIGNAL_CACHED_DEF)
+        const qint64 cache_seek_ts = m_latest_ts + price_signal_cache_idx * Tester::ACTUAL_CANDLE_INTERVAL_SECS;
+#endif
         for ( price_it = price_data_begin; price_it != price_data_end; price_it++ )
         {
             ++market_i;
@@ -442,14 +460,33 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
 
             // push price and signal values
             const QString &currency = market.getQuote();
-            sp.setCurrentPriceAndSignal( currency, price, signal_values );
-            take_price[ market_i ] = price_signal.getSignal();
+            sp.setCurrentPrice( currency, price );//, signal_values );
+
+#if defined(PRICE_SIGNAL_CACHED_DEF)
+            //kDebug() << ( should_use_price_signal_cache ? "using cache" : "not using cache" );
+            if ( should_use_price_signal_cache && cache_seek_ts >= m_latest_ts_price_cache )
+            {
+                price_signal_value = container.price_signal_cache.at( price_signal_cache_idx );
+//                kDebug() << "loaded signal for ts" << cache_seek_ts << price_signal_value;
+            }
+            else
+            {
+#endif
+                price_signal_value = price_signal.getSignal();
+#if defined(PRICE_SIGNAL_CACHED_DEF)
+                container.price_signal_cache += price_signal_value;
+//                kDebug() << "wrote signal for ts" << cache_seek_ts << price_signal_value;
+            }
+#endif
+            take_price[ market_i ] = price_signal_value;
 
             // check for end of data
             if ( price_ahead_idx == data.size() -1 )
                 at_end = true;
         }
-
+#if defined(PRICE_SIGNAL_CACHED_DEF)
+        price_signal_cache_idx++;
+#endif
         // calculate ratio table
         if ( !sp.calculateAmountToShortLong() )
         {
@@ -461,7 +498,9 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
         base_capital = sp.getBaseCapital();
         if ( base_capital < simulation_cutoff_value )
         {
-            kDebug() << "warning: ran out of capital" << signals_str;
+#if defined(OUTPUT_SIMULATION_CUTOFF_WARNING)
+            kDebug() << "warning: ran out of capital" << m_signals_str;
+#endif
             return;
         }
 
@@ -474,6 +513,9 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
         // we can only take so much btc per relative base length, per market. 0.05% limit, 0.05%/market_count max take
         static const Coin PRECOMPUTED_ORDERSIZE_PARAMS = CoinAmount::SATOSHI * Tester::RELATIVE_SATS_TRADED_PER_BASE_INTERVAL * BASE_INTERVAL;
         ORDER_SIZE_LIMIT = ( base_capital * PRECOMPUTED_ORDERSIZE_PARAMS ) / m_signals.size();
+
+        // calculate dynamic fee based on relative sizing
+        FEE = base_capital / Tester::FEE_DIV;
 
         /// measure if we should make a trade, and add to alphatracker
 //        const QMap<QString, Coin> &current_prices = sp.getCurrentPrices();
@@ -578,6 +620,10 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
         }
 
 #if defined(OUTPUT_BASE_CAPITAL)
+//        static PriceSignal sma = PriceSignal( SMA, 1051 );
+//        Coin sample = base_capital / initial_btc_value;
+//        sma.addSample( sample );
+//        kDebug() << sma.getSignal();
         kDebug() << base_capital / initial_btc_value;
 #endif
     }
@@ -662,27 +708,27 @@ void SimulationThread::runSimulation( const QMap<Market, PriceData> *const &pric
 //#endif
     }
 
-    // set simulation id
+    // set simulation id if empty (if we have multiple market variations, prevent from executing multiple times)
     if ( m_work->m_simulation_result.isEmpty() )
     {
         m_work->m_simulation_result = QString( "%1func[%2]-take[%3]-startamt[%4]-fee[%5]-candlelen[%6]-pricelen[%7]-pricebias[%8]-[+%9]" )
-                          .arg( signals_str )
+                          .arg( m_signals_str )
                           .arg( sp.getAllocationFunctionIndex() )
                           .arg( Tester::RELATIVE_SATS_TRADED_PER_BASE_INTERVAL )
                           .arg( initial_btc_value.toCompact() )
-                          .arg( ( FEE /2 ).toCompact() )
+                          .arg( Tester::FEE_DIV )
                           .arg( Tester::ACTUAL_CANDLE_INTERVAL_SECS )
                           .arg( Tester::PRICE_SIGNAL_LENGTH )
                           .arg( Tester::PRICE_SIGNAL_BIAS )
-                          .arg( m_work->m_samples_start_offset );
+                          .arg( Tester::WORK_SAMPLES_START_OFFSET );
     }
 
     // insert scores
     const Coin unique_value = CoinAmount::SUBSATOSHI * ( QDateTime::currentSecsSinceEpoch() - qint64(1592625713) );
-    m_work->m_scores[ 0 ] += CoinAmount::COIN * 10000 * ( m_base_capital_sma0.getSignal() / initial_btc_value ) / total_samples + unique_value;
-    m_work->m_scores[ 1 ] += highest_btc_value / initial_btc_value + unique_value;
-    m_work->m_scores[ 2 ] += base_capital / initial_btc_value + unique_value;
-    m_work->m_scores[ 3 ] += CoinAmount::COIN * 100 * m_work->m_scores[ 0 ] * m_work->m_scores[ 2 ] / total_volume + unique_value;
+    m_work->m_scores += CoinAmount::COIN * 100000 * ( m_base_capital_sma0.getSignal() / initial_btc_value ) / total_samples + unique_value;
+    m_work->m_scores += highest_btc_value / initial_btc_value + unique_value;
+    m_work->m_scores += base_capital / initial_btc_value + unique_value;
+    m_work->m_scores += CoinAmount::COIN * 1000 * ( m_work->m_scores[ 0 ].pow( 2 ) / total_volume ) + unique_value;
 
     // append alpha readout
 //    if ( !m_work->m_alpha_readout.isEmpty() )
