@@ -17,6 +17,7 @@ if not os.path.exists( KEYDEFS_FILE ):
   trex_secret = add_quotes( raw_input( "Enter Bittrex API Secret" + MSG ) )
   bnc_key = add_quotes( raw_input( "Enter Binance API Key" + MSG ) )
   bnc_secret = add_quotes( raw_input( "Enter Binance API Secret" + MSG ) )
+  waves_secret = add_quotes( raw_input( "Enter Waves API Secret (Base58)" + MSG ) )
 
   file = open( KEYDEFS_FILE, "w" )
   file.write( "#ifndef KEYDEFS_H\n" )
@@ -27,7 +28,8 @@ if not os.path.exists( KEYDEFS_FILE ):
   file.write( "#define BITTREX_KEY " + trex_key + "\n" )
   file.write( "#define BITTREX_SECRET " + trex_secret + "\n" )
   file.write( "#define BINANCE_KEY " + bnc_key + "\n" )
-  file.write( "#define BINANCE_SECRET " + bnc_secret + "\n\n" )
+  file.write( "#define BINANCE_SECRET " + bnc_secret + "\n" )
+  file.write( "#define WAVES_SECRET " + waves_secret + "\n\n" )
 
 
   file.write( "#endif // KEYDEFS_H\n" )
